@@ -40,11 +40,38 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/bid-request');
       const data = await res.json();
-      setBidRequests((data.bidRequests || []).filter((req: any) => !req.customerConfirmed));
-      setLoading(false);
+      
+      // スネークケースからキャメルケースに変換
+      const convertedRequests = (data.bidRequests || []).map((req: any) => ({
+        id: req.id,
+        productId: req.product_id,
+        productTitle: req.product_title,
+        productUrl: req.product_url,
+        productImage: req.product_image,
+        productPrice: req.product_price,
+        productEndTime: req.product_end_time,
+        maxBid: req.max_bid,
+        customerName: req.customer_name,
+        customerEmail: req.customer_email,
+        language: req.language,
+        status: req.status,
+        createdAt: req.created_at,
+        approvedAt: req.approved_at,
+        rejectReason: req.reject_reason,
+        counterOffer: req.counter_offer,
+        shippingCostJpy: req.shipping_cost_jpy,
+        customerCounterOffer: req.customer_counter_offer,
+        customerCounterOfferUsed: req.customer_counter_offer_used,
+        finalStatus: req.final_status,
+        finalPrice: req.final_price,
+        customerConfirmed: req.customer_confirmed,
+        customerMessage: req.customer_message,
+        adminNeedsConfirm: req.admin_needs_confirm
+      }));
+      
+      setBidRequests(convertedRequests);
     } catch (error) {
       console.error('Error fetching bid requests:', error);
-      setLoading(false);
     }
   };
 
@@ -52,7 +79,20 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/bid-request?purchased=true');
       const data = await res.json();
-      setPurchasedItems(data.purchasedItems || []);
+      
+      // スネークケースからキャメルケースに変換
+      const convertedItems = (data.purchasedItems || []).map((item: any) => ({
+        id: item.id,
+        productTitle: item.product_title,
+        productImage: item.product_image,
+        productUrl: item.product_url,
+        finalPrice: item.final_price,
+        customerEmail: item.customer_email,
+        customerName: item.customer_name,
+        confirmedAt: item.confirmed_at
+      }));
+      
+      setPurchasedItems(convertedItems);
       setPurchasedTotal(data.total || 0);
     } catch (error) {
       console.error('Error fetching purchased items:', error);
