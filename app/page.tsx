@@ -55,6 +55,8 @@ const translations = {
     endsIn: 'Termina en',
     viewOnYahoo: 'Ver en Yahoo! →',
     exchangeRate: 'Tipo de cambio',
+    offerSuccess: '¡Oferta enviada con éxito!',
+    offerError: 'Error al enviar la oferta. Por favor, inténtalo de nuevo.',
     days: 'días',
     hours: 'horas',
     minutes: 'minutos',
@@ -93,7 +95,7 @@ const translations = {
     approved: 'Aprovado',
     rejected: 'Rejeitado',
     counter_offer: 'Contraoferta',
-    won: 'Ganho',
+    won: 'Ganhado',
     lost: 'Perdido',
     rejectReason: 'Razão da rejeição',
     counterOfferAmount: 'Contraoferta',
@@ -114,6 +116,8 @@ const translations = {
     endsIn: 'Termina em',
     viewOnYahoo: 'Ver em Yahoo! →',
     exchangeRate: 'Taxa de câmbio',
+    offerSuccess: 'Oferta enviada com sucesso!',
+    offerError: 'Erro ao enviar oferta. Por favor, tente novamente.',
     days: 'dias',
     hours: 'horas',
     minutes: 'minutos',
@@ -257,11 +261,9 @@ export default function Home() {
 
   const handleBidRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) {
-      alert('Please login first');
-      return;
-    }
-
+    
+    if (!selectedProduct || !bidForm.name || !bidForm.maxBid) return;
+    
     try {
       const res = await fetch('/api/bid-request', {
         method: 'POST',
@@ -275,19 +277,22 @@ export default function Home() {
           productEndTime: selectedProduct.endTime,
           maxBid: parseFloat(bidForm.maxBid),
           customerName: bidForm.name,
-          currentEmail: currentUser.email,
+          currentEmail: currentUser?.email,
           language: lang
         })
       });
-
+      
       if (res.ok) {
+        alert(t.offerSuccess);
         setSelectedProduct(null);
         setBidForm({ name: '', maxBid: '' });
-        setProducts(products.filter(p => p.id !== selectedProduct.id));
-        alert('Bid request submitted successfully!');
+        fetchMyRequests();
+      } else {
+        alert(t.offerError);
       }
     } catch (error) {
       console.error('Error submitting bid request:', error);
+      alert(t.offerError);
     }
   };
 
@@ -632,10 +637,16 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {request.rejectReason && (
+                    {request.rejectReason && request.status === 'rejected' && (
                       <div className="mb-3 p-3 bg-red-50 rounded">
                         <p className="text-sm text-gray-600">{t.rejectReason}:</p>
-                        <p className="font-semibold text-red-700">{request.rejectReason}</p>
+                        <p className="font-semibold text-red-700 mb-3">{request.rejectReason}</p>
+                        <button
+                          onClick={() => handleFinalStatusConfirm(request.id)}
+                          className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                        >
+                          {t.confirm}
+                        </button>
                       </div>
                     )}
 
