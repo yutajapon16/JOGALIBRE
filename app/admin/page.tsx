@@ -37,12 +37,16 @@ export default function AdminDashboard() {
   };
 
   const fetchBidRequests = async () => {
-    try {
-      const res = await fetch('/api/bid-request');
-      const data = await res.json();
-      
-      // スネークケースからキャメルケースに変換
-      const convertedRequests = (data.bidRequests || []).map((req: any) => ({
+  try {
+    const res = await fetch('/api/bid-request');
+    const data = await res.json();
+    
+    console.log('=== ADMIN DEBUG ===');
+    console.log('Raw data:', data);
+    console.log('bidRequests:', data.bidRequests);
+    
+    // スネークケースからキャメルケースに変換
+    const convertedRequests = (data.bidRequests || []).map((req: any) => ({
         id: req.id,
         productId: req.product_id,
         productTitle: req.product_title,
@@ -68,10 +72,13 @@ export default function AdminDashboard() {
         customerMessage: req.customer_message,
         adminNeedsConfirm: req.admin_needs_confirm
       }));
-      
+      console.log('Converted requests:', convertedRequests);
+
       setBidRequests(convertedRequests);
+      setLoading(false);  // ← これを追加
     } catch (error) {
       console.error('Error fetching bid requests:', error);
+      setLoading(false);  // ← エラー時も追加
     }
   };
 
