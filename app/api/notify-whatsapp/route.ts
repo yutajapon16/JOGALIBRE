@@ -6,20 +6,27 @@ import { sendWhatsAppMessage } from '@/lib/whatsapp';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { userType, email } = body; // userType: 'admin' or 'customer'
+    const { userType, email } = body;
+
+    console.log('=== WhatsApp Notification Request ===');
+    console.log('User Type:', userType);
+    console.log('Email:', email);
 
     if (userType === 'admin') {
       // 管理者が送信：未確認の顧客に通知
-      const { data: pendingRequests } = await supabase
+      const { data: pendingRequests, error } = await supabase
         .from('bid_requests')
         .select('customer_email, customer_name, product_title, language, status, final_status')
         .eq('customer_confirmed', false)
         .order('created_at', { ascending: false });
 
+      console.log('Pending requests:', pendingRequests);
+      console.log('Query error:', error);
+
       if (!pendingRequests || pendingRequests.length === 0) {
         return NextResponse.json({ 
           success: false, 
-          message: '通知する更新がありません' 
+          message: '通知する更新がありません（未確認リクエスト: 0件）' 
         });
       }
 
@@ -32,12 +39,22 @@ export async function POST(request: Request) {
         customerGroups.get(req.customer_email)!.push(req);
       }
 
+      console.log('Customer groups:', customerGroups.size);
+
       // 各顧客にWhatsApp送信
       const results = [];
       for (const [customerEmail, requests] of customerGroups.entries()) {
         const userInfo = await getUserInfo(customerEmail);
+        console.log(`Customer ${customerEmail} - WhatsApp:`, userInfo?.whatsapp);
+        
         if (!userInfo?.whatsapp) {
           console.log(`No WhatsApp for ${customerEmail}, skipping`);
+          results.push({
+            email: customerEmail,
+            whatsapp: null,
+            success: false,
+            reason: 'WhatsApp番号未登録'
+          });
           continue;
         }
 
@@ -52,9 +69,12 @@ export async function POST(request: Request) {
         results.push({ 
           email: customerEmail, 
           whatsapp: userInfo.whatsapp,
-          success: result.success 
+          success: result.success,
+          error: result.error
         });
       }
+
+      console.log('Send results:', results);
 
       return NextResponse.json({ 
         success: true, 
@@ -72,6 +92,8 @@ export async function POST(request: Request) {
         .eq('customer_confirmed', false)
         .order('created_at', { ascending: false });
 
+      console.log('Customer requests:', myRequests);
+
       if (!myRequests || myRequests.length === 0) {
         return NextResponse.json({ 
           success: false, 
@@ -80,6 +102,8 @@ export async function POST(request: Request) {
       }
 
       const adminWhatsApp = process.env.ADMIN_WHATSAPP_NUMBER;
+      console.log('Admin WhatsApp:', adminWhatsApp);
+      
       if (!adminWhatsApp) {
         return NextResponse.json({ 
           success: false, 
@@ -93,10 +117,12 @@ export async function POST(request: Request) {
       const message = `🔔 JOGALIBRE ADMIN: ${customerName} tiene ${count} solicitud(es) pendientes de revisión. Revisar: https://jogalibre.vercel.app/admin`;
 
       const result = await sendWhatsAppMessage(adminWhatsApp, message);
+      console.log('Admin notification result:', result);
 
       return NextResponse.json({ 
         success: result.success,
-        notificationsSent: result.success ? 1 : 0
+        notificationsSent: result.success ? 1 : 0,
+        error: result.error
       });
     }
 
@@ -108,7 +134,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('WhatsApp notification error:', error);
     return NextResponse.json(
-      { error: 'Failed to send notifications' },
+      { error: 'Failed to send notifications', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
