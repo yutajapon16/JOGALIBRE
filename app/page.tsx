@@ -727,7 +727,7 @@ export default function Home() {
                   >
                     {isSendingNotification 
                       ? (lang === 'es' ? 'Enviando...' : 'Enviando...') 
-                      : 'WhatsApp'}
+                      : 'Notificar actualizaciones por WhatsApp'}
                   </button>
                 <button
                   onClick={() => {

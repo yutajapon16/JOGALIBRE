@@ -431,6 +431,14 @@ export default function AdminDashboard() {
               合計: <span className="font-bold">{bidRequests.length}件</span>
             </div>
             
+          <button
+              onClick={sendWhatsAppNotifications}
+              disabled={isSendingNotification}
+              className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base w-full disabled:bg-gray-400"
+            >
+              {isSendingNotification ? '送信中...' : 'WhatsApp通知'}
+            </button>
+
             <button
               onClick={fetchBidRequests}
               className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
