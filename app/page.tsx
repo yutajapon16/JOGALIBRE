@@ -853,11 +853,11 @@ export default function Home() {
                     )}
 
                     {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 削除確認待ち */}
-                    {request.adminNeedsConfirm && !request.customerCounterOffer && (
+                    {request.status === 'rejected' && !request.customerCounterOffer && (
                       <div className="mb-2">
-                        <div className="p-3 bg-blue-50 rounded mb-2">
+                        <div className="p-3 bg-blue-50 rounded mb-3">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base mb-2">
+                          <p className="font-semibold text-blue-700 text-base">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
                         </div>
@@ -898,7 +898,7 @@ export default function Home() {
                           <p className="font-semibold text-purple-700 text-base">
                             ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
                           </p>
-                          <p className="text-xs text-red-600 mt-2">
+                          <p className="text-xs text-red-600">
                             {lang === 'es' ? 'Rechazado por el administrador' : 'Rejeitado pelo administrador'}
                           </p>
                         </div>
