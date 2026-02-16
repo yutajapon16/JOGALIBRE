@@ -904,7 +904,7 @@ export default function Home() {
                         </div>
                       </div>
                     )}
-                     {request.customerCounterOffer && (
+                     {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
                       <div className="mb-2 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
                         <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
