@@ -839,10 +839,6 @@ export default function Home() {
                         <p className="font-semibold text-blue-700 text-xl mb-2">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
-                        <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700 text-xl mb-2">
-                          ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
-                        </p>
                       </div>
                     )}
 
