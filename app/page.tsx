@@ -782,7 +782,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {request.status === 'rejected' && (
+                    {request.status === 'rejected' && !request.customerCounterOffer && (
                       <div className="mb-2 p-3 bg-red-50 rounded">
                         {request.rejectReason && (
                           <>
