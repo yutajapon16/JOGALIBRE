@@ -783,11 +783,11 @@ export default function Home() {
                     </div>
 
                     {request.status === 'rejected' && (
-                      <div className="mb-3 p-3 bg-red-50 rounded">
+                      <div className="mb-2 p-3 bg-red-50 rounded">
                         {request.rejectReason && (
                           <>
                             <p className="text-sm text-gray-600">{t.rejectReason}:</p>
-                            <p className="font-semibold text-red-700 mb-3">{request.rejectReason}</p>
+                            <p className="font-semibold text-red-700 mb-2">{request.rejectReason}</p>
                           </>
                         )}
                         <button
@@ -801,7 +801,7 @@ export default function Home() {
 
                     {/* ケース1: 最初の管理者カウンターオファー（顧客未返答） */}
                     {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
-                      <div className="mb-3 p-3 bg-blue-50 rounded">
+                      <div className="mb-2 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
                         <p className="font-semibold text-blue-700 text-sm mb-2">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
@@ -834,7 +834,7 @@ export default function Home() {
 
                     {/* ケース2: 顧客がカウンターオファー送信済み（管理者返答待ち） */}
                     {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
-                      <div className="mb-3 p-3 bg-blue-50 rounded">
+                      <div className="mb-2 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
                         <p className="font-semibold text-blue-700 text-sm mb-2">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
@@ -844,9 +844,9 @@ export default function Home() {
 
                     {/* ケース3: 管理者が顧客カウンターオファーを承認 */}
                     {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && (
-                      <div className="mb-3 p-3 bg-blue-50 rounded">
+                      <div className="mb-2 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-sm">
+                        <p className="font-semibold text-blue-700 text-sm mb-2">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
                         <p className="text-xs text-gray-600 mt-2">
@@ -857,10 +857,10 @@ export default function Home() {
 
                     {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 削除確認待ち */}
                     {request.adminNeedsConfirm && !request.customerCounterOffer && (
-                      <div className="mb-3">
-                        <div className="p-3 bg-blue-50 rounded mb-3">
+                      <div className="mb-2">
+                        <div className="p-3 bg-blue-50 rounded mb-2">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-sm">
+                          <p className="font-semibold text-blue-700 text-sm mb-2">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
                         </div>
@@ -875,7 +875,7 @@ export default function Home() {
 
                     {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
                     {request.adminNeedsConfirm && request.customerCounterOffer && (
-                      <div className="mb-3">
+                      <div className="mb-2">
                         <button
                           onClick={() => confirmRejection(request.id)}
                           className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 mb-3"
@@ -883,9 +883,9 @@ export default function Home() {
                           {t.confirm}
                         </button>
                         
-                        <div className="p-3 bg-blue-50 rounded mb-3">
+                        <div className="p-3 bg-blue-50 rounded mb-2">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-sm mb-3">
+                          <p className="font-semibold text-blue-700 text-sm mb-2">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
                           <button
@@ -898,7 +898,7 @@ export default function Home() {
                         
                         <div className="p-3 bg-purple-50 rounded">
                           <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                          <p className="font-semibold text-purple-700 text-sm">
+                          <p className="font-semibold text-purple-700 text-sm mb-2">
                             ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
                           </p>
                           <p className="text-xs text-red-600 mt-2">
@@ -911,7 +911,7 @@ export default function Home() {
                     {request.customerCounterOffer && (
                       <div className="mb-3 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                        <p className="font-semibold text-purple-700 text-sm mb-2">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
                       </div>
                     )}
 
@@ -920,7 +920,7 @@ export default function Home() {
                       <p className="text-sm text-gray-600">{t.finalPrice}:</p>
                       <p className="text-4xl font-bold text-green-600">
                         ${Math.round(request.finalPrice || request.counterOffer || request.maxBid).toLocaleString('en-US')}
-                      </p>
+                      </p>Contraoferta
                       <button
                         onClick={() => handleFinalStatusConfirm(request.id)}
                         className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"

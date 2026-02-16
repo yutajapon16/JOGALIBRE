@@ -672,7 +672,7 @@ export default function AdminDashboard() {
                 {request.counterOffer && (
                   <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                     <p className="text-sm text-gray-600">カウンターオファー:</p>
-                    <p className="font-semibold text-blue-700">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                    <p className="font-semibold text-blue-700 text-sm mb-2">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
                     {request.shippingCostJpy > 0 && (
                       <p className="text-xs text-gray-600 mt-1">送料: ¥{request.shippingCostJpy.toLocaleString()}</p>
                     )}
