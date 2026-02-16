@@ -227,7 +227,7 @@ export async function DELETE(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus } = body;
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, customerConfirmed, customerMessage, customerAction, customerCounterOffer } = body;
 
     const updateData: any = {};
     
@@ -236,9 +236,22 @@ export async function PATCH(request: Request) {
     if (counterOffer !== undefined) updateData.counter_offer = counterOffer;
     if (shippingCostJpy !== undefined) updateData.shipping_cost_jpy = shippingCostJpy;
     if (finalStatus !== undefined) updateData.final_status = finalStatus;
+    if (customerConfirmed !== undefined) updateData.customer_confirmed = customerConfirmed;
+    if (customerMessage !== undefined) updateData.customer_message = customerMessage;
+    if (customerCounterOffer !== undefined) updateData.customer_counter_offer = customerCounterOffer;
     
     if (status === 'approved') {
       updateData.approved_at = new Date().toISOString();
+    }
+    
+    if (customerAction === 'accept_counter') {
+      updateData.status = 'approved';
+      updateData.approved_at = new Date().toISOString();
+      updateData.customer_counter_offer_used = true;
+    }
+    
+    if (customerAction === 'reject_counter') {
+      updateData.admin_needs_confirm = true;
     }
 
     const { error } = await supabase

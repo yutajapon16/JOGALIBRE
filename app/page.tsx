@@ -152,6 +152,9 @@ export default function Home() {
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
   const [exchangeRate, setExchangeRate] = useState(150);
+  const [showCounterModal, setShowCounterModal] = useState(false);  // ← 追加
+  const [selectedRequestForCounter, setSelectedRequestForCounter] = useState<any>(null);  // ← 追加
+  const [customerCounterAmount, setCustomerCounterAmount] = useState('');  // ← 追加
 
   const t = translations[lang];
 
@@ -160,12 +163,20 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // セッションをチェック
+    // セッション永続化
     getCurrentUser().then(user => {
       if (user?.role === 'customer') {
         setCurrentUser(user);
       }
     });
+    
+    // ページリロード時もセッションを維持
+    const handleBeforeUnload = () => {
+      // セッションを保持（何もしない）
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
   const fetchExchangeRate = async () => {
@@ -798,14 +809,12 @@ export default function Home() {
                           </button>
                           <button
                             onClick={() => {
-                              const amount = window.prompt(t.yourCounterOffer);
-                              if (amount && !isNaN(parseFloat(amount))) {
-                                  handleCounterOfferResponse(request.id, 'counter', parseFloat(amount));
-                              }
-                          }}
-                          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                        >
-                          {t.counterOfferAction}
+                              setSelectedRequestForCounter(request);
+                              setShowCounterModal(true);
+                            }}
+                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                          >
+                            {t.counterOfferAction}
                           </button>
                           <button
                             onClick={() => handleCounterOfferResponse(request.id, 'reject')}
@@ -1141,6 +1150,53 @@ export default function Home() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {showCounterModal && selectedRequestForCounter && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-bold mb-4">{t.counterOfferAction}</h2>
+            <p className="text-sm text-gray-600 mb-2">
+              {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer).toLocaleString('en-US')}
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">{t.yourCounterOffer}</label>
+              <input
+                type="number"
+                value={customerCounterAmount}
+                onChange={(e) => setCustomerCounterAmount(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                placeholder="USD"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCounterModal(false);
+                  setSelectedRequestForCounter(null);
+                  setCustomerCounterAmount('');
+                }}
+                className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={() => {
+                  if (customerCounterAmount && !isNaN(parseFloat(customerCounterAmount))) {
+                    handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', parseFloat(customerCounterAmount));
+                    setShowCounterModal(false);
+                    setSelectedRequestForCounter(null);
+                    setCustomerCounterAmount('');
+                  }
+                }}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+              >
+                {lang === 'es' ? 'Enviar' : 'Enviar'}
+              </button>
+            </div>
           </div>
         </div>
       )}
