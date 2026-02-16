@@ -871,7 +871,7 @@ export default function Home() {
                     )}
 
                     {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
-                    {request.adminNeedsConfirm && request.customerCounterOffer && (
+                     {request.status === 'rejected' && request.customerCounterOffer && (
                       <div className="mb-2">
                         <button
                           onClick={() => confirmRejection(request.id)}
@@ -882,7 +882,7 @@ export default function Home() {
                         
                         <div className="p-3 bg-blue-50 rounded mb-2">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base mb-2">
+                          <p className="font-semibold text-blue-700 text-base">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
                           <button
@@ -895,7 +895,7 @@ export default function Home() {
                         
                         <div className="p-3 bg-purple-50 rounded">
                           <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                          <p className="font-semibold text-purple-700 text-base mb-2">
+                          <p className="font-semibold text-purple-700 text-base">
                             ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
                           </p>
                           <p className="text-xs text-red-600 mt-2">
