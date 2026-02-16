@@ -871,7 +871,7 @@ export default function Home() {
                     )}
 
                     {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
-                     {request.status === 'rejected' && request.customerCounterOffer && (
+                     {request.adminNeedsConfirm && request.customerCounterOffer && (
                       <div className="mb-2">
                         <button
                           onClick={() => confirmRejection(request.id)}
