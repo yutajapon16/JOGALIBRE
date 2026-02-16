@@ -803,7 +803,7 @@ export default function Home() {
                     {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
                       <div className="mb-2 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-ml mb-2">
+                        <p className="font-semibold text-blue-700 text-base mb-2">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
                         <div className="flex gap-2">
@@ -836,10 +836,10 @@ export default function Home() {
                     {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
                       <div className="mb-2 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-ml mb-2">
+                        <p className="font-semibold text-blue-700 text-base">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
-                      </div>
+                        </div>
                     )}
 
                     {/* ケース3: 管理者が顧客カウンターオファーを承認 */}
@@ -857,7 +857,7 @@ export default function Home() {
                       <div className="mb-2">
                         <div className="p-3 bg-blue-50 rounded mb-2">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-ml mb-2">
+                          <p className="font-semibold text-blue-700 text-base mb-2">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
                         </div>
@@ -882,7 +882,7 @@ export default function Home() {
                         
                         <div className="p-3 bg-blue-50 rounded mb-2">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-ml mb-2">
+                          <p className="font-semibold text-blue-700 text-base mb-2">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
                           <button
@@ -895,7 +895,7 @@ export default function Home() {
                         
                         <div className="p-3 bg-purple-50 rounded">
                           <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                          <p className="font-semibold text-purple-700 text-ml mb-2">
+                          <p className="font-semibold text-purple-700 text-base mb-2">
                             ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
                           </p>
                           <p className="text-xs text-red-600 mt-2">
@@ -904,11 +904,16 @@ export default function Home() {
                         </div>
                       </div>
                     )}
-
-                      {request.customerCounterOffer && request.status === 'approved' && !request.finalStatus && (
-                      <div className="m2-3 p-3 bg-purple-50 rounded">
+                     {request.customerCounterOffer && (
+                      <div className="mb-2 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700 text-xl">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                        <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                      </div>
+                    )}
+                      {request.customerCounterOffer && request.status === 'approved' && !request.finalStatus && (
+                      <div className="m-2 p-3 bg-purple-50 rounded">
+                        <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                        <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
                         <p className="text-xs text-gray-600">
                           {lang === 'es' ? 'Esperando resultado de la subasta' : 'Aguardando resultado do leilão'}
                         </p>
