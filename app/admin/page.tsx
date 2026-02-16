@@ -674,9 +674,35 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {request.customerCounterOffer && (
+                {request.customerCounterOffer && !request.customerCounterOfferUsed && (
                   <div className="mb-4 p-3 bg-purple-50 rounded-lg">
                     <p className="text-sm text-gray-600">顧客からのカウンターオファー:</p>
+                    <p className="font-semibold text-purple-700 text-xl mb-3">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          updateStatus(request.id, 'approved');
+                        }}
+                        className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
+                      >
+                        承認
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setActionType('reject');
+                        }}
+                        className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                      >
+                        却下
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {request.customerCounterOffer && request.customerCounterOfferUsed && (
+                  <div className="mb-4 p-3 bg-purple-50 rounded-lg">
+                    <p className="text-sm text-gray-600">顧客カウンターオファー（承認済み）:</p>
                     <p className="font-semibold text-purple-700">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
                   </div>
                 )}
@@ -739,6 +765,15 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
+                {request.finalStatus === 'lost' && request.customerConfirmed && (
+                  <button
+                    onClick={() => confirmCustomerRejection(request.id)}
+                    className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                  >
+                    削除を確認
+                  </button>
+                )}
+
                 {request.approvedAt && (
                   <div className="mt-3 text-sm text-gray-600">
                     承認: {formatDateTime(request.approvedAt)}
@@ -797,19 +832,8 @@ export default function AdminDashboard() {
       )}
 
       {selectedRequest && actionType === 'counter' && (
-  <div 
-    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-    onClick={() => {
-      setSelectedRequest(null);
-      setActionType(null);
-      setCounterOffer('');
-      setShippingCostJpy('');
-    }}
-  >
-    <div 
-      className="bg-white rounded-lg max-w-md w-full p-6"
-      onClick={(e) => e.stopPropagation()}
-    >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-2xl font-bold mb-4">カウンターオファー</h2>
             <p className="text-gray-600 mb-2">{selectedRequest.productTitle}</p>
             <p className="text-sm text-gray-500 mb-4">

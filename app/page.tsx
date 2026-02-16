@@ -794,7 +794,7 @@ export default function Home() {
                       </div>
                     )}
 
-                    {request.counterOffer && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
+                    {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && (
                       <div className="mb-3 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">{t.counterOfferAmount}:</p>
                         <p className="font-semibold text-blue-700 text-xl mb-3">
@@ -818,6 +818,46 @@ export default function Home() {
                           </button>
                           <button
                             onClick={() => handleCounterOfferResponse(request.id, 'reject')}
+                            className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                          >
+                            {t.reject}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {request.customerCounterOffer && !request.adminNeedsConfirm && (
+                      <div className="mb-3 p-3 bg-purple-50 rounded">
+                        <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                        <p className="font-semibold text-purple-700 text-xl">
+                          ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
+                        </p>
+                        <p className="text-xs text-gray-600 mt-2">
+                          {lang === 'es' ? 'Esperando respuesta del administrador' : 'Aguardando resposta do administrador'}
+                        </p>
+                      </div>
+                    )}
+
+                    {request.adminNeedsConfirm && (
+                      <div className="mb-3 p-3 bg-yellow-50 rounded">
+                        <p className="text-sm text-yellow-800 mb-3">
+                          {lang === 'es' 
+                            ? 'El administrador rechazó tu contraoferta. Puedes aceptar la contraoferta original o rechazar.'
+                            : 'O administrador rejeitou sua contraoferta. Você pode aceitar a contraoferta original ou rejeitar.'}
+                        </p>
+                        <p className="text-sm text-gray-600 mb-2">{t.counterOfferAmount}:</p>
+                        <p className="font-semibold text-blue-700 text-xl mb-3">
+                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleCounterOfferResponse(request.id, 'accept')}
+                            className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                          >
+                            {t.accept}
+                          </button>
+                          <button
+                            onClick={() => confirmRejection(request.id)}
                             className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
                           >
                             {t.reject}

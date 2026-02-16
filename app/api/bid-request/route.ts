@@ -235,10 +235,29 @@ export async function PATCH(request: Request) {
     if (rejectReason !== undefined) updateData.reject_reason = rejectReason;
     if (counterOffer !== undefined) updateData.counter_offer = counterOffer;
     if (shippingCostJpy !== undefined) updateData.shipping_cost_jpy = shippingCostJpy;
-    if (finalStatus !== undefined) updateData.final_status = finalStatus;
     if (customerConfirmed !== undefined) updateData.customer_confirmed = customerConfirmed;
     if (customerMessage !== undefined) updateData.customer_message = customerMessage;
     if (customerCounterOffer !== undefined) updateData.customer_counter_offer = customerCounterOffer;
+    
+    // finalStatusが設定される場合
+    if (finalStatus !== undefined) {
+      updateData.final_status = finalStatus;
+      
+      // 落札の場合、final_priceを設定
+      if (finalStatus === 'won') {
+        // 現在のリクエストデータを取得
+        const { data: currentRequest } = await supabase
+          .from('bid_requests')
+          .select('customer_counter_offer, counter_offer, max_bid')
+          .eq('id', id)
+          .single();
+        
+        if (currentRequest) {
+          // 優先順位: 顧客カウンターオファー > 管理者カウンターオファー > 最高入札額
+          updateData.final_price = currentRequest.customer_counter_offer || currentRequest.counter_offer || currentRequest.max_bid;
+        }
+      }
+    }
     
     if (status === 'approved') {
       updateData.approved_at = new Date().toISOString();
