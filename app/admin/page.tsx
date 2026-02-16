@@ -560,7 +560,7 @@ export default function AdminDashboard() {
           </div>
         ) : bidRequests.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
-            <p className="text-gray-500 text-lg">オファーリクエストがありません</p>
+            <p className="text-gray-500 text-lg">オファーリクエストなし</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -717,7 +717,7 @@ export default function AdminDashboard() {
                 )}
 
 
-                {request.adminNeedsConfirm && (
+                {request.adminNeedsConfirm && !request.customerCounterOffer && (
                   <div className="mb-2 p-3 bg-red-50 rounded-lg">
                     <p className="text-sm text-red-800 mb-2">顧客がカウンターオファーを拒否しました</p>
                     <button
