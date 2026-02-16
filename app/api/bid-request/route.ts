@@ -263,6 +263,21 @@ export async function PATCH(request: Request) {
       updateData.approved_at = new Date().toISOString();
     }
     
+    // ← ここに追加！管理者が顧客カウンターオファーを却下した場合
+    if (status === 'rejected') {
+      // 現在のリクエストを取得して顧客カウンターオファーがあるか確認
+      const { data: currentRequest } = await supabase
+        .from('bid_requests')
+        .select('customer_counter_offer')
+        .eq('id', id)
+        .single();
+      
+      if (currentRequest && currentRequest.customer_counter_offer) {
+        // 顧客カウンターオファーが存在する場合は、admin_needs_confirm を設定
+        updateData.admin_needs_confirm = true;
+      }
+    }
+    
     if (customerAction === 'accept_counter') {
       updateData.status = 'approved';
       updateData.approved_at = new Date().toISOString();
