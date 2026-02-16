@@ -266,9 +266,10 @@ export default function Home() {
         loginForm.whatsapp
       );
       
-      await signIn(loginForm.email, loginForm.password);
-      const user = await getCurrentUser();
-      setCurrentUser(user);
+      // メール確認が必要な場合は成功メッセージを表示
+      alert(lang === 'es'
+        ? '¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta.'
+        : 'Conta criada! Por favor, verifique seu e-mail para confirmar sua conta.');
       
       setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
       setShowSignUp(false);
