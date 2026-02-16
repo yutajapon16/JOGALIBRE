@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export type UserRole = 'admin' | 'customer';
+export type UserRole = 'customer' | 'admin';
 
 export interface User {
   id: string;
@@ -10,7 +10,6 @@ export interface User {
   whatsapp?: string;
 }
 
-// サインアップ
 export async function signUp(
   email: string, 
   password: string, 
@@ -26,7 +25,6 @@ export async function signUp(
   if (error) throw error;
   if (!data.user) throw new Error('User creation failed');
 
-  // ロールとユーザー情報を設定
   const { error: roleError } = await supabase
     .from('user_roles')
     .insert([{ 
@@ -41,33 +39,21 @@ export async function signUp(
   return data;
 }
 
-// ログイン
 export async function signIn(email: string, password: string) {
-  console.log('=== SIGNIN DEBUG ===');
-  console.log('Email:', email);
-  console.log('Password length:', password.length);
-  
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  console.log('SignIn result:', { data, error });
-
-  if (error) {
-    console.error('SignIn error details:', error);
-    throw error;
-  }
+  if (error) throw error;
   return data;
 }
 
-// ログアウト
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
 
-// 現在のユーザー情報とロールを取得
 export async function getCurrentUser(): Promise<User | null> {
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -90,7 +76,6 @@ export async function getCurrentUser(): Promise<User | null> {
   };
 }
 
-// セッション監視
 export function onAuthStateChange(callback: (user: User | null) => void) {
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
     if (session?.user) {
@@ -100,6 +85,6 @@ export function onAuthStateChange(callback: (user: User | null) => void) {
       callback(null);
     }
   });
-  
+
   return subscription;
 }
