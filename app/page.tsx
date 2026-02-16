@@ -911,7 +911,7 @@ export default function Home() {
                       </div>
                     )}
                       {request.customerCounterOffer && request.status === 'approved' && !request.finalStatus && (
-                      <div className="m-2 p-3 bg-purple-50 rounded">
+                      <div className="mb-2 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
                         <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
                         <p className="text-xs text-gray-600">
@@ -921,7 +921,7 @@ export default function Home() {
                     )}
 
                     {request.finalStatus === 'won' && !request.customerConfirmed && (
-                    <div className="mb-3 p-3 bg-green-50 rounded">
+                    <div className="mb-2 p-3 bg-green-50 rounded">
                       <p className="text-sm text-gray-600">{t.finalPrice}:</p>
                       <p className="text-4xl font-bold text-green-600">
                         ${Math.round(request.finalPrice || request.counterOffer || request.maxBid).toLocaleString('en-US')}
@@ -936,7 +936,7 @@ export default function Home() {
                   )}
 
                     {request.finalStatus === 'lost' && (
-                      <div className="mb-3 p-3 bg-red-50 rounded">
+                      <div className="mb-2 p-3 bg-red-50 rounded">
                         <p className="font-semibold text-red-700">{t.lost}</p>
                         <button
                           onClick={() => handleFinalStatusConfirm(request.id)}
