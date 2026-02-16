@@ -803,7 +803,7 @@ export default function Home() {
                     {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
                       <div className="mb-3 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-xl mb-3">
+                        <p className="font-semibold text-blue-700 text-sm mb-2">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
                         <div className="flex gap-2">
@@ -836,7 +836,7 @@ export default function Home() {
                     {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
                       <div className="mb-3 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-xl mb-2">
+                        <p className="font-semibold text-blue-700 text-sm mb-2">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
                       </div>
@@ -846,7 +846,7 @@ export default function Home() {
                     {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && (
                       <div className="mb-3 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-xl">
+                        <p className="font-semibold text-blue-700 text-sm">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
                         <p className="text-xs text-gray-600 mt-2">
@@ -860,7 +860,7 @@ export default function Home() {
                       <div className="mb-3">
                         <div className="p-3 bg-blue-50 rounded mb-3">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-xl">
+                          <p className="font-semibold text-blue-700 text-sm">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
                         </div>
@@ -885,7 +885,7 @@ export default function Home() {
                         
                         <div className="p-3 bg-blue-50 rounded mb-3">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-xl mb-3">
+                          <p className="font-semibold text-blue-700 text-sm mb-3">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
                           <button
@@ -898,7 +898,7 @@ export default function Home() {
                         
                         <div className="p-3 bg-purple-50 rounded">
                           <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                          <p className="font-semibold text-purple-700 text-xl">
+                          <p className="font-semibold text-purple-700 text-sm">
                             ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
                           </p>
                           <p className="text-xs text-red-600 mt-2">
