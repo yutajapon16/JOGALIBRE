@@ -601,6 +601,11 @@ export default function AdminDashboard() {
                           {getFinalStatusText(request.finalStatus)}
                         </span>
                       )}
+                      {request.adminNeedsConfirm && (
+                        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                          却下
+                        </span>
+                      )}
                     </div>
                     
                     <div className="text-right">
@@ -713,11 +718,11 @@ export default function AdminDashboard() {
 
 
                 {request.adminNeedsConfirm && (
-                  <div className="mb-4 p-3 bg-yellow-50 rounded-lg">
-                    <p className="text-sm text-yellow-800 mb-2">顧客がカウンターオファーを拒否しました</p>
+                  <div className="mb-4 p-3 bg-red-50 rounded-lg">
+                    <p className="text-sm text-red-800 mb-2">顧客がカウンターオファーを拒否しました</p>
                     <button
                       onClick={() => confirmCustomerRejection(request.id)}
-                      className="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700 transition"
+                      className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
                     >
                       削除を確認
                     </button>

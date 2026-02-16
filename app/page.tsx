@@ -765,6 +765,11 @@ export default function Home() {
                               {t[request.finalStatus as keyof typeof t]}
                             </span>
                           )}
+                          {request.adminNeedsConfirm && (
+                            <span className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800">
+                              {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-gray-600">
                           {t.maxBid}: ${Math.round(request.maxBid).toLocaleString('en-US')}
@@ -831,10 +836,10 @@ export default function Home() {
                     {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
                       <div className="mb-3 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-xl mb-2">
+                        <p className="font-semibold text-blue-700 text-xl mb-3">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
-                        <p className="text-sm text-gray-600 mt-3">{t.yourCounterOffer}:</p>
+                        <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
                         <p className="font-semibold text-purple-700 text-xl mb-2">
                           ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
                         </p>
