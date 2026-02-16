@@ -836,15 +836,12 @@ export default function Home() {
                     {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
                       <div className="mb-3 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-xl mb-3">
+                        <p className="font-semibold text-blue-700 text-xl mb-2">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
                         <p className="font-semibold text-purple-700 text-xl mb-2">
                           ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {lang === 'es' ? 'Esperando respuesta del administrador' : 'Aguardando resposta do administrador'}
                         </p>
                       </div>
                     )}
