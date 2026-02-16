@@ -831,7 +831,7 @@ export default function Home() {
                     {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
                       <div className="mb-3 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-lg mb-2">
+                        <p className="font-semibold text-blue-700 text-xl mb-2">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
                         <p className="text-sm text-gray-600 mt-3">{t.yourCounterOffer}:</p>
@@ -857,49 +857,55 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* ケース4: 管理者が顧客カウンターオファーを却下 OR 顧客が最初のカウンターオファーを却下 */}
-                    {request.adminNeedsConfirm && (
-                      <div className="mb-3 p-3 bg-yellow-50 rounded">
-                        <p className="text-sm text-yellow-800 mb-3">
-                          {request.customerCounterOffer ? (
-                            lang === 'es' 
-                              ? 'El administrador rechazó tu contraoferta. Puedes aceptar la contraoferta original o rechazar.'
-                              : 'O administrador rejeitou sua contraoferta. Você pode aceitar a contraoferta original ou rejeitar.'
-                          ) : (
-                            lang === 'es'
-                              ? 'Rechazaste la contraoferta. Esperando confirmación del administrador.'
-                              : 'Você rejeitou a contraoferta. Aguardando confirmação do administrador.'
-                          )}
-                        </p>
-                        <div className="p-3 bg-blue-50 rounded">
+                    {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 削除確認待ち */}
+                    {request.adminNeedsConfirm && !request.customerCounterOffer && (
+                      <div className="mb-3">
+                        <div className="p-3 bg-blue-50 rounded mb-3">
+                          <p className="text-sm text-gray-600">Contraoferta:</p>
+                          <p className="font-semibold text-blue-700 text-xl">
+                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => confirmRejection(request.id)}
+                          className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                        >
+                          {t.confirm}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
+                    {request.adminNeedsConfirm && request.customerCounterOffer && (
+                      <div className="mb-3">
+                        <button
+                          onClick={() => confirmRejection(request.id)}
+                          className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 mb-3"
+                        >
+                          {t.confirm}
+                        </button>
+                        
+                        <div className="p-3 bg-blue-50 rounded mb-3">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
                           <p className="font-semibold text-blue-700 text-xl mb-3">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
-                          {request.customerCounterOffer && (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                              >
-                                {t.accept}
-                              </button>
-                              <button
-                                onClick={() => confirmRejection(request.id)}
-                                className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                              >
-                                {t.reject}
-                              </button>
-                            </div>
-                          )}
-                          {!request.customerCounterOffer && (
-                            <button
-                              onClick={() => confirmRejection(request.id)}
-                              className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 mt-2"
-                            >
-                              {t.confirm}
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleCounterOfferResponse(request.id, 'accept')}
+                            className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                          >
+                            {t.accept}
+                          </button>
+                        </div>
+                        
+                        <div className="p-3 bg-purple-50 rounded">
+                          <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                          <p className="font-semibold text-purple-700 text-xl">
+                            ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
+                          </p>
+                          <p className="text-xs text-red-600 mt-2">
+                            {lang === 'es' ? 'Rechazado por el administrador' : 'Rejeitado pelo administrador'}
+                          </p>
                         </div>
                       </div>
                     )}

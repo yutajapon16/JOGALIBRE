@@ -771,20 +771,12 @@ export default function AdminDashboard() {
                 )}
 
                 {request.finalStatus === 'lost' && (
-                  <div className="mt-3">
-                    {request.customerConfirmed ? (
-                      <button
-                        onClick={() => confirmCustomerRejection(request.id)}
-                        className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
-                      >
-                        削除を確認
-                      </button>
-                    ) : (
-                      <div className="text-sm text-gray-600">
-                        顧客の確認待ち
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => confirmCustomerRejection(request.id)}
+                    className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition mt-3"
+                  >
+                    削除を確認
+                  </button>
                 )}
 
                 {request.approvedAt && (
