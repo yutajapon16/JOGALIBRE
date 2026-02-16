@@ -507,6 +507,21 @@ export default function Home() {
     }
   };
 
+  // ← ここに追加！
+  const confirmRejection = async (requestId: string) => {
+    try {
+      const res = await fetch(`/api/bid-request?id=${requestId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        fetchMyRequests();
+      }
+    } catch (error) {
+      console.error('Error confirming rejection:', error);
+    }
+  };
+
   const getTimeRemaining = (endTime: string) => {
     if (!endTime) return '0m';
     
@@ -760,7 +775,7 @@ export default function Home() {
                           </>
                         )}
                         <button
-                          onClick={() => handleFinalStatusConfirm(request.id)}
+                          onClick={() => confirmRejection(request.id)}
                           className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
                         >
                           {t.confirm}
@@ -783,14 +798,14 @@ export default function Home() {
                           </button>
                           <button
                             onClick={() => {
-                              const amount = prompt(t.yourCounterOffer);
-                              if (amount) {
-                                handleCounterOfferResponse(request.id, 'counter', parseFloat(amount));
+                              const amount = window.prompt(t.yourCounterOffer);
+                              if (amount && !isNaN(parseFloat(amount))) {
+                                  handleCounterOfferResponse(request.id, 'counter', parseFloat(amount));
                               }
-                            }}
-                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                          >
-                            {t.counterOfferAction}
+                          }}
+                          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                        >
+                          {t.counterOfferAction}
                           </button>
                           <button
                             onClick={() => handleCounterOfferResponse(request.id, 'reject')}
@@ -809,20 +824,20 @@ export default function Home() {
                       </div>
                     )}
 
-                    {request.finalStatus === 'won' && (
-                      <div className="mb-3 p-3 bg-green-50 rounded">
-                        <p className="text-sm text-gray-600">{t.finalPrice}:</p>
-                        <p className="text-4xl font-bold text-green-600">
-                          ${Math.round(request.finalPrice).toLocaleString('en-US')}
-                        </p>
-                        <button
-                          onClick={() => handleFinalStatusConfirm(request.id)}
-                          className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                        >
-                          {t.confirm}
-                        </button>
-                      </div>
-                    )}
+                    {request.finalStatus === 'won' && !request.customerConfirmed && (
+                    <div className="mb-3 p-3 bg-green-50 rounded">
+                      <p className="text-sm text-gray-600">{t.finalPrice}:</p>
+                      <p className="text-4xl font-bold text-green-600">
+                        ${Math.round(request.finalPrice || request.counterOffer || request.maxBid).toLocaleString('en-US')}
+                      </p>
+                      <button
+                        onClick={() => handleFinalStatusConfirm(request.id)}
+                        className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                      >
+                        {t.confirm}
+                      </button>
+                    </div>
+                  )}
 
                     {request.finalStatus === 'lost' && (
                       <div className="mb-3 p-3 bg-red-50 rounded">
