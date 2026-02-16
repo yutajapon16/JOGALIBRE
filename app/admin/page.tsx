@@ -534,7 +534,7 @@ export default function AdminDashboard() {
                       
                       <div className="text-right pt-3 border-t">
                         <p className="text-xl sm:text-2xl font-bold text-green-600">
-                          ${Math.round(item.finalPrice).toLocaleString('en-US')}
+                          ${Math.round(item.finalPrice || 0).toLocaleString('en-US')}
                         </p>
                       </div>
                     </div>
@@ -674,7 +674,7 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {request.customerCounterOffer && !request.customerCounterOfferUsed && (
+                {request.customerCounterOffer && !request.customerCounterOfferUsed && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
                   <div className="mb-4 p-3 bg-purple-50 rounded-lg">
                     <p className="text-sm text-gray-600">顧客からのカウンターオファー:</p>
                     <p className="font-semibold text-purple-700 text-xl mb-3">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>

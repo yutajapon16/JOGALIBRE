@@ -794,9 +794,9 @@ export default function Home() {
                       </div>
                     )}
 
-                    {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && (
+                    {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
                       <div className="mb-3 p-3 bg-blue-50 rounded">
-                        <p className="text-sm text-gray-600">{t.counterOfferAmount}:</p>
+                        <p className="text-sm text-gray-600">{lang === 'es' ? 'Contraoferta del administrador:' : 'Contraoferta do administrador:'}</p>
                         <p className="font-semibold text-blue-700 text-xl mb-3">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
@@ -826,13 +826,17 @@ export default function Home() {
                       </div>
                     )}
 
-                    {request.customerCounterOffer && !request.adminNeedsConfirm && (
+                    {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && (
                       <div className="mb-3 p-3 bg-purple-50 rounded">
+                        <p className="text-sm text-gray-600">{lang === 'es' ? 'Contraoferta del administrador:' : 'Contraoferta do administrador:'}</p>
+                        <p className="font-semibold text-blue-700 text-lg mb-2">
+                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                        </p>
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700 text-xl">
+                        <p className="font-semibold text-purple-700 text-xl mb-2">
                           ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
                         </p>
-                        <p className="text-xs text-gray-600 mt-2">
+                        <p className="text-xs text-gray-600">
                           {lang === 'es' ? 'Esperando respuesta del administrador' : 'Aguardando resposta do administrador'}
                         </p>
                       </div>
@@ -845,7 +849,7 @@ export default function Home() {
                             ? 'El administrador rechazó tu contraoferta. Puedes aceptar la contraoferta original o rechazar.'
                             : 'O administrador rejeitou sua contraoferta. Você pode aceitar a contraoferta original ou rejeitar.'}
                         </p>
-                        <p className="text-sm text-gray-600 mb-2">{t.counterOfferAmount}:</p>
+                        <p className="text-sm text-gray-600 mb-2">{lang === 'es' ? 'Contraoferta del administrador:' : 'Contraoferta do administrador:'}</p>
                         <p className="font-semibold text-blue-700 text-xl mb-3">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
@@ -1001,7 +1005,7 @@ export default function Home() {
                       
                       <div className="text-right pt-3 border-t">
                         <p className="text-xl font-bold text-green-600">
-                          ${Math.round(item.finalPrice).toLocaleString('en-US')}
+                          ${Math.round(item.finalPrice || 0).toLocaleString('en-US')}
                         </p>
                       </div>
                     </div>
