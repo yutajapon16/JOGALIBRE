@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { signIn, signUp, signOut, getCurrentUser, type User } from '@/lib/auth';
 
 const translations = {
   es: {
@@ -134,15 +136,21 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showSignUp, setShowSignUp] = useState(false);
+  const [loginForm, setLoginForm] = useState({ 
+    email: '', 
+    password: '', 
+    fullName: '', 
+    whatsapp: '' 
+  });
   const [showMyRequests, setShowMyRequests] = useState(false);
   const [myRequests, setMyRequests] = useState<any[]>([]);
   const [showPurchased, setShowPurchased] = useState(false);
   const [purchasedItems, setPurchasedItems] = useState<any[]>([]);
   const [purchasedTotal, setPurchasedTotal] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
-  const [sortPurchasedBy, setSortPurchasedBy] = useState<'date' | 'name'>('date');
+  const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
   const [exchangeRate, setExchangeRate] = useState(150);
 
   const t = translations[lang];
@@ -152,12 +160,13 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (currentUser && showMyRequests) {
-      fetchMyRequests();
-      const interval = setInterval(fetchMyRequests, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [currentUser, showMyRequests]);
+    // セッションをチェック
+    getCurrentUser().then(user => {
+      if (user?.role === 'customer') {
+        setCurrentUser(user);
+      }
+    });
+  }, []);
 
   const fetchExchangeRate = async () => {
     try {
@@ -185,7 +194,10 @@ export default function Home() {
         finalPrice: item.final_price,
         customerEmail: item.customer_email,
         customerName: item.customer_name,
-        confirmedAt: item.confirmed_at
+        customerFullName: item.customer_full_name,
+        customerWhatsapp: item.customer_whatsapp,
+        language: item.language,
+        confirmedAt: item.created_at  // confirmed_at の代わりに created_at を使用
       }));
       
       setPurchasedItems(convertedItems);
@@ -231,38 +243,91 @@ export default function Home() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/bid-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'login',
-          email: loginForm.email,
-          password: loginForm.password
-        })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setCurrentUser(data.user);
-        setLoginForm({ email: '', password: '' });
-      } else {
-        alert('Invalid credentials');
-      }
+      await signIn(loginForm.email, loginForm.password);
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
     } catch (error) {
       console.error('Login error:', error);
+      alert(lang === 'es' 
+        ? 'Error al iniciar sesión. Verifica tu email y contraseña.' 
+        : 'Erro ao fazer login. Verifique seu email e senha.');
     }
   };
 
-  const handleLogout = () => {
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await signUp(
+        loginForm.email, 
+        loginForm.password, 
+        'customer',
+        loginForm.fullName,
+        loginForm.whatsapp
+      );
+      
+      // 登録後、自動的にログイン
+      await signIn(loginForm.email, loginForm.password);
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+      
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
+      setShowSignUp(false);
+    } catch (error) {
+      console.error('Sign up error:', error);
+      alert(lang === 'es'
+        ? 'Error al crear cuenta. El email puede estar en uso.'
+        : 'Erro ao criar conta. O email pode já estar em uso.');
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
     setCurrentUser(null);
+    
+    // ログアウト時にデータをクリア
+    setSearchUrl('');
+    setProducts([]);
+    setSelectedProduct(null);
+    setBidForm({ name: '', maxBid: '' });
+    setMyRequests([]);
+    setPurchasedItems([]);
+    setPurchasedTotal(0);
     setShowMyRequests(false);
     setShowPurchased(false);
+    setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
+  };
+
+  // ← ここに追加！
+  const getFilteredPurchasedItems = () => {
+    let filtered = purchasedItems;
+    
+    if (purchasedPeriod !== 'all') {
+      const now = new Date();
+      const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
+      const days = daysMap[purchasedPeriod];
+      const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      
+      filtered = purchasedItems.filter(item => 
+        new Date(item.confirmedAt).getTime() >= cutoffDate.getTime()
+      );
+    }
+    
+    return filtered;
   };
 
   const handleBidRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedProduct || !bidForm.name || !bidForm.maxBid) return;
+    
+    // 10件制限チェック
+    if (myRequests.length >= 10) {
+      alert(lang === 'es' 
+        ? 'Has alcanzado el límite máximo de 10 solicitudes. Por favor, espera a que se procesen las actuales.' 
+        : 'Você atingiu o limite máximo de 10 solicitações. Aguarde o processamento das atuais.');
+      return;
+    }
     
     try {
       const res = await fetch('/api/bid-request', {
@@ -277,7 +342,7 @@ export default function Home() {
           productEndTime: selectedProduct.endTime,
           maxBid: parseFloat(bidForm.maxBid),
           customerName: bidForm.name,
-          currentEmail: currentUser?.email,
+          customerEmail: currentUser?.email,
           language: lang
         })
       });
@@ -286,6 +351,8 @@ export default function Home() {
         alert(t.offerSuccess);
         setSelectedProduct(null);
         setBidForm({ name: '', maxBid: '' });
+        setSearchUrl('');  // URLをクリア
+        setProducts([]);   // 商品リストをクリア
         fetchMyRequests();
       } else {
         alert(t.offerError);
@@ -478,7 +545,34 @@ export default function Home() {
             </select>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={showSignUp ? handleSignUp : handleLogin} className="space-y-4">
+            {showSignUp && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {lang === 'es' ? 'Nombre completo' : 'Nome completo'}
+                  </label>
+                  <input
+                    type="text"
+                    value={loginForm.fullName}
+                    onChange={(e) => setLoginForm({ ...loginForm, fullName: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">WhatsApp</label>
+                  <input
+                    type="tel"
+                    value={loginForm.whatsapp}
+                    onChange={(e) => setLoginForm({ ...loginForm, whatsapp: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    placeholder="+55 11 98765-4321"
+                    required
+                  />
+                </div>
+              </>
+            )}
             <div>
               <label className="block text-sm font-medium mb-2">{t.email}</label>
               <input
@@ -497,15 +591,28 @@ export default function Home() {
                 onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2"
                 required
+                minLength={6}
               />
             </div>
             <button
               type="submit"
               className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
             >
-              {t.loginButton}
+              {showSignUp ? (lang === 'es' ? 'Crear Cuenta' : 'Criar Conta') : t.loginButton}
             </button>
           </form>
+          
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setShowSignUp(!showSignUp)}
+              className="text-sm text-indigo-600 hover:underline"
+            >
+              {showSignUp 
+                ? (lang === 'es' ? '¿Ya tienes cuenta? Inicia sesión' : 'Já tem conta? Faça login')
+                : (lang === 'es' ? '¿No tienes cuenta? Regístrate' : 'Não tem conta? Cadastre-se')
+              }
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -596,7 +703,9 @@ export default function Home() {
               </div>
             ) : (
               <div className="space-y-4">
-                {myRequests.map((request) => (
+                {myRequests
+                  .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                  .map((request) => (
                   <div key={request.id} className="border rounded-lg p-4">
                     <div className="flex gap-4 mb-3">
                       {request.productImage && (
@@ -616,6 +725,11 @@ export default function Home() {
                         >
                           {t.viewOnYahoo}
                         </a>
+                        <div className="mb-2 text-sm">
+                          <span className="text-gray-600">{lang === 'es' ? 'Cliente: ' : 'Cliente: '}</span>
+                          <span className="font-semibold">{request.customerName}</span>
+                        </div>
+
                         <div className="flex gap-2 mb-2">
                           <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(request.status)}`}>
                             {t[request.status as keyof typeof t] || request.status}
@@ -637,10 +751,14 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {request.rejectReason && request.status === 'rejected' && (
+                    {request.status === 'rejected' && (
                       <div className="mb-3 p-3 bg-red-50 rounded">
-                        <p className="text-sm text-gray-600">{t.rejectReason}:</p>
-                        <p className="font-semibold text-red-700 mb-3">{request.rejectReason}</p>
+                        {request.rejectReason && (
+                          <>
+                            <p className="text-sm text-gray-600">{t.rejectReason}:</p>
+                            <p className="font-semibold text-red-700 mb-3">{request.rejectReason}</p>
+                          </>
+                        )}
                         <button
                           onClick={() => handleFinalStatusConfirm(request.id)}
                           className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
@@ -744,14 +862,16 @@ export default function Home() {
               </div>
               
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 whitespace-nowrap w-28">{t.sortBy}:</span>
+                <span className="text-sm text-gray-600 whitespace-nowrap w-28">{lang === 'es' ? 'Período:' : 'Período:'}</span>
                 <select
-                  value={sortPurchasedBy}
-                  onChange={(e) => setSortPurchasedBy(e.target.value as 'date' | 'name')}
+                  value={purchasedPeriod}
+                  onChange={(e) => setPurchasedPeriod(e.target.value as 'all' | '7days' | '30days' | '90days')}
                   className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
                 >
-                  <option value="date">{t.date}</option>
-                  <option value="name">{t.customerName}</option>
+                  <option value="all">{lang === 'es' ? 'Todos' : 'Todos'}</option>
+                  <option value="7days">{lang === 'es' ? 'Últimos 7 días' : 'Últimos 7 dias'}</option>
+                  <option value="30days">{lang === 'es' ? 'Últimos 30 días' : 'Últimos 30 dias'}</option>
+                  <option value="90days">{lang === 'es' ? 'Últimos 90 días' : 'Últimos 90 dias'}</option>
                 </select>
               </div>
             </div>
@@ -763,42 +883,57 @@ export default function Home() {
             ) : (
               <>
                 <div className="space-y-4 mb-6">
-                  {getFilteredItems()
-                    .sort((a, b) => {
-                      if (sortPurchasedBy === 'name') {
-                        return a.customerName.localeCompare(b.customerName);
-                      }
-                      return new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime();
-                    })
-                    .map((item, index) => (
+                  {getFilteredPurchasedItems()
+                  .sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime())
+                  .map((item, index) => (
                     <div key={`purchased-${index}-${item.id}`} className="border rounded-lg p-4">
-                      {item.productImage && (
-                        <img 
-                          src={item.productImage} 
-                          alt={item.productTitle}
-                          className="w-full aspect-square object-cover rounded mb-3"
-                        />
-                      )}
-                      <h3 className="text-sm font-semibold mb-3">{item.productTitle}</h3>
-                      <div className="space-y-2 text-xs mb-3">
-                          <div>
-                            <span className="text-gray-600">Cliente: </span>
-                            <span className="font-semibold">{item.customerName}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-600">{t.confirmedDate}</span>
-                            <span className="font-semibold">{formatDateTime(item.confirmedAt)}</span>
-                          </div>
+                      <div className="flex gap-4 mb-3">
+                        {item.productImage && (
+                          <img 
+                            src={item.productImage} 
+                            alt={item.productTitle}
+                            className="w-32 h-32 object-cover rounded"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <h3 className="text-sm font-semibold mb-2">{item.productTitle}</h3>
+                          <a
+                            href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(item.productUrl)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:underline text-xs inline-block"
+                          >
+                            {t.viewOnYahoo}
+                          </a>
                         </div>
-                        <a
-
-                          href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(item.productUrl)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-indigo-600 hover:underline text-xs inline-block mb-3"
-                        >
-                          {t.viewOnYahoo}
-                        </a>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-gray-50 rounded text-xs">
+                        <div>
+                          <p className="text-gray-600">{lang === 'es' ? 'Nombre' : 'Nome'}</p>
+                          <p className="font-semibold">{item.customerFullName || item.customerName}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">WhatsApp</p>
+                          <p className="font-semibold">{item.customerWhatsapp || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">{lang === 'es' ? 'Correo' : 'E-mail'}</p>
+                          <p className="font-semibold break-all">{item.customerEmail}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">{lang === 'es' ? 'Idioma' : 'Idioma'}</p>
+                          <p className="font-semibold">{item.language === 'es' ? 'Español' : 'Português'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">{lang === 'es' ? 'Cliente' : 'Cliente'}</p>
+                          <p className="font-semibold">{item.customerName}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">{t.confirmedDate}</p>
+                          <p className="font-semibold">{formatDateTime(item.confirmedAt)}</p>
+                        </div>
+                      </div>
                       
                       <div className="text-right pt-3 border-t">
                         <p className="text-xl font-bold text-green-600">
@@ -816,9 +951,7 @@ export default function Home() {
                     </span>
                     <span className="text-3xl font-bold text-indigo-600">
                       ${Math.round(
-                        selectedCustomer === 'all' 
-                          ? purchasedTotal 
-                          : getCustomerTotal(selectedCustomer)
+                        getFilteredPurchasedItems().reduce((sum, item) => sum + (item.finalPrice || 0), 0)
                       ).toLocaleString('en-US')}
                     </span>
                   </div>
