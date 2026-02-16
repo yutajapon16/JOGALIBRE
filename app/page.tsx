@@ -155,6 +155,7 @@ export default function Home() {
   const [showCounterModal, setShowCounterModal] = useState(false);  // ← 追加
   const [selectedRequestForCounter, setSelectedRequestForCounter] = useState<any>(null);  // ← 追加
   const [customerCounterAmount, setCustomerCounterAmount] = useState('');  // ← 追加
+  const [isSendingNotification, setIsSendingNotification] = useState(false);
 
   const t = translations[lang];
 
@@ -188,6 +189,35 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
+    }
+  };
+
+  const sendWhatsAppNotification = async () => {
+    setIsSendingNotification(true);
+    try {
+      const res = await fetch('/api/notify-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userType: 'customer',
+          email: currentUser?.email
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        alert(lang === 'es' 
+          ? 'Notificación enviada al administrador' 
+          : 'Notificação enviada ao administrador');
+      } else {
+        alert(data.message || (lang === 'es' ? 'Error al enviar' : 'Erro ao enviar'));
+      }
+    } catch (error) {
+      console.error('Notification error:', error);
+      alert(lang === 'es' ? 'Error al enviar notificación' : 'Erro ao enviar notificação');
+    } finally {
+      setIsSendingNotification(false);
     }
   };
 
@@ -690,6 +720,15 @@ export default function Home() {
             
             {(showMyRequests || showPurchased) && (
               <>
+                <button
+                    onClick={sendWhatsAppNotification}
+                    disabled={isSendingNotification}
+                    className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm w-full disabled:bg-gray-400"
+                  >
+                    {isSendingNotification 
+                      ? (lang === 'es' ? 'Enviando...' : 'Enviando...') 
+                      : 'WhatsApp'}
+                  </button>
                 <button
                   onClick={() => {
                     if (showMyRequests) fetchMyRequests();

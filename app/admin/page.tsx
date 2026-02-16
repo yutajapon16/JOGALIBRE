@@ -19,6 +19,8 @@ export default function AdminDashboard() {
   const [purchasedTotal, setPurchasedTotal] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
+  const [isSendingNotification, setIsSendingNotification] = useState(false);
+
 
   // セッションチェック（最初に実行）
   useEffect(() => {
@@ -74,6 +76,30 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
+    }
+  };
+
+  const sendWhatsAppNotifications = async () => {
+    setIsSendingNotification(true);
+    try {
+      const res = await fetch('/api/notify-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userType: 'admin' })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        alert(`WhatsApp通知を${data.notificationsSent}件送信しました`);
+      } else {
+        alert(data.message || 'エラーが発生しました');
+      }
+    } catch (error) {
+      console.error('Notification error:', error);
+      alert('通知の送信に失敗しました');
+    } finally {
+      setIsSendingNotification(false);
     }
   };
 
