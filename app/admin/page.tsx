@@ -682,7 +682,7 @@ export default function AdminDashboard() {
                 {request.customerCounterOffer && (
                   <div className="mb-4 p-3 bg-purple-50 rounded-lg">
                     <p className="text-sm text-gray-600">顧客からのカウンターオファー:</p>
-                    <p className="font-semibold text-purple-700 text-xl mb-2">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                    <p className="font-semibold text-purple-700 text-sm mb-2">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
                     
                     {!request.customerCounterOfferUsed && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
                       <div className="flex gap-2">
