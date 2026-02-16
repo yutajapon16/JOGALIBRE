@@ -846,7 +846,7 @@ export default function Home() {
                     {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && (
                       <div className="mb-2 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-xl">
+                        <p className="font-semibold text-blue-700 text-base">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
                       </div>
