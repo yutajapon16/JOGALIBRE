@@ -258,6 +258,9 @@ export default function Home() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('=== SIGNUP START ===');
+      console.log('Email:', loginForm.email);
+      
       await signUp(
         loginForm.email, 
         loginForm.password, 
@@ -266,10 +269,17 @@ export default function Home() {
         loginForm.whatsapp
       );
       
+      console.log('Signup successful, attempting auto-login...');
+      
       // 登録後、自動的にログイン
       await signIn(loginForm.email, loginForm.password);
+      console.log('SignIn successful, getting user...');
+      
       const user = await getCurrentUser();
+      console.log('User retrieved:', user);
+      
       setCurrentUser(user);
+      console.log('CurrentUser set, signup complete');
       
       setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
       setShowSignUp(false);
