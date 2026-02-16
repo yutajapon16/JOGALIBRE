@@ -73,25 +73,21 @@ export async function getCurrentUser(): Promise<User | null> {
   
   if (!user) return null;
 
-  // RLSをバイパスするためにサーバー側で実行する必要がある
-  // クライアント側では直接取得できないので、APIを使用
-  try {
-    const response = await fetch('/api/get-user-role');
-    const data = await response.json();
-    
-    if (!data.role) return null;
-    
-    return {
-      id: user.id,
-      email: user.email!,
-      role: data.role as UserRole,
-      fullName: data.full_name || undefined,
-      whatsapp: data.whatsapp || undefined,
-    };
-  } catch (error) {
-    console.error('Error getting user role:', error);
-    return null;
-  }
+  const { data: roleData } = await supabase
+    .from('user_roles')
+    .select('role, full_name, whatsapp')
+    .eq('id', user.id)
+    .single();
+
+  if (!roleData) return null;
+
+  return {
+    id: user.id,
+    email: user.email!,
+    role: roleData.role as UserRole,
+    fullName: roleData.full_name || undefined,
+    whatsapp: roleData.whatsapp || undefined,
+  };
 }
 
 // セッション監視
