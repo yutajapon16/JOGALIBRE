@@ -223,3 +223,37 @@ export async function DELETE(request: Request) {
     );
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus } = body;
+
+    const updateData: any = {};
+    
+    if (status) updateData.status = status;
+    if (rejectReason !== undefined) updateData.reject_reason = rejectReason;
+    if (counterOffer !== undefined) updateData.counter_offer = counterOffer;
+    if (shippingCostJpy !== undefined) updateData.shipping_cost_jpy = shippingCostJpy;
+    if (finalStatus !== undefined) updateData.final_status = finalStatus;
+    
+    if (status === 'approved') {
+      updateData.approved_at = new Date().toISOString();
+    }
+
+    const { error } = await supabase
+      .from('bid_requests')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating bid request:', error);
+    return NextResponse.json(
+      { error: 'Failed to update bid request' },
+      { status: 500 }
+    );
+  }
+}
