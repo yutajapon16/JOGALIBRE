@@ -843,14 +843,11 @@ export default function Home() {
                     )}
 
                     {/* ケース3: 管理者が顧客カウンターオファーを承認 */}
-                    {request.customerCounterOffer && request.status === 'approved' && !request.finalStatus && (
+                    {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && (
                       <div className="mb-2 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-ml mb-2">
-                          ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
-                        </p>
-                        <p className="text-xs text-gray-600 mt-2">
-                          {lang === 'es' ? 'Esperando resultado de la subasta' : 'Aguardando resultado do leilão'}
+                        <p className="font-semibold text-blue-700 text-xl">
+                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
                       </div>
                     )}
@@ -908,10 +905,13 @@ export default function Home() {
                       </div>
                     )}
 
-                    {request.customerCounterOffer && (
-                      <div className="mb-3 p-3 bg-purple-50 rounded">
+                      {request.customerCounterOffer && request.status === 'approved' && !request.finalStatus && (
+                      <div className="m2-3 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700 text-ml mb-2">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                        <p className="font-semibold text-purple-700 text-xl">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                        <p className="text-xs text-gray-600">
+                          {lang === 'es' ? 'Esperando resultado de la subasta' : 'Aguardando resultado do leilão'}
+                        </p>
                       </div>
                     )}
 
