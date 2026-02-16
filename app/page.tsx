@@ -843,11 +843,11 @@ export default function Home() {
                     )}
 
                     {/* ケース3: 管理者が顧客カウンターオファーを承認 */}
-                    {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && (
+                    {request.customerCounterOffer && request.status === 'approved' && !request.finalStatus && (
                       <div className="mb-2 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
                         <p className="font-semibold text-blue-700 text-ml mb-2">
-                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                          ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
                         </p>
                         <p className="text-xs text-gray-600 mt-2">
                           {lang === 'es' ? 'Esperando resultado de la subasta' : 'Aguardando resultado do leilão'}
