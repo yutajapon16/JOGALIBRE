@@ -670,19 +670,19 @@ export default function AdminDashboard() {
                 )}
 
                 {request.counterOffer && (
-                  <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="mb-2 p-3 bg-blue-50 rounded-lg">
                     <p className="text-sm text-gray-600">カウンターオファー:</p>
-                    <p className="font-semibold text-blue-700 text-ml mb-2">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                    <p className="font-semibold text-blue-700 text-ml">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
                     {request.shippingCostJpy > 0 && (
-                      <p className="text-xs text-gray-600 mb-1">送料: ¥{request.shippingCostJpy.toLocaleString()}</p>
+                      <p className="text-xs text-gray-600">送料: ¥{request.shippingCostJpy.toLocaleString()}</p>
                     )}
                   </div>
                 )}
 
                 {request.customerCounterOffer && (
-                  <div className="mb-4 p-3 bg-purple-50 rounded-lg">
+                  <div className="mb-2 p-3 bg-purple-50 rounded-lg">
                     <p className="text-sm text-gray-600">顧客からのカウンターオファー:</p>
-                    <p className="font-semibold text-purple-700 text-ml mb-2">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                    <p className="font-semibold text-purple-700 text-ml">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
                     
                     {!request.customerCounterOfferUsed && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
                       <div className="flex gap-2">
@@ -718,7 +718,7 @@ export default function AdminDashboard() {
 
 
                 {request.adminNeedsConfirm && (
-                  <div className="mb-4 p-3 bg-red-50 rounded-lg">
+                  <div className="mb-2 p-3 bg-red-50 rounded-lg">
                     <p className="text-sm text-red-800 mb-2">顧客がカウンターオファーを拒否しました</p>
                     <button
                       onClick={() => confirmCustomerRejection(request.id)}
