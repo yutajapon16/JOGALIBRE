@@ -794,9 +794,10 @@ export default function Home() {
                       </div>
                     )}
 
+                    {/* ケース1: 最初の管理者カウンターオファー（顧客未返答） */}
                     {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
                       <div className="mb-3 p-3 bg-blue-50 rounded">
-                        <p className="text-sm text-gray-600">{lang === 'es' ? 'Contraoferta del administrador:' : 'Contraoferta do administrador:'}</p>
+                        <p className="text-sm text-gray-600">Contraoferta:</p>
                         <p className="font-semibold text-blue-700 text-xl mb-3">
                           ${Math.round(request.counterOffer).toLocaleString('en-US')}
                         </p>
@@ -826,7 +827,8 @@ export default function Home() {
                       </div>
                     )}
 
-                    {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && (
+                    {/* ケース2: 顧客がカウンターオファー送信済み（管理者返答待ち） */}
+                    {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
                       <div className="mb-3 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{lang === 'es' ? 'Contraoferta del administrador:' : 'Contraoferta do administrador:'}</p>
                         <p className="font-semibold text-blue-700 text-lg mb-2">
@@ -842,6 +844,20 @@ export default function Home() {
                       </div>
                     )}
 
+                    {/* ケース3: 管理者が顧客カウンターオファーを承認（写真①） */}
+                    {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && (
+                      <div className="mb-3 p-3 bg-blue-50 rounded">
+                        <p className="text-sm text-gray-600">Contraoferta:</p>
+                        <p className="font-semibold text-blue-700 text-xl">
+                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                        </p>
+                        <p className="text-xs text-gray-600 mt-2">
+                          {lang === 'es' ? 'Esperando resultado de la subasta' : 'Aguardando resultado do leilão'}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* ケース4: 管理者が顧客カウンターオファーを却下（写真②） */}
                     {request.adminNeedsConfirm && (
                       <div className="mb-3 p-3 bg-yellow-50 rounded">
                         <p className="text-sm text-yellow-800 mb-3">
@@ -849,23 +865,25 @@ export default function Home() {
                             ? 'El administrador rechazó tu contraoferta. Puedes aceptar la contraoferta original o rechazar.'
                             : 'O administrador rejeitou sua contraoferta. Você pode aceitar a contraoferta original ou rejeitar.'}
                         </p>
-                        <p className="text-sm text-gray-600 mb-2">{lang === 'es' ? 'Contraoferta del administrador:' : 'Contraoferta do administrador:'}</p>
-                        <p className="font-semibold text-blue-700 text-xl mb-3">
-                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                            className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                          >
-                            {t.accept}
-                          </button>
-                          <button
-                            onClick={() => confirmRejection(request.id)}
-                            className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                          >
-                            {t.reject}
-                          </button>
+                        <div className="p-3 bg-blue-50 rounded">
+                          <p className="text-sm text-gray-600">Contraoferta:</p>
+                          <p className="font-semibold text-blue-700 text-xl mb-3">
+                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleCounterOfferResponse(request.id, 'accept')}
+                              className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                            >
+                              {t.accept}
+                            </button>
+                            <button
+                              onClick={() => confirmRejection(request.id)}
+                              className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                            >
+                              {t.reject}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1005,7 +1023,7 @@ export default function Home() {
                       
                       <div className="text-right pt-3 border-t">
                         <p className="text-xl font-bold text-green-600">
-                          ${Math.round(item.finalPrice || 0).toLocaleString('en-US')}
+                          ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
                         </p>
                       </div>
                     </div>

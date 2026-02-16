@@ -534,7 +534,7 @@ export default function AdminDashboard() {
                       
                       <div className="text-right pt-3 border-t">
                         <p className="text-xl sm:text-2xl font-bold text-green-600">
-                          ${Math.round(item.finalPrice || 0).toLocaleString('en-US')}
+                          ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
                         </p>
                       </div>
                     </div>
@@ -674,38 +674,43 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {request.customerCounterOffer && !request.customerCounterOfferUsed && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
+                {request.customerCounterOffer && (
                   <div className="mb-4 p-3 bg-purple-50 rounded-lg">
                     <p className="text-sm text-gray-600">顧客からのカウンターオファー:</p>
                     <p className="font-semibold text-purple-700 text-xl mb-3">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          updateStatus(request.id, 'approved');
-                        }}
-                        className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
-                      >
-                        承認
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setActionType('reject');
-                        }}
-                        className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition"
-                      >
-                        却下
-                      </button>
-                    </div>
+                    
+                    {!request.customerCounterOfferUsed && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            updateStatus(request.id, 'approved');
+                          }}
+                          className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
+                        >
+                          承認
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setActionType('reject');
+                          }}
+                          className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                        >
+                          却下
+                        </button>
+                      </div>
+                    )}
+                    
+                    {request.customerCounterOfferUsed && (
+                      <p className="text-xs text-green-600 mt-2">✓ 承認済み</p>
+                    )}
+                    
+                    {request.adminNeedsConfirm && (
+                      <p className="text-xs text-red-600 mt-2">✓ 却下済み</p>
+                    )}
                   </div>
                 )}
 
-                {request.customerCounterOffer && request.customerCounterOfferUsed && (
-                  <div className="mb-4 p-3 bg-purple-50 rounded-lg">
-                    <p className="text-sm text-gray-600">顧客カウンターオファー（承認済み）:</p>
-                    <p className="font-semibold text-purple-700">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                  </div>
-                )}
 
                 {request.adminNeedsConfirm && (
                   <div className="mb-4 p-3 bg-yellow-50 rounded-lg">
