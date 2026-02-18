@@ -273,26 +273,20 @@ export default function Home() {
   };
 
   const formatDateTime = (dateString: string) => {
-    // ← デバッグログを追加
-    console.log('=== DEBUG formatDateTime ===');
-    console.log('Original dateString:', dateString);
+    // タイムゾーン情報がない場合、UTC として扱う
+    let date: Date;
+    if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
+      date = new Date(dateString + 'Z');
+    } else {
+      date = new Date(dateString);
+    }
     
-    const date = new Date(dateString);
-    
-    console.log('Parsed date (UTC):', date.toISOString());
-    console.log('Local time:', date.toString());
-    console.log('Hours:', date.getHours());
-    console.log('Timezone offset (minutes):', date.getTimezoneOffset());
-    console.log('========================');
-    
-    // 日時をフォーマット
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     
-    // タイムゾーン略称を取得（JST, BRT, ESTなど）
     const timeZoneName = new Intl.DateTimeFormat('en-US', {
       timeZoneName: 'short'
     }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || 'UTC';
