@@ -883,11 +883,26 @@ export default function Home() {
                     )}
 
                     {/* ケース3: 管理者が顧客カウンターオファーを承認 */}
-                    {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && (
+                    {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
+                      <div className="mb-2 p-3 bg-purple-50 rounded">
+                        <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                        <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                        <p className="text-sm text-red-600 mb-1">
+                          {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {lang === 'es' ? 'Esperando resultado de la subasta' : 'Aguardando resultado do leilão'}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* ケース3B: 管理者が却下後、顧客が管理者カウンターを承認 */}
+                    {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
                       <div className="mb-2 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-base">
-                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                        <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                        <p className="text-xs text-gray-600">
+                          {lang === 'es' ? 'Esperando resultado de la subasta' : 'Aguardando resultado do leilão'}
                         </p>
                       </div>
                     )}
@@ -956,8 +971,8 @@ export default function Home() {
                       {request.customerCounterOffer && request.status === 'approved' && !request.finalStatus && (
                       <div className="mb-2 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700 text-base mb-2">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                        <p className="text-sm text-red-600 font-semibold mb-2">
+                        <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                        <p className="text-sm text-red-600 mb-1">
                           {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
                         </p>
                         <p className="text-xs text-gray-600">
