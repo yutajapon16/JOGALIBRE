@@ -20,7 +20,7 @@ const translations = {
     timeLeft: 'Tiempo restante',
     makeOffer: 'Hacer oferta',
     yourName: 'Nombre del cliente',
-    maxBid: 'Oferta máxima',
+    maxBid: 'Tu oferta máxima',
     submit: 'Enviar solicitud',
     cancel: 'Cancelar',
     login: 'Iniciar sesión',
@@ -81,7 +81,7 @@ const translations = {
     timeLeft: 'Tempo restante',
     makeOffer: 'Fazer oferta',
     yourName: 'Nome do cliente',
-    maxBid: 'Lance máximo',
+    maxBid: 'Sua oferta máxima',
     submit: 'Enviar solicitação',
     cancel: 'Cancelar',
     login: 'Entrar',
@@ -138,11 +138,11 @@ export default function Home() {
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showSignUp, setShowSignUp] = useState(false);
-  const [loginForm, setLoginForm] = useState({ 
-    email: '', 
-    password: '', 
-    fullName: '', 
-    whatsapp: '' 
+  const [loginForm, setLoginForm] = useState({
+    email: '',
+    password: '',
+    fullName: '',
+    whatsapp: ''
   });
   const [showMyRequests, setShowMyRequests] = useState(false);
   const [myRequests, setMyRequests] = useState<any[]>([]);
@@ -170,12 +170,12 @@ export default function Home() {
         setCurrentUser(user);
       }
     });
-    
+
     // ページリロード時もセッションを維持
     const handleBeforeUnload = () => {
       // セッションを保持（何もしない）
     };
-    
+
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
@@ -198,17 +198,17 @@ export default function Home() {
       const res = await fetch('/api/notify-whatsapp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           userType: 'customer',
           email: currentUser?.email
         })
       });
-      
+
       const data = await res.json();
-      
+
       if (data.success) {
-        alert(lang === 'es' 
-          ? 'Notificación enviada al administrador' 
+        alert(lang === 'es'
+          ? 'Notificación enviada al administrador'
           : 'Notificação enviada ao administrador');
       } else {
         alert(data.message || (lang === 'es' ? 'Error al enviar' : 'Erro ao enviar'));
@@ -225,7 +225,7 @@ export default function Home() {
     try {
       const res = await fetch(`/api/bid-request?email=${currentUser?.email}&purchased=true`);
       const data = await res.json();
-      
+
       // スネークケースからキャメルケースに変換
       const convertedItems = (data.purchasedItems || []).map((item: any) => ({
         id: item.id,
@@ -239,9 +239,11 @@ export default function Home() {
         customerWhatsapp: item.customer_whatsapp,
         language: item.language,
         confirmedAt: item.created_at,  // confirmed_at の代わりに created_at を使用
+        customerCounterOffer: item.customer_counter_offer,
+        customerCounterOfferUsed: item.customer_counter_offer_used,
         paid: item.paid || false
       }));
-      
+
       setPurchasedItems(convertedItems);
       setPurchasedTotal(data.total || 0);
     } catch (error) {
@@ -273,6 +275,8 @@ export default function Home() {
   };
 
   const formatDateTime = (dateString: string) => {
+    if (!dateString) return '-';
+
     // タイムゾーン情報がない場合、UTC として扱う
     let date: Date;
     if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
@@ -280,18 +284,36 @@ export default function Home() {
     } else {
       date = new Date(dateString);
     }
-    
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    
-    const timeZoneName = new Intl.DateTimeFormat('en-US', {
+
+    if (isNaN(date.getTime())) return dateString;
+
+    // ローカルタイムゾーンの取得
+    const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // 略称の取得
+    let localLabel = new Intl.DateTimeFormat('en-US', {
+      timeZone: localTimeZone,
       timeZoneName: 'short'
-    }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || 'UTC';
-    
-    return `${day}/${month}/${year} ${hours}:${minutes} ${timeZoneName}`;
+    }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || '';
+
+    // GMT-3 などのオフセット表示を BRT 等の略称にマッピング
+    if (localTimeZone === 'America/Sao_Paulo' || localLabel.includes('GMT-3')) {
+      localLabel = 'BRT';
+    } else if (localTimeZone === 'Asia/Tokyo' || localLabel.includes('GMT+9')) {
+      localLabel = 'JST';
+    }
+
+    const formatter = new Intl.DateTimeFormat('ja-JP', {
+      timeZone: localTimeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    return `${formatter.format(date)} ${localLabel}`;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -303,8 +325,8 @@ export default function Home() {
       setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
     } catch (error) {
       console.error('Login error:', error);
-      alert(lang === 'es' 
-        ? 'Error al iniciar sesión. Verifica tu email y contraseña.' 
+      alert(lang === 'es'
+        ? 'Error al iniciar sesión. Verifica tu email y contraseña.'
         : 'Erro ao fazer login. Verifique seu email e senha.');
     }
   };
@@ -313,18 +335,18 @@ export default function Home() {
     e.preventDefault();
     try {
       await signUp(
-        loginForm.email, 
-        loginForm.password, 
+        loginForm.email,
+        loginForm.password,
         'customer',
         loginForm.fullName,
         loginForm.whatsapp
       );
-      
+
       // メール確認が必要な場合は成功メッセージを表示
       alert(lang === 'es'
         ? '¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta.'
         : 'Conta criada! Por favor, verifique seu e-mail para confirmar sua conta.');
-      
+
       setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
       setShowSignUp(false);
     } catch (error) {
@@ -338,7 +360,7 @@ export default function Home() {
   const handleLogout = async () => {
     await signOut();
     setCurrentUser(null);
-    
+
     // ログアウト時にデータをクリア
     setSearchUrl('');
     setProducts([]);
@@ -355,34 +377,34 @@ export default function Home() {
   // ← ここに追加！
   const getFilteredPurchasedItems = () => {
     let filtered = purchasedItems;
-    
+
     if (purchasedPeriod !== 'all') {
       const now = new Date();
       const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
       const days = daysMap[purchasedPeriod];
       const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-      
-      filtered = purchasedItems.filter(item => 
+
+      filtered = purchasedItems.filter(item =>
         new Date(item.confirmedAt).getTime() >= cutoffDate.getTime()
       );
     }
-    
+
     return filtered;
   };
 
   const handleBidRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedProduct || !bidForm.name || !bidForm.maxBid) return;
-    
+
     // 10件制限チェック
     if (myRequests.length >= 10) {
-      alert(lang === 'es' 
-        ? 'Has alcanzado el límite máximo de 10 solicitudes. Por favor, espera a que se procesen las actuales.' 
+      alert(lang === 'es'
+        ? 'Has alcanzado el límite máximo de 10 solicitudes. Por favor, espera a que se procesen las actuales.'
         : 'Você atingiu o limite máximo de 10 solicitações. Aguarde o processamento das atuais.');
       return;
     }
-    
+
     try {
       const res = await fetch('/api/bid-request', {
         method: 'POST',
@@ -400,7 +422,7 @@ export default function Home() {
           language: lang
         })
       });
-      
+
       if (res.ok) {
         alert(t.offerSuccess);
         setSelectedProduct(null);
@@ -430,7 +452,7 @@ export default function Home() {
     try {
       const res = await fetch(`/api/bid-request?email=${currentUser?.email}`);
       const data = await res.json();
-      
+
       // スネークケースからキャメルケースに変換
       const convertedRequests = (data.bidRequests || []).map((req: any) => ({
         id: req.id,
@@ -458,7 +480,7 @@ export default function Home() {
         customerMessage: req.customer_message,
         adminNeedsConfirm: req.admin_needs_confirm
       }));
-      
+
       setMyRequests(convertedRequests);
     } catch (error) {
       console.error('Error fetching requests:', error);
@@ -578,19 +600,19 @@ export default function Home() {
 
   const getTimeRemaining = (endTime: string) => {
     if (!endTime) return '0m';
-    
+
     const now = new Date().getTime();
     const end = new Date(endTime).getTime();
     const diff = end - now;
-    
+
     console.log('Time calculation:', { endTime, now: new Date(now).toISOString(), end: new Date(end).toISOString(), diff });
-    
+
     if (diff <= 0) return '0m';
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (days > 0) return `${days}${t.dShort} ${hours}${t.hShort}`;
     if (hours > 0) return `${hours}${t.hShort} ${minutes}${t.mShort}`;
     return `${minutes}${t.mShort}`;
@@ -670,13 +692,13 @@ export default function Home() {
               {showSignUp ? (lang === 'es' ? 'Crear Cuenta' : 'Criar Conta') : t.loginButton}
             </button>
           </form>
-          
+
           <div className="mt-4 text-center">
             <button
               onClick={() => setShowSignUp(!showSignUp)}
               className="text-sm text-indigo-600 hover:underline"
             >
-              {showSignUp 
+              {showSignUp
                 ? (lang === 'es' ? '¿Ya tienes cuenta? Inicia sesión' : 'Já tem conta? Faça login')
                 : (lang === 'es' ? '¿No tienes cuenta? Regístrate' : 'Não tem conta? Cadastre-se')
               }
@@ -703,7 +725,7 @@ export default function Home() {
               {t.logout}
             </button>
           </div>
-          
+
           <div className="flex flex-col gap-2 mb-3">
             <select
               value={lang}
@@ -713,7 +735,7 @@ export default function Home() {
               <option value="es">Español</option>
               <option value="pt">Português</option>
             </select>
-            
+
             {!showMyRequests && !showPurchased && (
               <>
                 <button
@@ -730,18 +752,18 @@ export default function Home() {
                 </button>
               </>
             )}
-            
+
             {(showMyRequests || showPurchased) && (
               <>
                 <button
-                    onClick={sendWhatsAppNotification}
-                    disabled={isSendingNotification}
-                    className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm w-full disabled:bg-gray-400"
-                  >
-                    {isSendingNotification 
-                      ? (lang === 'es' ? 'Enviando...' : 'Enviando...') 
-                      : 'Notificar actualizaciones por WhatsApp'}
-                  </button>
+                  onClick={sendWhatsAppNotification}
+                  disabled={isSendingNotification}
+                  className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm w-full disabled:bg-gray-400"
+                >
+                  {isSendingNotification
+                    ? (lang === 'es' ? 'Enviando...' : 'Enviando...')
+                    : 'Notificar actualizaciones por WhatsApp'}
+                </button>
                 <button
                   onClick={() => {
                     if (showMyRequests) fetchMyRequests();
@@ -763,7 +785,7 @@ export default function Home() {
               </>
             )}
           </div>
-          
+
           <div className="text-xs sm:text-sm text-gray-600">
             {t.exchangeRate}: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
           </div>
@@ -784,254 +806,275 @@ export default function Home() {
                 {myRequests
                   .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                   .map((request) => (
-                  <div key={request.id} className="border rounded-lg p-4">
-                    <div className="flex gap-4 mb-3">
-                      {request.productImage && (
-                        <img 
-                          src={request.productImage} 
-                          alt={request.productTitle}
-                          className="w-32 h-32 object-cover rounded"
-                        />
+                    <div key={request.id} className="border rounded-lg p-4">
+                      <div className="flex gap-4 mb-3">
+                        {request.productImage && (
+                          <img
+                            src={request.productImage}
+                            alt={request.productTitle}
+                            className="w-32 h-32 object-cover rounded"
+                          />
+                        )}
+                        <div className="flex-1 min-h-[128px] flex flex-col py-0.5">
+                          <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{request.productTitle}</h3>
+                          <div className="flex flex-col gap-0.5">
+                            <div className="text-xs">
+                              <span className="text-gray-600">{lang === 'es' ? 'Cliente: ' : 'Cliente: '}</span>
+                              <span className="font-semibold">{request.customerName}</span>
+                            </div>
+                            <p className="text-xs text-gray-600">
+                              {t.maxBid}: <span className="font-bold text-blue-600">${Math.round(request.maxBid).toLocaleString('en-US')}</span>
+                            </p>
+                            {request.productEndTime && (
+                              <p className="text-[10px] text-gray-500">
+                                {t.endsIn}: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-row flex-wrap gap-1 mt-1">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center ${getStatusColor(request.status)}`}>
+                              {t[request.status as keyof typeof t] || request.status}
+                            </span>
+                            {request.finalStatus && (
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center ${getFinalStatusColor(request.finalStatus)}`}>
+                                {t[request.finalStatus as keyof typeof t]}
+                              </span>
+                            )}
+                            {request.adminNeedsConfirm && (
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center bg-red-100 text-red-800`}>
+                                {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                              </span>
+                            )}
+                          </div>
+                          <a
+                            href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(request.productUrl)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:underline text-xs inline-block mt-auto"
+                          >
+                            {t.viewOnYahoo}
+                          </a>
+                        </div>
+                      </div>
+
+                      {request.status === 'rejected' && !request.customerCounterOffer && (
+                        <div className="mb-2 p-3 bg-red-50 rounded">
+                          {request.rejectReason && (
+                            <>
+                              <p className="text-sm text-gray-600">{t.rejectReason}:</p>
+                              <p className="text-red-700 mb-2">{request.rejectReason}</p>
+                            </>
+                          )}
+                          <button
+                            onClick={() => confirmRejection(request.id)}
+                            className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                          >
+                            {t.confirm}
+                          </button>
+                        </div>
                       )}
-                      <div className="flex-1 h-32 flex flex-col">
-                        <h3 className="font-semibold mb-1 line-clamp-3 overflow-hidden text-ellipsis">{request.productTitle}</h3>
-                        <a
-                          href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(request.productUrl)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-indigo-600 hover:underline text-sm inline-block mt-auto"
-                        >
-                          {t.viewOnYahoo}
-                        </a>
-                        <div className="mb-2 text-sm">
-                          <span className="text-gray-600">{lang === 'es' ? 'Cliente: ' : 'Cliente: '}</span>
-                          <span className="font-semibold">{request.customerName}</span>
-                        </div>
 
-                        <div className="flex flex-col gap-1 mb-2">
-                          <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-center ${getStatusColor(request.status)}`}>
-                            {t[request.status as keyof typeof t] || request.status}
-                          </span>
-                          {request.finalStatus && (
-                            <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-center ${getFinalStatusColor(request.finalStatus)}`}>
-                              {t[request.finalStatus as keyof typeof t]}
-                            </span>
-                          )}
-                          {request.adminNeedsConfirm && (
-                            <span className="px-3 py-1.5 rounded-lg text-xs font-semibold text-center bg-red-100 text-red-800">
-                              {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          {t.maxBid}: ${Math.round(request.maxBid).toLocaleString('en-US')}
-                        </p>
-                        {request.productEndTime && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {t.endsIn}: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
+                      {/* ケース1: 最初の管理者カウンターオファー（顧客未返答） */}
+                      {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
+                        <div className="mb-2 p-3 bg-blue-50 rounded">
+                          <p className="text-sm text-gray-600">Contraoferta:</p>
+                          <p className="font-semibold text-blue-700 text-base mb-2">
+                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {request.status === 'rejected' && !request.customerCounterOffer && (
-                      <div className="mb-2 p-3 bg-red-50 rounded">
-                        {request.rejectReason && (
-                          <>
-                            <p className="text-sm text-gray-600">{t.rejectReason}:</p>
-                            <p className="font-semibold text-red-700 mb-2">{request.rejectReason}</p>
-                          </>
-                        )}
-                        <button
-                          onClick={() => confirmRejection(request.id)}
-                          className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                        >
-                          {t.confirm}
-                        </button>
-                      </div>
-                    )}
-
-                    {/* ケース1: 最初の管理者カウンターオファー（顧客未返答） */}
-                    {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
-                      <div className="mb-2 p-3 bg-blue-50 rounded">
-                        <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-base mb-2">
-                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                            className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                          >
-                            {t.accept}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedRequestForCounter(request);
-                              setShowCounterModal(true);
-                            }}
-                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                          >
-                            {t.counterOfferAction}
-                          </button>
-                          <button
-                            onClick={() => handleCounterOfferResponse(request.id, 'reject')}
-                            className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                          >
-                            {t.reject}
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleCounterOfferResponse(request.id, 'accept')}
+                              className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                            >
+                              {t.accept}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedRequestForCounter(request);
+                                setShowCounterModal(true);
+                              }}
+                              className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                            >
+                              {t.counterOfferAction}
+                            </button>
+                            <button
+                              onClick={() => handleCounterOfferResponse(request.id, 'reject')}
+                              className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                            >
+                              {t.reject}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* ケース2: 顧客がカウンターオファー送信済み（管理者返答待ち） */}
-                    {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
-                      <div className="mb-2 p-3 bg-blue-50 rounded">
-                        <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-base">
-                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
-                        </p>
-                        </div>
-                    )}
-
-                    {/* ケース3A: 管理者が顧客カウンターオファーを承認 */}
-                    {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                      <div className="mb-2 p-3 bg-purple-50 rounded">
-                        <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                        <p className="text-xs text-red-600">
-                          {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* ケース3B: 管理者が却下後、顧客が管理者カウンターを承認 */}
-                    {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                      <div className="mb-2 p-3 bg-blue-50 rounded">
-                        <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
-                        <p className="text-xs text-red-600">
-                          {lang === 'es' ? 'Tu aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 削除確認待ち */}
-                    {request.adminNeedsConfirm && !request.customerCounterOffer && (
-                      <div className="mb-2">
-                        <div className="p-3 bg-blue-50 rounded mb-3">
+                      {/* ケース2: 顧客がカウンターオファー送信済み（管理者返答待ち） */}
+                      {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
+                        <div className="mb-2 p-3 bg-blue-50 rounded">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
                           <p className="font-semibold text-blue-700 text-base">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
                         </div>
-                        <button
-                          onClick={() => confirmRejection(request.id)}
-                          className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                        >
-                          {t.confirm}
-                        </button>
-                      </div>
-                    )}
+                      )}
 
-                    {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
-                     {request.status === 'rejected' && request.customerCounterOffer && (
-                      <div className="mb-2">
-                        <button
-                          onClick={() => confirmRejection(request.id)}
-                          className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 mb-3"
-                        >
-                          {t.confirm}
-                        </button>
-                        
-                        <div className="p-3 bg-blue-50 rounded mb-2">
+                      {/* ケース3A: 管理者が顧客のカウンターオファーを承認 (Fabio) */}
+                      {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
+                        <>
+                          <div className="mb-2 p-3 bg-blue-50 rounded">
+                            <p className="text-sm text-gray-600">Contraoferta:</p>
+                            <p className="font-semibold text-blue-700 text-base">
+                              ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                            </p>
+                          </div>
+                          <div className="mb-2 p-3 bg-purple-50 rounded">
+                            <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                            <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                            <p className="text-xs text-red-600 mb-1">
+                              {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
+                            </p>
+                          </div>
+                        </>
+                      )}
+
+                      {/* ケース3B: 顧客が管理者のカウンターオファーを承認 (Carlos系: 顧客カウンターあり) */}
+                      {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
+                        <>
+                          <div className="mb-2 p-3 bg-blue-50 rounded">
+                            <p className="text-sm text-gray-600">Contraoferta:</p>
+                            <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                            <p className="text-xs text-red-600 mb-1">
+                              {lang === 'es' ? 'Tú aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
+                            </p>
+                          </div>
+                          <div className="mb-2 p-3 bg-purple-50 rounded">
+                            <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                            <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                            <p className="text-xs text-red-600">
+                              {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
+                            </p>
+                          </div>
+                        </>
+                      )}
+
+                      {/* ケース3C: 顧客が管理者のカウンターオファーを直接承認 (顧客カウンターなし) */}
+                      {!request.customerCounterOffer && request.counterOffer && request.status === 'approved' && !request.finalStatus && (
+                        <div className="mb-2 p-3 bg-blue-50 rounded">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base mb-2">
-                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                          <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                          <p className="text-xs text-red-600 mb-1">
+                            {lang === 'es' ? 'Tú aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
                           </p>
+                          <p className="text-xs text-gray-600">
+                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 削除確認待ち */}
+                      {request.adminNeedsConfirm && !request.customerCounterOffer && (
+                        <div className="mb-2">
+                          <div className="p-3 bg-blue-50 rounded mb-3">
+                            <p className="text-sm text-gray-600">Contraoferta:</p>
+                            <p className="font-semibold text-blue-700 text-base">
+                              ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                            </p>
+                          </div>
                           <button
-                            onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                            className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                            onClick={() => confirmRejection(request.id)}
+                            className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
                           >
-                            {t.accept}
+                            {t.confirm}
                           </button>
                         </div>
-                        
-                        <div className="p-3 bg-purple-50 rounded">
-                          <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                          <p className="font-semibold text-purple-700 text-base">
-                            ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
-                          </p>
-                          <p className="text-xs text-red-600">
-                            {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
-                          </p>
+                      )}
+
+                      {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
+                      {request.status === 'rejected' && request.customerCounterOffer && (
+                        <div className="mb-2">
+                          <button
+                            onClick={() => confirmRejection(request.id)}
+                            className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 mb-3"
+                          >
+                            {t.confirm}
+                          </button>
+
+                          <div className="p-3 bg-blue-50 rounded mb-2">
+                            <p className="text-sm text-gray-600">Contraoferta:</p>
+                            <p className="font-semibold text-blue-700 text-base mb-2">
+                              ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                            </p>
+                            <button
+                              onClick={() => handleCounterOfferResponse(request.id, 'accept')}
+                              className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                            >
+                              {t.accept}
+                            </button>
+                          </div>
+
+                          <div className="p-3 bg-purple-50 rounded">
+                            <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                            <p className="font-semibold text-purple-700 text-base">
+                              ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
+                            </p>
+                            <p className="text-xs text-red-600">
+                              {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                     {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
-                      <div className="mb-2 p-3 bg-purple-50 rounded">
-                        <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                      </div>
-                    )}
-                      {request.customerCounterOffer && request.status === 'approved' && !request.finalStatus && (
-                      <div className="mb-2 p-3 bg-purple-50 rounded">
-                        <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                        <p className="text-xs text-red-600">
-                          {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
-                        </p>
-                      </div>
-                    )}
+                      {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
+                        <div className="mb-2 p-3 bg-purple-50 rounded">
+                          <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                          <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                        </div>
+                      )}
+                      {/* (以前重複していたブロックを削除しました) */}
 
-                    {request.finalStatus === 'won' && !request.customerConfirmed && (
-                    <div className="mb-2 p-3 bg-green-50 rounded">
-                      <p className="text-sm text-gray-600">{t.finalPrice}:</p>
-                      <p className="text-base font-semibold text-green-600">
-                        ${Math.round(request.finalPrice || request.counterOffer || request.maxBid).toLocaleString('en-US')}
-                      </p>
-                      <p className="text-xs text-red-600 font-semibold">
-                        {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
-                      </p>
-                      <button
-                        onClick={() => handleFinalStatusConfirm(request.id)}
-                        className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                      >
-                        {t.confirm}
-                      </button>
+                      {request.finalStatus === 'won' && !request.customerConfirmed && (
+                        <div className="mb-2 p-3 bg-green-50 rounded">
+                          <p className="text-sm text-gray-600">{t.finalPrice}:</p>
+                          <p className="text-base font-semibold text-green-600">
+                            ${Math.round(
+                              request.finalPrice ||
+                              (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid))
+                            ).toLocaleString('en-US')}
+                          </p>
+                          <button
+                            onClick={() => handleFinalStatusConfirm(request.id)}
+                            className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                          >
+                            {t.confirm}
+                          </button>
+                        </div>
+                      )}
+
+                      {request.finalStatus === 'lost' && (
+                        <div className="mb-2 p-3 bg-red-50 rounded">
+                          <p className="font-semibold text-red-700">{t.lost}</p>
+                          <button
+                            onClick={() => handleFinalStatusConfirm(request.id)}
+                            className="mt-3 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                          >
+                            {t.confirm}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
-
-                    {request.finalStatus === 'lost' && (
-                      <div className="mb-2 p-3 bg-red-50 rounded">
-                        <p className="font-semibold text-red-700">{t.lost}</p>
-                        <button
-                          onClick={() => handleFinalStatusConfirm(request.id)}
-                          className="mt-3 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                        >
-                          {t.confirm}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>
         ) : showPurchased ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-4">{t.purchasedItems}</h2>
-            
+
             <div className="flex flex-col gap-3 mb-6">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 whitespace-nowrap w-28">{t.filterByCustomer}:</span>
@@ -1048,7 +1091,7 @@ export default function Home() {
                   ))}
                 </select>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 whitespace-nowrap w-28">{lang === 'es' ? 'Período:' : 'Período:'}</span>
                 <select
@@ -1072,73 +1115,76 @@ export default function Home() {
               <>
                 <div className="space-y-4 mb-6">
                   {getFilteredPurchasedItems()
-                  .sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime())
-                  .map((item, index) => (
-                    <div key={`purchased-${index}-${item.id}`} className="border rounded-lg p-4">
-                      <div className="flex gap-4 mb-3">
-                        {item.productImage && (
-                          <img 
-                            src={item.productImage} 
-                            alt={item.productTitle}
-                            className="w-32 h-32 object-cover rounded"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <h3 className="text-sm font-semibold mb-2">{item.productTitle}</h3>
-                          <a
-                            href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(item.productUrl)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-indigo-600 hover:underline text-xs inline-block"
-                          >
-                            {t.viewOnYahoo}
-                          </a>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-gray-50 rounded text-xs">
-                        <div>
-                          <p className="text-gray-600">{lang === 'es' ? 'Nombre' : 'Nome'}</p>
-                          <p className="font-semibold">{item.customerFullName || item.customerName}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">WhatsApp</p>
-                          <p className="font-semibold">{item.customerWhatsapp || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">{lang === 'es' ? 'Correo' : 'E-mail'}</p>
-                          <p className="font-semibold break-all">{item.customerEmail}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">{lang === 'es' ? 'Idioma' : 'Idioma'}</p>
-                          <p className="font-semibold">{item.language === 'es' ? 'Español' : 'Português'}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">{lang === 'es' ? 'Cliente' : 'Cliente'}</p>
-                          <p className="font-semibold">{item.customerName}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">{t.confirmedDate}</p>
-                          <p className="font-semibold">{formatDateTime(item.confirmedAt)}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="text-right pt-3 border-t">
-                        <div className="flex items-center justify-end gap-3">
-                          {item.paid && (
-                            <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">
-                              ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
-                            </span>
+                    .sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime())
+                    .map((item, index) => (
+                      <div key={`purchased-${index}-${item.id}`} className="border rounded-lg p-4">
+                        <div className="flex gap-4 mb-3">
+                          {item.productImage && (
+                            <img
+                              src={item.productImage}
+                              alt={item.productTitle}
+                              className="w-32 h-32 object-cover rounded"
+                            />
                           )}
-                          <p className={`text-xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                            ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
-                          </p>
+                          <div className="flex-1">
+                            <h3 className="text-sm font-semibold mb-2">{item.productTitle}</h3>
+                            <a
+                              href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(item.productUrl)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:underline text-xs inline-block"
+                            >
+                              {t.viewOnYahoo}
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-gray-50 rounded text-xs">
+                          <div>
+                            <p className="text-gray-600">{lang === 'es' ? 'Nombre' : 'Nome'}</p>
+                            <p className="font-semibold">{item.customerFullName || item.customerName}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">WhatsApp</p>
+                            <p className="font-semibold">{item.customerWhatsapp || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">{lang === 'es' ? 'Correo' : 'E-mail'}</p>
+                            <p className="font-semibold break-all">{item.customerEmail}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">{lang === 'es' ? 'Idioma' : 'Idioma'}</p>
+                            <p className="font-semibold">{item.language === 'es' ? 'Español' : 'Português'}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">{lang === 'es' ? 'Cliente' : 'Cliente'}</p>
+                            <p className="font-semibold">{item.customerName}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">{t.confirmedDate}</p>
+                            <p className="font-semibold">{formatDateTime(item.confirmedAt)}</p>
+                          </div>
+                        </div>
+
+                        <div className="text-right pt-3 border-t">
+                          <div className="flex items-center justify-end gap-3">
+                            {item.paid && (
+                              <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">
+                                ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
+                              </span>
+                            )}
+                            <p className={`text-xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                              ${Math.round(
+                                item.finalPrice ||
+                                (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
+                              ).toLocaleString('en-US')}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
-                
+
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-xl font-semibold">
@@ -1153,7 +1199,7 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 text-right mt-1">
-                    {lang === 'es' ? 'Solo productos sin pagar' : 'Apenas produtos não pagos'} / 
+                    {lang === 'es' ? 'Solo productos sin pagar' : 'Apenas produtos não pagos'} /
                     {lang === 'es' ? ' Pagados: ' : ' Pagos: '}{getFilteredPurchasedItems().filter(item => item.paid).length}
                   </p>
                 </div>
@@ -1186,71 +1232,72 @@ export default function Home() {
                 console.log('Rendering product:', product);
                 console.log('Product endTime:', product.endTime);
                 return (
-                <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <div className="aspect-square w-full overflow-hidden">
-                    <img 
-                      src={product.imageUrl} 
-                      alt={product.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-3 sm:p-4">
-                    <h3 className="text-sm sm:text-base font-semibold mb-2 line-clamp-2">{product.title}</h3>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">{t.currentPrice}:</span>
-                        <span className="font-semibold">¥{product.currentPrice.toLocaleString()}</span>
-                      </div>
-                      {product.shippingCost > 0 && (
+                  <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div className="aspect-square w-full overflow-hidden">
+                      <img
+                        src={product.imageUrl}
+                        alt={product.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3 sm:p-4">
+                      <h3 className="text-sm sm:text-base font-semibold mb-2 line-clamp-2">{product.title}</h3>
+
+                      <div className="space-y-2 mb-4">
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">{t.shippingCost}:</span>
-                          <span className="font-semibold">¥{product.shippingCost.toLocaleString()}</span>
+                          <span className="text-gray-600">{t.currentPrice}:</span>
+                          <span className="font-semibold">¥{product.currentPrice.toLocaleString()}</span>
                         </div>
-                      )}
-                      {product.shippingCost > 0 && (
-                        <div className="flex justify-between text-sm border-t pt-2">
-                          <span className="text-gray-600 font-semibold">{t.totalPrice}:</span>
-                          <span className="font-bold">¥{(product.currentPrice + product.shippingCost).toLocaleString()}</span>
+                        {product.shippingCost > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">{t.shippingCost}:</span>
+                            <span className="font-semibold">¥{product.shippingCost.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {product.shippingCost > 0 && (
+                          <div className="flex justify-between text-sm border-t pt-2">
+                            <span className="text-gray-600 font-semibold">{t.totalPrice}:</span>
+                            <span className="font-bold">¥{(product.currentPrice + product.shippingCost).toLocaleString()}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">{t.usdPrice}:</span>
+                          <span className="text-2xl font-bold text-indigo-600">
+                            ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
+                          </span>
                         </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">{t.usdPrice}:</span>
-                        <span className="text-2xl font-bold text-indigo-600">
-                          ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
-                        </span>
+                        {product.shippingUnknown && (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-2">
+                            <p className="text-xs text-yellow-800">⚠️ {t.shippingUnknown}</p>
+                          </div>
+                        )}
                       </div>
-                      {product.shippingUnknown && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-2">
-                          <p className="text-xs text-yellow-800">⚠️ {t.shippingUnknown}</p>
-                        </div>
-                      )}
+
+                      <div className="flex justify-between text-sm mb-4">
+                        <span className="text-gray-600">{t.bids}: {product.bids}</span>
+                        <span className="text-gray-600">{t.timeLeft}: <span className="font-semibold text-red-600">{getTimeRemaining(product.endTime)}</span></span>
+                      </div>
+
+                      <a
+                        href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(product.url)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:underline text-sm mb-3 inline-block"
+                      >
+                        {t.viewOnYahoo}
+
+                      </a>
+
+                      <button
+                        onClick={() => setSelectedProduct(product)}
+                        className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm sm:text-base"
+                      >
+                        {t.makeOffer}
+                      </button>
                     </div>
-
-                    <div className="flex justify-between text-sm mb-4">
-                      <span className="text-gray-600">{t.bids}: {product.bids}</span>
-                      <span className="text-gray-600">{t.timeLeft}: <span className="font-semibold text-red-600">{getTimeRemaining(product.endTime)}</span></span>
-                    </div>
-
-                    <a
-                      href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(product.url)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:underline text-sm mb-3 inline-block"
-                    >
-                      {t.viewOnYahoo}
-
-                    </a>
-
-                    <button
-                      onClick={() => setSelectedProduct(product)}
-                      className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm sm:text-base"
-                    >
-                      {t.makeOffer}
-                    </button>
                   </div>
-                </div>
-              )})}
+                )
+              })}
             </div>
           </>
         )}
@@ -1260,50 +1307,52 @@ export default function Home() {
         <div className="fixed inset-0 bg-gray-900 bg-opacity-30 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full p-6">
             <h2 className="text-2xl font-bold mb-4">{t.makeOffer}</h2>
-            
-            <div className="flex gap-4 mb-6">
-              <img 
-                src={selectedProduct.imageUrl} 
+
+            <div className="flex gap-3 mb-4">
+              <img
+                src={selectedProduct.imageUrl}
                 alt={selectedProduct.title}
-                className="w-32 h-32 object-cover rounded"
+                className="w-32 h-32 object-cover rounded flex-shrink-0"
               />
-              <div className="flex-1">
-                <h3 className="font-semibold mb-2">{selectedProduct.title}</h3>
-                <p className="text-sm text-gray-600">
-                  {t.currentPrice}: ¥{selectedProduct.currentPrice.toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-600">
-                  USD: ${calculateUSDPrice(selectedProduct.currentPrice, selectedProduct.shippingCost || 0)}
-                </p>
+              <div className="flex-1 flex flex-col py-0.5 overflow-hidden">
+                <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{selectedProduct.title}</h3>
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-xs text-gray-600">
+                    {t.currentPrice}: ¥{selectedProduct.currentPrice.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    USD: ${calculateUSDPrice(selectedProduct.currentPrice, selectedProduct.shippingCost || 0)}
+                  </p>
+                </div>
                 <a
                   href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(selectedProduct.url)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-indigo-600 hover:underline text-sm"
+                  className="text-indigo-600 hover:underline text-xs inline-block mt-auto"
                 >
                   {t.viewOnYahoo}
                 </a>
               </div>
             </div>
 
-            <form onSubmit={handleBidRequest} className="space-y-4">
+            <form onSubmit={handleBidRequest} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-2">{t.yourName}</label>
+                <label className="block text-xs font-medium mb-1">{t.yourName}</label>
                 <input
                   type="text"
                   value={bidForm.name}
                   onChange={(e) => setBidForm({ ...bidForm, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">{t.maxBid}</label>
+                <label className="block text-xs font-medium mb-1">{t.maxBid}</label>
                 <input
                   type="number"
                   value={bidForm.maxBid}
                   onChange={(e) => setBidForm({ ...bidForm, maxBid: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
                   required
                 />
               </div>
@@ -1337,7 +1386,7 @@ export default function Home() {
             <p className="text-sm text-gray-600 mb-2">
               {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer).toLocaleString('en-US')}
             </p>
-            
+
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">{t.yourCounterOffer}</label>
               <input

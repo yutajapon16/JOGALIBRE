@@ -24,9 +24,9 @@ export async function POST(request: Request) {
       console.log('Query error:', error);
 
       if (!pendingRequests || pendingRequests.length === 0) {
-        return NextResponse.json({ 
-          success: false, 
-          message: '通知する更新がありません（未確認リクエスト: 0件）' 
+        return NextResponse.json({
+          success: false,
+          message: '通知する更新がありません（未確認リクエスト: 0件）'
         });
       }
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       for (const [customerEmail, requests] of customerGroups.entries()) {
         const userInfo = await getUserInfo(customerEmail);
         console.log(`Customer ${customerEmail} - WhatsApp:`, userInfo?.whatsapp);
-        
+
         if (!userInfo?.whatsapp) {
           console.log(`No WhatsApp for ${customerEmail}, skipping`);
           results.push({
@@ -60,14 +60,14 @@ export async function POST(request: Request) {
 
         const lang = requests[0].language || 'es';
         const count = requests.length;
-        
+
         const message = lang === 'es'
           ? `🔔 JOGALIBRE: Tienes ${count} solicitud(es) con actualizaciones. Revisa tu panel: https://jogalibre.vercel.app/`
           : `🔔 JOGALIBRE: Você tem ${count} solicitação(ões) com atualizações. Confira seu painel: https://jogalibre.vercel.app/`;
 
         const result = await sendWhatsAppMessage(userInfo.whatsapp, message);
-        results.push({ 
-          email: customerEmail, 
+        results.push({
+          email: customerEmail,
           whatsapp: userInfo.whatsapp,
           success: result.success,
           error: result.error
@@ -76,8 +76,8 @@ export async function POST(request: Request) {
 
       console.log('Send results:', results);
 
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         notificationsSent: results.filter(r => r.success).length,
         total: results.length,
         details: results
@@ -89,46 +89,47 @@ export async function POST(request: Request) {
         .from('bid_requests')
         .select('customer_name, product_title, status, final_status')
         .eq('customer_email', email)
-        .eq('customer_confirmed', false)
+        .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      console.log('Customer requests:', myRequests);
+      console.log('Customer requests for admin notification:', myRequests);
 
       if (!myRequests || myRequests.length === 0) {
-        return NextResponse.json({ 
-          success: false, 
-          message: 'No hay actualizaciones pendientes' 
+        return NextResponse.json({
+          success: false,
+          message: 'No hay solicitudes pendientes de enviar al administrador'
         });
       }
 
       const adminWhatsApp = process.env.ADMIN_WHATSAPP_NUMBER;
-      console.log('Admin WhatsApp:', adminWhatsApp);
-      
+      console.log('Admin WhatsApp from env:', adminWhatsApp);
+
       if (!adminWhatsApp) {
-        return NextResponse.json({ 
-          success: false, 
-          message: 'Admin WhatsApp no configurado' 
+        console.error('ADMIN_WHATSAPP_NUMBER is not set in environment variables');
+        return NextResponse.json({
+          success: false,
+          message: 'Admin WhatsApp no configurado'
         });
       }
 
       const customerName = myRequests[0].customer_name;
       const count = myRequests.length;
 
-      const message = `🔔 JOGALIBRE ADMIN: ${customerName} tiene ${count} solicitud(es) pendientes de revisión. Revisar: https://jogalibre.vercel.app/admin`;
+      const message = `🔔 JOGALIBRE ADMIN: ${customerName} tiene ${count} solicitud(es) pendientes de revisar. URL: https://jogalibre.vercel.app/admin`;
 
       const result = await sendWhatsAppMessage(adminWhatsApp, message);
       console.log('Admin notification result:', result);
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: result.success,
         notificationsSent: result.success ? 1 : 0,
         error: result.error
       });
     }
 
-    return NextResponse.json({ 
-      success: false, 
-      message: 'Tipo de usuario inválido' 
+    return NextResponse.json({
+      success: false,
+      message: 'Tipo de usuario inválido'
     });
 
   } catch (error) {

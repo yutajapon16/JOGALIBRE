@@ -46,14 +46,14 @@ export default function AdminDashboard() {
     try {
       await signIn(loginForm.email, loginForm.password);
       const user = await getCurrentUser();
-      
+
       // 管理者ロールチェック
       if (user?.role !== 'admin') {
         await signOut();
         alert('管理者アカウントでログインしてください');
         return;
       }
-      
+
       setCurrentUser(user);
       setLoginForm({ email: '', password: '' });
     } catch (error) {
@@ -87,9 +87,9 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userType: 'admin' })
       });
-      
+
       const data = await res.json();
-      
+
       if (data.success) {
         alert(`WhatsApp通知を${data.notificationsSent}件送信しました`);
       } else {
@@ -105,32 +105,32 @@ export default function AdminDashboard() {
 
   const getFilteredPurchasedItems = () => {
     let filtered = purchasedItems;
-    
+
     if (purchasedPeriod !== 'all') {
       const now = new Date();
       const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
       const days = daysMap[purchasedPeriod];
       const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-      
-      filtered = purchasedItems.filter(item => 
+
+      filtered = purchasedItems.filter(item =>
         new Date(item.confirmedAt).getTime() >= cutoffDate.getTime()
       );
     }
-    
+
     return filtered;
   };
 
   const fetchBidRequests = async () => {
-  try {
-    const res = await fetch('/api/bid-request');
-    const data = await res.json();
-    
-    console.log('=== ADMIN DEBUG ===');
-    console.log('Raw data:', data);
-    console.log('bidRequests:', data.bidRequests);
-    
-    // スネークケースからキャメルケースに変換
-    const convertedRequests = (data.bidRequests || []).map((req: any) => ({
+    try {
+      const res = await fetch('/api/bid-request');
+      const data = await res.json();
+
+      console.log('=== ADMIN DEBUG ===');
+      console.log('Raw data:', data);
+      console.log('bidRequests:', data.bidRequests);
+
+      // スネークケースからキャメルケースに変換
+      const convertedRequests = (data.bidRequests || []).map((req: any) => ({
         id: req.id,
         productId: req.product_id,
         productTitle: req.product_title,
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/bid-request?purchased=true');
       const data = await res.json();
-      
+
       // スネークケースからキャメルケースに変換
       const convertedItems = (data.purchasedItems || []).map((item: any) => ({
         id: item.id,
@@ -188,7 +188,7 @@ export default function AdminDashboard() {
         confirmedAt: item.created_at,  // confirmed_at の代わりに created_at を使用
         paid: item.paid || false
       }));
-      
+
       setPurchasedItems(convertedItems);
       setPurchasedTotal(data.total || 0);
     } catch (error) {
@@ -225,15 +225,15 @@ export default function AdminDashboard() {
       const res = await fetch('/api/bid-request', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          id, 
+        body: JSON.stringify({
+          id,
           status,
           rejectReason: reason,
           counterOffer: counterOfferAmount,
           shippingCostJpy: shippingJpy
         })
       });
-      
+
       if (res.ok) {
         fetchBidRequests();
         setSelectedRequest(null);
@@ -254,7 +254,7 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, finalStatus })
       });
-      
+
       if (res.ok) {
         fetchBidRequests();
       }
@@ -268,7 +268,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/bid-request?id=' + id, {
         method: 'DELETE'
       });
-      
+
       if (res.ok) {
         fetchBidRequests();
       }
@@ -284,7 +284,7 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, paid })
       });
-      
+
       if (res.ok) {
         fetchPurchasedItems();
       }
@@ -303,12 +303,12 @@ export default function AdminDashboard() {
     if (selectedRequest) {
       const FOB_COST = 1350;
       const shipping = shippingCostJpy.trim() ? parseFloat(shippingCostJpy) : 0;
-      
+
       const totalJpy = (selectedRequest.productPrice || 0) + shipping + FOB_COST;
       const priceWithProfit = totalJpy / 0.8;
       const usdPrice = priceWithProfit / exchangeRate;
       const roundedUsd = Math.ceil(usdPrice / 10) * 10;
-      
+
       updateStatus(selectedRequest.id, 'counter_offer', undefined, roundedUsd, shipping);
     }
   };
@@ -351,41 +351,60 @@ export default function AdminDashboard() {
   };
 
   const formatDateTime = (dateString: string) => {
-    console.log('=== DEBUG formatDateTime ===');
-    console.log('Original dateString:', dateString);
-    
+    if (!dateString) return '-';
+
     // タイムゾーン情報がない場合、UTC として扱う
     let date: Date;
     if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-      // タイムゾーン情報なし → UTC として扱う
       date = new Date(dateString + 'Z');
-      console.log('Added Z to treat as UTC');
     } else {
       date = new Date(dateString);
     }
-    
-    console.log('Parsed date (UTC):', date.toISOString());
-    console.log('Local time:', date.toString());
-    console.log('Hours:', date.getHours());
-    console.log('Timezone offset (minutes):', date.getTimezoneOffset());
-    console.log('========================');
-    
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    
-    const timeZoneName = new Intl.DateTimeFormat('en-US', {
+
+    if (isNaN(date.getTime())) return dateString;
+
+    // ローカルタイムゾーンの取得
+    const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // 略称の取得
+    let localLabel = new Intl.DateTimeFormat('en-US', {
+      timeZone: localTimeZone,
       timeZoneName: 'short'
-    }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || 'UTC';
-    
-    return `${year}/${month}/${day} ${hours}:${minutes} ${timeZoneName}`;
+    }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || '';
+
+    // GMT-3 などのオフセット表示を BRT 等の略称にマッピング
+    if (localTimeZone === 'America/Sao_Paulo' || localLabel.includes('GMT-3')) {
+      localLabel = 'BRT';
+    } else if (localTimeZone === 'Asia/Tokyo' || localLabel.includes('GMT+9')) {
+      localLabel = 'JST';
+    }
+
+    const formatter = new Intl.DateTimeFormat('ja-JP', {
+      timeZone: localTimeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    return `${formatter.format(date)} ${localLabel}`;
   };
 
   const getTimeRemaining = (endTime: string) => {
+    if (!endTime) return '-';
+
+    // タイムゾーン情報がない場合、UTC として扱う
+    let endDate: Date;
+    if (!endTime.includes('Z') && !endTime.includes('+') && !endTime.includes('-', 10)) {
+      endDate = new Date(endTime + 'Z');
+    } else {
+      endDate = new Date(endTime);
+    }
+
     const now = new Date().getTime();
-    const end = new Date(endTime).getTime();
+    const end = endDate.getTime();
     const diff = end - now;
 
     if (diff <= 0) return '終了';
@@ -461,7 +480,7 @@ export default function AdminDashboard() {
               ログアウト
             </button>
           </div>
-          
+
           <div className="flex flex-col gap-2">
             <div className="text-sm sm:text-base text-gray-600">
               保留中: <span className="font-bold text-indigo-600">
@@ -470,8 +489,8 @@ export default function AdminDashboard() {
               {' '}
               合計: <span className="font-bold">{bidRequests.length}件</span>
             </div>
-            
-          <button
+
+            <button
               onClick={sendWhatsAppNotifications}
               disabled={isSendingNotification}
               className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base w-full disabled:bg-gray-400"
@@ -485,7 +504,7 @@ export default function AdminDashboard() {
             >
               更新
             </button>
-            
+
             {!showPurchased && (
               <button
                 onClick={() => { setShowPurchased(true); fetchPurchasedItems(); }}
@@ -502,7 +521,7 @@ export default function AdminDashboard() {
                 戻る
               </button>
             )}
-            
+
             <div className="text-xs sm:text-sm text-gray-600">
               為替レート: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
             </div>
@@ -514,7 +533,7 @@ export default function AdminDashboard() {
         {showPurchased ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-4">購入済み商品</h2>
-            
+
             <div className="flex flex-col gap-3 mb-6">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 whitespace-nowrap w-28">フィルター:</span>
@@ -531,7 +550,7 @@ export default function AdminDashboard() {
                   ))}
                 </select>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 whitespace-nowrap w-28">期間:</span>
                 <select
@@ -557,80 +576,80 @@ export default function AdminDashboard() {
                   {getFilteredPurchasedItems()
                     .sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime())
                     .map((item) => (
-                    <div key={item.id} className="border rounded-lg p-4">
-                      <div className="flex gap-4 mb-3">
-                        {item.productImage && (
-                          <img 
-                            src={item.productImage} 
-                            alt={item.productTitle}
-                            className="w-32 h-32 object-cover rounded"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <h3 className="text-sm sm:text-base font-semibold mb-2">{item.productTitle}</h3>
-                          <a
-                            href={item.productUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-indigo-600 hover:underline text-sm inline-block"
-                          >
-                            ヤフオクURL →
-                          </a>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-gray-50 rounded text-xs sm:text-sm">
-                        <div>
-                          <p className="text-gray-600">氏名</p>
-                          <p className="font-semibold">{item.customerFullName || item.customerName}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">WhatsApp</p>
-                          <p className="font-semibold">{item.customerWhatsapp || '未登録'}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">メール</p>
-                          <p className="font-semibold break-all">{item.customerEmail}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">言語</p>
-                          <p className="font-semibold">{item.language === 'es' ? 'スペイン語' : 'ポルトガル語'}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">顧客名</p>
-                          <p className="font-semibold">{item.customerName}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">確認日時</p>
-                          <p className="font-semibold">{formatDateTime(item.confirmedAt)}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="text-right pt-3 border-t">
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={item.paid}
-                              onChange={(e) => updatePaidStatus(item.id, e.target.checked)}
-                              className="w-5 h-5 mr-2 cursor-pointer"
+                      <div key={item.id} className="border rounded-lg p-4">
+                        <div className="flex gap-4 mb-3">
+                          {item.productImage && (
+                            <img
+                              src={item.productImage}
+                              alt={item.productTitle}
+                              className="w-32 h-32 object-cover rounded"
                             />
-                            <span className="text-sm font-semibold text-gray-700">支払済</span>
-                          </label>
-                          <p className={`text-xl sm:text-2xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                            ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
-                          </p>
+                          )}
+                          <div className="flex-1">
+                            <h3 className="text-sm sm:text-base font-semibold mb-2">{item.productTitle}</h3>
+                            <a
+                              href={item.productUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:underline text-sm inline-block"
+                            >
+                              ヤフオクURL →
+                            </a>
+                          </div>
                         </div>
-                        {item.paid && (
-                          <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                            ✓ 支払済
-                          </span>
-                        )}
+
+                        <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-gray-50 rounded text-xs sm:text-sm">
+                          <div>
+                            <p className="text-gray-600">氏名</p>
+                            <p className="font-semibold">{item.customerFullName || item.customerName}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">WhatsApp</p>
+                            <p className="font-semibold">{item.customerWhatsapp || '未登録'}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">メール</p>
+                            <p className="font-semibold break-all">{item.customerEmail}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">言語</p>
+                            <p className="font-semibold">{item.language === 'es' ? 'スペイン語' : 'ポルトガル語'}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">顧客名</p>
+                            <p className="font-semibold">{item.customerName}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600">確認日時</p>
+                            <p className="font-semibold">{formatDateTime(item.confirmedAt)}</p>
+                          </div>
+                        </div>
+
+                        <div className="text-right pt-3 border-t">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={item.paid}
+                                onChange={(e) => updatePaidStatus(item.id, e.target.checked)}
+                                className="w-5 h-5 mr-2 cursor-pointer"
+                              />
+                              <span className="text-sm font-semibold text-gray-700">支払済</span>
+                            </label>
+                            <p className={`text-xl sm:text-2xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                              ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
+                            </p>
+                          </div>
+                          {item.paid && (
+                            <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                              ✓ 支払済
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
-                
+
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xl font-semibold">
@@ -661,250 +680,253 @@ export default function AdminDashboard() {
             {bidRequests
               .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
               .map((request) => (
-              <div key={request.id} className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-                <div className="flex gap-4 mb-4">
-                  {request.productImage && (
-                    <img 
-                      src={request.productImage} 
-                      alt={request.productTitle}
-                      className="w-32 h-32 object-cover rounded"
-                    />
-                  )}
-                  
-                  <div className="flex-1">
-                    <h3 className="text-base sm:text-xl font-semibold mb-2">{request.productTitle}</h3>
-                    <a
-                      href={request.productUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:underline text-sm inline-block mb-2"
-                    >
-                      ヤフオクURL →
-                    </a>
-                    {request.productEndTime && (
-                      <p className="text-sm text-gray-600 mb-2">
-                        終了まで: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
-                      </p>
+                <div key={request.id} className="bg-white rounded-lg shadow-md p-3 sm:p-4">
+                  <div className="flex gap-4 mb-3">
+                    {request.productImage && (
+                      <img
+                        src={request.productImage}
+                        alt={request.productTitle}
+                        className="w-32 h-32 object-cover rounded flex-shrink-0"
+                      />
                     )}
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(request.status)}`}>
-                        {getStatusText(request.status)}
-                      </span>
-                      {request.finalStatus && (
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getFinalStatusColor(request.finalStatus)}`}>
-                          {getFinalStatusText(request.finalStatus)}
-                        </span>
-                      )}
-                      {request.adminNeedsConfirm && (
-                        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
-                          却下
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="text-xl sm:text-2xl font-bold text-indigo-600">
-                        ${Math.round(request.maxBid).toLocaleString('en-US')}
+
+                    <div className="flex-1 flex flex-col min-h-[128px] py-0.5 overflow-hidden">
+                      <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{request.productTitle}</h3>
+                      <div className="flex flex-col gap-0.5">
+                        <a
+                          href={request.productUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:underline text-xs inline-block"
+                        >
+                          ヤフオクURL →
+                        </a>
+                        {request.productEndTime && (
+                          <p className="text-[10px] text-gray-500">
+                            終了まで: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
+                          </p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getStatusColor(request.status)}`}>
+                            {getStatusText(request.status)}
+                          </span>
+                          {request.finalStatus && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getFinalStatusColor(request.finalStatus)}`}>
+                              {getFinalStatusText(request.finalStatus)}
+                            </span>
+                          )}
+                          {request.adminNeedsConfirm && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-800">
+                              却下
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-xs sm:text-sm text-gray-500">最高入札額</div>
+
+                      <div className="mt-auto flex items-end justify-between">
+                        <div className="text-left flex items-baseline gap-1">
+                          <span className="text-xs text-gray-500">希望入札額:</span>
+                          <span className="text-lg font-bold text-indigo-600 leading-none">
+                            ${Math.round(request.maxBid).toLocaleString('en-US')}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 p-3 sm:p-4 bg-gray-50 rounded-lg text-sm sm:text-base">
-                  <div>
-                    <p className="text-sm text-gray-600">氏名</p>
-                    <p className="font-semibold">{request.customerFullName || request.customerName}</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 p-3 bg-gray-50 rounded-lg text-xs">
+                    <div className="flex flex-col">
+                      <span className="text-gray-500">氏名:</span>
+                      <span className="font-semibold truncate">{request.customerFullName || request.customerName}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-gray-500">WhatsApp:</span>
+                      <span className="font-semibold truncate">{request.customerWhatsapp || '未登録'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-gray-500">メール:</span>
+                      <span className="font-semibold break-all line-clamp-1">{request.customerEmail}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-gray-500">言語:</span>
+                      <span className="font-semibold">{request.language === 'es' ? 'スペイン語' : 'ポルトガル語'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-gray-500">顧客名:</span>
+                      <span className="font-semibold truncate">{request.customerName}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-gray-500">リクエスト日時:</span>
+                      <span className="font-semibold">{formatDateTime(request.createdAt)}</span>
+                      {request.status === 'approved' && request.productEndTime && (
+                        <span className="text-[10px] text-red-500">
+                          (終了: {getTimeRemaining(request.productEndTime)})
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">WhatsApp</p>
-                    <p className="font-semibold text-xs sm:text-sm">{request.customerWhatsapp || '未登録'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">メール</p>
-                    <p className="font-semibold text-xs sm:text-sm break-all">{request.customerEmail}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">言語</p>
-                    <p className="font-semibold">{request.language === 'es' ? 'スペイン語' : 'ポルトガル語'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">顧客名</p>
-                    <p className="font-semibold">{request.customerName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">リクエスト日時</p>
-                    <p className="font-semibold text-xs sm:text-sm">{formatDateTime(request.createdAt)}</p>
-                    
-                    {request.status === 'approved' && request.productEndTime && (
-                      <p className="text-xs text-red-600 mt-1">
-                        終了まで: {getTimeRemaining(request.productEndTime)}
-                      </p>
-                    )}
-                  </div>
-                </div>
 
-                {request.status === 'rejected' && (
-                  <div className="mb-4 p-3 bg-red-50 rounded-lg">
-                    {request.rejectReason && (
-                      <>
-                        <p className="text-sm text-gray-600">却下理由:</p>
-                        <p className="font-semibold text-red-700 mb-3">{request.rejectReason}</p>
-                      </>
-                    )}
-                    {request.status === 'rejected' && (
+                  {request.status === 'rejected' && (
+                    <div className="mb-4 p-3 bg-red-50 rounded-lg">
+                      {request.rejectReason && (
+                        <>
+                          <p className="text-sm text-gray-600">却下理由:</p>
+                          <p className="font-semibold text-red-700 mb-3">{request.rejectReason}</p>
+                        </>
+                      )}
+                      {request.status === 'rejected' && (
+                        <button
+                          onClick={() => confirmCustomerRejection(request.id)}
+                          className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                        >
+                          削除を確認
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {request.counterOffer && (
+                    <div className="mb-2 p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-gray-600">カウンターオファー:</p>
+                      <p className="font-semibold text-blue-700 text-base">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                      {request.shippingCostJpy > 0 && (
+                        <p className="text-xs text-gray-600">送料: ¥{request.shippingCostJpy.toLocaleString()}</p>
+                      )}
+                      {/* ✓承認済みをここに移動 */}
+                      {request.customerCounterOffer && request.customerCounterOfferUsed && (
+                        <p className="text-xs text-green-600 mt-2">✓ 承認済</p>
+                      )}
+                    </div>
+                  )}
+
+                  {request.customerCounterOffer && (
+                    <div className="mb-2 p-3 bg-purple-50 rounded-lg">
+                      <p className="text-sm text-gray-600">顧客からのカウンターオファー:</p>
+                      <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+
+                      {!request.customerCounterOfferUsed && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => updateStatus(request.id, 'approved')}
+                            className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
+                          >
+                            承認
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setActionType('reject');
+                            }}
+                            className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                          >
+                            却下
+                          </button>
+                        </div>
+                      )}
+
+                      {/* ✓承認済みを削除（上の管理者カウンターオファーボックスに移動済み） */}
+
+                      {request.adminNeedsConfirm && (
+                        <p className="text-xs text-red-600 mt-2">✓ 却下済み</p>
+                      )}
+                    </div>
+                  )}
+
+
+                  {request.adminNeedsConfirm && !request.customerCounterOffer && (
+                    <div className="mb-2 p-3 bg-red-50 rounded-lg">
+                      <p className="text-sm text-red-800 mb-2">顧客がカウンターオファーを拒否しました</p>
                       <button
                         onClick={() => confirmCustomerRejection(request.id)}
                         className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
                       >
                         削除を確認
                       </button>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                {request.counterOffer && (
-                  <div className="mb-2 p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-gray-600">カウンターオファー:</p>
-                    <p className="font-semibold text-blue-700 text-base">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
-                    {request.shippingCostJpy > 0 && (
-                      <p className="text-xs text-gray-600">送料: ¥{request.shippingCostJpy.toLocaleString()}</p>
-                    )}
-                    {/* ✓承認済みをここに移動 */}
-                    {request.customerCounterOffer && request.customerCounterOfferUsed && (
-                      <p className="text-xs text-green-600 mt-2">✓ 承認済</p>
-                    )}
-                  </div>
-                )}
+                  {request.status === 'pending' && !request.adminNeedsConfirm && (
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                      <button
+                        onClick={() => updateStatus(request.id, 'approved')}
+                        className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base"
+                      >
+                        承認
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setActionType('counter');
+                        }}
+                        className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base"
+                      >
+                        カウンターオファー
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setActionType('reject');
+                        }}
+                        className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base"
+                      >
+                        却下
+                      </button>
+                    </div>
+                  )}
 
-                {request.customerCounterOffer && (
-                  <div className="mb-2 p-3 bg-purple-50 rounded-lg">
-                    <p className="text-sm text-gray-600">顧客からのカウンターオファー:</p>
-                    <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                    
-                    {!request.customerCounterOfferUsed && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => updateStatus(request.id, 'approved')}
-                          className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
-                        >
-                          承認
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedRequest(request);
-                            setActionType('reject');
-                          }}
-                          className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition"
-                        >
-                          却下
-                        </button>
-                      </div>
-                    )}
-                    
-                    {/* ✓承認済みを削除（上の管理者カウンターオファーボックスに移動済み） */}
-                    
-                    {request.adminNeedsConfirm && (
-                      <p className="text-xs text-red-600 mt-2">✓ 却下済み</p>
-                    )}
-                  </div>
-                )}
+                  {request.status === 'approved' && !request.finalStatus && (
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                      <button
+                        onClick={() => updateFinalStatus(request.id, 'won')}
+                        className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base"
+                      >
+                        落札
+                      </button>
+                      <button
+                        onClick={() => updateFinalStatus(request.id, 'lost')}
+                        className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base"
+                      >
+                        落札できず
+                      </button>
+                    </div>
+                  )}
 
-
-                {request.adminNeedsConfirm && !request.customerCounterOffer && (
-                  <div className="mb-2 p-3 bg-red-50 rounded-lg">
-                    <p className="text-sm text-red-800 mb-2">顧客がカウンターオファーを拒否しました</p>
+                  {request.finalStatus === 'lost' && (
                     <button
                       onClick={() => confirmCustomerRejection(request.id)}
-                      className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                      className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition mt-3"
                     >
                       削除を確認
                     </button>
-                  </div>
-                )}
+                  )}
 
-                {request.status === 'pending' && !request.adminNeedsConfirm && (
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <button
-                      onClick={() => updateStatus(request.id, 'approved')}
-                      className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base"
-                    >
-                      承認
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedRequest(request);
-                        setActionType('counter');
-                      }}
-                      className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base"
-                    >
-                      カウンターオファー
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedRequest(request);
-                        setActionType('reject');
-                      }}
-                      className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base"
-                    >
-                      却下
-                    </button>
-                  </div>
-                )}
-
-                {request.status === 'approved' && !request.finalStatus && (
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <button
-                      onClick={() => updateFinalStatus(request.id, 'won')}
-                      className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base"
-                    >
-                      落札
-                    </button>
-                    <button
-                      onClick={() => updateFinalStatus(request.id, 'lost')}
-                      className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base"
-                    >
-                      落札できず
-                    </button>
-                  </div>
-                )}
-
-                {request.finalStatus === 'lost' && (
-                  <button
-                    onClick={() => confirmCustomerRejection(request.id)}
-                    className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition mt-3"
-                  >
-                    削除を確認
-                  </button>
-                )}
-
-                {request.approvedAt && (
-                  <div className="mt-3 text-sm text-gray-600">
-                    承認: {formatDateTime(request.approvedAt)}
-                  </div>
-                )}
-              </div>
-            ))}
+                  {request.approvedAt && (
+                    <div className="mt-3 text-sm text-gray-600">
+                      承認: {formatDateTime(request.approvedAt)}
+                    </div>
+                  )}
+                </div>
+              ))}
           </div>
         )}
       </main>
 
       {selectedRequest && actionType === 'reject' && (
-  <div 
-    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-    onClick={() => {
-      setSelectedRequest(null);
-      setActionType(null);
-      setRejectReason('');
-    }}
-  >
-    <div 
-      className="bg-white rounded-lg max-w-md w-full p-6"
-      onClick={(e) => e.stopPropagation()}
-    >
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setSelectedRequest(null);
+            setActionType(null);
+            setRejectReason('');
+          }}
+        >
+          <div
+            className="bg-white rounded-lg max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-2xl font-bold mb-4">リクエストを却下</h2>
             <p className="text-gray-600 mb-4">{selectedRequest.productTitle}</p>
-            
+
             <textarea
               placeholder="却下理由（任意）..."
               value={rejectReason}
@@ -943,13 +965,13 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-500 mb-4">
               顧客のオファー: ${Math.round(selectedRequest.customerCounterOffer || selectedRequest.maxBid).toLocaleString('en-US')}
             </p>
-            
+
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-gray-600">現在価格:</span>
                 <span className="font-semibold">¥{selectedRequest.productPrice?.toLocaleString() || 'N/A'}</span>
               </div>
-              
+
               <div className="flex justify-between items-center text-sm mb-2">
                 <span className="text-gray-600">送料:</span>
                 <input
@@ -960,12 +982,12 @@ export default function AdminDashboard() {
                   className="w-32 border border-gray-300 rounded px-3 py-2 text-sm text-right"
                 />
               </div>
-              
+
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-gray-600">FOB費用:</span>
                 <span className="font-semibold">¥1,350</span>
               </div>
-              
+
               <div className="flex justify-between text-sm mb-2 pt-2 border-t">
                 <span className="text-gray-600 font-semibold">合計（JPY）:</span>
                 <span className="font-bold">

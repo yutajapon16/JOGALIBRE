@@ -4,12 +4,12 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { cookies } from 'next/headers';
 
 
-    
-    export async function POST(request: Request) {
+
+export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { productId, productTitle, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language } = body;
-    
+
     const bidRequest = {
       id: Date.now().toString(),
       product_id: productId,
@@ -36,13 +36,13 @@ import { cookies } from 'next/headers';
       customer_message: null,
       admin_needs_confirm: false
     };
-    
+
     const { data, error } = await supabase
       .from('bid_requests')
       .insert([bidRequest])
       .select()
       .single();
-    
+
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
@@ -50,7 +50,7 @@ import { cookies } from 'next/headers';
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json({
       success: true,
       bidRequest: data
@@ -72,20 +72,20 @@ export async function GET(request: Request) {
 
     if (purchased === 'true') {
       // 購入済み商品を取得（final_status='won'のみ）
-      const query = email 
+      const query = email
         ? supabase
-            .from('bid_requests')
-            .select('*')
-            .eq('customer_email', email)
-            .eq('final_status', 'won')
-            .eq('customer_confirmed', true)
-            .order('created_at', { ascending: false })
+          .from('bid_requests')
+          .select('*')
+          .eq('customer_email', email)
+          .eq('final_status', 'won')
+          .eq('customer_confirmed', true)
+          .order('created_at', { ascending: false })
         : supabase
-            .from('bid_requests')
-            .select('*')
-            .eq('final_status', 'won')
-            .eq('customer_confirmed', true)
-            .order('created_at', { ascending: false });
+          .from('bid_requests')
+          .select('*')
+          .eq('final_status', 'won')
+          .eq('customer_confirmed', true)
+          .order('created_at', { ascending: false });
 
       const { data, error } = await query;
 
@@ -102,7 +102,7 @@ export async function GET(request: Request) {
           };
         })
       );
-      
+
 
       const total = itemsWithUserInfo.reduce((sum, item) => sum + (item.final_price || 0), 0);
 
@@ -115,16 +115,16 @@ export async function GET(request: Request) {
     // 通常の入札リクエストを取得
     const query = email
       ? supabase
-          .from('bid_requests')
-          .select('*')
-          .eq('customer_email', email)
-          .neq('customer_confirmed', true)
-          .order('created_at', { ascending: true })
+        .from('bid_requests')
+        .select('*')
+        .eq('customer_email', email)
+        .neq('customer_confirmed', true)
+        .order('created_at', { ascending: true })
       : supabase
-          .from('bid_requests')
-          .select('*')
-          .neq('customer_confirmed', true)
-          .order('created_at', { ascending: true });
+        .from('bid_requests')
+        .select('*')
+        .neq('customer_confirmed', true)
+        .order('created_at', { ascending: true });
 
     const { data, error } = await query;
 
@@ -159,7 +159,7 @@ async function getUserInfo(email: string) {
   try {
     // auth.usersからユーザーIDを取得
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-    
+
     if (authError) {
       console.error('Error fetching auth users:', authError);
       return null;
@@ -191,19 +191,19 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       return NextResponse.json(
         { error: 'ID required' },
         { status: 400 }
       );
     }
-    
+
     const { error } = await supabase
       .from('bid_requests')
       .delete()
       .eq('id', id);
-    
+
     if (error) {
       console.error('Supabase error:', error);
       return NextResponse.json(
@@ -211,7 +211,7 @@ export async function DELETE(request: Request) {
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json({
       success: true
     });
@@ -230,7 +230,7 @@ export async function PATCH(request: Request) {
     const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid } = body;
 
     const updateData: any = {};
-    
+
     if (status) updateData.status = status;
     if (rejectReason !== undefined) updateData.reject_reason = rejectReason;
     if (counterOffer !== undefined) updateData.counter_offer = counterOffer;
@@ -239,33 +239,38 @@ export async function PATCH(request: Request) {
     if (customerMessage !== undefined) updateData.customer_message = customerMessage;
     if (customerCounterOffer !== undefined) updateData.customer_counter_offer = customerCounterOffer;
     if (paid !== undefined) updateData.paid = paid;
-    
+
     // ... 残りのコードはそのまま
 
     // finalStatusが設定される場合
     if (finalStatus !== undefined) {
       updateData.final_status = finalStatus;
-      
+
       // 落札の場合、final_priceを設定
       if (finalStatus === 'won') {
         // 現在のリクエストデータを取得
         const { data: currentRequest } = await supabase
           .from('bid_requests')
-          .select('customer_counter_offer, counter_offer, max_bid')
+          .select('customer_counter_offer, counter_offer, max_bid, customer_counter_offer_used')
           .eq('id', id)
           .single();
-        
+
         if (currentRequest) {
-          // 優先順位: 顧客カウンターオファー > 管理者カウンターオファー > 最高入札額
-          updateData.final_price = currentRequest.customer_counter_offer || currentRequest.counter_offer || currentRequest.max_bid;
+          // 修正: 顧客が管理者の提案を承諾した（customer_counter_offer_used === true）場合は、管理者のカウンターオファーを優先
+          if (currentRequest.customer_counter_offer_used) {
+            updateData.final_price = currentRequest.counter_offer || currentRequest.max_bid;
+          } else {
+            // それ以外（管理者が顧客のカウンターオファーを承認した等）は、顧客の提案を優先
+            updateData.final_price = currentRequest.customer_counter_offer || currentRequest.counter_offer || currentRequest.max_bid;
+          }
         }
       }
     }
-    
+
     if (status === 'approved') {
       updateData.approved_at = new Date().toISOString();
     }
-    
+
     // ← ここに追加！管理者が顧客カウンターオファーを却下した場合
     if (status === 'rejected') {
       // 現在のリクエストを取得して顧客カウンターオファーがあるか確認
@@ -274,19 +279,19 @@ export async function PATCH(request: Request) {
         .select('customer_counter_offer')
         .eq('id', id)
         .single();
-      
+
       if (currentRequest && currentRequest.customer_counter_offer) {
         // 顧客カウンターオファーが存在する場合は、admin_needs_confirm を設定
         updateData.admin_needs_confirm = true;
       }
     }
-    
+
     if (customerAction === 'accept_counter') {
       updateData.status = 'approved';
       updateData.approved_at = new Date().toISOString();
       updateData.customer_counter_offer_used = true;
     }
-    
+
     if (customerAction === 'reject_counter') {
       updateData.admin_needs_confirm = true;
     }
