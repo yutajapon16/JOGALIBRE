@@ -326,8 +326,8 @@ export default function AdminDashboard() {
   const getStatusText = (status: string) => {
     const statusMap: Record<string, string> = {
       pending: '保留中',
-      approved: '承認済み',
-      rejected: '却下済み',
+      approved: '承認済',
+      rejected: '却下済',
       counter_offer: 'カウンターオファー',
       completed: '完了'
     };
@@ -747,6 +747,9 @@ export default function AdminDashboard() {
                     {request.shippingCostJpy > 0 && (
                       <p className="text-xs text-gray-600">送料: ¥{request.shippingCostJpy.toLocaleString()}</p>
                     )}
+                    {request.customerCounterOfferUsed && (
+                      <p className="text-xs text-green-600 mt-2">✓ 承認済</p>
+                    )}
                   </div>
                 )}
 
@@ -777,12 +780,9 @@ export default function AdminDashboard() {
                       </div>
                     )}
                     
-                    {request.customerCounterOfferUsed && (
-                      <p className="text-xs text-green-600 mt-2">✓ 承認済み</p>
-                    )}
                     
                     {request.adminNeedsConfirm && (
-                      <p className="text-xs text-red-600 mt-2">✓ 却下済み</p>
+                      <p className="text-xs text-red-600 mt-2">✓ 却下済</p>
                     )}
                   </div>
                 )}

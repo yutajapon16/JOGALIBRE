@@ -954,9 +954,6 @@ export default function Home() {
                       <div className="mb-2 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
                         <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                        <p className="text-xs text-gray-600">
-                          {lang === 'es' ? 'Esperando resultado de la subasta' : 'Aguardando resultado do leilão'}
-                        </p>
                       </div>
                     )}
 
