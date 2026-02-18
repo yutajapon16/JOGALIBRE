@@ -962,18 +962,17 @@ export default function Home() {
 
                     {request.finalStatus === 'won' && !request.customerConfirmed && (
                     <div className="mb-2 p-3 bg-green-50 rounded">
-                      <p className="text-sm text-gray-600">{t.yourCounterOffer}:
-                        <button
+                      <p className="text-sm text-gray-600">{t.finalPrice}:</p>
+                      <p className="text-4xl font-bold text-green-600">
+                        ${Math.round(request.finalPrice || request.counterOffer || request.maxBid).toLocaleString('en-US')}
+                      </p>
+                      <p className="text-sm text-gray-600">{lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}</p>
+                      <button
                         onClick={() => handleFinalStatusConfirm(request.id)}
                         className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
                       >
                         {t.confirm}
                       </button>
-                      </p>
-                      <p className="text-sm font-bold text-green-600">
-                        ${Math.round(request.finalPrice || request.counterOffer || request.maxBid).toLocaleString('en-US')}
-                      </p>Contraoferta
-                      
                     </div>
                   )}
 
