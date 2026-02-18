@@ -84,12 +84,12 @@ export async function POST(request: Request) {
       });
 
     } else if (userType === 'customer') {
-      // 顧客が送信：未確認の自分のリクエストを管理者に通知
+      // 顧客が送信：未完了（customer_confirmed=false）の自分のリクエストを管理者に通知
       const { data: myRequests } = await supabase
         .from('bid_requests')
         .select('customer_name, product_title, status, final_status')
         .eq('customer_email', email)
-        .eq('status', 'pending')
+        .eq('customer_confirmed', false)
         .order('created_at', { ascending: false });
 
       console.log('Customer requests for admin notification:', myRequests);
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
       if (!myRequests || myRequests.length === 0) {
         return NextResponse.json({
           success: false,
-          message: 'No hay solicitudes pendientes de enviar al administrador'
+          message: 'No hay solicitudes pendientes que requieran atención del administrador'
         });
       }
 
