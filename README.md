@@ -11,8 +11,9 @@
 - カウンターオファー対応（承諾・却下・再カウンター）
 - 落札・落札できず確認
 - 購入履歴表示
-- WhatsApp通知（管理者への更新通知）
 - スペイン語・ポルトガル語切り替え
+- WhatsApp通知（管理者への更新通知 - 自動番号正規化機能付き）
+- 端末のタイムゾーンに基づく一貫した時刻表示
 
 ### 管理者機能
 - 入札リクエスト管理
@@ -20,8 +21,9 @@
 - 顧客カウンターオファー対応
 - 落札・落札できず設定
 - 購入履歴表示（顧客別・期間別フィルター）
-- WhatsApp通知（顧客への更新通知）
+- WhatsApp通知（顧客への更新通知 - 自動番号正規化機能付き）
 - 自動価格計算（FOB費用込み・利益率20%）
+- 落札時の最終確定金額（Precio final）の適正算出ロジック
 
 ## 🚀 技術スタック
 
@@ -31,6 +33,7 @@
 - **Authentication**: Supabase Auth
 - **Notifications**: Twilio WhatsApp API
 - **Deployment**: Vercel
+- **UI Design**: Tailwind CSS (Optimized for mobile & compact desktop view)
 
 ## 📦 環境変数
 
