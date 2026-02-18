@@ -815,7 +815,7 @@ export default function Home() {
                             className="w-32 h-32 object-cover rounded"
                           />
                         )}
-                        <div className="flex-1 min-h-[128px] flex flex-col py-0.5">
+                        <div className="flex-1 min-h-[128px] flex flex-col py-0.5 min-w-0">
                           <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{request.productTitle}</h3>
                           <div className="flex flex-col gap-0.5">
                             <div className="text-xs">
@@ -1126,8 +1126,8 @@ export default function Home() {
                               className="w-32 h-32 object-cover rounded"
                             />
                           )}
-                          <div className="flex-1">
-                            <h3 className="text-sm font-semibold mb-2">{item.productTitle}</h3>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-semibold mb-2 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
                             <a
                               href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(item.productUrl)}`}
                               target="_blank"
