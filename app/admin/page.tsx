@@ -663,17 +663,17 @@ export default function AdminDashboard() {
                         終了まで: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
                       </p>
                     )}
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(request.status)}`}>
+                    <div className="flex flex-col gap-2 mb-3">
+                      <span className={`px-4 py-2 rounded-lg text-sm font-semibold text-center ${getStatusColor(request.status)}`}>
                         {getStatusText(request.status)}
                       </span>
                       {request.finalStatus && (
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getFinalStatusColor(request.finalStatus)}`}>
+                        <span className={`px-4 py-2 rounded-lg text-sm font-semibold text-center ${getFinalStatusColor(request.finalStatus)}`}>
                           {getFinalStatusText(request.finalStatus)}
                         </span>
                       )}
                       {request.adminNeedsConfirm && (
-                        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                        <span className="px-4 py-2 rounded-lg text-sm font-semibold text-center bg-red-100 text-red-800">
                           却下
                         </span>
                       )}
@@ -743,11 +743,12 @@ export default function AdminDashboard() {
                 {request.counterOffer && (
                   <div className="mb-2 p-3 bg-blue-50 rounded-lg">
                     <p className="text-sm text-gray-600">カウンターオファー:</p>
-                    <p className="font-semibold text-blue-700 text-base ml">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                    <p className="font-semibold text-blue-700 text-base">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
                     {request.shippingCostJpy > 0 && (
                       <p className="text-xs text-gray-600">送料: ¥{request.shippingCostJpy.toLocaleString()}</p>
                     )}
-                    {request.customerCounterOfferUsed && (
+                    {/* ✓承認済みをここに移動 */}
+                    {request.customerCounterOffer && request.customerCounterOfferUsed && (
                       <p className="text-xs text-green-600 mt-2">✓ 承認済</p>
                     )}
                   </div>
@@ -759,11 +760,9 @@ export default function AdminDashboard() {
                     <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
                     
                     {!request.customerCounterOfferUsed && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 mt-2">
                         <button
-                          onClick={() => {
-                            updateStatus(request.id, 'approved');
-                          }}
+                          onClick={() => updateStatus(request.id, 'approved')}
                           className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
                         >
                           承認
@@ -780,9 +779,10 @@ export default function AdminDashboard() {
                       </div>
                     )}
                     
+                    {/* ✓承認済みを削除（上の管理者カウンターオファーボックスに移動済み） */}
                     
                     {request.adminNeedsConfirm && (
-                      <p className="text-xs text-red-600 mt-2">✓ 却下済</p>
+                      <p className="text-xs text-red-600 mt-2">✓ 却下済み</p>
                     )}
                   </div>
                 )}
