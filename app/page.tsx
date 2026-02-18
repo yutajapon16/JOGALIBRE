@@ -922,8 +922,11 @@ export default function Home() {
                         
                         <div className="p-3 bg-blue-50 rounded mb-2">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base">
+                          <p className="font-semibold text-blue-700 text-base mb-2">
                             ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                          </p>
+                          <p className="text-xs text-gray-600 mb-2">
+                            {lang === 'es' ? 'Esperando resultado de la subasta' : 'Aguardando resultado do leilão'}
                           </p>
                           <button
                             onClick={() => handleCounterOfferResponse(request.id, 'accept')}
@@ -953,7 +956,13 @@ export default function Home() {
                       {request.customerCounterOffer && request.status === 'approved' && !request.finalStatus && (
                       <div className="mb-2 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                        <p className="font-semibold text-purple-700 text-base mb-2">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                        <p className="text-sm text-red-600 font-semibold mb-2">
+                          {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {lang === 'es' ? 'Esperando resultado de la subasta' : 'Aguardando resultado do leilão'}
+                        </p>
                       </div>
                     )}
 

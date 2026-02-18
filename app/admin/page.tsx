@@ -663,17 +663,17 @@ export default function AdminDashboard() {
                         終了まで: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
                       </p>
                     )}
-                    <div className="flex flex-col gap-2 mb-3">
-                      <span className={`px-4 py-2 rounded-lg text-sm font-semibold text-center ${getStatusColor(request.status)}`}>
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(request.status)}`}>
                         {getStatusText(request.status)}
                       </span>
                       {request.finalStatus && (
-                        <span className={`px-4 py-2 rounded-lg text-sm font-semibold text-center ${getFinalStatusColor(request.finalStatus)}`}>
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getFinalStatusColor(request.finalStatus)}`}>
                           {getFinalStatusText(request.finalStatus)}
                         </span>
                       )}
                       {request.adminNeedsConfirm && (
-                        <span className="px-4 py-2 rounded-lg text-sm font-semibold text-center bg-red-100 text-red-800">
+                        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
                           却下
                         </span>
                       )}
