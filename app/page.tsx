@@ -238,7 +238,8 @@ export default function Home() {
         customerFullName: item.customer_full_name,
         customerWhatsapp: item.customer_whatsapp,
         language: item.language,
-        confirmedAt: item.created_at  // confirmed_at の代わりに created_at を使用
+        confirmedAt: item.created_at,  // confirmed_at の代わりに created_at を使用
+        paid: item.paid || false
       }));
       
       setPurchasedItems(convertedItems);
@@ -1086,9 +1087,16 @@ export default function Home() {
                       </div>
                       
                       <div className="text-right pt-3 border-t">
-                        <p className="text-xl font-bold text-green-600">
-                          ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
-                        </p>
+                        <div className="flex items-center justify-end gap-3">
+                          {item.paid && (
+                            <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">
+                              ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
+                            </span>
+                          )}
+                          <p className={`text-xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                            ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1101,10 +1109,16 @@ export default function Home() {
                     </span>
                     <span className="text-3xl font-bold text-indigo-600">
                       ${Math.round(
-                        getFilteredPurchasedItems().reduce((sum, item) => sum + (item.finalPrice || 0), 0)
+                        getFilteredPurchasedItems()
+                          .filter(item => !item.paid)  // ← 支払済を除外
+                          .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
                       ).toLocaleString('en-US')}
                     </span>
                   </div>
+                  <p className="text-sm text-gray-500 text-right mt-1">
+                    {lang === 'es' ? 'Solo productos sin pagar' : 'Apenas produtos não pagos'} / 
+                    {lang === 'es' ? ' Pagados: ' : ' Pagos: '}{getFilteredPurchasedItems().filter(item => item.paid).length}
+                  </p>
                 </div>
               </>
             )}

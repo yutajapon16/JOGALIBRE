@@ -185,7 +185,8 @@ export default function AdminDashboard() {
         customerFullName: item.customer_full_name,
         customerWhatsapp: item.customer_whatsapp,
         language: item.language,
-        confirmedAt: item.created_at  // confirmed_at の代わりに created_at を使用
+        confirmedAt: item.created_at,  // confirmed_at の代わりに created_at を使用
+        paid: item.paid || false
       }));
       
       setPurchasedItems(convertedItems);
@@ -273,6 +274,22 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error confirming rejection:', error);
+    }
+  };
+
+  const updatePaidStatus = async (id: string, paid: boolean) => {
+    try {
+      const res = await fetch('/api/bid-request', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, paid })
+      });
+      
+      if (res.ok) {
+        fetchPurchasedItems();
+      }
+    } catch (error) {
+      console.error('Error updating paid status:', error);
     }
   };
 
@@ -567,16 +584,32 @@ export default function AdminDashboard() {
                       </div>
                       
                       <div className="text-right pt-3 border-t">
-                        <p className="text-xl sm:text-2xl font-bold text-green-600">
-                          ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
-                        </p>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={item.paid}
+                              onChange={(e) => updatePaidStatus(item.id, e.target.checked)}
+                              className="w-5 h-5 mr-2 cursor-pointer"
+                            />
+                            <span className="text-sm font-semibold text-gray-700">支払済</span>
+                          </label>
+                          <p className={`text-xl sm:text-2xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                            ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
+                          </p>
+                        </div>
+                        {item.paid && (
+                          <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                            ✓ 支払済
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
                 
                 <div className="border-t pt-4">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mb-2">
                     <span className="text-xl font-semibold">
                       合計{selectedCustomer !== 'all' && '（選択した顧客）'}:
                     </span>
@@ -584,10 +617,14 @@ export default function AdminDashboard() {
                       ${Math.round(
                         getFilteredPurchasedItems()
                           .filter(item => selectedCustomer === 'all' || item.customerName === selectedCustomer)
+                          .filter(item => !item.paid)  // ← 支払済を除外
                           .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
                       ).toLocaleString('en-US')}
                     </span>
                   </div>
+                  <p className="text-sm text-gray-500 text-right">
+                    未払い商品のみ / 支払済: {getFilteredPurchasedItems().filter(item => item.paid).length}件
+                  </p>
                 </div>
               </>
             )}

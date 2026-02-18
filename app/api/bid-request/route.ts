@@ -227,7 +227,7 @@ export async function DELETE(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, customerConfirmed, customerMessage, customerAction, customerCounterOffer } = body;
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid } = body;
 
     const updateData: any = {};
     
@@ -238,7 +238,10 @@ export async function PATCH(request: Request) {
     if (customerConfirmed !== undefined) updateData.customer_confirmed = customerConfirmed;
     if (customerMessage !== undefined) updateData.customer_message = customerMessage;
     if (customerCounterOffer !== undefined) updateData.customer_counter_offer = customerCounterOffer;
+    if (paid !== undefined) updateData.paid = paid;
     
+    // ... 残りのコードはそのまま
+
     // finalStatusが設定される場合
     if (finalStatus !== undefined) {
       updateData.final_status = finalStatus;
