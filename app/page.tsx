@@ -781,13 +781,13 @@ export default function Home() {
                           className="w-32 h-32 object-cover rounded"
                         />
                       )}
-                      <div className="flex-1">
-                        <h3 className="font-semibold mb-1">{request.productTitle}</h3>
+                      <div className="flex-1 h-32 flex flex-col">
+                        <h3 className="font-semibold mb-1 line-clamp-3 overflow-hidden text-ellipsis">{request.productTitle}</h3>
                         <a
                           href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(request.productUrl)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-indigo-600 hover:underline text-sm mb-2 inline-block"
+                          className="text-indigo-600 hover:underline text-sm inline-block mt-auto"
                         >
                           {t.viewOnYahoo}
                         </a>
@@ -796,17 +796,17 @@ export default function Home() {
                           <span className="font-semibold">{request.customerName}</span>
                         </div>
 
-                        <div className="flex gap-2 mb-2">
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(request.status)}`}>
+                        <div className="flex flex-col gap-1 mb-2">
+                          <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-center ${getStatusColor(request.status)}`}>
                             {t[request.status as keyof typeof t] || request.status}
                           </span>
                           {request.finalStatus && (
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${getFinalStatusColor(request.finalStatus)}`}>
+                            <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold text-center ${getFinalStatusColor(request.finalStatus)}`}>
                               {t[request.finalStatus as keyof typeof t]}
                             </span>
                           )}
                           {request.adminNeedsConfirm && (
-                            <span className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800">
+                            <span className="px-3 py-1.5 rounded-lg text-xs font-semibold text-center bg-red-100 text-red-800">
                               {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
                             </span>
                           )}
@@ -960,10 +960,12 @@ export default function Home() {
                     {request.finalStatus === 'won' && !request.customerConfirmed && (
                     <div className="mb-2 p-3 bg-green-50 rounded">
                       <p className="text-sm text-gray-600">{t.finalPrice}:</p>
-                      <p className="text-4xl font-bold text-green-600">
+                      <p className="text-base font-semibold text-green-600">
                         ${Math.round(request.finalPrice || request.counterOffer || request.maxBid).toLocaleString('en-US')}
                       </p>
-                      <p className="text-sm text-gray-600">{lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}</p>
+                      <p className="text-sm text-red-600 font-semibold mt-2">
+                        {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
+                      </p>
                       <button
                         onClick={() => handleFinalStatusConfirm(request.id)}
                         className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
