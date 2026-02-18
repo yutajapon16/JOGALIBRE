@@ -273,27 +273,31 @@ export default function Home() {
   };
 
   const formatDateTime = (dateString: string) => {
+    // ← デバッグログを追加
+    console.log('=== DEBUG formatDateTime ===');
+    console.log('Original dateString:', dateString);
+    
     const date = new Date(dateString);
     
-    // ユーザーのタイムゾーンで日時をフォーマット
-    const formatter = new Intl.DateTimeFormat('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+    console.log('Parsed date (UTC):', date.toISOString());
+    console.log('Local time:', date.toString());
+    console.log('Hours:', date.getHours());
+    console.log('Timezone offset (minutes):', date.getTimezoneOffset());
+    console.log('========================');
+    
+    // 日時をフォーマット
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    // タイムゾーン略称を取得（JST, BRT, ESTなど）
+    const timeZoneName = new Intl.DateTimeFormat('en-US', {
       timeZoneName: 'short'
-    });
+    }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || 'UTC';
     
-    const parts = formatter.formatToParts(date);
-    const year = parts.find(p => p.type === 'year')?.value;
-    const month = parts.find(p => p.type === 'month')?.value;
-    const day = parts.find(p => p.type === 'day')?.value;
-    const hour = parts.find(p => p.type === 'hour')?.value;
-    const minute = parts.find(p => p.type === 'minute')?.value;
-    const timezone = parts.find(p => p.type === 'timeZoneName')?.value;
-    
-    return `${year}/${month}/${day} ${hour}:${minute} ${timezone}`;
+    return `${day}/${month}/${year} ${hours}:${minutes} ${timeZoneName}`;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -901,7 +905,7 @@ export default function Home() {
                       <div className="mb-2 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
                         <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                        <p className="text-xs text-red-600 mb-1">
+                        <p className="text-xs text-red-600">
                           {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
                         </p>
                         <p className="text-xs text-gray-600">
@@ -915,7 +919,7 @@ export default function Home() {
                       <div className="mb-2 p-3 bg-blue-50 rounded">
                         <p className="text-sm text-gray-600">Contraoferta:</p>
                         <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
-                        <p className="text-xs text-red-600 mb-1">
+                        <p className="text-xs text-red-600">
                           {lang === 'es' ? 'Tu aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
                         </p>
                         <p className="text-xs text-gray-600">
@@ -971,12 +975,12 @@ export default function Home() {
                             ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
                           </p>
                           <p className="text-xs text-red-600">
-                            {lang === 'es' ? 'Rechazado por el administrador' : 'Rejeitado pelo administrador'}
+                            {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
                           </p>
                         </div>
                       </div>
                     )}
-                    
+
                      {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
                       <div className="mb-2 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
@@ -987,7 +991,7 @@ export default function Home() {
                       <div className="mb-2 p-3 bg-purple-50 rounded">
                         <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
                         <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                        <p className="text-sm text-red-600 mb-1">
+                        <p className="text-xs text-red-600">
                           {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
                         </p>
                         <p className="text-xs text-gray-600">
@@ -1002,7 +1006,7 @@ export default function Home() {
                       <p className="text-base font-semibold text-green-600">
                         ${Math.round(request.finalPrice || request.counterOffer || request.maxBid).toLocaleString('en-US')}
                       </p>
-                      <p className="text-sm text-red-600 font-semibold mt-2">
+                      <p className="text-xs text-red-600 font-semibold">
                         {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
                       </p>
                       <button

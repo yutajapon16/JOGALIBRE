@@ -351,27 +351,31 @@ export default function AdminDashboard() {
   };
 
   const formatDateTime = (dateString: string) => {
+    // ← デバッグログを追加
+    console.log('=== DEBUG formatDateTime ===');
+    console.log('Original dateString:', dateString);
+    
     const date = new Date(dateString);
     
-    // ユーザーのタイムゾーンで日時をフォーマット
-    const formatter = new Intl.DateTimeFormat('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+    console.log('Parsed date (UTC):', date.toISOString());
+    console.log('Local time:', date.toString());
+    console.log('Hours:', date.getHours());
+    console.log('Timezone offset (minutes):', date.getTimezoneOffset());
+    console.log('========================');
+    
+    // 日時をフォーマット
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    // タイムゾーン略称を取得（JST, BRT, ESTなど）
+    const timeZoneName = new Intl.DateTimeFormat('en-US', {
       timeZoneName: 'short'
-    });
+    }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || 'UTC';
     
-    const parts = formatter.formatToParts(date);
-    const year = parts.find(p => p.type === 'year')?.value;
-    const month = parts.find(p => p.type === 'month')?.value;
-    const day = parts.find(p => p.type === 'day')?.value;
-    const hour = parts.find(p => p.type === 'hour')?.value;
-    const minute = parts.find(p => p.type === 'minute')?.value;
-    const timezone = parts.find(p => p.type === 'timeZoneName')?.value;
-    
-    return `${year}/${month}/${day} ${hour}:${minute} ${timezone}`;
+    return `${year}/${month}/${day} ${hours}:${minutes} ${timeZoneName}`;
   };
 
   const getTimeRemaining = (endTime: string) => {
