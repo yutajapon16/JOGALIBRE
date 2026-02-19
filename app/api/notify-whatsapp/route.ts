@@ -60,9 +60,7 @@ export async function POST(request: Request) {
         const lang = requests[0].language || 'es';
         const count = requests.length;
 
-        const message = lang === 'es'
-          ? `🔔 JOGALIBRE: Tienes ${count} solicitud(es) con actualizaciones. Revisa tu panel: https://jogalibre.vercel.app/`
-          : `🔔 JOGALIBRE: Você tem ${count} solicitação(ões) com atualizações. Confira seu painel: https://jogalibre.vercel.app/`;
+        const message = `🔔 JOGALIBRE: Tienes ${count} solicitud(es) con actualizaciones. / Você tem ${count} solicitação(ões) com atualizações.\nRevisa tu panel / Confira seu painel: https://jogalibre.vercel.app/`;
 
         const result = await sendWhatsAppMessage(userInfo.whatsapp, message);
         results.push({
@@ -123,7 +121,7 @@ export async function POST(request: Request) {
       const userInfo = await getUserInfo(email);
       const displayName = userInfo?.full_name || customerName;
 
-      const message = `🔔 JOGALIBRE ADMIN: ${displayName} tiene ${count} solicitud(es) pendientes de revisar. URL: https://jogalibre.vercel.app/admin`;
+      const message = `🔔 JOGALIBRE: ${displayName} 様から ${count} 件の確認待ちリクエストがあります。\n管理画面: https://jogalibre.vercel.app/admin`;
 
       const result = await sendWhatsAppMessage(adminWhatsApp, message);
       console.log('Admin notification result:', result);
