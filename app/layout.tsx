@@ -38,6 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="color-scheme" content="light only" />
         <link rel="icon" href="/icons/customer-icon.png" type="image/png" />
         <link rel="apple-touch-icon" href="/icons/customer-icon.png" />
       </head>
