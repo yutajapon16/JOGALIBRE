@@ -165,20 +165,26 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // セッション永続化
+    // 初回セッション復元
     getCurrentUser().then(user => {
       if (user?.role === 'customer') {
         setCurrentUser(user);
       }
     });
 
-    // ページリロード時もセッションを維持
-    const handleBeforeUnload = () => {
-      // セッションを保持（何もしない）
-    };
+    // セッション変更を監視（トークンリフレッシュ後の自動復元）
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+      } else if (session?.user) {
+        const user = await getCurrentUser();
+        if (user?.role === 'customer') {
+          setCurrentUser(user);
+        }
+      }
+    });
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchExchangeRate = async () => {

@@ -25,11 +25,26 @@ export default function AdminDashboard() {
 
   // セッションチェック（最初に実行）
   useEffect(() => {
+    // 初回セッション復元
     getCurrentUser().then(user => {
       if (user?.role === 'admin') {
         setCurrentUser(user);
       }
     });
+
+    // セッション変更を監視（トークンリフレッシュ後の自動復元）
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+      } else if (session?.user) {
+        const user = await getCurrentUser();
+        if (user?.role === 'admin') {
+          setCurrentUser(user);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // データ取得（ログイン後のみ実行）
