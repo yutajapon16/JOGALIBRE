@@ -1,6 +1,6 @@
 {
-    "name": "JOGALIBRE 管理画面",
-    "short_name": "JL管理",
+    "name": "管理画面",
+    "short_name": "管理画面",
     "description": "JOGALIBRE 管理者ダッシュボード",
     "start_url": "/admin",
     "display": "standalone",
@@ -9,10 +9,10 @@
     "orientation": "portrait",
     "icons": [
         {
-            "src": "/icons/admin-icon.svg",
-            "sizes": "any",
-            "type": "image/svg+xml",
-            "purpose": "any"
+            "src": "/icons/admin-icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ]
 }

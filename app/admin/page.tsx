@@ -15,11 +15,11 @@ function useAdminManifest() {
     // favicon を管理者用に差し替え
     const iconLink = document.querySelector('link[rel="icon"]');
     if (iconLink) {
-      iconLink.setAttribute('href', '/icons/admin-icon.svg');
+      iconLink.setAttribute('href', '/icons/admin-icon.png');
     }
     const appleIconLink = document.querySelector('link[rel="apple-touch-icon"]');
     if (appleIconLink) {
-      appleIconLink.setAttribute('href', '/icons/admin-icon.svg');
+      appleIconLink.setAttribute('href', '/icons/admin-icon.png');
     }
   }, []);
 }
