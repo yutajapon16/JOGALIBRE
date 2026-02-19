@@ -159,7 +159,14 @@ export default function AdminDashboard() {
 
   const fetchBidRequests = async () => {
     try {
-      const res = await fetch('/api/bid-request');
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/bid-request', {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
       const data = await res.json();
 
       console.log('=== ADMIN DEBUG ===');
@@ -207,7 +214,14 @@ export default function AdminDashboard() {
 
   const fetchPurchasedItems = async () => {
     try {
-      const res = await fetch('/api/bid-request?purchased=true');
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/bid-request?purchased=true', {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
       const data = await res.json();
 
       // スネークケースからキャメルケースに変換
@@ -342,9 +356,15 @@ export default function AdminDashboard() {
 
   const updatePaidStatus = async (id: string, paid: boolean) => {
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       const res = await fetch('/api/bid-request', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
         body: JSON.stringify({ id, paid })
       });
 

@@ -541,9 +541,15 @@ export default function Home() {
 
     setLoading(true);
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       const res = await fetch('/api/yahoo-product', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
         body: JSON.stringify({ url: searchUrl })
       });
 
