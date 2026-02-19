@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
 
 const translations = {
   es: {
@@ -75,6 +76,11 @@ const translations = {
     newPassword: 'Nueva contraseña',
     confirmNewPassword: 'Confirmar nueva contraseña',
     search: 'Buscar',
+    notifications: 'Notificaciones Push',
+    enableNotifications: 'Activar notificaciones',
+    disableNotifications: 'Desactivar notificaciones',
+    notificationsEnabled: 'Notificaciones activadas \u2705',
+    notificationsDisabled: 'Notificaciones desactivadas',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -145,6 +151,11 @@ const translations = {
     newPassword: 'Nova senha',
     confirmNewPassword: 'Confirmar nova senha',
     search: 'Buscar',
+    notifications: 'Notifica\u00e7\u00f5es Push',
+    enableNotifications: 'Ativar notifica\u00e7\u00f5es',
+    disableNotifications: 'Desativar notifica\u00e7\u00f5es',
+    notificationsEnabled: 'Notifica\u00e7\u00f5es ativadas \u2705',
+    notificationsDisabled: 'Notifica\u00e7\u00f5es desativadas',
   }
 };
 
@@ -173,6 +184,7 @@ export default function Home() {
   const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
   const [profileSaving, setProfileSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState<'loading' | 'enabled' | 'disabled' | 'unsupported'>('loading');
   const [purchasedTotal, setPurchasedTotal] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
@@ -926,11 +938,23 @@ export default function Home() {
                   if (tab.key === 'purchased') fetchPurchasedItems();
                   if (tab.key === 'mypage' && currentUser) {
                     setProfileForm({ fullName: currentUser.fullName || '', whatsapp: currentUser.whatsapp || '' });
+                    // 通知状態をチェック
+                    const permission = getNotificationPermission();
+                    if (permission === 'unsupported') {
+                      setNotificationStatus('unsupported');
+                    } else if (permission === 'granted') {
+                      // サブスクリプションがDBにあるか確認
+                      fetch(`/api/push-subscribe?userId=${currentUser.id}`)
+                        .then(r => r.ok ? setNotificationStatus('enabled') : setNotificationStatus('disabled'))
+                        .catch(() => setNotificationStatus('disabled'));
+                    } else {
+                      setNotificationStatus('disabled');
+                    }
                   }
                 }}
                 className={`flex-1 py-3 text-center text-xs sm:text-sm font-medium border-b-2 transition ${activeTab === tab.key
-                    ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
               >
                 <span className="block text-lg">{tab.icon}</span>
@@ -1466,6 +1490,64 @@ export default function Home() {
                 >
                   {passwordSaving ? '...' : t.changePassword}
                 </button>
+              </div>
+            </div>
+
+            {/* プッシュ通知設定 */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4">{t.notifications}</h3>
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  {notificationStatus === 'enabled' ? t.notificationsEnabled : t.notificationsDisabled}
+                </p>
+                {notificationStatus === 'unsupported' ? (
+                  <p className="text-sm text-red-500">
+                    {lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador n\u00e3o suporta notifica\u00e7\u00f5es push.'}
+                  </p>
+                ) : notificationStatus === 'enabled' ? (
+                  <button
+                    onClick={async () => {
+                      if (!currentUser) return;
+                      try {
+                        await fetch('/api/push-subscribe', {
+                          method: 'DELETE',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ userId: currentUser.id }),
+                        });
+                        setNotificationStatus('disabled');
+                      } catch (err) {
+                        console.error('Error disabling notifications:', err);
+                      }
+                    }}
+                    className="w-full bg-gray-500 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 transition"
+                  >
+                    {t.disableNotifications}
+                  </button>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      if (!currentUser) return;
+                      try {
+                        const subscription = await requestNotificationPermission();
+                        if (subscription) {
+                          await fetch('/api/push-subscribe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: currentUser.id, subscription }),
+                          });
+                          setNotificationStatus('enabled');
+                          alert(lang === 'es' ? '\u00a1Notificaciones activadas!' : 'Notifica\u00e7\u00f5es ativadas!');
+                        }
+                      } catch (err) {
+                        console.error('Error enabling notifications:', err);
+                        alert(lang === 'es' ? 'Error al activar notificaciones.' : 'Erro ao ativar notifica\u00e7\u00f5es.');
+                      }
+                    }}
+                    className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
+                  >
+                    \ud83d\udd14 {t.enableNotifications}
+                  </button>
+                )}
               </div>
             </div>
 

@@ -319,6 +319,26 @@ export default function AdminDashboard() {
         setRejectReason('');
         setCounterOffer('');
         setShippingCostJpy('');
+
+        // プッシュ通知を送信（対象顧客のリクエストを特定）
+        const targetRequest = bidRequests.find(r => r.id === id);
+        if (targetRequest?.customerEmail) {
+          const statusMessages: Record<string, string> = {
+            approved: '✅ Su solicitud ha sido aprobada / Sua solicitação foi aprovada',
+            rejected: '❌ Su solicitud ha sido rechazada / Sua solicitação foi rejeitada',
+            counter_offer: '💬 Tiene una contraoferta / Você tem uma contraoferta',
+          };
+          fetch('/api/push-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: targetRequest.customerEmail,
+              title: 'JOGALIBRE',
+              body: statusMessages[status] || `Estado actualizado: ${status}`,
+              url: '/',
+            }),
+          }).catch(err => console.error('Push notification error:', err));
+        }
       } else {
         console.error('updateStatus failed:', res.status);
         alert('更新に失敗しました。ページをリロードしてください。');
