@@ -1,0 +1,18 @@
+{
+    "name": "JOGALIBRE",
+    "short_name": "JOGALIBRE",
+    "description": "ヤフオク代理入札サービス",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4f46e5",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/icons/customer-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ]
+}

@@ -4,7 +4,28 @@ import { useState, useEffect } from 'react';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
+// 管理者画面用のPWA manifest差し替え
+function useAdminManifest() {
+  useEffect(() => {
+    // manifest を管理者用に差し替え
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+      manifestLink.setAttribute('href', '/manifest-admin.json');
+    }
+    // favicon を管理者用に差し替え
+    const iconLink = document.querySelector('link[rel="icon"]');
+    if (iconLink) {
+      iconLink.setAttribute('href', '/icons/admin-icon.svg');
+    }
+    const appleIconLink = document.querySelector('link[rel="apple-touch-icon"]');
+    if (appleIconLink) {
+      appleIconLink.setAttribute('href', '/icons/admin-icon.svg');
+    }
+  }, []);
+}
+
 export default function AdminDashboard() {
+  useAdminManifest();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [bidRequests, setBidRequests] = useState<any[]>([]);
