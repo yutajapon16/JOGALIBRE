@@ -119,7 +119,11 @@ export async function POST(request: Request) {
       const customerName = myRequests[0].customer_name;
       const count = myRequests.length;
 
-      const message = `🔔 JOGALIBRE ADMIN: ${customerName} tiene ${count} solicitud(es) pendientes de revisar. URL: https://jogalibre.vercel.app/admin`;
+      // user_roles テーブルから氏名を取得
+      const userInfo = await getUserInfo(email);
+      const displayName = userInfo?.full_name || customerName;
+
+      const message = `🔔 JOGALIBRE ADMIN: ${displayName} tiene ${count} solicitud(es) pendientes de revisar. URL: https://jogalibre.vercel.app/admin`;
 
       const result = await sendWhatsAppMessage(adminWhatsApp, message);
       console.log('Admin notification result:', result);
@@ -155,7 +159,7 @@ async function getUserInfo(email: string) {
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
-      .select('whatsapp')
+      .select('whatsapp, full_name')
       .eq('id', user.id)
       .single();
 
