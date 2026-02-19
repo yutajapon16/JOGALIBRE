@@ -213,10 +213,19 @@ export default function Home() {
 
       const data = await res.json();
 
-      if (data.success) {
+      if (data.outsideWindow) {
+        // 24時間ウィンドウ外エラー
         alert(lang === 'es'
-          ? 'Notificación enviada al administrador'
-          : 'Notificação enviada ao administrador');
+          ? '⚠️ No se pudo enviar la notificación.\n\nEl administrador necesita reactivar WhatsApp Sandbox.\n\nPasos:\n1. Enviar un mensaje a +1 415 523 8886 en WhatsApp\n2. Escribir "join" seguido del código del Sandbox\n3. Intentar de nuevo'
+          : '⚠️ Não foi possível enviar a notificação.\n\nO administrador precisa reativar o WhatsApp Sandbox.\n\nPassos:\n1. Enviar uma mensagem para +1 415 523 8886 no WhatsApp\n2. Escrever "join" seguido do código do Sandbox\n3. Tentar novamente');
+      } else if (data.success && data.notificationsSent > 0) {
+        alert(lang === 'es'
+          ? '✅ Notificación enviada al administrador'
+          : '✅ Notificação enviada ao administrador');
+      } else if (data.success && data.notificationsSent === 0) {
+        alert(lang === 'es'
+          ? '⚠️ No se pudo enviar. El administrador puede necesitar reactivar el Sandbox de WhatsApp.'
+          : '⚠️ Não foi possível enviar. O administrador pode precisar reativar o Sandbox do WhatsApp.');
       } else {
         alert(data.message || (lang === 'es' ? 'Error al enviar' : 'Erro ao enviar'));
       }

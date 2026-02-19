@@ -59,11 +59,18 @@ export async function sendWhatsAppMessage(
 
     console.log('WhatsApp message sent successfully:', response.sid);
     return { success: true, messageSid: response.sid };
-  } catch (error) {
+  } catch (error: any) {
     console.error('WhatsApp send error:', error);
+
+    // エラー63016: 24時間ウィンドウ外（Sandbox再オプトインが必要）
+    const isOutsideWindow = error?.code === 63016 ||
+      error?.message?.includes('outside the allowed window') ||
+      error?.moreInfo?.includes('63016');
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      outsideWindow: isOutsideWindow
     };
   }
 }

@@ -98,8 +98,15 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
 
-      if (data.success) {
-        alert(`WhatsApp通知を${data.notificationsSent}件送信しました`);
+      if (data.outsideWindow && data.outsideWindowCount > 0) {
+        // 24時間ウィンドウ外エラーがある場合
+        const sent = data.notificationsSent || 0;
+        const failed = data.outsideWindowCount || 0;
+        alert(`⚠️ WhatsApp通知: ${sent}件成功 / ${failed}件失敗\n\n一部の顧客がSandboxの24時間ウィンドウ外です。\n\n対象の顧客に以下を依頼してください：\n1. WhatsAppで +1 415 523 8886 にメッセージを送信\n2. Sandboxの参加コードを送信\n3. その後、再度通知を試してください`);
+      } else if (data.success && data.notificationsSent > 0) {
+        alert(`✅ WhatsApp通知を${data.notificationsSent}件送信しました`);
+      } else if (data.success && data.notificationsSent === 0) {
+        alert('⚠️ 通知対象がないか、送信に失敗しました。顧客がSandboxに再参加する必要があるかもしれません。');
       } else {
         alert(data.message || 'エラーが発生しました');
       }

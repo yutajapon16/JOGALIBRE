@@ -69,16 +69,21 @@ export async function POST(request: Request) {
           email: customerEmail,
           whatsapp: userInfo.whatsapp,
           success: result.success,
-          error: result.error
+          error: result.error,
+          outsideWindow: result.outsideWindow || false
         });
       }
 
       console.log('Send results:', results);
 
+      const outsideWindowCount = results.filter(r => r.outsideWindow).length;
+
       return NextResponse.json({
         success: true,
         notificationsSent: results.filter(r => r.success).length,
         total: results.length,
+        outsideWindow: outsideWindowCount > 0,
+        outsideWindowCount,
         details: results
       });
 
@@ -122,7 +127,8 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: result.success,
         notificationsSent: result.success ? 1 : 0,
-        error: result.error
+        error: result.error,
+        outsideWindow: result.outsideWindow || false
       });
     }
 
