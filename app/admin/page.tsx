@@ -396,6 +396,46 @@ export default function AdminDashboard() {
     }
   };
 
+  // CSVエクスポート機能
+  const exportPurchasedItemsCSV = () => {
+    const items = getFilteredPurchasedItems()
+      .sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime());
+
+    if (items.length === 0) {
+      alert('エクスポートするデータがありません。');
+      return;
+    }
+
+    // CSVヘッダー
+    const headers = ['日付', '顧客名', '氏名', 'メール', 'WhatsApp', '商品名', '確定金額(USD)', '支払い状態', '商品URL'];
+
+    // CSVデータ行
+    const rows = items.map(item => [
+      formatDateTime(item.confirmedAt),
+      item.customerName,
+      item.customerFullName || '',
+      item.customerEmail,
+      item.customerWhatsapp || '',
+      `"${(item.productTitle || '').replace(/"/g, '""')}"`,
+      item.finalPrice ? Math.round(item.finalPrice) : '',
+      item.paid ? '支払い済み' : '未払い',
+      item.productUrl || ''
+    ]);
+
+    // BOM付きUTF-8でCSV生成（Excelで文字化けしないように）
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    // ダウンロード
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `JOGALIBRE_購入履歴_${dateStr}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -647,6 +687,13 @@ export default function AdminDashboard() {
                   <option value="90days">過去90日間</option>
                 </select>
               </div>
+
+              <button
+                onClick={exportPurchasedItemsCSV}
+                className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition text-sm sm:text-base"
+              >
+                📥 CSVダウンロード
+              </button>
             </div>
 
             {purchasedItems.length === 0 ? (
