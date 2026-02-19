@@ -275,12 +275,7 @@ export default function Home() {
     return Array.from(uniqueCustomers.values()).sort((a, b) => a.localeCompare(b));
   };
 
-  const getFilteredItems = () => {
-    if (selectedCustomer === 'all') {
-      return purchasedItems;
-    }
-    return purchasedItems.filter(item => item.customerName === selectedCustomer);
-  };
+
 
   const getCustomerTotal = (customerName: string) => {
     return purchasedItems
@@ -393,7 +388,7 @@ export default function Home() {
     let filtered = purchasedItems;
 
     // 顧客名でフィルタリング
-    if (selectedCustomer !== 'all') {
+    if (selectedCustomer && selectedCustomer !== 'all') {
       filtered = filtered.filter(item => item.customerName === selectedCustomer);
     }
 
