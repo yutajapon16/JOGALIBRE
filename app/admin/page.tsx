@@ -259,9 +259,15 @@ export default function AdminDashboard() {
 
   const updateStatus = async (id: string, status: string, reason?: string, counterOfferAmount?: number, shippingJpy?: number) => {
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       const res = await fetch('/api/bid-request', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
         body: JSON.stringify({
           id,
           status,
@@ -278,32 +284,52 @@ export default function AdminDashboard() {
         setRejectReason('');
         setCounterOffer('');
         setShippingCostJpy('');
+      } else {
+        console.error('updateStatus failed:', res.status);
+        alert('更新に失敗しました。ページをリロードしてください。');
       }
     } catch (error) {
       console.error('Error updating status:', error);
+      alert('通信エラーが発生しました。');
     }
   };
 
   const updateFinalStatus = async (id: string, finalStatus: string) => {
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       const res = await fetch('/api/bid-request', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
         body: JSON.stringify({ id, finalStatus })
       });
 
       if (res.ok) {
         fetchBidRequests();
+      } else {
+        console.error('updateFinalStatus failed:', res.status);
+        alert('更新に失敗しました。ページをリロードしてください。');
       }
     } catch (error) {
       console.error('Error updating final status:', error);
+      alert('通信エラーが発生しました。');
     }
   };
 
   const confirmCustomerRejection = async (id: string) => {
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       const res = await fetch('/api/bid-request?id=' + id, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
       });
 
       if (res.ok) {
