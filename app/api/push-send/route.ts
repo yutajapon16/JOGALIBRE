@@ -3,10 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 
 // Web Push設定
+const VAPID_PUBLIC_KEY = 'BMgO11arVCaq8epmUOq7YtLPY8F2x2dyPl4bUvkx0c-T-6su72j0FR4Nd2CV8qgeEpDlCTCyvi9pfuFnguHkHUs';
+const VAPID_PRIVATE_KEY = '4cb0XpnJ0b4H1-ZXVocTAqgavZR7s4_w1Vidgy-rN5g';
+
 webpush.setVapidDetails(
     'mailto:export@joga.ltd',
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
 );
 
 const supabase = createClient(

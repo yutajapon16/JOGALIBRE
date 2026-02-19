@@ -1,4 +1,5 @@
 // プッシュ通知ユーティリティ（クライアント側）
+const VAPID_PUBLIC_KEY = 'BMgO11arVCaq8epmUOq7YtLPY8F2x2dyPl4bUvkx0c-T-6su72j0FR4Nd2CV8qgeEpDlCTCyvi9pfuFnguHkHUs';
 export async function requestNotificationPermission(): Promise<string | null> {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
         console.warn('プッシュ通知はこのブラウザでサポートされていません');
@@ -15,7 +16,7 @@ export async function requestNotificationPermission(): Promise<string | null> {
     const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
-            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+            VAPID_PUBLIC_KEY
         ) as any,
     });
 
