@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, type User } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 
 const translations = {
   es: {
@@ -223,7 +224,14 @@ export default function Home() {
 
   const fetchPurchasedItems = async () => {
     try {
-      const res = await fetch(`/api/bid-request?email=${currentUser?.email}&purchased=true`);
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/bid-request?email=${currentUser?.email}&purchased=true`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
       const data = await res.json();
 
       // スネークケースからキャメルケースに変換
@@ -406,9 +414,20 @@ export default function Home() {
     }
 
     try {
+      // 念のためセッションから最新のトークンを取得
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      console.log('=== API Fetch Debug ===');
+      console.log('Token exists:', !!accessToken);
+      console.log('Session user:', clientSession?.user?.email);
+
       const res = await fetch('/api/bid-request', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
         body: JSON.stringify({
           productId: selectedProduct.id,
           productTitle: selectedProduct.title,
@@ -450,7 +469,14 @@ export default function Home() {
 
   const fetchMyRequests = async () => {
     try {
-      const res = await fetch(`/api/bid-request?email=${currentUser?.email}`);
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/bid-request?email=${currentUser?.email}`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
       const data = await res.json();
 
       // スネークケースからキャメルケースに変換
@@ -530,10 +556,16 @@ export default function Home() {
 
   const handleCounterOfferResponse = async (requestId: string, action: 'accept' | 'reject' | 'counter', counterAmount?: number) => {
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       if (action === 'accept') {
         await fetch('/api/bid-request', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+          },
           body: JSON.stringify({
             id: requestId,
             customerAction: 'accept_counter'
@@ -542,7 +574,10 @@ export default function Home() {
       } else if (action === 'reject') {
         await fetch('/api/bid-request', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+          },
           body: JSON.stringify({
             id: requestId,
             customerAction: 'reject_counter'
@@ -551,7 +586,10 @@ export default function Home() {
       } else if (action === 'counter' && counterAmount) {
         await fetch('/api/bid-request', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+          },
           body: JSON.stringify({
             id: requestId,
             customerCounterOffer: counterAmount
@@ -567,9 +605,15 @@ export default function Home() {
 
   const handleFinalStatusConfirm = async (requestId: string, message?: string) => {
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       await fetch('/api/bid-request', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
         body: JSON.stringify({
           id: requestId,
           customerConfirmed: true,
@@ -586,8 +630,14 @@ export default function Home() {
   // ← ここに追加！
   const confirmRejection = async (requestId: string) => {
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       const res = await fetch(`/api/bid-request?id=${requestId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
       });
 
       if (res.ok) {

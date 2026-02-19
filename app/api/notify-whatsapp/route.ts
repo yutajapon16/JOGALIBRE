@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendWhatsAppMessage } from '@/lib/whatsapp';
 
@@ -14,7 +13,7 @@ export async function POST(request: Request) {
 
     if (userType === 'admin') {
       // 管理者が送信：未確認の顧客に通知
-      const { data: pendingRequests, error } = await supabase
+      const { data: pendingRequests, error } = await supabaseAdmin
         .from('bid_requests')
         .select('customer_email, customer_name, product_title, language, status, final_status')
         .eq('customer_confirmed', false)
@@ -85,7 +84,7 @@ export async function POST(request: Request) {
 
     } else if (userType === 'customer') {
       // 顧客が送信：未完了（customer_confirmed=false）の自分のリクエストを管理者に通知
-      const { data: myRequests } = await supabase
+      const { data: myRequests } = await supabaseAdmin
         .from('bid_requests')
         .select('customer_name, product_title, status, final_status')
         .eq('customer_email', email)

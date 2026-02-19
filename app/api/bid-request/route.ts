@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/auth-helpers-nextjs';
@@ -29,21 +28,47 @@ export async function POST(request: Request) {
         },
       }
     );
-    const { data: { session }, error: sessionError } = await supabaseRoute.auth.getSession();
+    let { data: { session }, error: sessionError } = await supabaseRoute.auth.getSession();
+
+    // クッキーでセッションが見つからない場合、Authorization ヘッダーを試行
+    let userFromToken = session?.user || null;
+    if (!session) {
+      const authHeader = request.headers.get('Authorization');
+      console.log('Auth Header:', authHeader ? 'Present (starts with ' + authHeader.substring(0, 15) + '...)' : 'MISSING');
+
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        const { data: { user: oauthUser }, error: oauthError } = await supabaseAdmin.auth.getUser(token);
+
+        if (oauthError) {
+          console.error('Token verification error:', oauthError.message);
+        }
+
+        if (!oauthError && oauthUser) {
+          userFromToken = oauthUser;
+          console.log('Authenticated via Authorization header successfully');
+        }
+      }
+    }
 
     console.log('=== Bid Request POST Debug ===');
     if (sessionError) console.error('Session Error:', sessionError);
-    console.log('Session User:', session?.user?.email, 'ID:', session?.user?.id);
+    console.log('Auth Method:', session ? 'Cookie' : (userFromToken ? 'Header' : 'None'));
+    console.log('User:', userFromToken?.email, 'ID:', userFromToken?.id);
 
-    if (!session) {
-      console.error('No session found');
+    if (!userFromToken) {
+      console.error('No authenticated user found (Cookie or Token)');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // session ではなく userFromToken を以降で使用する準備
+    // (既存の session.user.id 参照を userFromToken.id に読み替える)
+    const effectiveUser = userFromToken;
 
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', effectiveUser.id)
       .single();
 
     if (roleError) {
@@ -56,7 +81,7 @@ export async function POST(request: Request) {
     const { productId, productTitle, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language } = body;
 
     // 顧客の場合は自身のメールアドレスを強制使用
-    const finalEmail = isAdmin ? customerEmail : session.user.email;
+    const finalEmail = isAdmin ? customerEmail : effectiveUser.email;
     console.log('Final Email for record:', finalEmail);
 
     const bidRequest = {
@@ -139,18 +164,33 @@ export async function GET(request: Request) {
     );
     const { data: { session } } = await supabaseRoute.auth.getSession();
 
+    // クッキーでセッションが見つからない場合、Authorization ヘッダーを試行
+    let userFromToken = session?.user || null;
     if (!session) {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        const { data: { user: oauthUser } } = await supabaseAdmin.auth.getUser(token);
+        if (oauthUser) {
+          userFromToken = oauthUser;
+        }
+      }
+    }
+
+    if (!userFromToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const effectiveUser = userFromToken;
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', effectiveUser.id)
       .single();
 
     const isAdmin = roleData?.role === 'admin';
-    const userEmail = session.user.email;
+    const userEmail = effectiveUser.email;
 
     const { searchParams } = new URL(request.url);
     const emailParam = searchParams.get('email');
@@ -311,14 +351,29 @@ export async function DELETE(request: Request) {
     );
     const { data: { session } } = await supabaseRoute.auth.getSession();
 
+    // クッキーでセッションが見つからない場合、Authorization ヘッダーを試行
+    let userFromToken = session?.user || null;
     if (!session) {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        const { data: { user: oauthUser } } = await supabaseAdmin.auth.getUser(token);
+        if (oauthUser) {
+          userFromToken = oauthUser;
+        }
+      }
+    }
+
+    if (!userFromToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const effectiveUser = userFromToken;
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', effectiveUser.id)
       .single();
 
     const isAdmin = roleData?.role === 'admin';
@@ -337,7 +392,7 @@ export async function DELETE(request: Request) {
         .eq('id', id)
         .single();
 
-      if (!bidRequest || bidRequest.customer_email !== session.user.email) {
+      if (!bidRequest || bidRequest.customer_email !== effectiveUser.email) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
@@ -384,14 +439,29 @@ export async function PATCH(request: Request) {
     );
     const { data: { session } } = await supabaseRoute.auth.getSession();
 
+    // クッキーでセッションが見つからない場合、Authorization ヘッダーを試行
+    let userFromToken = session?.user || null;
     if (!session) {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        const { data: { user: oauthUser } } = await supabaseAdmin.auth.getUser(token);
+        if (oauthUser) {
+          userFromToken = oauthUser;
+        }
+      }
+    }
+
+    if (!userFromToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const effectiveUser = userFromToken;
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', effectiveUser.id)
       .single();
 
     const isAdmin = roleData?.role === 'admin';
@@ -413,7 +483,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Not Found' }, { status: 404 });
     }
 
-    if (!isAdmin && currentRequest.customer_email !== session.user.email) {
+    if (!isAdmin && currentRequest.customer_email !== effectiveUser.email) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
