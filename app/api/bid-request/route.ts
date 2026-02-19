@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: roleData } = await supabase
+    const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('id', session.user.id)
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       admin_needs_confirm: false
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('bid_requests')
       .insert([bidRequest])
       .select()
@@ -113,7 +113,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: roleData } = await supabase
+    const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('id', session.user.id)
@@ -134,7 +134,7 @@ export async function GET(request: Request) {
       let query;
       if (isAdmin && !emailParam) {
         // 管理者が全顧客の購入済み商品を見る場合
-        query = supabase
+        query = supabaseAdmin
           .from('bid_requests')
           .select('*')
           .eq('final_status', 'won')
@@ -142,7 +142,7 @@ export async function GET(request: Request) {
           .order('created_at', { ascending: false });
       } else {
         // 特定の顧客（または自分自身）の購入済み商品を見る場合
-        query = supabase
+        query = supabaseAdmin
           .from('bid_requests')
           .select('*')
           .eq('customer_email', targetEmail)
@@ -180,14 +180,14 @@ export async function GET(request: Request) {
     let requestsQuery;
     if (isAdmin && !emailParam) {
       // 管理者が全リクエストを見る場合
-      requestsQuery = supabase
+      requestsQuery = supabaseAdmin
         .from('bid_requests')
         .select('*')
         .neq('customer_confirmed', true)
         .order('created_at', { ascending: true });
     } else {
       // 特定の顧客（または自分自身）のリクエストを見る場合
-      requestsQuery = supabase
+      requestsQuery = supabaseAdmin
         .from('bid_requests')
         .select('*')
         .eq('customer_email', targetEmail)
@@ -276,7 +276,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: roleData } = await supabase
+    const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('id', session.user.id)
@@ -292,7 +292,7 @@ export async function DELETE(request: Request) {
 
     // 認可チェック
     if (!isAdmin) {
-      const { data: bidRequest } = await supabase
+      const { data: bidRequest } = await supabaseAdmin
         .from('bid_requests')
         .select('customer_email')
         .eq('id', id)
@@ -303,7 +303,7 @@ export async function DELETE(request: Request) {
       }
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('bid_requests')
       .delete()
       .eq('id', id);
@@ -340,7 +340,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: roleData } = await supabase
+    const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('id', session.user.id)
@@ -355,7 +355,7 @@ export async function PATCH(request: Request) {
     }
 
     // 認可チェックとデータ取得
-    const { data: currentRequest } = await supabase
+    const { data: currentRequest } = await supabaseAdmin
       .from('bid_requests')
       .select('*')
       .eq('id', id)
@@ -420,7 +420,7 @@ export async function PATCH(request: Request) {
       updateData.admin_needs_confirm = true;
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('bid_requests')
       .update(updateData)
       .eq('id', id);
