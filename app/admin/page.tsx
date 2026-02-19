@@ -567,7 +567,10 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-          <h1 className="text-3xl font-bold text-black mb-2">管理者ログイン</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-black">管理者ログイン</h1>
+            <img src="/icons/admin-icon.png" alt="管理画面" className="w-10 h-10 rounded" />
+          </div>
           <p className="text-gray-600 mb-6">JOGALIBRE 管理画面</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -616,7 +619,10 @@ export default function AdminDashboard() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">管理画面</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">管理画面</h1>
+              <img src="/icons/admin-icon.png" alt="管理画面" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
+            </div>
             <button
               onClick={handleLogout}
               className="text-red-600 hover:text-red-700 font-semibold"

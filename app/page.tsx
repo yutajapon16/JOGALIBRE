@@ -702,7 +702,10 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-          <h1 className="text-3xl font-bold text-black mb-2">{t.title}</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold text-black">{t.title}</h1>
+            <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-10 h-10 rounded" />
+          </div>
           <p className="text-gray-600 mb-6">{t.subtitle}</p>
 
           <div className="mb-6">
@@ -853,7 +856,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
           <div className="flex justify-between items-start mb-3">
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-black">{t.title}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-black">{t.title}</h1>
+                <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
+              </div>
               <p className="text-sm sm:text-base text-gray-600">{t.subtitle}</p>
             </div>
             <button
