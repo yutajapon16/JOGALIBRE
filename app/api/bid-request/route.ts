@@ -85,6 +85,7 @@ export async function POST(request: Request) {
     console.log('Final Email for record:', finalEmail);
 
     const bidRequest = {
+      id: Date.now().toString(),
       product_id: productId,
       product_title: productTitle,
       product_url: productUrl,
