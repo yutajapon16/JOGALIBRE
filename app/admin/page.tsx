@@ -695,7 +695,7 @@ export default function AdminDashboard() {
                 }}
                 className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition text-sm sm:text-base"
               >
-                🔔 Push テスト
+                🔔 Push
               </button>
             </div>
 
@@ -703,7 +703,7 @@ export default function AdminDashboard() {
               onClick={fetchBidRequests}
               className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
             >
-              更新
+              🔁 更新
             </button>
 
             <div className="text-xs sm:text-sm text-gray-600">
@@ -729,8 +729,8 @@ export default function AdminDashboard() {
                   else fetchBidRequests();
                 }}
                 className={`flex-1 py-3 text-center text-sm sm:text-base font-medium border-b-2 transition ${(tab.key === 'purchased' ? showPurchased : !showPurchased)
-                    ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
               >
                 <span className="block text-lg">{tab.icon}</span>

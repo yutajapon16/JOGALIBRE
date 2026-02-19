@@ -915,10 +915,10 @@ export default function Home() {
               <select
                 value={lang}
                 onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                className="border border-gray-300 rounded-lg px-2 py-1 text-xs"
+                className="border border-gray-300 rounded-lg px-2 py-1 text-xs w-40"
               >
-                <option value="es">ES</option>
-                <option value="pt">PT</option>
+                <option value="es">Español</option>
+                <option value="pt">Português</option>
               </select>
             </div>
           </div>
@@ -972,8 +972,8 @@ export default function Home() {
                   }
                 }}
                 className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
-                    ? 'bg-gray-500 text-white hover:bg-gray-600'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-gray-500 text-white hover:bg-gray-600'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
               >
                 {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
@@ -989,7 +989,7 @@ export default function Home() {
               }}
               className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
             >
-              🔄 {t.refresh}
+              🔁 {t.refresh}
             </button>
 
             <div className="text-xs sm:text-sm text-gray-600">
@@ -1569,21 +1569,6 @@ export default function Home() {
                 >
                   {passwordSaving ? '...' : t.changePassword}
                 </button>
-              </div>
-            </div>
-
-            {/* プッシュ通知設定 */}
-            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-4">{t.notifications}</h3>
-              <div className="space-y-3">
-                <p className="text-sm text-gray-600">
-                  {notificationStatus === 'enabled' ? t.notificationsEnabled : t.notificationsDisabled}
-                </p>
-                {notificationStatus === 'unsupported' && (
-                  <p className="text-sm text-red-500">
-                    {lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.'}
-                  </p>
-                )}
               </div>
             </div>
 
