@@ -899,104 +899,102 @@ export default function Home() {
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
-          {/* 1行目: ロゴ + 言語切替 + ログアウト */}
-          <div className="flex justify-between items-center mb-3">
+          {/* 1行目: ロゴ + ログアウト/言語切り替え */}
+          <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-2">
               <h1 className="text-2xl sm:text-3xl font-bold text-black">{t.title}</h1>
               <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
             </div>
-            <div className="flex items-center gap-3">
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="es">ES</option>
-                <option value="pt">PT</option>
-              </select>
+            <div className="flex flex-col items-end gap-2">
               <button
                 onClick={handleLogout}
                 className="text-sm text-red-600 hover:text-red-800 whitespace-nowrap"
               >
                 {t.logout}
               </button>
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+                className="border border-gray-300 rounded-lg px-2 py-1 text-xs"
+              >
+                <option value="es">ES</option>
+                <option value="pt">PT</option>
+              </select>
             </div>
           </div>
 
-          {/* 2行目: 為替レート + 更新ボタン */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-xs sm:text-sm text-gray-600">
-              {t.exchangeRate}: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
+          <div className="flex flex-col gap-2">
+            {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
+            <div className="flex gap-2">
+              <button
+                onClick={sendWhatsAppNotification}
+                disabled={isSendingNotification}
+                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base disabled:bg-gray-400"
+              >
+                {isSendingNotification ? '...' : '📱 WhatsApp'}
+              </button>
+              <button
+                onClick={async () => {
+                  if (!currentUser) return;
+                  const permission = getNotificationPermission();
+                  if (permission === 'unsupported') {
+                    alert(lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.');
+                    return;
+                  }
+                  if (permission === 'granted') {
+                    try {
+                      const res = await fetch(`/api/push-subscribe?userId=${currentUser.id}`);
+                      if (res.ok) {
+                        await fetch('/api/push-subscribe', {
+                          method: 'DELETE',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ userId: currentUser.id }),
+                        });
+                        setNotificationStatus('disabled');
+                        alert(lang === 'es' ? 'Notificaciones desactivadas' : 'Notificações desativadas');
+                        return;
+                      }
+                    } catch { }
+                  }
+                  try {
+                    const subscription = await requestNotificationPermission();
+                    if (subscription) {
+                      await fetch('/api/push-subscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: currentUser.id, subscription }),
+                      });
+                      setNotificationStatus('enabled');
+                      alert(lang === 'es' ? '¡Notificaciones activadas!' : 'Notificações ativadas!');
+                    }
+                  } catch (err) {
+                    console.error('Push error:', err);
+                  }
+                }}
+                className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
+                    ? 'bg-gray-500 text-white hover:bg-gray-600'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+              >
+                {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
+              </button>
             </div>
+
+            {/* 更新ボタン（全幅） */}
             <button
               onClick={() => {
                 if (activeTab === 'requests') fetchMyRequests();
                 else if (activeTab === 'purchased') fetchPurchasedItems();
                 else { fetchExchangeRate(); }
               }}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-xs sm:text-sm"
+              className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
             >
               🔄 {t.refresh}
             </button>
-          </div>
 
-          {/* 3行目: WhatsApp通知 + プッシュ通知ボタン（半幅ずつ） */}
-          <div className="flex gap-2">
-            <button
-              onClick={sendWhatsAppNotification}
-              disabled={isSendingNotification}
-              className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition text-xs sm:text-sm disabled:bg-gray-400"
-            >
-              {isSendingNotification ? '...' : '📱 WhatsApp'}
-            </button>
-            <button
-              onClick={async () => {
-                if (!currentUser) return;
-                const permission = getNotificationPermission();
-                if (permission === 'unsupported') {
-                  alert(lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.');
-                  return;
-                }
-                if (permission === 'granted') {
-                  // 既に有効かチェック
-                  try {
-                    const res = await fetch(`/api/push-subscribe?userId=${currentUser.id}`);
-                    if (res.ok) {
-                      // 無効化
-                      await fetch('/api/push-subscribe', {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: currentUser.id }),
-                      });
-                      setNotificationStatus('disabled');
-                      alert(lang === 'es' ? 'Notificaciones desactivadas' : 'Notificações desativadas');
-                      return;
-                    }
-                  } catch { }
-                }
-                // 有効化
-                try {
-                  const subscription = await requestNotificationPermission();
-                  if (subscription) {
-                    await fetch('/api/push-subscribe', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ userId: currentUser.id, subscription }),
-                    });
-                    setNotificationStatus('enabled');
-                    alert(lang === 'es' ? '¡Notificaciones activadas!' : 'Notificações ativadas!');
-                  }
-                } catch (err) {
-                  console.error('Push error:', err);
-                }
-              }}
-              className={`flex-1 py-2 rounded-lg transition text-xs sm:text-sm ${notificationStatus === 'enabled'
-                ? 'bg-gray-500 text-white hover:bg-gray-600'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-            >
-              {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
-            </button>
+            <div className="text-xs sm:text-sm text-gray-600">
+              {t.exchangeRate}: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -1575,59 +1573,16 @@ export default function Home() {
             </div>
 
             {/* プッシュ通知設定 */}
-            <div className="border-t pt-6">
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
               <h3 className="text-lg font-semibold mb-4">{t.notifications}</h3>
               <div className="space-y-3">
                 <p className="text-sm text-gray-600">
                   {notificationStatus === 'enabled' ? t.notificationsEnabled : t.notificationsDisabled}
                 </p>
-                {notificationStatus === 'unsupported' ? (
+                {notificationStatus === 'unsupported' && (
                   <p className="text-sm text-red-500">
-                    {lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador n\u00e3o suporta notifica\u00e7\u00f5es push.'}
+                    {lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.'}
                   </p>
-                ) : notificationStatus === 'enabled' ? (
-                  <button
-                    onClick={async () => {
-                      if (!currentUser) return;
-                      try {
-                        await fetch('/api/push-subscribe', {
-                          method: 'DELETE',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ userId: currentUser.id }),
-                        });
-                        setNotificationStatus('disabled');
-                      } catch (err) {
-                        console.error('Error disabling notifications:', err);
-                      }
-                    }}
-                    className="w-full bg-gray-500 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 transition"
-                  >
-                    {t.disableNotifications}
-                  </button>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      if (!currentUser) return;
-                      try {
-                        const subscription = await requestNotificationPermission();
-                        if (subscription) {
-                          await fetch('/api/push-subscribe', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ userId: currentUser.id, subscription }),
-                          });
-                          setNotificationStatus('enabled');
-                          alert(lang === 'es' ? '\u00a1Notificaciones activadas!' : 'Notifica\u00e7\u00f5es ativadas!');
-                        }
-                      } catch (err) {
-                        console.error('Error enabling notifications:', err);
-                        alert(lang === 'es' ? 'Error al activar notificaciones.' : 'Erro ao ativar notifica\u00e7\u00f5es.');
-                      }
-                    }}
-                    className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
-                  >
-                    \ud83d\udd14 {t.enableNotifications}
-                  </button>
                 )}
               </div>
             </div>
