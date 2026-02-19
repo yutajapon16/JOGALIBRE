@@ -205,6 +205,18 @@ export default function Home() {
     getCurrentUser().then(user => {
       if (user?.role === 'customer') {
         setCurrentUser(user);
+        // 通知状態を初期化
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+          if (Notification.permission === 'granted') {
+            fetch(`/api/push-subscribe?userId=${user.id}`)
+              .then(r => r.ok ? setNotificationStatus('enabled') : setNotificationStatus('disabled'))
+              .catch(() => setNotificationStatus('disabled'));
+          } else {
+            setNotificationStatus('disabled');
+          }
+        } else {
+          setNotificationStatus('unsupported');
+        }
       }
     });
 
@@ -887,35 +899,104 @@ export default function Home() {
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-start mb-3">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-black">{t.title}</h1>
-                <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
-              </div>
-              <p className="text-sm sm:text-base text-gray-600">{t.subtitle}</p>
+          {/* 1行目: ロゴ + 言語切替 + ログアウト */}
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-black">{t.title}</h1>
+              <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="es">ES</option>
+                <option value="pt">PT</option>
+              </select>
+              <button
+                onClick={handleLogout}
+                className="text-sm text-red-600 hover:text-red-800 whitespace-nowrap"
+              >
+                {t.logout}
+              </button>
+            </div>
+          </div>
+
+          {/* 2行目: 為替レート + 更新ボタン */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs sm:text-sm text-gray-600">
+              {t.exchangeRate}: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
             </div>
             <button
-              onClick={handleLogout}
-              className="text-sm text-red-600 hover:text-red-800 whitespace-nowrap ml-4"
+              onClick={() => {
+                if (activeTab === 'requests') fetchMyRequests();
+                else if (activeTab === 'purchased') fetchPurchasedItems();
+                else { fetchExchangeRate(); }
+              }}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-xs sm:text-sm"
             >
-              {t.logout}
+              🔄 {t.refresh}
             </button>
           </div>
 
-          <div className="flex items-center gap-2 mb-3">
-            <select
-              value={lang}
-              onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          {/* 3行目: WhatsApp通知 + プッシュ通知ボタン（半幅ずつ） */}
+          <div className="flex gap-2">
+            <button
+              onClick={sendWhatsAppNotification}
+              disabled={isSendingNotification}
+              className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition text-xs sm:text-sm disabled:bg-gray-400"
             >
-              <option value="es">ES</option>
-              <option value="pt">PT</option>
-            </select>
-          </div>
-
-          <div className="text-xs sm:text-sm text-gray-600 mb-3">
-            {t.exchangeRate}: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
+              {isSendingNotification ? '...' : '📱 WhatsApp'}
+            </button>
+            <button
+              onClick={async () => {
+                if (!currentUser) return;
+                const permission = getNotificationPermission();
+                if (permission === 'unsupported') {
+                  alert(lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.');
+                  return;
+                }
+                if (permission === 'granted') {
+                  // 既に有効かチェック
+                  try {
+                    const res = await fetch(`/api/push-subscribe?userId=${currentUser.id}`);
+                    if (res.ok) {
+                      // 無効化
+                      await fetch('/api/push-subscribe', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: currentUser.id }),
+                      });
+                      setNotificationStatus('disabled');
+                      alert(lang === 'es' ? 'Notificaciones desactivadas' : 'Notificações desativadas');
+                      return;
+                    }
+                  } catch { }
+                }
+                // 有効化
+                try {
+                  const subscription = await requestNotificationPermission();
+                  if (subscription) {
+                    await fetch('/api/push-subscribe', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: currentUser.id, subscription }),
+                    });
+                    setNotificationStatus('enabled');
+                    alert(lang === 'es' ? '¡Notificaciones activadas!' : 'Notificações ativadas!');
+                  }
+                } catch (err) {
+                  console.error('Push error:', err);
+                }
+              }}
+              className={`flex-1 py-2 rounded-lg transition text-xs sm:text-sm ${notificationStatus === 'enabled'
+                ? 'bg-gray-500 text-white hover:bg-gray-600'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+            >
+              {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
+            </button>
           </div>
         </div>
       </header>

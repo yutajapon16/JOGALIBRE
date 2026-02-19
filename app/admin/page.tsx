@@ -660,13 +660,44 @@ export default function AdminDashboard() {
               合計: <span className="font-bold">{bidRequests.length}件</span>
             </div>
 
-            <button
-              onClick={sendWhatsAppNotification}
-              disabled={isSendingNotification}
-              className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base w-full disabled:bg-gray-400"
-            >
-              {isSendingNotification ? '送信中...' : 'WhatsApp通知'}
-            </button>
+            {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
+            <div className="flex gap-2">
+              <button
+                onClick={sendWhatsAppNotification}
+                disabled={isSendingNotification}
+                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base disabled:bg-gray-400"
+              >
+                {isSendingNotification ? '送信中...' : '📱 WhatsApp'}
+              </button>
+              <button
+                onClick={async () => {
+                  // テスト通知を管理者自身に送信
+                  try {
+                    const res = await fetch('/api/push-send', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email: 'export@joga.ltd',
+                        title: 'JOGALIBRE テスト',
+                        body: 'プッシュ通知テストです',
+                        url: '/admin',
+                      }),
+                    });
+                    const data = await res.json();
+                    if (data.sent) {
+                      alert('✅ プッシュ通知テスト送信完了');
+                    } else {
+                      alert('⚠️ プッシュ通知の登録がありません');
+                    }
+                  } catch (err) {
+                    alert('プッシュ通知エラー');
+                  }
+                }}
+                className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition text-sm sm:text-base"
+              >
+                🔔 Push テスト
+              </button>
+            </div>
 
             <button
               onClick={fetchBidRequests}
@@ -675,29 +706,40 @@ export default function AdminDashboard() {
               更新
             </button>
 
-            {!showPurchased && (
-              <button
-                onClick={() => { setShowPurchased(true); fetchPurchasedItems(); }}
-                className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base w-full"
-              >
-                購入履歴
-              </button>
-            )}
-            {showPurchased && (
-              <button
-                onClick={() => setShowPurchased(false)}
-                className="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition text-sm sm:text-base w-full"
-              >
-                戻る
-              </button>
-            )}
-
             <div className="text-xs sm:text-sm text-gray-600">
               為替レート: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
             </div>
           </div>
         </div>
       </header>
+
+      {/* タブナビゲーション */}
+      <nav className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex">
+            {[
+              { key: 'requests' as const, label: '入札リクエスト', icon: '📋' },
+              { key: 'purchased' as const, label: '購入履歴', icon: '🛒' },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setShowPurchased(tab.key === 'purchased');
+                  if (tab.key === 'purchased') fetchPurchasedItems();
+                  else fetchBidRequests();
+                }}
+                className={`flex-1 py-3 text-center text-sm sm:text-base font-medium border-b-2 transition ${(tab.key === 'purchased' ? showPurchased : !showPurchased)
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <span className="block text-lg">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {showPurchased ? (
