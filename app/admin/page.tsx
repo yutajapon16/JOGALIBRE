@@ -665,16 +665,16 @@ export default function AdminDashboard() {
                             <img
                               src={item.productImage}
                               alt={item.productTitle}
-                              className="w-32 h-32 object-cover rounded"
+                              className="w-32 h-32 object-cover rounded flex-shrink-0"
                             />
                           )}
-                          <div className="flex-1">
-                            <h3 className="text-sm sm:text-base font-semibold mb-2">{item.productTitle}</h3>
+                          <div className="flex-1 flex flex-col justify-between overflow-hidden" style={{ maxHeight: '128px' }}>
+                            <h3 className="text-sm sm:text-base font-semibold" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.productTitle}</h3>
                             <a
                               href={item.productUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-indigo-600 hover:underline text-sm inline-block"
+                              className="text-indigo-600 hover:underline text-sm inline-block flex-shrink-0"
                             >
                               ヤフオクURL →
                             </a>
