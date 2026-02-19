@@ -17,24 +17,33 @@ export async function POST(request: Request) {
           getAll() {
             return cookieStore.getAll();
           },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // Server Component からの呼び出し時は無視される
+            }
+          },
         },
       }
     );
-    const { data: { session }, error: sessionError } = await supabaseRoute.auth.getSession();
+    const { data: { user }, error: authError } = await supabaseRoute.auth.getUser();
 
     console.log('=== Bid Request POST Debug ===');
-    if (sessionError) console.error('Session Error:', sessionError);
-    console.log('Session User:', session?.user?.email, 'ID:', session?.user?.id);
+    if (authError) console.error('Auth Error:', authError);
+    console.log('User:', user?.email, 'ID:', user?.id);
 
-    if (!session) {
-      console.error('No session found');
+    if (!user) {
+      console.error('No authenticated user found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (roleError) {
@@ -47,7 +56,7 @@ export async function POST(request: Request) {
     const { productId, productTitle, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language } = body;
 
     // 顧客の場合は自身のメールアドレスを強制使用
-    const finalEmail = isAdmin ? customerEmail : session.user.email;
+    const finalEmail = isAdmin ? customerEmail : user.email;
     console.log('Final Email for record:', finalEmail);
 
     const bidRequest = {
@@ -116,23 +125,32 @@ export async function GET(request: Request) {
           getAll() {
             return cookieStore.getAll();
           },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // Server Component からの呼び出し時は無視される
+            }
+          },
         },
       }
     );
-    const { data: { session } } = await supabaseRoute.auth.getSession();
+    const { data: { user } } = await supabaseRoute.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     const isAdmin = roleData?.role === 'admin';
-    const userEmail = session.user.email;
+    const userEmail = user.email;
 
     const { searchParams } = new URL(request.url);
     const emailParam = searchParams.get('email');
@@ -279,19 +297,28 @@ export async function DELETE(request: Request) {
           getAll() {
             return cookieStore.getAll();
           },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // Server Component からの呼び出し時は無視される
+            }
+          },
         },
       }
     );
-    const { data: { session } } = await supabaseRoute.auth.getSession();
+    const { data: { user } } = await supabaseRoute.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     const isAdmin = roleData?.role === 'admin';
@@ -310,7 +337,7 @@ export async function DELETE(request: Request) {
         .eq('id', id)
         .single();
 
-      if (!bidRequest || bidRequest.customer_email !== session.user.email) {
+      if (!bidRequest || bidRequest.customer_email !== user.email) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
@@ -343,19 +370,28 @@ export async function PATCH(request: Request) {
           getAll() {
             return cookieStore.getAll();
           },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // Server Component からの呼び出し時は無視される
+            }
+          },
         },
       }
     );
-    const { data: { session } } = await supabaseRoute.auth.getSession();
+    const { data: { user } } = await supabaseRoute.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     const isAdmin = roleData?.role === 'admin';
@@ -377,7 +413,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Not Found' }, { status: 404 });
     }
 
-    if (!isAdmin && currentRequest.customer_email !== session.user.email) {
+    if (!isAdmin && currentRequest.customer_email !== user.email) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
