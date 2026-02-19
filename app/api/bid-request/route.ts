@@ -29,21 +29,21 @@ export async function POST(request: Request) {
         },
       }
     );
-    const { data: { user }, error: authError } = await supabaseRoute.auth.getUser();
+    const { data: { session }, error: sessionError } = await supabaseRoute.auth.getSession();
 
     console.log('=== Bid Request POST Debug ===');
-    if (authError) console.error('Auth Error:', authError);
-    console.log('User:', user?.email, 'ID:', user?.id);
+    if (sessionError) console.error('Session Error:', sessionError);
+    console.log('Session User:', session?.user?.email, 'ID:', session?.user?.id);
 
-    if (!user) {
-      console.error('No authenticated user found');
+    if (!session) {
+      console.error('No session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single();
 
     if (roleError) {
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     const { productId, productTitle, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language } = body;
 
     // 顧客の場合は自身のメールアドレスを強制使用
-    const finalEmail = isAdmin ? customerEmail : user.email;
+    const finalEmail = isAdmin ? customerEmail : session.user.email;
     console.log('Final Email for record:', finalEmail);
 
     const bidRequest = {
@@ -137,20 +137,20 @@ export async function GET(request: Request) {
         },
       }
     );
-    const { data: { user } } = await supabaseRoute.auth.getUser();
+    const { data: { session } } = await supabaseRoute.auth.getSession();
 
-    if (!user) {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single();
 
     const isAdmin = roleData?.role === 'admin';
-    const userEmail = user.email;
+    const userEmail = session.user.email;
 
     const { searchParams } = new URL(request.url);
     const emailParam = searchParams.get('email');
@@ -309,16 +309,16 @@ export async function DELETE(request: Request) {
         },
       }
     );
-    const { data: { user } } = await supabaseRoute.auth.getUser();
+    const { data: { session } } = await supabaseRoute.auth.getSession();
 
-    if (!user) {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single();
 
     const isAdmin = roleData?.role === 'admin';
@@ -337,7 +337,7 @@ export async function DELETE(request: Request) {
         .eq('id', id)
         .single();
 
-      if (!bidRequest || bidRequest.customer_email !== user.email) {
+      if (!bidRequest || bidRequest.customer_email !== session.user.email) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
@@ -382,16 +382,16 @@ export async function PATCH(request: Request) {
         },
       }
     );
-    const { data: { user } } = await supabaseRoute.auth.getUser();
+    const { data: { session } } = await supabaseRoute.auth.getSession();
 
-    if (!user) {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single();
 
     const isAdmin = roleData?.role === 'admin';
@@ -413,7 +413,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Not Found' }, { status: 404 });
     }
 
-    if (!isAdmin && currentRequest.customer_email !== user.email) {
+    if (!isAdmin && currentRequest.customer_email !== session.user.email) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
