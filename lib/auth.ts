@@ -11,8 +11,8 @@ export interface User {
 }
 
 export async function signUp(
-  email: string, 
-  password: string, 
+  email: string,
+  password: string,
   role: UserRole = 'customer',
   fullName?: string,
   whatsapp?: string
@@ -27,8 +27,8 @@ export async function signUp(
 
   const { error: roleError } = await supabase
     .from('user_roles')
-    .insert([{ 
-      id: data.user.id, 
+    .insert([{
+      id: data.user.id,
       role,
       full_name: fullName || null,
       whatsapp: whatsapp || null
@@ -54,9 +54,25 @@ export async function signOut() {
   if (error) throw error;
 }
 
+// パスワードリセットメール送信
+export async function resetPassword(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`
+  });
+  if (error) throw error;
+}
+
+// パスワード更新（リセットリンクからアクセスした後）
+export async function updatePassword(newPassword: string) {
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+  if (error) throw error;
+}
+
 export async function getCurrentUser(): Promise<User | null> {
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) return null;
 
   const { data: roleData } = await supabase

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { signIn, signUp, signOut, getCurrentUser, type User } from '@/lib/auth';
+import { signIn, signUp, signOut, getCurrentUser, resetPassword, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
 const translations = {
@@ -139,6 +139,8 @@ export default function Home() {
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showSignUp, setShowSignUp] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: '',
@@ -772,9 +774,66 @@ export default function Home() {
             </button>
           </form>
 
+          {!showSignUp && !showResetPassword && (
+            <div className="mt-3 text-center">
+              <button
+                onClick={() => setShowResetPassword(true)}
+                className="text-sm text-gray-500 hover:underline"
+              >
+                {lang === 'es' ? '¿Olvidaste tu contraseña?' : 'Esqueceu sua senha?'}
+              </button>
+            </div>
+          )}
+
+          {showResetPassword && (
+            <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+              <p className="text-sm text-gray-700 mb-3">
+                {lang === 'es'
+                  ? 'Ingresa tu email para recibir un enlace de recuperación:'
+                  : 'Digite seu e-mail para receber um link de recuperação:'}
+              </p>
+              <input
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                placeholder={lang === 'es' ? 'tu@email.com' : 'seu@email.com'}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (!resetEmail.trim()) return;
+                    try {
+                      await resetPassword(resetEmail);
+                      alert(lang === 'es'
+                        ? 'Se envió un enlace de recuperación a tu email.'
+                        : 'Um link de recuperação foi enviado para seu e-mail.');
+                      setShowResetPassword(false);
+                      setResetEmail('');
+                    } catch (error) {
+                      console.error('Reset password error:', error);
+                      alert(lang === 'es'
+                        ? 'Error al enviar el enlace. Verifica tu email.'
+                        : 'Erro ao enviar o link. Verifique seu e-mail.');
+                    }
+                  }}
+                  className="flex-1 bg-yellow-500 text-white py-2 rounded-lg font-semibold hover:bg-yellow-600 transition text-sm"
+                >
+                  {lang === 'es' ? 'Enviar enlace' : 'Enviar link'}
+                </button>
+                <button
+                  onClick={() => { setShowResetPassword(false); setResetEmail(''); }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-400 transition text-sm"
+                >
+                  {lang === 'es' ? 'Cancelar' : 'Cancelar'}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="mt-4 text-center">
             <button
-              onClick={() => setShowSignUp(!showSignUp)}
+              onClick={() => { setShowSignUp(!showSignUp); setShowResetPassword(false); }}
               className="text-sm text-indigo-600 hover:underline"
             >
               {showSignUp
