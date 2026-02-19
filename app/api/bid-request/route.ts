@@ -20,17 +20,27 @@ export async function POST(request: Request) {
         },
       }
     );
-    const { data: { session } } = await supabaseRoute.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabaseRoute.auth.getSession();
+
+    console.log('=== Bid Request POST Debug ===');
+    if (sessionError) console.error('Session Error:', sessionError);
+    console.log('Session User:', session?.user?.email, 'ID:', session?.user?.id);
 
     if (!session) {
+      console.error('No session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: roleData } = await supabaseAdmin
+    const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('id', session.user.id)
       .single();
+
+    if (roleError) {
+      console.warn('Role fetch error (could be missing entry):', roleError);
+    }
+    console.log('User Role:', roleData?.role);
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
@@ -38,9 +48,9 @@ export async function POST(request: Request) {
 
     // 顧客の場合は自身のメールアドレスを強制使用
     const finalEmail = isAdmin ? customerEmail : session.user.email;
+    console.log('Final Email for record:', finalEmail);
 
     const bidRequest = {
-      id: Date.now().toString(),
       product_id: productId,
       product_title: productTitle,
       product_url: productUrl,
@@ -66,6 +76,7 @@ export async function POST(request: Request) {
       admin_needs_confirm: false
     };
 
+    console.log('Inserting bid request...');
     const { data, error } = await supabaseAdmin
       .from('bid_requests')
       .insert([bidRequest])
@@ -73,21 +84,22 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error('Supabase error:', error);
+      console.error('Supabase insertion error:', error);
       return NextResponse.json(
-        { error: 'Failed to create bid request' },
+        { error: 'Failed' + error.message, details: error },
         { status: 500 }
       );
     }
 
+    console.log('Bid request created successfully:', data.id);
     return NextResponse.json({
       success: true,
       bidRequest: data
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Critical Error in POST /api/bid-request:', error);
     return NextResponse.json(
-      { error: 'Failed to create bid request' },
+      { error: 'Critical Error', details: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 }
     );
   }
