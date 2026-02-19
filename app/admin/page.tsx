@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 
 export default function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -79,15 +80,22 @@ export default function AdminDashboard() {
     }
   };
 
-  const sendWhatsAppNotifications = async () => {
+  const sendWhatsAppNotification = async () => {
     setIsSendingNotification(true);
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       const res = await fetch('/api/notify-whatsapp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userType: 'admin' })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({
+          userType: 'admin'
+        })
       });
-
       const data = await res.json();
 
       if (data.success) {
@@ -106,13 +114,19 @@ export default function AdminDashboard() {
   const getFilteredPurchasedItems = () => {
     let filtered = purchasedItems;
 
+    // 顧客名でフィルタリング
+    if (selectedCustomer !== 'all') {
+      filtered = filtered.filter(item => item.customerName === selectedCustomer);
+    }
+
+    // 期間でフィルタリング
     if (purchasedPeriod !== 'all') {
       const now = new Date();
       const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
-      const days = daysMap[purchasedPeriod];
+      const days = (daysMap as any)[purchasedPeriod];
       const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
-      filtered = purchasedItems.filter(item =>
+      filtered = filtered.filter(item =>
         new Date(item.confirmedAt).getTime() >= cutoffDate.getTime()
       );
     }
@@ -491,7 +505,7 @@ export default function AdminDashboard() {
             </div>
 
             <button
-              onClick={sendWhatsAppNotifications}
+              onClick={sendWhatsAppNotification}
               disabled={isSendingNotification}
               className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base w-full disabled:bg-gray-400"
             >

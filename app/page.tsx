@@ -196,9 +196,15 @@ export default function Home() {
   const sendWhatsAppNotification = async () => {
     setIsSendingNotification(true);
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       const res = await fetch('/api/notify-whatsapp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
         body: JSON.stringify({
           userType: 'customer',
           email: currentUser?.email
@@ -386,13 +392,19 @@ export default function Home() {
   const getFilteredPurchasedItems = () => {
     let filtered = purchasedItems;
 
+    // 顧客名でフィルタリング
+    if (selectedCustomer !== 'all') {
+      filtered = filtered.filter(item => item.customerName === selectedCustomer);
+    }
+
+    // 期間でフィルタリング
     if (purchasedPeriod !== 'all') {
       const now = new Date();
       const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
-      const days = daysMap[purchasedPeriod];
+      const days = (daysMap as any)[purchasedPeriod];
       const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
-      filtered = purchasedItems.filter(item =>
+      filtered = filtered.filter(item =>
         new Date(item.confirmedAt).getTime() >= cutoffDate.getTime()
       );
     }
