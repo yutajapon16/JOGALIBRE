@@ -70,6 +70,19 @@ export async function updatePassword(newPassword: string) {
   if (error) throw error;
 }
 
+// プロフィール更新（氏名・WhatsApp）
+export async function updateProfile(fullName: string, whatsapp: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
+    .from('user_roles')
+    .update({ full_name: fullName, whatsapp })
+    .eq('id', user.id);
+
+  if (error) throw error;
+}
+
 export async function getCurrentUser(): Promise<User | null> {
   const { data: { user } } = await supabase.auth.getUser();
 

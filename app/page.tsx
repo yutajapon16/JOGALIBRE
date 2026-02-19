@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { signIn, signUp, signOut, getCurrentUser, resetPassword, type User } from '@/lib/auth';
+import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
 const translations = {
@@ -66,6 +66,15 @@ const translations = {
     dShort: 'd',
     hShort: 'h',
     mShort: 'm',
+    myPage: 'Mi Cuenta',
+    profile: 'Perfil',
+    fullName: 'Nombre completo',
+    whatsapp: 'WhatsApp',
+    saveProfile: 'Guardar cambios',
+    changePassword: 'Cambiar contraseña',
+    newPassword: 'Nueva contraseña',
+    confirmNewPassword: 'Confirmar nueva contraseña',
+    search: 'Buscar',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -127,6 +136,15 @@ const translations = {
     dShort: 'd',
     hShort: 'h',
     mShort: 'm',
+    myPage: 'Minha Conta',
+    profile: 'Perfil',
+    fullName: 'Nome completo',
+    whatsapp: 'WhatsApp',
+    saveProfile: 'Salvar alterações',
+    changePassword: 'Alterar senha',
+    newPassword: 'Nova senha',
+    confirmNewPassword: 'Confirmar nova senha',
+    search: 'Buscar',
   }
 };
 
@@ -147,10 +165,14 @@ export default function Home() {
     fullName: '',
     whatsapp: ''
   });
-  const [showMyRequests, setShowMyRequests] = useState(false);
+  const [activeTab, setActiveTab] = useState<'search' | 'requests' | 'purchased' | 'mypage'>('search');
   const [myRequests, setMyRequests] = useState<any[]>([]);
-  const [showPurchased, setShowPurchased] = useState(false);
   const [purchasedItems, setPurchasedItems] = useState<any[]>([]);
+  // マイページ用state
+  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '' });
+  const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
   const [purchasedTotal, setPurchasedTotal] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
@@ -396,8 +418,7 @@ export default function Home() {
     setMyRequests([]);
     setPurchasedItems([]);
     setPurchasedTotal(0);
-    setShowMyRequests(false);
-    setShowPurchased(false);
+    setActiveTab('search');
     setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
   };
 
@@ -870,74 +891,58 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="flex flex-col gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3">
             <select
               value={lang}
               onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
             >
-              <option value="es">Español</option>
-              <option value="pt">Português</option>
+              <option value="es">ES</option>
+              <option value="pt">PT</option>
             </select>
-
-            {!showMyRequests && !showPurchased && (
-              <>
-                <button
-                  onClick={() => { setShowMyRequests(true); fetchMyRequests(); }}
-                  className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm w-full"
-                >
-                  {t.myRequests}
-                </button>
-                <button
-                  onClick={() => { setShowPurchased(true); fetchPurchasedItems(); }}
-                  className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm w-full"
-                >
-                  {t.purchasedItems}
-                </button>
-              </>
-            )}
-
-            {(showMyRequests || showPurchased) && (
-              <>
-                <button
-                  onClick={sendWhatsAppNotification}
-                  disabled={isSendingNotification}
-                  className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm w-full disabled:bg-gray-400"
-                >
-                  {isSendingNotification
-                    ? (lang === 'es' ? 'Enviando...' : 'Enviando...')
-                    : (lang === 'es' ? 'Notificar actualizaciones por WhatsApp' : 'Notificar atualizações por WhatsApp')}
-                </button>
-                <button
-                  onClick={() => {
-                    if (showMyRequests) fetchMyRequests();
-                    if (showPurchased) fetchPurchasedItems();
-                  }}
-                  className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm w-full"
-                >
-                  {t.refresh}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMyRequests(false);
-                    setShowPurchased(false);
-                  }}
-                  className="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition text-sm w-full"
-                >
-                  {t.backToSearch}
-                </button>
-              </>
-            )}
           </div>
 
-          <div className="text-xs sm:text-sm text-gray-600">
+          <div className="text-xs sm:text-sm text-gray-600 mb-3">
             {t.exchangeRate}: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
           </div>
         </div>
       </header>
 
+      {/* タブナビゲーション */}
+      <nav className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex">
+            {[
+              { key: 'search' as const, label: t.search, icon: '🔍' },
+              { key: 'requests' as const, label: t.myRequests, icon: '📋' },
+              { key: 'purchased' as const, label: t.purchasedItems, icon: '🛒' },
+              { key: 'mypage' as const, label: t.myPage, icon: '👤' },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  if (tab.key === 'requests') fetchMyRequests();
+                  if (tab.key === 'purchased') fetchPurchasedItems();
+                  if (tab.key === 'mypage' && currentUser) {
+                    setProfileForm({ fullName: currentUser.fullName || '', whatsapp: currentUser.whatsapp || '' });
+                  }
+                }}
+                className={`flex-1 py-3 text-center text-xs sm:text-sm font-medium border-b-2 transition ${activeTab === tab.key
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <span className="block text-lg">{tab.icon}</span>
+                <span className="hidden sm:block">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {showMyRequests ? (
+        {activeTab === 'requests' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myRequests}</h2>
 
@@ -1215,7 +1220,7 @@ export default function Home() {
               </div>
             )}
           </div>
-        ) : showPurchased ? (
+        ) : activeTab === 'purchased' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-4">{t.purchasedItems}</h2>
 
@@ -1349,6 +1354,130 @@ export default function Home() {
                 </div>
               </>
             )}
+          </div>
+        ) : activeTab === 'mypage' ? (
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myPage}</h2>
+
+            {/* プロフィール編集 */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-4">{t.profile}</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t.email}</label>
+                  <input
+                    type="email"
+                    value={currentUser?.email || ''}
+                    disabled
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 bg-gray-50 text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t.fullName}</label>
+                  <input
+                    type="text"
+                    value={profileForm.fullName}
+                    onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t.whatsapp}</label>
+                  <input
+                    type="tel"
+                    value={profileForm.whatsapp}
+                    onChange={(e) => setProfileForm({ ...profileForm, whatsapp: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    placeholder="+55 11 98765-4321"
+                  />
+                </div>
+                <button
+                  onClick={async () => {
+                    setProfileSaving(true);
+                    try {
+                      await updateProfile(profileForm.fullName, profileForm.whatsapp);
+                      const user = await getCurrentUser();
+                      setCurrentUser(user);
+                      alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
+                    } catch (error) {
+                      console.error('Profile update error:', error);
+                      alert(lang === 'es' ? 'Error al actualizar perfil.' : 'Erro ao atualizar perfil.');
+                    } finally {
+                      setProfileSaving(false);
+                    }
+                  }}
+                  disabled={profileSaving}
+                  className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400"
+                >
+                  {profileSaving ? '...' : t.saveProfile}
+                </button>
+              </div>
+            </div>
+
+            {/* パスワード変更 */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4">{t.changePassword}</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t.newPassword}</label>
+                  <input
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    minLength={6}
+                    placeholder={lang === 'es' ? 'Mínimo 6 caracteres' : 'Mínimo 6 caracteres'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t.confirmNewPassword}</label>
+                  <input
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    minLength={6}
+                  />
+                </div>
+                <button
+                  onClick={async () => {
+                    if (passwordForm.newPassword.length < 6) {
+                      alert(lang === 'es' ? 'La contraseña debe tener al menos 6 caracteres.' : 'A senha deve ter pelo menos 6 caracteres.');
+                      return;
+                    }
+                    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+                      alert(lang === 'es' ? 'Las contraseñas no coinciden.' : 'As senhas não coincidem.');
+                      return;
+                    }
+                    setPasswordSaving(true);
+                    try {
+                      await updatePassword(passwordForm.newPassword);
+                      setPasswordForm({ newPassword: '', confirmPassword: '' });
+                      alert(lang === 'es' ? '¡Contraseña actualizada!' : 'Senha atualizada!');
+                    } catch (error) {
+                      console.error('Password update error:', error);
+                      alert(lang === 'es' ? 'Error al cambiar contraseña.' : 'Erro ao alterar senha.');
+                    } finally {
+                      setPasswordSaving(false);
+                    }
+                  }}
+                  disabled={passwordSaving}
+                  className="w-full bg-yellow-500 text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition disabled:bg-gray-400"
+                >
+                  {passwordSaving ? '...' : t.changePassword}
+                </button>
+              </div>
+            </div>
+
+            {/* ログアウト */}
+            <div className="border-t pt-6 mt-6">
+              <button
+                onClick={handleLogout}
+                className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition"
+              >
+                {t.logout}
+              </button>
+            </div>
           </div>
         ) : (
           <>
