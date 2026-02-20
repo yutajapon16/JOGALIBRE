@@ -12,7 +12,7 @@ const translations = {
     subtitle: 'Subastas de Yahoo Japón',
     language: 'Idioma',
     searchPlaceholder: 'Pega la URL del producto de Yahoo Auctions aquí...',
-    import: 'Importar',
+    import: 'Obtener Cotización',
     currentPrice: 'Precio actual',
     shippingCost: 'Costo de envío',
     totalPrice: 'Precio total',
@@ -94,7 +94,7 @@ const translations = {
     subtitle: 'Leilões do Yahoo Japão',
     language: 'Idioma',
     searchPlaceholder: 'Cole a URL do produto do Yahoo Auctions aqui...',
-    import: 'Importar',
+    import: 'Obter Cotação',
     currentPrice: 'Preço atual',
     shippingCost: 'Custo de envio',
     totalPrice: 'Preço total',
@@ -191,8 +191,8 @@ const CATEGORIES = [
   { id: 'moto', es: 'Moto', pt: 'Moto', url: 'https://auctions.yahoo.co.jp/list1/26316-category.html' },
   {
     id: 'llantas',
-    es: 'Llantas / Rodas',
-    pt: 'Llantas / Rodas',
+    es: 'Llantas',
+    pt: 'Rodas',
     sub: [
       { id: 'll16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200188/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200188&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured' },
       { id: 'll17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200189/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200189&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured' },
@@ -212,7 +212,7 @@ const CATEGORIES = [
   { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=128485,103816,105215,103820,119942,119941,119938' },
   { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=102214,103815,115842,128485,159741,103823' },
   { id: 'repuesto', es: 'Repuesto', pt: 'Autopeça', url: 'https://auctions.yahoo.co.jp/list1/26322-catlist.html' },
-  { id: 'allcats', es: 'Lista de categorías', pt: 'Lista de categorias', url: 'https://auctions.yahoo.co.jp/list1/jp/0-all.html' },
+  { id: 'allcats', es: 'Lista de categorías de subasta', pt: 'Lista de categorias de leilão', url: 'https://auctions.yahoo.co.jp/list1/jp/0-all.html' },
 ];
 
 export default function Home() {
@@ -1715,14 +1715,37 @@ export default function Home() {
         ) : (
           <>
             <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              {/* 検索タイプ切り替え */}
+              {/* 商品URLインポート (最上部に常設) */}
+              <div className="mb-8 border-b pb-6">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  {lang === 'es' ? 'OBTENER COTIZACIÓN POR URL' : 'OBTER COTAÇÃO POR URL'}
+                </h3>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    placeholder={t.searchPlaceholder}
+                    value={searchUrl}
+                    onChange={(e) => setSearchUrl(e.target.value)}
+                    className="flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                  />
+                  <button
+                    onClick={handleImport}
+                    disabled={loading}
+                    className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 whitespace-nowrap text-sm shadow-sm"
+                  >
+                    {loading ? '...' : t.import}
+                  </button>
+                </div>
+              </div>
+
+              {/* 検索タイプ切り替え (カテゴリ / ワード) */}
               <div className="flex border-b mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
                 <button
                   onClick={() => {
                     setSearchType('categories');
                     setProducts([]);
                   }}
-                  className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
+                  className={`flex-1 py-2 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
                 >
                   {t.searchByCategories}
                 </button>
@@ -1731,18 +1754,9 @@ export default function Home() {
                     setSearchType('keyword');
                     setProducts([]);
                   }}
-                  className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
+                  className={`flex-1 py-2 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
                 >
                   {t.searchByKeyword}
-                </button>
-                <button
-                  onClick={() => {
-                    setSearchType('url');
-                    setProducts([]);
-                  }}
-                  className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
-                >
-                  {t.searchByUrl}
                 </button>
               </div>
 
@@ -1751,7 +1765,7 @@ export default function Home() {
                   {currentCategory && (
                     <button
                       onClick={() => setCurrentCategory(null)}
-                      className="mb-4 flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium"
+                      className="mb-4 flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold text-sm"
                     >
                       ← {t.back} ({lang === 'es' ? currentCategory.es : currentCategory.pt})
                     </button>
@@ -1760,70 +1774,47 @@ export default function Home() {
                     {(currentCategory ? currentCategory.sub : CATEGORIES).map((cat: any) => (
                       <button
                         key={cat.id}
-                        onClick={async () => {
+                        onClick={() => {
                           if (cat.sub) {
                             setCurrentCategory(cat);
                           } else if (cat.url) {
-                            setIsSearching(true);
-                            setLoading(true);
-                            try {
-                              const res = await fetch(`/api/search?url=${encodeURIComponent(cat.url)}`);
-                              const data = await res.json();
-                              if (data.items) {
-                                setProducts(data.items);
-                              }
-                            } catch (error) {
-                              console.error('Search error:', error);
-                            } finally {
-                              setIsSearching(false);
-                              setLoading(false);
-                            }
+                            // 翻訳済みURLを生成して別タブで開く
+                            const translatedUrl = `https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(cat.url)}`;
+                            window.open(translatedUrl, '_blank');
                           }
                         }}
-                        className="flex items-center justify-between p-4 border rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition group"
+                        className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-gray-50/30"
                       >
                         <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600">
                           {lang === 'es' ? cat.es : cat.pt}
                         </span>
-                        {cat.sub && <span className="text-gray-400 group-hover:text-indigo-600">→</span>}
+                        <span className="text-gray-400 group-hover:text-indigo-600 font-bold">
+                          {cat.sub ? '→' : '↗'}
+                        </span>
                       </button>
                     ))}
                   </div>
                 </div>
-              ) : searchType === 'url' ? (
-                <div className="flex gap-4">
-                  <input
-                    type="text"
-                    placeholder={t.searchPlaceholder}
-                    value={searchUrl}
-                    onChange={(e) => setSearchUrl(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <button
-                    onClick={handleImport}
-                    disabled={loading}
-                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400"
-                  >
-                    {loading ? '...' : t.import}
-                  </button>
-                </div>
               ) : (
-                <form onSubmit={handleKeywordSearch} className="flex gap-4">
-                  <input
-                    type="text"
-                    placeholder={t.keywordPlaceholder}
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400"
-                  >
-                    {loading ? '...' : t.search}
-                  </button>
-                </form>
+                <div className="flex flex-col gap-4">
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      placeholder={t.keywordPlaceholder}
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleKeywordSearch()}
+                      className="flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                    />
+                    <button
+                      onClick={handleKeywordSearch}
+                      disabled={loading || isSearching}
+                      className="bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm shadow-sm"
+                    >
+                      {isSearching ? '...' : t.search}
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
