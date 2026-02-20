@@ -521,7 +521,7 @@ export default function Home() {
             body: JSON.stringify({
               sendToAdmins: true,
               title: 'JOGALIBRE',
-              body: `新規リクエスト: ${bidForm.name} (${currentUser.email})`,
+              body: `更新通知： ${bidForm.name}`,
               url: '/admin'
             })
           }).catch(e => console.error('Admin push error', e));

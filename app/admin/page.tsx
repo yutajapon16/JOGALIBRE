@@ -350,9 +350,9 @@ export default function AdminDashboard() {
         const targetRequest = bidRequests.find(r => r.id === id);
         if (targetRequest?.customerEmail) {
           const statusMessages: Record<string, string> = {
-            approved: '✅ Su solicitud ha sido aprobada / Sua solicitação foi aprovada',
-            rejected: '❌ Su solicitud ha sido rechazada / Sua solicitação foi rejeitada',
-            counter_offer: '💬 Tiene una contraoferta / Você tem uma contraoferta',
+            approved: 'Solicitud aprobada / Solicitação aprovada',
+            rejected: 'Solicitud rechazada / Solicitação rejeitada',
+            counter_offer: 'Tienes contraoferta / Você tem contraoferta',
           };
           fetch('/api/push-send', {
             method: 'POST',
@@ -360,7 +360,7 @@ export default function AdminDashboard() {
             body: JSON.stringify({
               email: targetRequest.customerEmail,
               title: 'JOGALIBRE',
-              body: statusMessages[status] || `Estado actualizado: ${status}`,
+              body: statusMessages[status] || 'Estado actualizado / Estado atualizado',
               url: '/',
             }),
           }).catch(err => console.error('Push notification error:', err));
@@ -738,8 +738,8 @@ export default function AdminDashboard() {
                   }
                 }}
                 className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
-                    ? 'bg-gray-500 text-white hover:bg-gray-600'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-gray-500 text-white hover:bg-gray-600'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
               >
                 {notificationStatus === 'enabled' ? '🔕 通知停止' : '🔔 通知受取'}
