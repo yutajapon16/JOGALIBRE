@@ -1,65 +1,70 @@
 import { NextResponse } from 'next/server';
+import * as cheerio from 'cheerio';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q');
+  const q = searchParams.get('q');
   const lang = searchParams.get('lang') || 'es';
-  
-  if (!query) {
-    return NextResponse.json({ error: 'Search query required' }, { status: 400 });
+
+  if (!q) {
+    return NextResponse.json({ items: [] });
   }
 
   try {
-    // Yahoo!オークションの検索URL（スクレイピング用）
-    // 注：実際の運用では、より適切な方法を使用する必要があります
-    const yahooUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(query)}&n=50`;
-    
-    // デモ用のサンプルデータ
-    const sampleProducts = [
-      {
-        id: '1001',
-        title: query.includes('カメラ') || query.includes('camera') 
-          ? 'Canon EOS R6 ボディ' 
-          : `${query} - サンプル商品 1`,
-        currentPrice: 150000,
-        bids: 12,
-        endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        imageUrl: 'https://via.placeholder.com/300x200?text=Product+1',
-        url: 'https://auctions.yahoo.co.jp/item/1001'
-      },
-      {
-        id: '1002',
-        title: query.includes('カメラ') || query.includes('camera')
-          ? 'Nikon Z6 II レンズキット'
-          : `${query} - サンプル商品 2`,
-        currentPrice: 180000,
-        bids: 8,
-        endTime: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-        imageUrl: 'https://via.placeholder.com/300x200?text=Product+2',
-        url: 'https://auctions.yahoo.co.jp/item/1002'
-      },
-      {
-        id: '1003',
-        title: query.includes('カメラ') || query.includes('camera')
-          ? 'Sony α7 IV ボディ'
-          : `${query} - サンプル商品 3`,
-        currentPrice: 220000,
-        bids: 15,
-        endTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-        imageUrl: 'https://via.placeholder.com/300x200?text=Product+3',
-        url: 'https://auctions.yahoo.co.jp/item/1003'
-      }
-    ];
-
-    return NextResponse.json({
-      products: sampleProducts,
-      query,
-      language: lang
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Search failed' },
-      { status: 500 }
+    // 1. 翻訳 (スペイン語/ポルトガル語 -> 日本語)
+    // 無料の翻訳サービス用URL (簡易版)
+    const translateRes = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${lang}&tl=ja&dt=t&q=${encodeURIComponent(q)}`
     );
+    const translateData = await translateRes.json();
+    const JapaneseKeyword = translateData?.[0]?.[0]?.[0] || q;
+
+    console.log(`Original: ${q}, Translated: ${JapaneseKeyword}`);
+
+    // 2. Yahoo!オークション検索
+    const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(JapaneseKeyword)}&va=${encodeURIComponent(JapaneseKeyword)}&exflg=1&b=1&n=20&s1=score&o1=d`;
+
+    const response = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const items: any[] = [];
+
+    $('.Product').each((i, el) => {
+      if (items.length >= 20) return;
+
+      const $el = $(el);
+      const title = $el.find('.Product__titleLink').text().trim();
+      const url = $el.find('.Product__titleLink').attr('href');
+      const imageUrl = $el.find('.Product__imageData').attr('src');
+      const priceText = $el.find('.Product__priceValue').first().text().replace(/[^\d]/g, '');
+      const price = parseInt(priceText) || 0;
+      const bids = parseInt($el.find('.Product__bid').text()) || 0;
+
+      // 商品ID抽出
+      const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
+      const id = productIdMatch ? productIdMatch[1] : `search-${i}`;
+
+      if (title && url) {
+        items.push({
+          id,
+          title,
+          url,
+          imageUrl,
+          currentPrice: price,
+          bids,
+          source: 'yahoo_search'
+        });
+      }
+    });
+
+    return NextResponse.json({ items, translatedKeyword: JapaneseKeyword });
+  } catch (error) {
+    console.error('Search error:', error);
+    return NextResponse.json({ error: 'Failed to search' }, { status: 500 });
   }
 }

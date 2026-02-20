@@ -82,6 +82,10 @@ const translations = {
     notificationsEnabled: 'Notificaciones activadas \u2705',
     notificationsDisabled: 'Notificaciones desactivadas',
     sendComprobante: 'Enviar comprobante de pago',
+    searchByUrl: 'Importar por URL',
+    searchByKeyword: 'Buscar por Palabra Clave',
+    keywordPlaceholder: 'Buscar productos (ej. reloj, bolso...)',
+    searching: 'Buscando...',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -158,6 +162,10 @@ const translations = {
     notificationsEnabled: 'Notifica\u00e7\u00f5es ativadas \u2705',
     notificationsDisabled: 'Notifica\u00e7\u00f5es desativadas',
     sendComprobante: 'Enviar comprovante de pagamento',
+    searchByUrl: 'Importar por URL',
+    searchByKeyword: 'Buscar por Palavra-Chave',
+    keywordPlaceholder: 'Buscar produtos (ex: relógio, bolsa...)',
+    searching: 'Buscando...',
   }
 };
 
@@ -179,6 +187,9 @@ export default function Home() {
     whatsapp: ''
   });
   const [activeTab, setActiveTab] = useState<'search' | 'requests' | 'purchased' | 'mypage'>('search');
+  const [searchType, setSearchType] = useState<'url' | 'keyword'>('keyword');
+  const [keyword, setKeyword] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [myRequests, setMyRequests] = useState<any[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<any[]>([]);
   // マイページ用state
@@ -624,6 +635,26 @@ export default function Home() {
     } catch (error) {
       console.error('Error importing product:', error);
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeywordSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!keyword.trim()) return;
+
+    setIsSearching(true);
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(keyword)}&lang=${lang}`);
+      const data = await res.json();
+      if (data.items) {
+        setProducts(data.items);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
       setLoading(false);
     }
   };
@@ -1637,22 +1668,63 @@ export default function Home() {
         ) : (
           <>
             <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              <div className="flex gap-4">
-                <input
-                  type="text"
-                  placeholder={t.searchPlaceholder}
-                  value={searchUrl}
-                  onChange={(e) => setSearchUrl(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-                />
+              {/* 検索タイプ切り替え */}
+              <div className="flex border-b mb-6">
                 <button
-                  onClick={handleImport}
-                  disabled={loading}
-                  className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400"
+                  onClick={() => {
+                    setSearchType('keyword');
+                    setProducts([]);
+                  }}
+                  className={`flex-1 py-2 text-sm font-medium border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
                 >
-                  {loading ? '...' : t.import}
+                  {t.searchByKeyword}
+                </button>
+                <button
+                  onClick={() => {
+                    setSearchType('url');
+                    setProducts([]);
+                  }}
+                  className={`flex-1 py-2 text-sm font-medium border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
+                >
+                  {t.searchByUrl}
                 </button>
               </div>
+
+              {searchType === 'url' ? (
+                <div className="flex gap-4">
+                  <input
+                    type="text"
+                    placeholder={t.searchPlaceholder}
+                    value={searchUrl}
+                    onChange={(e) => setSearchUrl(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <button
+                    onClick={handleImport}
+                    disabled={loading}
+                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400"
+                  >
+                    {loading ? '...' : t.import}
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleKeywordSearch} className="flex gap-4">
+                  <input
+                    type="text"
+                    placeholder={t.keywordPlaceholder}
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400"
+                  >
+                    {loading ? '...' : t.search}
+                  </button>
+                </form>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
