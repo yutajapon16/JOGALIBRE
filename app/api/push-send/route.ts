@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
             // 管理者全員のIDを取得
             const { data: adminUsers, error: adminError } = await supabase
                 .from('user_roles')
-                .select('user_id')
+                .select('id')
                 .eq('role', 'admin');
 
             if (adminError) {
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: adminError.message }, { status: 500 });
             }
             if (adminUsers) {
-                targetUserIds = adminUsers.map(u => u.user_id);
+                targetUserIds = adminUsers.map(u => u.id);
             }
         } else {
             // 個別ユーザー指定
