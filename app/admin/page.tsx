@@ -359,7 +359,7 @@ export default function AdminDashboard() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: targetRequest.customerEmail,
-              title: 'JOGALIBRE',
+              title: '', // タイトルを空にして「From ...」表示を抑制
               body: statusMessages[status] || 'Estado actualizado / Estado atualizado',
               url: '/',
             }),
@@ -391,6 +391,25 @@ export default function AdminDashboard() {
 
       if (res.ok) {
         fetchBidRequests();
+
+        // プッシュ通知を送信（対象顧客のリクエストを特定）
+        const targetRequest = bidRequests.find(r => r.id === id);
+        if (targetRequest?.customerEmail) {
+          const statusMessages: Record<string, string> = {
+            won: 'Ganado / Ganhado',
+            lost: 'Perdido / Perdido',
+          };
+          fetch('/api/push-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: targetRequest.customerEmail,
+              title: '', // タイトルを空にして「From ...」表示を抑制
+              body: statusMessages[finalStatus] || 'Resultado actualizado / Resultado atualizado',
+              url: '/',
+            }),
+          }).catch(err => console.error('Push notification error:', err));
+        }
       } else {
         console.error('updateFinalStatus failed:', res.status);
         alert('更新に失敗しました。ページをリロードしてください。');

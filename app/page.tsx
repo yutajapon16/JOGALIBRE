@@ -520,8 +520,8 @@ export default function Home() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               sendToAdmins: true,
-              title: 'JOGALIBRE',
-              body: `更新通知： ${bidForm.name}`,
+              title: '', // タイトルを空にして「From ...」表示を抑制
+              body: `更新通知： ${currentUser.fullName || bidForm.name}`,
               url: '/admin'
             })
           }).catch(e => console.error('Admin push error', e));
@@ -685,6 +685,20 @@ export default function Home() {
             customerCounterOffer: counterAmount
           })
         });
+      }
+
+      // 管理者へ通知
+      if (currentUser) {
+        fetch('/api/push-send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sendToAdmins: true,
+            title: '', // タイトルを空にして「From ...」表示を抑制
+            body: `更新通知： ${currentUser.fullName || currentUser.email}`,
+            url: '/admin'
+          })
+        }).catch(e => console.error('Admin push error', e));
       }
 
       fetchMyRequests();
