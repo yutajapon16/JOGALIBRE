@@ -359,7 +359,7 @@ export default function AdminDashboard() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: targetRequest.customerEmail,
-              title: '', // タイトルを空にして「From ...」表示を抑制
+              title: ' ', // タイトルをスペースにして「From ...」表示を抑制
               body: statusMessages[status] || 'Estado actualizado / Estado atualizado',
               url: '/',
             }),
@@ -404,7 +404,7 @@ export default function AdminDashboard() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: targetRequest.customerEmail,
-              title: '', // タイトルを空にして「From ...」表示を抑制
+              title: ' ', // タイトルをスペースにして「From ...」表示を抑制
               body: statusMessages[finalStatus] || 'Resultado actualizado / Resultado atualizado',
               url: '/',
             }),

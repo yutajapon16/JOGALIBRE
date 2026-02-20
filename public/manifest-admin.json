@@ -1,6 +1,6 @@
 {
-    "name": "管理画面",
-    "short_name": "管理画面",
+    "name": "JOGALIBRE",
+    "short_name": "JOGALIBRE",
     "description": "JOGALIBRE 管理者ダッシュボード",
     "start_url": "/admin",
     "display": "standalone",

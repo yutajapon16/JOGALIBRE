@@ -520,7 +520,7 @@ export default function Home() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               sendToAdmins: true,
-              title: '', // タイトルを空にして「From ...」表示を抑制
+              title: ' ', // タイトルをスペースにして「From ...」表示を抑制
               body: `更新通知： ${currentUser.fullName || bidForm.name}`,
               url: '/admin'
             })
@@ -694,7 +694,7 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sendToAdmins: true,
-            title: '', // タイトルを空にして「From ...」表示を抑制
+            title: ' ', // タイトルをスペースにして「From ...」表示を抑制
             body: `更新通知： ${currentUser.fullName || currentUser.email}`,
             url: '/admin'
           })

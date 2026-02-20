@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
         // 通知ペイロード
         const payload = JSON.stringify({
-            title: title || 'JOGALIBRE',
+            title: title !== undefined ? title : 'JOGALIBRE',
             body: body || '新しい通知があります',
             icon: '/icons/customer-icon.png',
             url: url || '/',
