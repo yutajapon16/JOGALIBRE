@@ -23,3 +23,8 @@ input, textarea, select {
   -webkit-user-select: text !important;
   user-select: text !important;
 }
+
+/* Improve touch response and prevent zoom on inputs */
+input, textarea, button, select, a {
+  touch-action: manipulation;
+}
