@@ -87,6 +87,7 @@ const translations = {
     searchByCategories: 'Categorías',
     keywordPlaceholder: 'Buscar productos (ej. reloj, bolso...)',
     searching: 'Buscando...',
+    back: 'Atrás',
   },
   pt: {
     title: 'JOGALIBRE',
