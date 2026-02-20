@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -244,6 +244,7 @@ export default function Home() {
   });
   const [activeTab, setActiveTab] = useState<'search' | 'requests' | 'purchased' | 'mypage'>('search');
   const [searchType, setSearchType] = useState<'url' | 'keyword' | 'categories'>('categories');
+  const resultsRef = useRef<HTMLDivElement>(null);
   const [keyword, setKeyword] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<any | null>(null);
@@ -737,6 +738,10 @@ export default function Home() {
       if (data.items) {
         setProducts(data.items);
         setNextPageExists(data.nextPage || false);
+        // スクロール処理
+        if (page > 1) {
+          resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -757,6 +762,10 @@ export default function Home() {
       if (data.items) {
         setProducts(data.items);
         setNextPageExists(data.nextPage || false);
+        // スクロール処理
+        if (page > 1) {
+          resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -1775,37 +1784,14 @@ export default function Home() {
         ) : (
           <>
             <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              {/* 商品URLインポート (最上部に常設) */}
-              <div className="mb-8 border-b pb-6">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  {lang === 'es' ? 'OBTENER COTIZACIÓN POR URL' : 'OBTER COTAÇÃO POR URL'}
-                </h3>
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    placeholder={t.searchPlaceholder}
-                    value={searchUrl}
-                    onChange={(e) => setSearchUrl(e.target.value)}
-                    className="flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
-                  />
-                  <button
-                    onClick={handleImport}
-                    disabled={loading}
-                    className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 whitespace-nowrap text-sm shadow-sm"
-                  >
-                    {loading ? '...' : t.import}
-                  </button>
-                </div>
-              </div>
-
-              {/* 検索タイプ切り替え (カテゴリ / ワード) */}
+              {/* 検索タイプ切り替え (3タブ化) */}
               <div className="flex border-b mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
                 <button
                   onClick={() => {
                     setSearchType('categories');
                     setProducts([]);
                   }}
-                  className={`flex-1 py-2 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
+                  className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
                 >
                   {t.searchByCategories}
                 </button>
@@ -1814,11 +1800,41 @@ export default function Home() {
                     setSearchType('keyword');
                     setProducts([]);
                   }}
-                  className={`flex-1 py-2 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
+                  className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
                 >
                   {t.searchByKeyword}
                 </button>
+                <button
+                  onClick={() => {
+                    setSearchType('url');
+                    setProducts([]);
+                  }}
+                  className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
+                >
+                  {lang === 'es' ? 'Importar URL' : 'Importar URL'}
+                </button>
               </div>
+
+              {searchType === 'url' && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      placeholder={t.searchPlaceholder}
+                      value={searchUrl}
+                      onChange={(e) => setSearchUrl(e.target.value)}
+                      className="flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                    />
+                    <button
+                      onClick={handleImport}
+                      disabled={loading}
+                      className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 whitespace-nowrap text-sm shadow-sm"
+                    >
+                      {loading ? '...' : t.import}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {searchType === 'categories' ? (
                 <div>
@@ -1876,37 +1892,33 @@ export default function Home() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div ref={resultsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer"
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer border border-gray-50"
                   onClick={() => fetchProductDetailForOffer(product.url)}
                 >
-                  <div className="aspect-square w-full overflow-hidden bg-gray-50">
+                  <div className="aspect-square w-full overflow-hidden bg-white">
                     <img
                       src={product.imageUrl}
                       alt={product.title}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain p-2"
                     />
                   </div>
-                  <div className="p-3 sm:p-4">
-                    <h3 className="text-sm font-semibold mb-2 line-clamp-2 h-10">{product.title}</h3>
-                    <div className="space-y-1 mb-2">
-                      <div className="flex justify-between text-xs text-gray-500">
-                        <span>{t.currentPrice}:</span>
-                        <span className="font-bold text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
+                  <div className="p-3 sm:p-4 border-t border-gray-50">
+                    <h3 className="text-xs font-bold mb-2 line-clamp-2 h-8 text-gray-800 leading-tight">{product.title}</h3>
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center bg-gray-50 p-1 px-2 rounded">
+                        <span className="text-[10px] text-gray-500 font-bold">{t.currentPrice}:</span>
+                        <span className="font-bold text-gray-900 text-sm">¥{product.currentPrice.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between items-end pt-1 border-t border-gray-100">
+                      <div className="flex justify-between items-center p-1 px-2">
                         <span className="text-[10px] font-bold text-indigo-600 uppercase">USD aprox:</span>
-                        <span className="text-lg font-bold text-indigo-600">
+                        <span className="text-lg font-black text-indigo-600">
                           ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
                         </span>
                       </div>
-                    </div>
-                    <div className="flex justify-between text-[10px] text-gray-400">
-                      <span>{t.bids}: {product.bids}</span>
-                      <span className="underline">View Detail →</span>
                     </div>
                   </div>
                 </div>
