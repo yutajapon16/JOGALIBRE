@@ -12,7 +12,7 @@ const translations = {
     subtitle: 'Subastas de Yahoo Japón',
     language: 'Idioma',
     searchPlaceholder: 'Pega la URL del producto de Yahoo Auctions aquí...',
-    import: 'Obtener Cotización',
+    import: 'Cotizar',
     currentPrice: 'Precio actual',
     shippingCost: 'Costo de envío',
     totalPrice: 'Precio total',
@@ -99,7 +99,7 @@ const translations = {
     subtitle: 'Leilões do Yahoo Japão',
     language: 'Idioma',
     searchPlaceholder: 'Cole a URL do produto do Yahoo Auctions aqui...',
-    import: 'Obter Cotação',
+    import: 'Cotar',
     currentPrice: 'Preço atual',
     shippingCost: 'Custo de envio',
     totalPrice: 'Preço total',
@@ -189,12 +189,12 @@ const CATEGORIES = [
     es: 'Carros JDM',
     pt: 'Carros JDM',
     sub: [
-      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=40726&o1=d&s1=new' },
-      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24846&o1=d&s1=new' },
-      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=18389&o1=a&s1=car_model_year' },
-      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=14657&o1=d&s1=new' },
-      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24557&carshift1=91%2C917%2C5379&o1=d&s1=new' },
-      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=28231&o1=a&s1=car_model_year' },
+      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/search/search?p=SUPRA+JZA80+SZ+RZ&va=SUPRA+JZA80+SZ+RZ&exflg=1&b=1&n=20&s1=new&o1=d' },
+      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/search/search?p=SKYLINE+GTR+BNR32+BCNR33+BNR34&va=SKYLINE+GTR+BNR32+BCNR33+BNR34&exflg=1&b=1&n=20&s1=new&o1=d' },
+      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/search/search?p=LANCER+EVOLUTION+CN9A+CP9A&va=LANCER+EVOLUTION+CN9A+CP9A&exflg=1&b=1&n=20&s1=new&o1=d' },
+      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/search/search?p=MAZDA+RX7+FD3S+FC3S&va=MAZDA+RX7+FD3S+FC3S&exflg=1&b=1&n=20&s1=new&o1=d' },
+      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/search/search?p=NISSAN+SILVIA+S13+S14+S15&va=NISSAN+SILVIA+S13+S14+S15&exflg=1&b=1&n=20&s1=new&o1=d' },
+      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/search/search?p=SUBARU+IMPREZA+WRX+STi&va=SUBARU+IMPREZA+WRX+STi&exflg=1&b=1&n=20&s1=new&o1=d' },
       { id: 'desarme', es: 'Vehículo para desarme', pt: 'Veículo para desmanche', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?auccat=2084061280&o1=d&s1=new' },
     ]
   },
@@ -1086,12 +1086,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ + ログアウト/言語切り替え */}
           <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col">
-                <h1 className="text-2xl sm:text-3xl font-bold text-black leading-tight">{t.title}</h1>
-                <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider">{t.subtitle}</p>
-              </div>
+            <div className="flex items-center gap-3">
               <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
+              <div className="flex flex-col">
+                <h1 className="text-2xl sm:text-3xl font-bold text-black leading-none">{t.title}</h1>
+                <p className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.subtitle}</p>
+              </div>
             </div>
             <div className="flex flex-col items-end gap-2">
               <button
@@ -1909,39 +1909,77 @@ export default function Home() {
               )}
             </div>
 
-            <div ref={resultsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div ref={resultsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded shadow hover:shadow-md transition cursor-pointer border border-gray-200"
-                  onClick={() => fetchProductDetailForOffer(product.url)}
+                  className="bg-white rounded overflow-hidden shadow hover:shadow-md transition border border-gray-200"
                 >
-                  <div className="aspect-square w-full overflow-hidden bg-white">
-                    <img
-                      src={product.imageUrl}
-                      alt={product.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-3">
-                    <h3 className="text-[10px] font-bold mb-1 line-clamp-2 h-7 text-gray-800 leading-[1.1]">{product.title}</h3>
-                    <div className="flex flex-col gap-0.5">
-                      <div className="flex justify-between items-center text-[9px] text-gray-500 font-bold">
-                        <span>{t.currentPrice}:</span>
-                        <span className="text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
+                  {/* 上段: 画像(正方形) + 情報 */}
+                  <div className="flex p-3 gap-3">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 relative">
+                      <img
+                        src={product.imageUrl}
+                        alt={product.title}
+                        className="w-full h-full object-cover rounded border border-gray-100"
+                      />
+                    </div>
+                    <div className="flex flex-col flex-1 min-w-0 h-24 sm:h-32 justify-between">
+                      <div>
+                        <h3 className="text-[11px] font-bold text-gray-800 line-clamp-3 leading-tight mb-1">
+                          {product.title}
+                        </h3>
                       </div>
-                      <div className="flex justify-between items-center text-[9px] text-gray-500 font-bold">
-                        <span>{t.bids}:</span>
-                        <span className="text-gray-900">{product.bids}</span>
-                      </div>
-                      <div className="flex justify-between items-center pt-1 mt-1 border-t border-gray-100">
-                        <span className="text-[10px] font-black text-indigo-600 uppercase">USD aprox:</span>
-                        <span className="text-sm font-black text-indigo-600">
-                          ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
-                        </span>
+                      <div className="text-right">
+                        <a
+                          href={product.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-blue-600 font-bold hover:underline"
+                        >
+                          {t.viewOnYahoo}
+                        </a>
                       </div>
                     </div>
                   </div>
+
+                  {/* 中段: 価格・入札情報セクション */}
+                  <div className="px-3 pb-3 space-y-2 border-t border-gray-50 pt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] text-gray-500 font-bold uppercase">{t.currentPrice}</span>
+                      <span className="text-sm font-black text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
+                    </div>
+
+                    <div className="text-[9px] text-gray-400 font-bold leading-tight">
+                      * {t.shippingUnknown}
+                    </div>
+
+                    <div className="flex justify-between items-center text-[10px] font-bold border-y border-gray-50 py-1">
+                      <div className="flex gap-1 items-center">
+                        <span className="text-gray-400 uppercase">{t.bids}:</span>
+                        <span className="text-gray-900">{product.bids}</span>
+                      </div>
+                      <div className="flex gap-1 items-center">
+                        <span className="text-gray-400 uppercase">Termina:</span>
+                        <span className="text-red-500">{product.timeLeft || '1d 12h'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center py-1">
+                      <span className="text-[10px] text-indigo-600 font-black uppercase tracking-tighter">USD aprox:</span>
+                      <span className="text-2xl font-black text-indigo-600 leading-none">
+                        ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 下段: 全幅オファーボタン */}
+                  <button
+                    onClick={() => fetchProductDetailForOffer(product.url)}
+                    className="w-full bg-indigo-600 text-white py-3 font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition"
+                  >
+                    {t.makeOffer}
+                  </button>
                 </div>
               ))}
             </div>
