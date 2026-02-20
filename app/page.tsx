@@ -168,8 +168,51 @@ const translations = {
     searchByCategories: 'Categorias',
     keywordPlaceholder: 'Buscar produtos (ex: relógio, bolsa...)',
     searching: 'Buscando...',
+    back: 'Atrás',
   }
 };
+
+const CATEGORIES = [
+  {
+    id: 'jdm',
+    es: 'Carros JDM',
+    pt: 'Carros JDM',
+    sub: [
+      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=40726&o1=d&s1=new' },
+      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24846&o1=d&s1=new' },
+      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=18389&o1=a&s1=car_model_year' },
+      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=14657&o1=d&s1=new' },
+      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24557&carshift1=91%2C917%2C5379&o1=d&s1=new' },
+      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=28231&o1=a&s1=car_model_year' },
+      { id: 'desarme', es: 'Vehículo para desarme', pt: 'Veículo para desmanche', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?auccat=2084061280&o1=d&s1=new' },
+    ]
+  },
+  { id: 'moto', es: 'Moto', pt: 'Moto', url: 'https://auctions.yahoo.co.jp/list1/26316-category.html' },
+  {
+    id: 'llantas',
+    es: 'Llantas / Rodas',
+    pt: 'Llantas / Rodas',
+    sub: [
+      { id: 'll16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200188/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200188&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured' },
+      { id: 'll17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200189/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200189&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured' },
+      { id: 'll18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200190/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200190&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured' },
+    ]
+  },
+  {
+    id: 'aros',
+    es: 'Aros',
+    pt: 'Aros',
+    sub: [
+      { id: 'ar16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084008474/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084008474&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=118472,118483,118474,119521,118478,118481,115842,102328,120288,119007' },
+      { id: 'ar17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040548/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040548&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=118472%2C118478%2C118474%2C119007%2C119521%2C118481%2C115842%2C159741%2C118483%2C102328' },
+      { id: 'ar18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040547/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040547&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=115842,119007,118474,102328,118472,118483,119521,118478,118481,128485' },
+    ]
+  },
+  { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=128485,103816,105215,103820,119942,119941,119938' },
+  { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=102214,103815,115842,128485,159741,103823' },
+  { id: 'repuesto', es: 'Repuesto', pt: 'Autopeça', url: 'https://auctions.yahoo.co.jp/list1/26322-catlist.html' },
+  { id: 'allcats', es: 'Lista de categorías', pt: 'Lista de categorias', url: 'https://auctions.yahoo.co.jp/list1/jp/0-all.html' },
+];
 
 export default function Home() {
   const [lang, setLang] = useState<'es' | 'pt'>('es');
@@ -192,6 +235,7 @@ export default function Home() {
   const [searchType, setSearchType] = useState<'url' | 'keyword' | 'categories'>('categories');
   const [keyword, setKeyword] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [currentCategory, setCurrentCategory] = useState<any | null>(null);
   const [myRequests, setMyRequests] = useState<any[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<any[]>([]);
   // マイページ用state
@@ -1702,44 +1746,48 @@ export default function Home() {
               </div>
 
               {searchType === 'categories' ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                  {[
-                    { id: 'rel', es: 'Relojes', pt: 'Relógios', jp: '時計' },
-                    { id: 'bol', es: 'Bolsos', pt: 'Bolsas', jp: 'バッグ' },
-                    { id: 'acc', es: 'Accesorios', pt: 'Acessórios', jp: 'アクセサリー' },
-                    { id: 'zap', es: 'Zapatos', pt: 'Sapatos', jp: '靴' },
-                    { id: 'rop', es: 'Ropa', pt: 'Roupas', jp: 'ファッション' },
-                    { id: 'cam', es: 'Cámaras', pt: 'Câmeras', jp: 'カメラ' },
-                    { id: 'ins', es: 'Instrumentos', pt: 'Instrumentos', jp: '楽器' },
-                    { id: 'jug', es: 'Juguetes', pt: 'Brinquedos', jp: 'おもちゃ' },
-                    { id: 'aut', es: 'Autos/Partes', pt: 'Carros/Peças', jp: '自動車パーツ' },
-                    { id: 'pes', es: 'Pesca', pt: 'Pesca', jp: 'フィッシング' },
-                  ].map((cat) => (
+                <div>
+                  {currentCategory && (
                     <button
-                      key={cat.id}
-                      onClick={async () => {
-                        setIsSearching(true);
-                        setLoading(true);
-                        try {
-                          const res = await fetch(`/api/search?q=${encodeURIComponent(cat.jp)}&lang=ja`);
-                          const data = await res.json();
-                          if (data.items) {
-                            setProducts(data.items);
-                          }
-                        } catch (error) {
-                          console.error('Search error:', error);
-                        } finally {
-                          setIsSearching(false);
-                          setLoading(false);
-                        }
-                      }}
-                      className="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition group"
+                      onClick={() => setCurrentCategory(null)}
+                      className="mb-4 flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium"
                     >
-                      <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">
-                        {lang === 'es' ? cat.es : cat.pt}
-                      </span>
+                      ← {t.back} ({lang === 'es' ? currentCategory.es : currentCategory.pt})
                     </button>
-                  ))}
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(currentCategory ? currentCategory.sub : CATEGORIES).map((cat: any) => (
+                      <button
+                        key={cat.id}
+                        onClick={async () => {
+                          if (cat.sub) {
+                            setCurrentCategory(cat);
+                          } else if (cat.url) {
+                            setIsSearching(true);
+                            setLoading(true);
+                            try {
+                              const res = await fetch(`/api/search?url=${encodeURIComponent(cat.url)}`);
+                              const data = await res.json();
+                              if (data.items) {
+                                setProducts(data.items);
+                              }
+                            } catch (error) {
+                              console.error('Search error:', error);
+                            } finally {
+                              setIsSearching(false);
+                              setLoading(false);
+                            }
+                          }
+                        }}
+                        className="flex items-center justify-between p-4 border rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition group"
+                      >
+                        <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600">
+                          {lang === 'es' ? cat.es : cat.pt}
+                        </span>
+                        {cat.sub && <span className="text-gray-400 group-hover:text-indigo-600">→</span>}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : searchType === 'url' ? (
                 <div className="flex gap-4">

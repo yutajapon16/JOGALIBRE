@@ -5,24 +5,32 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q');
   const lang = searchParams.get('lang') || 'es';
+  const urlParam = searchParams.get('url');
 
-  if (!q) {
+  if (!q && !urlParam) {
     return NextResponse.json({ items: [] });
   }
 
   try {
-    // 1. 翻訳 (スペイン語/ポルトガル語 -> 日本語)
-    // 無料の翻訳サービス用URL (簡易版)
-    const translateRes = await fetch(
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${lang}&tl=ja&dt=t&q=${encodeURIComponent(q)}`
-    );
-    const translateData = await translateRes.json();
-    const JapaneseKeyword = translateData?.[0]?.[0]?.[0] || q;
+    let searchUrl = '';
+    let translatedKeyword = '';
 
-    console.log(`Original: ${q}, Translated: ${JapaneseKeyword}`);
+    if (urlParam) {
+      searchUrl = urlParam;
+    } else if (q) {
+      // 1. 翻訳 (スペイン語/ポルトガル語 -> 日本語)
+      // 無料の翻訳サービス用URL (簡易版)
+      const translateRes = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${lang}&tl=ja&dt=t&q=${encodeURIComponent(q)}`
+      );
+      const translateData = await translateRes.json();
+      translatedKeyword = translateData?.[0]?.[0]?.[0] || q;
 
-    // 2. Yahoo!オークション検索
-    const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(JapaneseKeyword)}&va=${encodeURIComponent(JapaneseKeyword)}&exflg=1&b=1&n=20&s1=score&o1=d`;
+      console.log(`Original: ${q}, Translated: ${translatedKeyword}`);
+
+      // 2. Yahoo!オークション検索
+      searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(translatedKeyword)}&va=${encodeURIComponent(translatedKeyword)}&exflg=1&b=1&n=20&s1=score&o1=d`;
+    }
 
     const response = await fetch(searchUrl, {
       headers: {
@@ -62,7 +70,7 @@ export async function GET(request: Request) {
       }
     });
 
-    return NextResponse.json({ items, translatedKeyword: JapaneseKeyword });
+    return NextResponse.json({ items, translatedKeyword });
   } catch (error) {
     console.error('Search error:', error);
     return NextResponse.json({ error: 'Failed to search' }, { status: 500 });
