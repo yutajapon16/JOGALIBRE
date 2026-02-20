@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const { url } = await request.json();
-    
+
     if (!url || !url.includes('auctions.yahoo.co.jp')) {
       return NextResponse.json(
         { error: 'Invalid Yahoo Auctions URL' },
@@ -16,11 +16,11 @@ export async function POST(request: Request) {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       }
     });
-    
+
     const html = await response.text();
-    
+
     console.log('HTML length:', html.length);
-    
+
     let title = '';
     let currentPrice = 0;
     let bids = 0;
@@ -28,54 +28,54 @@ export async function POST(request: Request) {
     let endTime = null;
     let shippingCost = 0;
     let shippingUnknown = false;
-    
+
     const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
-    
+
     if (nextDataMatch) {
       try {
         const jsonData = JSON.parse(nextDataMatch[1]);
         console.log('Found __NEXT_DATA__');
-        
+
         const pageProps = jsonData.props?.pageProps;
-        
+
         if (pageProps) {
           const initialState = pageProps.initialState;
-          
+
           if (initialState) {
             console.log('Found initialState, keys:', Object.keys(initialState).slice(0, 20));
-            
+
             const itemData = initialState.item?.detail?.item || {};
             console.log('ItemData keys:', Object.keys(itemData).slice(0, 40));
-            
+
             // paymentとoptionの中身を確認
             console.log('payment object:', JSON.stringify(itemData.payment, null, 2));
             console.log('option object:', JSON.stringify(itemData.option, null, 2));
-            
-            currentPrice = itemData.price || 
-                          itemData.currentPrice || 
-                          itemData.currentBidPrice ||
-                          itemData.startPrice ||
-                          0;
-            
-            bids = itemData.bids || 
-                  itemData.bidCount || 
-                  itemData.numberOfBids ||
-                  itemData.bidders ||
-                  itemData.bidOrBuy ||
-                  0;
-            
-            title = itemData.title || 
-                   itemData.name || 
-                   itemData.productName || 
-                   '';
-            
+
+            currentPrice = itemData.price ||
+              itemData.currentPrice ||
+              itemData.currentBidPrice ||
+              itemData.startPrice ||
+              0;
+
+            bids = itemData.bids ||
+              itemData.bidCount ||
+              itemData.numberOfBids ||
+              itemData.bidders ||
+              itemData.bidOrBuy ||
+              0;
+
+            title = itemData.title ||
+              itemData.name ||
+              itemData.productName ||
+              '';
+
             imageUrl = itemData.img?.url ||
-                      itemData.image || 
-                      itemData.imageUrl || 
-                      itemData.thumbnail ||
-                      itemData.images?.[0]?.url ||
-                      imageUrl;
-            
+              itemData.image ||
+              itemData.imageUrl ||
+              itemData.thumbnail ||
+              itemData.images?.[0]?.url ||
+              imageUrl;
+
             // 終了時刻を取得（UNIXタイムスタンプまたはISO文字列）
             if (itemData.endTime) {  // ← let を削除
               // UNIXタイムスタンプの場合（秒単位）
@@ -84,18 +84,18 @@ export async function POST(request: Request) {
               } else if (typeof itemData.endTime === 'string') {
                 endTime = itemData.endTime;
               }
-        }
-            
-            console.log('End time data:', { 
+            }
+
+            console.log('End time data:', {
               rawEndTime: itemData.endTime,
               formattedEndTime: itemData.formattedEndTime,
               leftTime: itemData.leftTime,
               parsedEndTime: endTime
             });
-            
+
             // 送料を取得 - HTMLから直接抽出
             console.log('chargeForShipping:', itemData.chargeForShipping);
-            
+
             // 送料セクションを探す
             const shippingSection = html.match(/送料[\s\S]{0,500}?円/);
             if (shippingSection) {
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
             } else {
               console.log('Shipping section NOT found');
             }
-            
+
             // HTMLから送料を抽出（複数のパターンを試す）
             const shippingPatterns = [
               // シンプルに数字+円を探す（送料の後500文字以内）
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
               // HTMLタグを含む場合
               /送料[^>]*?>\s*([\d,]+)\s*円/,
             ];
-            
+
             for (const pattern of shippingPatterns) {
               const match = html.match(pattern);
               console.log('Testing pattern:', pattern, 'Match:', match ? match[1] : 'NO MATCH');
@@ -134,46 +134,46 @@ export async function POST(request: Request) {
                 }
               }
             }
-            
+
             // 送料無料の場合
             if (itemData.chargeForShipping === 'free') {
               shippingCost = 0;
               shippingUnknown = false;
             }
-            
+
             // 送料が見つからない場合は不明フラグ
             if (shippingCost === 0 && itemData.chargeForShipping === 'winner') {
               shippingUnknown = true;
             }
-            
+
             // 送料が0の場合、送料不明フラグを立てる
             if (shippingCost === 0) {
               shippingUnknown = true;
             }
-            
-            console.log('Shipping data:', { 
+
+            console.log('Shipping data:', {
               shippingCost,
               shippingUnknown,
               chargeForShipping: itemData.chargeForShipping,
               itemDataKeys: Object.keys(itemData).filter(key => key.toLowerCase().includes('ship') || key.toLowerCase().includes('delivery'))
             });
-            
-            console.log('Extracted from item.detail.item:', { 
-              title: title ? title.substring(0, 50) : '', 
-              currentPrice, 
+
+            console.log('Extracted from item.detail.item:', {
+              title: title ? title.substring(0, 50) : '',
+              currentPrice,
               bids,
               imageUrl: imageUrl.substring(0, 50),
               endTime
             });
           }
-          
+
           console.log('Available pageProps keys:', Object.keys(pageProps).slice(0, 30));
         }
       } catch (e) {
         console.log('JSON parse error:', e);
       }
     }
-    
+
     if (!title) {
       const titleMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
       if (titleMatch) {
@@ -185,43 +185,79 @@ export async function POST(request: Request) {
         }
       }
     }
-    
+
     if (imageUrl.includes('placeholder')) {
       const ogImageMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
       if (ogImageMatch) {
         imageUrl = ogImageMatch[1];
       }
     }
-    
+
     if (imageUrl && imageUrl.startsWith('/')) {
       imageUrl = 'https://auctions.yahoo.co.jp' + imageUrl;
     }
-    
+
     const match1 = url.match(/\/([a-z0-9]+)$/);
     const match2 = url.match(/\/item\/([a-z0-9]+)/);
     const match3 = url.match(/auction\/([a-z0-9]+)/);
-    const productId = (match1 && match1[1]) || 
-                      (match2 && match2[1]) ||
-                      (match3 && match3[1]) ||
-                      Date.now().toString();
-    
+    const productId = (match1 && match1[1]) ||
+      (match2 && match2[1]) ||
+      (match3 && match3[1]) ||
+      Date.now().toString();
+
+    // 商品の説明文を抽出
+    let description = '';
+    const descriptionMatch = html.match(/<div[^>]*class="ProductDescription__body"[^>]*>([\s\S]*?)<\/div>/i);
+    if (descriptionMatch) {
+      // タグを除去してテキストのみ抽出（または簡易HTMLとして保持）
+      description = descriptionMatch[1].replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '').trim();
+    } else {
+      // 別のパターン
+      const descPart = html.match(/<!--\s*description\s*-->([\s\S]*?)<!--\s*\/description\s*-->/i);
+      if (descPart) {
+        description = descPart[1].trim();
+      }
+    }
+
+    // 説明文の翻訳 (オプション: パラメータで言語が指定されている場合)
+    let translatedDescription = '';
+    const { lang = 'ja' } = await (async () => {
+      try { return await request.clone().json(); } catch (e) { return {}; }
+    })();
+
+    if (description && lang !== 'ja') {
+      try {
+        // 長文の場合は分割が必要だが、まずはシンプルに試行
+        const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2000); // 2000文字制限
+        const transRes = await fetch(
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(cleanDesc)}`
+        );
+        const transData = await transRes.json();
+        translatedDescription = transData?.[0]?.map((x: any) => x[0]).join('') || '';
+      } catch (e) {
+        console.error('Description translation error:', e);
+      }
+    }
+
     const product = {
-  id: productId,
-  title: title || 'タイトル取得失敗',
-  currentPrice: currentPrice,
-  bids: bids,
-  endTime: endTime,  // ← endTime 変数を使う
-  imageUrl: imageUrl,
-  url: url,
-  source: 'yahoo_url_import',
-  shippingCost: shippingCost,
-  shippingUnknown: shippingUnknown
-};
-    
+      id: productId,
+      title: title || 'タイトル取得失敗',
+      currentPrice: currentPrice,
+      bids: bids,
+      endTime: endTime,
+      imageUrl: imageUrl,
+      url: url,
+      source: 'yahoo_url_import',
+      shippingCost: shippingCost,
+      shippingUnknown: shippingUnknown,
+      description: description,
+      translatedDescription: translatedDescription
+    };
+
     console.log('Final product:', product);
-    
+
     return NextResponse.json({ product });
-    
+
   } catch (error) {
     console.error('Error fetching Yahoo product:', error);
     return NextResponse.json(

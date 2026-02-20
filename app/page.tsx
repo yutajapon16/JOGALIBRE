@@ -87,7 +87,10 @@ const translations = {
     searchByCategories: 'Categorías',
     keywordPlaceholder: 'Buscar productos (ej. reloj, bolso...)',
     searching: 'Buscando...',
-    back: 'Atrás',
+    back: 'Volver',
+    productDetail: 'Detalle del Producto',
+    description: 'Descripción',
+    loadingDetail: 'Cargando detalles...',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -169,7 +172,10 @@ const translations = {
     searchByCategories: 'Categorias',
     keywordPlaceholder: 'Buscar produtos (ex: relógio, bolsa...)',
     searching: 'Buscando...',
-    back: 'Atrás',
+    back: 'Voltar',
+    productDetail: 'Detalhes do Produto',
+    description: 'Descrição',
+    loadingDetail: 'Carregando detalhes...',
   }
 };
 
@@ -237,6 +243,8 @@ export default function Home() {
   const [keyword, setKeyword] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<any | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [detailedProduct, setDetailedProduct] = useState<any | null>(null);
   const [myRequests, setMyRequests] = useState<any[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<any[]>([]);
   // マイページ用state
@@ -654,6 +662,26 @@ export default function Home() {
       setMyRequests(convertedRequests);
     } catch (error) {
       console.error('Error fetching requests:', error);
+    }
+  };
+
+  const fetchProductDetail = async (url: string) => {
+    setIsDetailLoading(true);
+    setDetailedProduct(null); // クリア
+    try {
+      const res = await fetch('/api/yahoo-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, lang })
+      });
+      const data = await res.json();
+      if (data.product) {
+        setDetailedProduct(data.product);
+      }
+    } catch (error) {
+      console.error('Error fetching product detail:', error);
+    } finally {
+      setIsDetailLoading(false);
     }
   };
 
@@ -1774,13 +1802,25 @@ export default function Home() {
                     {(currentCategory ? currentCategory.sub : CATEGORIES).map((cat: any) => (
                       <button
                         key={cat.id}
-                        onClick={() => {
+                        onClick={async () => {
                           if (cat.sub) {
                             setCurrentCategory(cat);
                           } else if (cat.url) {
-                            // 翻訳済みURLを生成して別タブで開く
-                            const translatedUrl = `https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(cat.url)}`;
-                            window.open(translatedUrl, '_blank');
+                            // 内部検索を実行してアプリ内で表示
+                            setIsSearching(true);
+                            setLoading(true);
+                            try {
+                              const res = await fetch(`/api/search?url=${encodeURIComponent(cat.url)}`);
+                              const data = await res.json();
+                              if (data.items) {
+                                setProducts(data.items);
+                              }
+                            } catch (error) {
+                              console.error('Search error:', error);
+                            } finally {
+                              setIsSearching(false);
+                              setLoading(false);
+                            }
                           }
                         }}
                         className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-gray-50/30"
@@ -1789,7 +1829,7 @@ export default function Home() {
                           {lang === 'es' ? cat.es : cat.pt}
                         </span>
                         <span className="text-gray-400 group-hover:text-indigo-600 font-bold">
-                          {cat.sub ? '→' : '↗'}
+                          {cat.sub ? '→' : '↓'}
                         </span>
                       </button>
                     ))}
@@ -1819,80 +1859,137 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {products.map((product) => {
-                console.log('Rendering product:', product);
-                console.log('Product endTime:', product.endTime);
-                return (
-                  <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div className="aspect-square w-full overflow-hidden">
-                      <img
-                        src={product.imageUrl}
-                        alt={product.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-3 sm:p-4">
-                      <h3 className="text-sm sm:text-base font-semibold mb-2 line-clamp-2">{product.title}</h3>
-
-                      <div className="space-y-2 mb-4">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">{t.currentPrice}:</span>
-                          <span className="font-semibold">¥{product.currentPrice.toLocaleString()}</span>
-                        </div>
-                        {product.shippingCost > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">{t.shippingCost}:</span>
-                            <span className="font-semibold">¥{product.shippingCost.toLocaleString()}</span>
-                          </div>
-                        )}
-                        {product.shippingCost > 0 && (
-                          <div className="flex justify-between text-sm border-t pt-2">
-                            <span className="text-gray-600 font-semibold">{t.totalPrice}:</span>
-                            <span className="font-bold">¥{(product.currentPrice + product.shippingCost).toLocaleString()}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">{t.usdPrice}:</span>
-                          <span className="text-2xl font-bold text-indigo-600">
-                            ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
-                          </span>
-                        </div>
-                        {product.shippingUnknown && (
-                          <div className="bg-yellow-50 border border-yellow-200 rounded p-2 mt-2">
-                            <p className="text-xs text-yellow-800">⚠️ {t.shippingUnknown}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex justify-between text-sm mb-4">
-                        <span className="text-gray-600">{t.bids}: {product.bids}</span>
-                        <span className="text-gray-600">{t.timeLeft}: <span className="font-semibold text-red-600">{getTimeRemaining(product.endTime)}</span></span>
-                      </div>
-
-                      <a
-                        href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(product.url)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 hover:underline text-sm mb-3 inline-block"
-                      >
-                        {t.viewOnYahoo}
-
-                      </a>
-
-                      <button
-                        onClick={() => setSelectedProduct(product)}
-                        className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm sm:text-base"
-                      >
-                        {t.makeOffer}
-                      </button>
+              {products.map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer group"
+                  onClick={() => fetchProductDetail(product.url)}
+                >
+                  <div className="relative aspect-square w-full bg-gray-100 overflow-hidden">
+                    <img
+                      src={product.imageUrl}
+                      alt={product.title}
+                      className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
+                    />
+                    <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                      {product.bids} bids
                     </div>
                   </div>
-                )
-              })}
+                  <div className="p-3 sm:p-4 flex flex-col h-44">
+                    <h3 className="text-sm font-bold text-gray-800 line-clamp-2 mb-2 leading-tight min-h-[2.5rem]">
+                      {product.title}
+                    </h3>
+                    <div className="mt-auto space-y-1">
+                      <div className="flex justify-between items-end">
+                        <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">{t.currentPrice}:</span>
+                        <span className="font-bold text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-end pt-1 border-t border-gray-100">
+                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tight">USD (aprox):</span>
+                        <span className="text-lg font-black text-indigo-600">
+                          ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
+
+            {/* 商品詳細モーダル (インアプリ翻訳) */}
+            {(isDetailLoading || detailedProduct) && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-in fade-in duration-200">
+                <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col relative shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+                  {/* 閉じるボタン */}
+                  <button
+                    onClick={() => {
+                      setDetailedProduct(null);
+                      setIsDetailLoading(false);
+                    }}
+                    className="absolute top-4 right-4 bg-white/90 backdrop-blur-md p-2 rounded-full shadow-lg z-20 hover:bg-gray-100 transition active:scale-95"
+                  >
+                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+
+                  <div className="overflow-y-auto overflow-x-hidden">
+                    {isDetailLoading ? (
+                      <div className="flex flex-col items-center justify-center p-20 gap-4">
+                        <div className="w-12 h-12 border-[5px] border-gray-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                        <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">{t.loadingDetail}</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="p-6">
+                          <div className="flex flex-col md:flex-row gap-6 mb-8">
+                            <div className="w-full md:w-64 aspect-square bg-gray-50 rounded-2xl overflow-hidden shadow-inner flex-shrink-0">
+                              <img
+                                src={detailedProduct.imageUrl}
+                                alt={detailedProduct.title}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            <div className="flex-1 flex flex-col py-1">
+                              <h2 className="text-xl font-black text-gray-900 leading-tight mb-4">{detailedProduct.title}</h2>
+                              <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">{t.currentPrice}</span>
+                                  <span className="font-bold text-gray-700">¥{detailedProduct.currentPrice.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                                  <span className="text-indigo-600 font-black uppercase text-[11px] tracking-widest">USD FINAL</span>
+                                  <span className="text-3xl font-black text-indigo-600 tracking-tighter">
+                                    ${calculateUSDPrice(detailedProduct.currentPrice, detailedProduct.shippingCost || 0)}
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setSelectedProduct(detailedProduct);
+                                  setDetailedProduct(null);
+                                }}
+                                className="w-full mt-6 bg-indigo-600 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0.5 transition duration-200"
+                              >
+                                {t.makeOffer}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <h3 className="text-xs font-black text-gray-300 uppercase tracking-[0.2em] px-1">{t.description}</h3>
+                            <div className="bg-gray-50/50 rounded-2xl p-5 border border-gray-100">
+                              {detailedProduct.translatedDescription ? (
+                                <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                                  {detailedProduct.translatedDescription}
+                                </p>
+                              ) : (
+                                <p className="text-gray-400 italic text-sm py-8 text-center">Description not available.</p>
+                              )}
+                              <div className="mt-8 pt-6 border-t border-gray-200/50 flex justify-between items-center">
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">ID: {detailedProduct.id}</span>
+                                <a
+                                  href={detailedProduct.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-indigo-400 font-bold uppercase underline tracking-widest hover:text-indigo-600 transition"
+                                >
+                                  Ver Original ↗
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>
+
 
       {selectedProduct && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-30 flex items-center justify-center p-4 z-50">
