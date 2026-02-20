@@ -67,22 +67,22 @@ export async function GET(request: Request) {
       }
     });
 
-    // パターン2: カテゴリページ (.item) - もしパターン1で見つからなかった場合
+    // パターン2: カテゴリページ (.item, .s_item, .sdc)
     if (items.length === 0) {
-      $('.item, .s_item, .Product__item').each((i, el) => {
+      $('.item, .s_item, .Product__item, .sdc').each((i, el) => {
         const $el = $(el);
-        const title = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink').text().trim() || $el.find('h3').text().trim();
-        const url = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink').attr('href') || $el.find('a').attr('href');
-        let imageUrl = $el.find('.item__imageData, .s_item__imageData, .Product__imageData').attr('src') || $el.find('img').attr('src');
+        const title = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__title').text().trim() || $el.find('h3').text().trim();
+        const url = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link').attr('href') || $el.find('a').attr('href');
+        let imageUrl = $el.find('.item__imageData, .s_item__imageData, .Product__imageData, .sdc__image').attr('src') || $el.find('img').attr('src');
 
-        // Lazy load や data-original への対応
+        // Lazy load や data-original, data-src への対応
         if (!imageUrl || imageUrl.includes('blank.gif')) {
-          imageUrl = $el.find('img').attr('data-original') || $el.find('img').attr('data-src') || imageUrl;
+          imageUrl = $el.find('img').attr('data-original') || $el.find('img').attr('data-src') || $el.find('img').attr('src');
         }
 
-        const priceText = $el.find('.item__priceValue, .s_item__priceValue, .Product__priceValue').first().text().replace(/[^\d]/g, '') || $el.find('.price').text().replace(/[^\d]/g, '');
+        const priceText = $el.find('.item__priceValue, .s_item__priceValue, .Product__priceValue, .sdc__price').first().text().replace(/[^\d]/g, '') || $el.find('.price').text().replace(/[^\d]/g, '');
         const price = parseInt(priceText) || 0;
-        const bids = parseInt($el.find('.item__bid, .s_item__bid, .Product__bid').text()) || 0;
+        const bids = parseInt($el.find('.item__bid, .s_item__bid, .Product__bid, .sdc__bid').text()) || 0;
         const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
         const id = productIdMatch ? productIdMatch[1] : `cat-${page}-${i}`;
 

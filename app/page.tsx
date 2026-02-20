@@ -755,9 +755,17 @@ export default function Home() {
     setIsSearching(true);
     setLoading(true);
     setSearchPage(page);
-    setActiveCategoryUrl(url);
+
+    // カテゴリURLに exflg=1 を付与して検索結果形式を安定させる
+    let targetUrl = url;
+    if (!targetUrl.includes('exflg=1')) {
+      const connector = targetUrl.includes('?') ? '&' : '?';
+      targetUrl += `${connector}exflg=1`;
+    }
+
+    setActiveCategoryUrl(targetUrl);
     try {
-      const res = await fetch(`/api/search?url=${encodeURIComponent(url)}&page=${page}`);
+      const res = await fetch(`/api/search?url=${encodeURIComponent(targetUrl)}&page=${page}`);
       const data = await res.json();
       if (data.items) {
         setProducts(data.items);
@@ -1079,7 +1087,10 @@ export default function Home() {
           {/* 1行目: ロゴ + ログアウト/言語切り替え */}
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-black">{t.title}</h1>
+              <div className="flex flex-col">
+                <h1 className="text-2xl sm:text-3xl font-bold text-black leading-tight">{t.title}</h1>
+                <p className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider">{t.subtitle}</p>
+              </div>
               <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
             </div>
             <div className="flex flex-col items-end gap-2">
@@ -1793,7 +1804,7 @@ export default function Home() {
                   }}
                   className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
                 >
-                  {t.searchByCategories}
+                  CATEGORIAS
                 </button>
                 <button
                   onClick={() => {
@@ -1802,7 +1813,7 @@ export default function Home() {
                   }}
                   className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
                 >
-                  {t.searchByKeyword}
+                  BUSQUEDA
                 </button>
                 <button
                   onClick={() => {
@@ -1811,7 +1822,7 @@ export default function Home() {
                   }}
                   className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
                 >
-                  {lang === 'es' ? 'Importar URL' : 'Importar URL'}
+                  URL
                 </button>
               </div>
 
@@ -1836,8 +1847,8 @@ export default function Home() {
                 </div>
               )}
 
-              {searchType === 'categories' ? (
-                <div>
+              {searchType === 'categories' && (
+                <div className="animate-in fade-in duration-300">
                   {currentCategory && (
                     <button
                       onClick={() => setCurrentCategory(null)}
@@ -1855,9 +1866,13 @@ export default function Home() {
                             setCurrentCategory(cat);
                           } else if (cat.url) {
                             fetchCategoryItems(cat.url, 1);
+                            // 即時スクロールを試行（データロード前でも位置を確保）
+                            setTimeout(() => {
+                              resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }, 100);
                           }
                         }}
-                        className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-gray-50/30"
+                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-white"
                       >
                         <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600">
                           {lang === 'es' ? cat.es : cat.pt}
@@ -1869,8 +1884,10 @@ export default function Home() {
                     ))}
                   </div>
                 </div>
-              ) : (
-                <div className="flex flex-col gap-4">
+              )}
+
+              {searchType === 'keyword' && (
+                <div className="flex flex-col gap-4 animate-in fade-in duration-300">
                   <div className="flex gap-3">
                     <input
                       type="text"
@@ -1896,26 +1913,30 @@ export default function Home() {
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer border border-gray-50"
+                  className="bg-white rounded shadow hover:shadow-md transition cursor-pointer border border-gray-200"
                   onClick={() => fetchProductDetailForOffer(product.url)}
                 >
                   <div className="aspect-square w-full overflow-hidden bg-white">
                     <img
                       src={product.imageUrl}
                       alt={product.title}
-                      className="w-full h-full object-contain p-2"
+                      className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="p-3 sm:p-4 border-t border-gray-50">
-                    <h3 className="text-xs font-bold mb-2 line-clamp-2 h-8 text-gray-800 leading-tight">{product.title}</h3>
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center bg-gray-50 p-1 px-2 rounded">
-                        <span className="text-[10px] text-gray-500 font-bold">{t.currentPrice}:</span>
-                        <span className="font-bold text-gray-900 text-sm">¥{product.currentPrice.toLocaleString()}</span>
+                  <div className="p-3">
+                    <h3 className="text-[10px] font-bold mb-1 line-clamp-2 h-7 text-gray-800 leading-[1.1]">{product.title}</h3>
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex justify-between items-center text-[9px] text-gray-500 font-bold">
+                        <span>{t.currentPrice}:</span>
+                        <span className="text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between items-center p-1 px-2">
-                        <span className="text-[10px] font-bold text-indigo-600 uppercase">USD aprox:</span>
-                        <span className="text-lg font-black text-indigo-600">
+                      <div className="flex justify-between items-center text-[9px] text-gray-500 font-bold">
+                        <span>{t.bids}:</span>
+                        <span className="text-gray-900">{product.bids}</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1 mt-1 border-t border-gray-100">
+                        <span className="text-[10px] font-black text-indigo-600 uppercase">USD aprox:</span>
+                        <span className="text-sm font-black text-indigo-600">
                           ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
                         </span>
                       </div>
