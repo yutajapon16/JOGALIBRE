@@ -513,6 +513,20 @@ export default function Home() {
       });
 
       if (res.ok) {
+        // 管理者へ通知
+        if (currentUser) {
+          fetch('/api/push-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sendToAdmins: true,
+              title: 'JOGALIBRE',
+              body: `新規リクエスト: ${bidForm.name} (${currentUser.email})`,
+              url: '/admin'
+            })
+          }).catch(e => console.error('Admin push error', e));
+        }
+
         alert(t.offerSuccess);
         setSelectedProduct(null);
         setBidForm({ name: '', maxBid: '' });

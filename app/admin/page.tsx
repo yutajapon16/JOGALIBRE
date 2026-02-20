@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
 
 // 管理者画面用のPWA manifest差し替え
 function useAdminManifest() {
@@ -42,6 +43,7 @@ export default function AdminDashboard() {
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
   const [isSendingNotification, setIsSendingNotification] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState<'loading' | 'enabled' | 'disabled' | 'unsupported'>('loading');
 
 
   // セッションチェック（最初に実行）
@@ -76,6 +78,30 @@ export default function AdminDashboard() {
       fetchExchangeRate();
       const interval = setInterval(fetchBidRequests, 30000);
       return () => clearInterval(interval);
+    }
+  }, [currentUser]);
+
+  // 通知状態チェック
+  useEffect(() => {
+    if (currentUser) {
+      // ブラウザの許可状態を確認
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          // サーバー側の登録状況を確認
+          fetch(`/api/push-subscribe?userId=${currentUser.id}`)
+            .then(res => {
+              if (res.ok) setNotificationStatus('enabled');
+              else setNotificationStatus('disabled');
+            })
+            .catch(() => setNotificationStatus('disabled'));
+        } else if (Notification.permission === 'denied') {
+          setNotificationStatus('disabled');
+        } else {
+          setNotificationStatus('disabled'); // default
+        }
+      } else {
+        setNotificationStatus('unsupported');
+      }
     }
   }, [currentUser]);
 
@@ -671,31 +697,52 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={async () => {
-                  // テスト通知を管理者自身に送信
-                  try {
-                    const res = await fetch('/api/push-send', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        email: 'export@joga.ltd',
-                        title: 'JOGALIBRE テスト',
-                        body: 'プッシュ通知テストです',
-                        url: '/admin',
-                      }),
-                    });
-                    const data = await res.json();
-                    if (data.sent) {
-                      alert('✅ プッシュ通知テスト送信完了');
-                    } else {
-                      alert('⚠️ プッシュ通知の登録がありません');
+                  if (!currentUser) return;
+
+                  if (notificationStatus === 'enabled') {
+                    // 無効化
+                    try {
+                      await fetch('/api/push-subscribe', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: currentUser.id }),
+                      });
+                      setNotificationStatus('disabled');
+                      alert('通知を停止しました');
+                    } catch (err) {
+                      console.error('Error disabling notifications:', err);
                     }
-                  } catch (err) {
-                    alert('プッシュ通知エラー');
+                  } else {
+                    // 有効化
+                    const permission = getNotificationPermission();
+                    if (permission === 'unsupported') {
+                      alert('このブラウザはプッシュ通知に対応していません');
+                      return;
+                    }
+
+                    try {
+                      const subscription = await requestNotificationPermission();
+                      if (subscription) {
+                        await fetch('/api/push-subscribe', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ userId: currentUser.id, subscription }),
+                        });
+                        setNotificationStatus('enabled');
+                        alert('通知を受け取る設定にしました！');
+                      }
+                    } catch (err) {
+                      console.error('Error enabling notifications:', err);
+                      alert('通知設定に失敗しました');
+                    }
                   }
                 }}
-                className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition text-sm sm:text-base"
+                className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
+                    ? 'bg-gray-500 text-white hover:bg-gray-600'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
               >
-                🔔 Push
+                {notificationStatus === 'enabled' ? '🔕 通知停止' : '🔔 通知受取'}
               </button>
             </div>
 

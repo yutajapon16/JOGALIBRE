@@ -19,31 +19,54 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId, email, title, body, url } = await request.json();
+        const { userId, email, title, body, url, sendToAdmins } = await request.json();
 
-        let targetUserId = userId;
+        let targetUserIds: string[] = [];
 
-        // emailが指定された場合、user_idを検索
-        if (!targetUserId && email) {
-            const { data: users } = await supabase.auth.admin.listUsers();
-            const user = users?.users?.find(u => u.email === email);
-            if (user) {
-                targetUserId = user.id;
+        if (sendToAdmins) {
+            // 管理者全員のIDを取得
+            const { data: adminUsers, error: adminError } = await supabase
+                .from('user_roles')
+                .select('user_id')
+                .eq('role', 'admin');
+
+            if (adminError) {
+                console.error('管理者取得エラー:', adminError);
+                return NextResponse.json({ error: adminError.message }, { status: 500 });
+            }
+            if (adminUsers) {
+                targetUserIds = adminUsers.map(u => u.user_id);
+            }
+        } else {
+            // 個別ユーザー指定
+            let targetUserId = userId;
+
+            // emailが指定された場合、user_idを検索
+            if (!targetUserId && email) {
+                const { data: users } = await supabase.auth.admin.listUsers();
+                const user = users?.users?.find(u => u.email === email);
+                if (user) {
+                    targetUserId = user.id;
+                }
+            }
+
+            if (targetUserId) {
+                targetUserIds = [targetUserId];
             }
         }
 
-        if (!targetUserId) {
+        if (targetUserIds.length === 0) {
             return NextResponse.json(
-                { error: 'ユーザーが見つかりません', sent: false },
+                { error: '送信対象のユーザーが見つかりません', sent: false },
                 { status: 200 }
             );
         }
 
-        // ユーザーのプッシュサブスクリプションを取得
+        // 対象ユーザーのプッシュサブスクリプションを一括取得
         const { data: subscriptions, error: fetchError } = await supabase
             .from('push_subscriptions')
-            .select('subscription')
-            .eq('user_id', targetUserId);
+            .select('user_id, subscription')
+            .in('user_id', targetUserIds);
 
         if (fetchError) {
             console.error('サブスクリプション取得エラー:', fetchError);
@@ -73,12 +96,12 @@ export async function POST(request: NextRequest) {
                     await webpush.sendNotification(pushSubscription, payload);
                     return { success: true };
                 } catch (err: any) {
-                    // 無効なサブスクリプションを削除
+                    // 無効なサブスクリプションを削除 (410 Gone / 404 Not Found)
                     if (err.statusCode === 410 || err.statusCode === 404) {
                         await supabase
                             .from('push_subscriptions')
                             .delete()
-                            .eq('user_id', targetUserId);
+                            .eq('user_id', sub.user_id);
                     }
                     console.error('プッシュ送信エラー:', err);
                     return { success: false, error: err.message };
@@ -86,11 +109,10 @@ export async function POST(request: NextRequest) {
             })
         );
 
-        const sent = results.some(
-            (r) => r.status === 'fulfilled' && r.value.success
-        );
+        const sentCount = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
+        const sent = sentCount > 0;
 
-        return NextResponse.json({ success: true, sent });
+        return NextResponse.json({ success: true, sent, sentCount });
     } catch (error) {
         console.error('通知送信エラー:', error);
         return NextResponse.json(
