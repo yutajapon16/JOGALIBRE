@@ -359,8 +359,8 @@ export default function AdminDashboard() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: targetRequest.customerEmail,
-              title: 'From Administrador', // 顧客への通知タイトルを「From Administrador」に設定
-              body: statusMessages[status] || 'Estado actualizado / Estado atualizado',
+              title: 'JOGALIBRE',
+              body: `from Administrador\n${statusMessages[status] || 'Estado actualizado / Estado atualizado'}`,
               url: '/',
             }),
           }).catch(err => console.error('Push notification error:', err));
@@ -404,8 +404,8 @@ export default function AdminDashboard() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: targetRequest.customerEmail,
-              title: 'From Administrador', // 顧客への通知タイトルを「From Administrador」に設定
-              body: statusMessages[finalStatus] || 'Resultado actualizado / Resultado atualizado',
+              title: 'JOGALIBRE',
+              body: `from Administrador\n${statusMessages[finalStatus] || 'Resultado actualizado / Resultado atualizado'}`,
               url: '/',
             }),
           }).catch(err => console.error('Push notification error:', err));
