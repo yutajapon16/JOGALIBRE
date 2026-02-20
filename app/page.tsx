@@ -521,7 +521,7 @@ export default function Home() {
             body: JSON.stringify({
               sendToAdmins: true,
               title: 'JOGALIBRE',
-              body: `from Customer\n更新通知： ${currentUser.fullName || bidForm.name}`,
+              body: `更新通知： ${currentUser.fullName || bidForm.name}`,
               url: '/admin'
             })
           }).catch(e => console.error('Admin push error', e));
@@ -695,7 +695,7 @@ export default function Home() {
           body: JSON.stringify({
             sendToAdmins: true,
             title: 'JOGALIBRE',
-            body: `from Customer\n更新通知： ${currentUser.fullName || currentUser.email}`,
+            body: `更新通知： ${currentUser.fullName || currentUser.email}`,
             url: '/admin'
           })
         }).catch(e => console.error('Admin push error', e));
