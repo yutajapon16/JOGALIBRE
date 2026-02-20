@@ -83,7 +83,8 @@ const translations = {
     notificationsDisabled: 'Notificaciones desactivadas',
     sendComprobante: 'Enviar comprobante de pago',
     searchByUrl: 'Importar por URL',
-    searchByKeyword: 'Buscar por Palabra Clave',
+    searchByKeyword: 'Buscar por Palabra',
+    searchByCategories: 'Categorías',
     keywordPlaceholder: 'Buscar productos (ej. reloj, bolso...)',
     searching: 'Buscando...',
   },
@@ -163,7 +164,8 @@ const translations = {
     notificationsDisabled: 'Notifica\u00e7\u00f5es desativadas',
     sendComprobante: 'Enviar comprovante de pagamento',
     searchByUrl: 'Importar por URL',
-    searchByKeyword: 'Buscar por Palavra-Chave',
+    searchByKeyword: 'Buscar por Palavra',
+    searchByCategories: 'Categorias',
     keywordPlaceholder: 'Buscar produtos (ex: relógio, bolsa...)',
     searching: 'Buscando...',
   }
@@ -187,7 +189,7 @@ export default function Home() {
     whatsapp: ''
   });
   const [activeTab, setActiveTab] = useState<'search' | 'requests' | 'purchased' | 'mypage'>('search');
-  const [searchType, setSearchType] = useState<'url' | 'keyword'>('keyword');
+  const [searchType, setSearchType] = useState<'url' | 'keyword' | 'categories'>('categories');
   const [keyword, setKeyword] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [myRequests, setMyRequests] = useState<any[]>([]);
@@ -1669,13 +1671,22 @@ export default function Home() {
           <>
             <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
               {/* 検索タイプ切り替え */}
-              <div className="flex border-b mb-6">
+              <div className="flex border-b mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                <button
+                  onClick={() => {
+                    setSearchType('categories');
+                    setProducts([]);
+                  }}
+                  className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
+                >
+                  {t.searchByCategories}
+                </button>
                 <button
                   onClick={() => {
                     setSearchType('keyword');
                     setProducts([]);
                   }}
-                  className={`flex-1 py-2 text-sm font-medium border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
+                  className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
                 >
                   {t.searchByKeyword}
                 </button>
@@ -1684,13 +1695,53 @@ export default function Home() {
                     setSearchType('url');
                     setProducts([]);
                   }}
-                  className={`flex-1 py-2 text-sm font-medium border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
+                  className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
                 >
                   {t.searchByUrl}
                 </button>
               </div>
 
-              {searchType === 'url' ? (
+              {searchType === 'categories' ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                  {[
+                    { id: 'rel', es: 'Relojes', pt: 'Relógios', jp: '時計' },
+                    { id: 'bol', es: 'Bolsos', pt: 'Bolsas', jp: 'バッグ' },
+                    { id: 'acc', es: 'Accesorios', pt: 'Acessórios', jp: 'アクセサリー' },
+                    { id: 'zap', es: 'Zapatos', pt: 'Sapatos', jp: '靴' },
+                    { id: 'rop', es: 'Ropa', pt: 'Roupas', jp: 'ファッション' },
+                    { id: 'cam', es: 'Cámaras', pt: 'Câmeras', jp: 'カメラ' },
+                    { id: 'ins', es: 'Instrumentos', pt: 'Instrumentos', jp: '楽器' },
+                    { id: 'jug', es: 'Juguetes', pt: 'Brinquedos', jp: 'おもちゃ' },
+                    { id: 'aut', es: 'Autos/Partes', pt: 'Carros/Peças', jp: '自動車パーツ' },
+                    { id: 'pes', es: 'Pesca', pt: 'Pesca', jp: 'フィッシング' },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={async () => {
+                        setIsSearching(true);
+                        setLoading(true);
+                        try {
+                          const res = await fetch(`/api/search?q=${encodeURIComponent(cat.jp)}&lang=ja`);
+                          const data = await res.json();
+                          if (data.items) {
+                            setProducts(data.items);
+                          }
+                        } catch (error) {
+                          console.error('Search error:', error);
+                        } finally {
+                          setIsSearching(false);
+                          setLoading(false);
+                        }
+                      }}
+                      className="flex flex-col items-center justify-center p-4 border rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition group"
+                    >
+                      <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 text-center">
+                        {lang === 'es' ? cat.es : cat.pt}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : searchType === 'url' ? (
                 <div className="flex gap-4">
                   <input
                     type="text"
