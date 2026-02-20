@@ -91,6 +91,8 @@ const translations = {
     productDetail: 'Detalle del Producto',
     description: 'Descripción',
     loadingDetail: 'Cargando detalles...',
+    previous: 'Anterior',
+    next: 'Próximo',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -176,6 +178,8 @@ const translations = {
     productDetail: 'Detalhes do Produto',
     description: 'Descrição',
     loadingDetail: 'Carregando detalhes...',
+    previous: 'Anterior',
+    next: 'Próximo',
   }
 };
 
@@ -194,15 +198,15 @@ const CATEGORIES = [
       { id: 'desarme', es: 'Vehículo para desarme', pt: 'Veículo para desmanche', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?auccat=2084061280&o1=d&s1=new' },
     ]
   },
-  { id: 'moto', es: 'Moto', pt: 'Moto', url: 'https://auctions.yahoo.co.jp/list1/26316-category.html' },
+  { id: 'moto', es: 'Moto', pt: 'Moto', url: 'https://auctions.yahoo.co.jp/category/list/26316/?s1=new&o1=d' },
   {
     id: 'llantas',
     es: 'Llantas',
     pt: 'Rodas',
     sub: [
-      { id: 'll16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200188/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200188&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured' },
-      { id: 'll17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200189/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200189&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured' },
-      { id: 'll18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200190/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200190&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured' },
+      { id: 'll16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200188/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200188&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d' },
+      { id: 'll17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200189/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200189&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d' },
+      { id: 'll18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200190/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200190&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d' },
     ]
   },
   {
@@ -210,15 +214,15 @@ const CATEGORIES = [
     es: 'Aros',
     pt: 'Aros',
     sub: [
-      { id: 'ar16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084008474/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084008474&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=118472,118483,118474,119521,118478,118481,115842,102328,120288,119007' },
-      { id: 'ar17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040548/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040548&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=118472%2C118478%2C118474%2C119007%2C119521%2C118481%2C115842%2C159741%2C118483%2C102328' },
-      { id: 'ar18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040547/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040547&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=115842,119007,118474,102328,118472,118483,119521,118478,118481,128485' },
+      { id: 'ar16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084008474/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084008474&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=118472,118483,118474,119521,118478,118481,115842,102328,120288,119007' },
+      { id: 'ar17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040548/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040548&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=118472%2C118478%2C118474%2C119007%2C119521%2C118481%2C115842%2C159741%2C118483%2C102328' },
+      { id: 'ar18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040547/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040547&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=115842,119007,118474,102328,118472,118483,119521,118478,118481,128485' },
     ]
   },
-  { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=128485,103816,105215,103820,119942,119941,119938' },
-  { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&brand_id=102214,103815,115842,128485,159741,103823' },
-  { id: 'repuesto', es: 'Repuesto', pt: 'Autopeça', url: 'https://auctions.yahoo.co.jp/list1/26322-catlist.html' },
-  { id: 'allcats', es: 'Lista de categorías de subasta', pt: 'Lista de categorias de leilão', url: 'https://auctions.yahoo.co.jp/list1/jp/0-all.html' },
+  { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=128485,103816,105215,103820,119942,119941,119938' },
+  { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=102214,103815,115842,128485,159741,103823' },
+  { id: 'repuesto', es: 'Repuesto', pt: 'Autopeça', url: 'https://auctions.yahoo.co.jp/category/list/26322/?s1=new&o1=d' },
+  { id: 'allcats', es: 'Lista de categorías de subasta', pt: 'Lista de categorias de leilão', url: 'https://auctions.yahoo.co.jp/category/list/2084005139/?s1=new&o1=d' },
 ];
 
 export default function Home() {
@@ -243,8 +247,9 @@ export default function Home() {
   const [keyword, setKeyword] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<any | null>(null);
-  const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [detailedProduct, setDetailedProduct] = useState<any | null>(null);
+  const [searchPage, setSearchPage] = useState(1);
+  const [nextPageExists, setNextPageExists] = useState(false);
+  const [activeCategoryUrl, setActiveCategoryUrl] = useState<string | null>(null);
   const [myRequests, setMyRequests] = useState<any[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<any[]>([]);
   // マイページ用state
@@ -665,23 +670,28 @@ export default function Home() {
     }
   };
 
-  const fetchProductDetail = async (url: string) => {
-    setIsDetailLoading(true);
-    setDetailedProduct(null); // クリア
+  const fetchProductDetailForOffer = async (url: string) => {
+    setLoading(true);
     try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       const res = await fetch('/api/yahoo-product', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
         body: JSON.stringify({ url, lang })
       });
       const data = await res.json();
       if (data.product) {
-        setDetailedProduct(data.product);
+        setSelectedProduct(data.product);
       }
     } catch (error) {
-      console.error('Error fetching product detail:', error);
+      console.error('Error fetching product for offer:', error);
     } finally {
-      setIsDetailLoading(false);
+      setLoading(false);
     }
   };
 
@@ -714,17 +724,39 @@ export default function Home() {
     }
   };
 
-  const handleKeywordSearch = async (e?: React.FormEvent) => {
+  const handleKeywordSearch = async (e?: React.FormEvent, page: number = 1) => {
     if (e) e.preventDefault();
     if (!keyword.trim()) return;
 
     setIsSearching(true);
     setLoading(true);
+    setSearchPage(page);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(keyword)}&lang=${lang}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(keyword)}&lang=${lang}&page=${page}`);
       const data = await res.json();
       if (data.items) {
         setProducts(data.items);
+        setNextPageExists(data.nextPage || false);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+      setLoading(false);
+    }
+  };
+
+  const fetchCategoryItems = async (url: string, page: number = 1) => {
+    setIsSearching(true);
+    setLoading(true);
+    setSearchPage(page);
+    setActiveCategoryUrl(url);
+    try {
+      const res = await fetch(`/api/search?url=${encodeURIComponent(url)}&page=${page}`);
+      const data = await res.json();
+      if (data.items) {
+        setProducts(data.items);
+        setNextPageExists(data.nextPage || false);
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -1806,21 +1838,7 @@ export default function Home() {
                           if (cat.sub) {
                             setCurrentCategory(cat);
                           } else if (cat.url) {
-                            // 内部検索を実行してアプリ内で表示
-                            setIsSearching(true);
-                            setLoading(true);
-                            try {
-                              const res = await fetch(`/api/search?url=${encodeURIComponent(cat.url)}`);
-                              const data = await res.json();
-                              if (data.items) {
-                                setProducts(data.items);
-                              }
-                            } catch (error) {
-                              console.error('Search error:', error);
-                            } finally {
-                              setIsSearching(false);
-                              setLoading(false);
-                            }
+                            fetchCategoryItems(cat.url, 1);
                           }
                         }}
                         className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-gray-50/30"
@@ -1862,128 +1880,65 @@ export default function Home() {
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer group"
-                  onClick={() => fetchProductDetail(product.url)}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer"
+                  onClick={() => fetchProductDetailForOffer(product.url)}
                 >
-                  <div className="relative aspect-square w-full bg-gray-100 overflow-hidden">
+                  <div className="aspect-square w-full overflow-hidden bg-gray-50">
                     <img
                       src={product.imageUrl}
                       alt={product.title}
-                      className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
+                      className="w-full h-full object-contain"
                     />
-                    <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">
-                      {product.bids} bids
-                    </div>
                   </div>
-                  <div className="p-3 sm:p-4 flex flex-col h-44">
-                    <h3 className="text-sm font-bold text-gray-800 line-clamp-2 mb-2 leading-tight min-h-[2.5rem]">
-                      {product.title}
-                    </h3>
-                    <div className="mt-auto space-y-1">
-                      <div className="flex justify-between items-end">
-                        <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">{t.currentPrice}:</span>
+                  <div className="p-3 sm:p-4">
+                    <h3 className="text-sm font-semibold mb-2 line-clamp-2 h-10">{product.title}</h3>
+                    <div className="space-y-1 mb-2">
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>{t.currentPrice}:</span>
                         <span className="font-bold text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-end pt-1 border-t border-gray-100">
-                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-tight">USD (aprox):</span>
-                        <span className="text-lg font-black text-indigo-600">
+                        <span className="text-[10px] font-bold text-indigo-600 uppercase">USD aprox:</span>
+                        <span className="text-lg font-bold text-indigo-600">
                           ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
                         </span>
                       </div>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-gray-400">
+                      <span>{t.bids}: {product.bids}</span>
+                      <span className="underline">View Detail →</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* 商品詳細モーダル (インアプリ翻訳) */}
-            {(isDetailLoading || detailedProduct) && (
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-in fade-in duration-200">
-                <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col relative shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
-                  {/* 閉じるボタン */}
-                  <button
-                    onClick={() => {
-                      setDetailedProduct(null);
-                      setIsDetailLoading(false);
-                    }}
-                    className="absolute top-4 right-4 bg-white/90 backdrop-blur-md p-2 rounded-full shadow-lg z-20 hover:bg-gray-100 transition active:scale-95"
-                  >
-                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-
-                  <div className="overflow-y-auto overflow-x-hidden">
-                    {isDetailLoading ? (
-                      <div className="flex flex-col items-center justify-center p-20 gap-4">
-                        <div className="w-12 h-12 border-[5px] border-gray-100 border-t-indigo-600 rounded-full animate-spin"></div>
-                        <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">{t.loadingDetail}</p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="p-6">
-                          <div className="flex flex-col md:flex-row gap-6 mb-8">
-                            <div className="w-full md:w-64 aspect-square bg-gray-50 rounded-2xl overflow-hidden shadow-inner flex-shrink-0">
-                              <img
-                                src={detailedProduct.imageUrl}
-                                alt={detailedProduct.title}
-                                className="w-full h-full object-contain"
-                              />
-                            </div>
-                            <div className="flex-1 flex flex-col py-1">
-                              <h2 className="text-xl font-black text-gray-900 leading-tight mb-4">{detailedProduct.title}</h2>
-                              <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-                                <div className="flex justify-between items-center text-sm">
-                                  <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">{t.currentPrice}</span>
-                                  <span className="font-bold text-gray-700">¥{detailedProduct.currentPrice.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                                  <span className="text-indigo-600 font-black uppercase text-[11px] tracking-widest">USD FINAL</span>
-                                  <span className="text-3xl font-black text-indigo-600 tracking-tighter">
-                                    ${calculateUSDPrice(detailedProduct.currentPrice, detailedProduct.shippingCost || 0)}
-                                  </span>
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  setSelectedProduct(detailedProduct);
-                                  setDetailedProduct(null);
-                                }}
-                                className="w-full mt-6 bg-indigo-600 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0.5 transition duration-200"
-                              >
-                                {t.makeOffer}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="space-y-4">
-                            <h3 className="text-xs font-black text-gray-300 uppercase tracking-[0.2em] px-1">{t.description}</h3>
-                            <div className="bg-gray-50/50 rounded-2xl p-5 border border-gray-100">
-                              {detailedProduct.translatedDescription ? (
-                                <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                                  {detailedProduct.translatedDescription}
-                                </p>
-                              ) : (
-                                <p className="text-gray-400 italic text-sm py-8 text-center">Description not available.</p>
-                              )}
-                              <div className="mt-8 pt-6 border-t border-gray-200/50 flex justify-between items-center">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">ID: {detailedProduct.id}</span>
-                                <a
-                                  href={detailedProduct.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[10px] text-indigo-400 font-bold uppercase underline tracking-widest hover:text-indigo-600 transition"
-                                >
-                                  Ver Original ↗
-                                </a>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+            {/* ページネーション */}
+            {(products.length > 0) && (
+              <div className="mt-8 flex justify-center items-center gap-4">
+                <button
+                  disabled={searchPage === 1 || loading}
+                  onClick={() => {
+                    const nextP = searchPage - 1;
+                    if (searchType === 'keyword') handleKeywordSearch(undefined, nextP);
+                    else if (activeCategoryUrl) fetchCategoryItems(activeCategoryUrl, nextP);
+                  }}
+                  className="px-4 py-2 border rounded-lg text-sm font-bold disabled:opacity-30"
+                >
+                  ← {t.previous}
+                </button>
+                <span className="text-sm font-bold text-gray-500">Page {searchPage}</span>
+                <button
+                  disabled={!nextPageExists || loading}
+                  onClick={() => {
+                    const nextP = searchPage + 1;
+                    if (searchType === 'keyword') handleKeywordSearch(undefined, nextP);
+                    else if (activeCategoryUrl) fetchCategoryItems(activeCategoryUrl, nextP);
+                  }}
+                  className="px-4 py-2 border rounded-lg text-sm font-bold disabled:opacity-30"
+                >
+                  {t.next} →
+                </button>
               </div>
             )}
           </>
@@ -2022,6 +1977,16 @@ export default function Home() {
                 </a>
               </div>
             </div>
+
+            {/* 商品説明の追加 */}
+            {selectedProduct.translatedDescription && (
+              <div className="mt-4 mb-4 p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto border border-gray-100">
+                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t.description}</h4>
+                <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                  {selectedProduct.translatedDescription}
+                </p>
+              </div>
+            )}
 
             <form onSubmit={handleBidRequest} className="space-y-3">
               <div>
