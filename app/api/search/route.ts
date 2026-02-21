@@ -178,10 +178,45 @@ export async function GET(request: Request) {
         }
 
         const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
-        const id = productIdMatch ? productIdMatch[1] : `cat-${page}-${i}`;
+        const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
         if (title && url) {
-          items.push({ id, title, url, imageUrl, currentPrice: price, bids, timeLeft, source: 'yahoo_search' });
+          items.push({ id, title, url, imageUrl, currentPrice: price, bids, timeLeft, source: 'yahoo_category' });
+        }
+      });
+    }
+
+    // パターン3: 中古車カテゴリ等、特殊な構造の場合 (.Product等がない)
+    if (items.length === 0) {
+      $('h3, h2, .a__title, [class*="title"]').each((i, el) => {
+        const title = $(el).text().trim();
+        if (!title || title.length < 5) return;
+
+        const $el = $(el);
+        const $li = $el.closest('li');
+        if ($li.length === 0) return;
+
+        const rawHtml = $li.html() || '';
+        if (rawHtml.includes('ストアPR') || rawHtml.includes('PR ') || $li.find('[class*="pr"], [class*="PR"]').length > 0) {
+          return; // skip PR
+        }
+
+        const aTag = $li.find('a[href*="/auction/"]').first();
+        const url = aTag.attr('href');
+        if (!url) return;
+
+        const imageUrl = $li.find('img').first().attr('src') || $li.find('img').attr('data-original') || $li.find('img').attr('data-src');
+        const priceText = $li.find('[class*="price"], [class*="Price"], span').filter((idx, ele) => $(ele).text().includes('円')).first().text().replace(/[^\d]/g, '');
+        const price = priceText ? parseInt(priceText) || 0 : 0;
+
+        const dt = $li.find('span').filter((idx, ele) => $(ele).text().includes('日') || $(ele).text().includes('時間')).first().text().trim();
+        let timeLeft = parseTimeLeft(dt || '-');
+
+        const idMatch = url.match(/\/auction\/([a-zA-Z0-9]+)/);
+        const id = idMatch ? idMatch[1] : `search-p3-${page}-${i}`;
+
+        if (title && url) {
+          items.push({ id, title, url, imageUrl, currentPrice: price, bids: 0, timeLeft: timeLeft || '-', source: 'yahoo_car_category' });
         }
       });
     }
