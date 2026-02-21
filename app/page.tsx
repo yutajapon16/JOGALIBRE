@@ -209,7 +209,7 @@ const CATEGORIES = [
       { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=14657&o1=d&s1=new&exflg=1&b=1&n=100' },
       { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24557&carshift1=91%2C917%2C5379&o1=d&s1=new&exflg=1&b=1&n=100' },
       { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=28231&o1=a&s1=car_model_year&exflg=1&b=1&n=100' },
-      { id: 'desarme', es: 'VEHICULO PARA DESARME', pt: 'VEÍCULO PARA DESMANCHE', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?auccat=2084061280&o1=d&s1=new' },
+      { id: 'desarme', es: 'Vehiculo Para Desarme', pt: 'Veículo Para Desmanche', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?auccat=2084061280&o1=d&s1=new' },
     ]
   },
   { id: 'moto', es: 'Moto', pt: 'Moto', url: 'https://auctions.yahoo.co.jp/category/list/26316/?s1=new&o1=d' },
@@ -235,8 +235,6 @@ const CATEGORIES = [
   },
   { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=128485,103816,105215,103820,119942,119941,119938' },
   { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=102214,103815,115842,128485,159741,103823' },
-  { id: 'repuesto', es: 'Repuesto', pt: 'Autopeça', url: 'https://auctions.yahoo.co.jp/category/list/26322/?s1=new&o1=d' },
-  { id: 'allcats', es: 'Lista de categorías de subasta', pt: 'Lista de categorias de leilão', url: 'https://auctions.yahoo.co.jp/category/list/2084005139/?s1=new&o1=d' },
 ];
 
 export default function Home() {
@@ -734,7 +732,7 @@ export default function Home() {
       if (data.product) {
         const detail = data.product;
         setSelectedProduct(detail);
-        setBidForm(prev => ({ ...prev, name: currentUser?.fullName || '', maxBid: detail.currentPrice ? (detail.currentPrice + 100).toString() : '' }));
+        setBidForm({ name: '', maxBid: '' });
       }
     } catch (error) {
       console.error('Error fetching product for offer:', error);
@@ -1112,48 +1110,45 @@ export default function Home() {
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
-          {/* 1行目: ロゴ & ログアウト + 言語選択 */}
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-black leading-none">{t.title}</h1>
-                <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase tracking-wider leading-none">{t.subtitle}</p>
+          {/* 1行目: ロゴ & ログアウト + 言語選択のバランス調整 */}
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-black leading-none">{t.title}</h1>
+              <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-6 h-6 sm:w-8 sm:h-8 rounded" />
+              <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider ml-1 hidden sm:block">{t.subtitle}</p>
             </div>
 
-            <div className="flex flex-col items-end gap-3">
-              <button
-                onClick={handleLogout}
-                className="text-xs sm:text-sm text-red-600 hover:text-red-800 font-bold"
-              >
-                {t.logout}
-              </button>
-
+            <div className="flex items-center gap-3">
               <select
                 value={lang}
                 onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                className="bg-white border border-gray-200 text-gray-700 py-3 px-4 rounded-xl text-base font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
+                className="bg-white border text-gray-700 py-1 px-2 rounded-md text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
               >
-                <option value="es">🇪🇸 Español (ES)</option>
-                <option value="pt">🇧🇷 Português (PT)</option>
+                <option value="es">Español</option>
+                <option value="pt">Português</option>
               </select>
+              <button
+                onClick={handleLogout}
+                className="text-xs text-red-600 hover:text-red-800 font-bold"
+              >
+                {t.logout}
+              </button>
             </div>
           </div>
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-3 sm:hidden">{t.subtitle}</p>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
-        {/* WhatsApp + プッシュ通知ボタン（垂直スタック & 間隔統一） */}
-        <div className="flex flex-col gap-4">
+        {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
+        <div className="flex gap-2 mb-2">
           <button
             onClick={sendWhatsAppNotification}
             disabled={isSendingNotification}
-            className="w-full bg-green-600 text-white px-4 py-4 rounded-xl hover:bg-green-700 transition font-bold text-base shadow-sm disabled:bg-gray-400"
+            className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base disabled:bg-gray-400"
           >
-            {isSendingNotification ? '...' : (lang === 'es' ? '📱 Grupo WhatsApp' : '📱 Grupo do WhatsApp')}
+            {isSendingNotification ? '...' : '📱 WhatsApp'}
           </button>
-
           <button
             onClick={async () => {
               if (!currentUser) return;
@@ -1192,25 +1187,26 @@ export default function Home() {
                 console.error('Push error:', err);
               }
             }}
-            className={`w-full px-4 py-4 rounded-xl transition font-bold text-base shadow-sm ${notificationStatus === 'enabled'
+            className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
               ? 'bg-gray-500 text-white hover:bg-gray-600'
               : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
           >
-            {notificationStatus === 'enabled' ? '🔔 Notificaciones: ON' : '🔔 Activar Notificaciones'}
-          </button>
-
-          <button
-            onClick={() => {
-              if (activeTab === 'requests') fetchMyRequests();
-              else if (activeTab === 'purchased') fetchPurchasedItems();
-              else { fetchExchangeRate(); } // Removed searchProducts() as it's not defined
-            }}
-            className="w-full bg-indigo-600 text-white px-4 py-4 rounded-xl hover:bg-indigo-700 transition font-bold text-base shadow-sm"
-          >
-            🔁 {t.refresh}
+            {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
           </button>
         </div>
+
+        {/* 更新ボタン（全幅） */}
+        <button
+          onClick={() => {
+            if (activeTab === 'requests') fetchMyRequests();
+            else if (activeTab === 'purchased') fetchPurchasedItems();
+            else { fetchExchangeRate(); }
+          }}
+          className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full mb-3"
+        >
+          🔁 {t.refresh}
+        </button>
 
         <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 flex justify-center items-center">
           <div className="text-sm font-bold text-gray-600">
@@ -1598,8 +1594,18 @@ export default function Home() {
                               className="w-32 h-32 object-cover rounded"
                             />
                           )}
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 flex flex-col justify-between items-start">
                             <h3 className="text-sm font-semibold mb-2 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
+                            <div className="flex flex-col gap-2 w-full mt-auto">
+                              <a
+                                href={item.productUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
+                              >
+                                {t.viewOnYahoo}
+                              </a>
+                            </div>
                           </div>
                         </div>
 
@@ -1630,51 +1636,20 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* 中段: 価格情報 */}
-                        <div className="p-4 border-t border-gray-50 bg-gray-50/50 space-y-2">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-gray-500 font-bold">Precio final (JPY)</span>
-                            <span className="text-gray-900 font-black">¥{item.finalPrice?.toLocaleString()}</span>
+                        <div className="text-right pt-3 border-t">
+                          <div className="flex items-center justify-end gap-3">
+                            {item.paid && (
+                              <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">
+                                ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
+                              </span>
+                            )}
+                            <p className={`text-xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                              ${Math.round(
+                                item.finalPrice ||
+                                (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
+                              ).toLocaleString('en-US')}
+                            </p>
                           </div>
-                          {item.shippingCostJpy && (
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="text-gray-500 font-bold">Envío (JPY)</span>
-                              <span className="text-gray-900 font-black">¥{item.shippingCostJpy.toLocaleString()}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between items-center text-sm border-t border-gray-200 pt-2">
-                            <span className="text-indigo-600 font-black">TOTAL USD</span>
-                            <span className="text-indigo-600 font-black">${calculateUSDPrice(item.finalPrice || 0, item.shippingCostJpy || 0)}</span>
-                          </div>
-                        </div>
-
-                        {/* 下段: ヤフオクリンク & 支払い証明ボタン */}
-                        <div className="p-4 border-t border-gray-100 flex flex-col gap-2">
-                          <a
-                            href={item.productUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-center text-xs text-indigo-600 hover:underline font-bold py-2 bg-indigo-50 rounded"
-                          >
-                            {t.viewOnYahoo}
-                          </a>
-                          {!item.paid && (
-                            <button
-                              onClick={() => {
-                                const totalUSD = calculateUSDPrice(item.finalPrice || 0, item.shippingCostJpy || 0);
-                                const message = `Payment Proof\nProduct: ${item.productTitle}\nTotal: $${totalUSD}\nCustomer: ${item.customerFullName || item.customerEmail}`;
-                                window.open(`https://wa.me/5491176043997?text=${encodeURIComponent(message)}`, '_blank');
-                              }}
-                              className="bg-green-600 text-white py-3 rounded-lg font-bold text-sm hover:bg-green-700 transition"
-                            >
-                              ✅ {t.sendPaymentProof}
-                            </button>
-                          )}
-                          {item.paid && (
-                            <div className="bg-blue-100 text-blue-800 text-center py-2 rounded-lg font-bold text-sm">
-                              PEDIDO PAGADO ✅
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
@@ -2094,24 +2069,34 @@ export default function Home() {
 
               <form onSubmit={handleBidRequest} className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium mb-1">{t.yourName}</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    {t.yourName}
+                  </label>
                   <input
                     type="text"
                     value={bidForm.name}
                     onChange={(e) => setBidForm({ ...bidForm, name: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base shadow-sm focus:ring-2 focus:ring-indigo-500 font-bold"
                     required
+                    placeholder={lang === 'es' ? 'Nombre del cliente' : 'Nome do cliente'}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1">{t.maxBid}</label>
-                  <input
-                    type="number"
-                    value={bidForm.maxBid}
-                    onChange={(e) => setBidForm({ ...bidForm, maxBid: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-                    required
-                  />
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    {t.maxBid}
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                    <input
+                      type="number"
+                      value={bidForm.maxBid}
+                      onChange={(e) => setBidForm({ ...bidForm, maxBid: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg pl-8 pr-4 py-3 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500"
+                      required
+                      min="1"
+                      placeholder="USD"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button

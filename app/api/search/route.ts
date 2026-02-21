@@ -72,12 +72,30 @@ export async function GET(request: Request) {
         if (mMatch) parts.push(`${mMatch[1]}m`);
       }
 
-      return parts.join(' ') || raw.replace(/残り|あと|残り時間/g, '').trim();
+      // 「d h m」表記を強制する (例: 1d 0h 0m)
+      const partsStr = parts.join(' ');
+      let d = '0d', h = '0h', m = '0m';
+      if (partsStr.includes('d')) d = partsStr.match(/(\d+)d/)?.[0] || '0d';
+      if (partsStr.includes('h')) h = partsStr.match(/(\d+)h/)?.[0] || '0h';
+      if (partsStr.includes('m')) m = partsStr.match(/(\d+)m/)?.[0] || '0m';
+
+      let formattedTime = '';
+      if (parts.length > 0) {
+        formattedTime = `${d} ${h} ${m}`;
+      }
+
+      return formattedTime || raw.replace(/残り|あと|残り時間/g, '').trim();
     };
 
     // パターン1: 検索結果ページ (.Product)
     $('.Product, .Product__item').each((i, el) => {
       const $el = $(el);
+
+      // PR広告商品（一番目に固定される商品）を除外
+      if ($el.hasClass('Product--pr') || $el.find('span.Product__label--pr').length > 0) {
+        return; // skip
+      }
+
       const title = $el.find('.Product__titleLink, .item__titleLink').text().trim();
       const url = $el.find('.Product__titleLink, .item__titleLink').attr('href');
       const imageUrl = $el.find('.Product__imageData, .item__imageData').attr('src') || $el.find('img').attr('src');
