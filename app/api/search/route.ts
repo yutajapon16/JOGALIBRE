@@ -83,11 +83,23 @@ export async function GET(request: Request) {
         const priceText = $el.find('.item__priceValue, .s_item__priceValue, .Product__priceValue, .sdc__price').first().text().replace(/[^\d]/g, '') || $el.find('.price').text().replace(/[^\d]/g, '');
         const price = parseInt(priceText) || 0;
         const bids = parseInt($el.find('.item__bid, .s_item__bid, .Product__bid, .sdc__bid').text()) || 0;
+
+        // 残り時間の抽出と変換
+        let timeLeft = $el.find('.Product__time, .item__time, .sdc-time').text().trim();
+        if (timeLeft) {
+          timeLeft = timeLeft
+            .replace(/日/g, 'd ')
+            .replace(/時間/g, 'h ')
+            .replace(/分/g, 'm')
+            .replace(/残り/g, '')
+            .trim();
+        }
+
         const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
         const id = productIdMatch ? productIdMatch[1] : `cat-${page}-${i}`;
 
         if (title && url) {
-          items.push({ id, title, url, imageUrl, currentPrice: price, bids, source: 'yahoo_search' });
+          items.push({ id, title, url, imageUrl, currentPrice: price, bids, timeLeft, source: 'yahoo_search' });
         }
       });
     }

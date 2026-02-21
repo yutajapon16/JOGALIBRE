@@ -12,7 +12,7 @@ const translations = {
     subtitle: 'Subastas de Yahoo Japón',
     language: 'Idioma',
     searchPlaceholder: 'Pega la URL del producto de Yahoo Auctions aquí...',
-    import: 'Cotizar',
+    import: 'Importar',
     currentPrice: 'Precio actual',
     shippingCost: 'Costo de envío',
     totalPrice: 'Precio total',
@@ -99,7 +99,7 @@ const translations = {
     subtitle: 'Leilões do Yahoo Japão',
     language: 'Idioma',
     searchPlaceholder: 'Cole a URL do produto do Yahoo Auctions aqui...',
-    import: 'Cotar',
+    import: 'Importar',
     currentPrice: 'Preço atual',
     shippingCost: 'Custo de envio',
     totalPrice: 'Preço total',
@@ -189,13 +189,13 @@ const CATEGORIES = [
     es: 'Carros JDM',
     pt: 'Carros JDM',
     sub: [
-      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/search/search?p=SUPRA+JZA80+SZ+RZ&va=SUPRA+JZA80+SZ+RZ&exflg=1&b=1&n=20&s1=new&o1=d' },
-      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/search/search?p=SKYLINE+GTR+BNR32+BCNR33+BNR34&va=SKYLINE+GTR+BNR32+BCNR33+BNR34&exflg=1&b=1&n=20&s1=new&o1=d' },
-      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/search/search?p=LANCER+EVOLUTION+CN9A+CP9A&va=LANCER+EVOLUTION+CN9A+CP9A&exflg=1&b=1&n=20&s1=new&o1=d' },
-      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/search/search?p=MAZDA+RX7+FD3S+FC3S&va=MAZDA+RX7+FD3S+FC3S&exflg=1&b=1&n=20&s1=new&o1=d' },
-      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/search/search?p=NISSAN+SILVIA+S13+S14+S15&va=NISSAN+SILVIA+S13+S14+S15&exflg=1&b=1&n=20&s1=new&o1=d' },
-      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/search/search?p=SUBARU+IMPREZA+WRX+STi&va=SUBARU+IMPREZA+WRX+STi&exflg=1&b=1&n=20&s1=new&o1=d' },
-      { id: 'desarme', es: 'Vehículo para desarme', pt: 'Veículo para desmanche', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?auccat=2084061280&o1=d&s1=new' },
+      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=40726&o1=d&s1=new' },
+      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24846&o1=d&s1=new' },
+      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=18389&o1=a&s1=car_model_year' },
+      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=14657&o1=d&s1=new' },
+      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24557&carshift1=91%2C917%2C5379&o1=d&s1=new' },
+      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=28231&o1=a&s1=car_model_year' },
+      { id: 'desarme', es: 'VEHICULO PARA DESARME', pt: 'VEÍCULO PARA DESMANCHE', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?auccat=2084061280&o1=d&s1=new' },
     ]
   },
   { id: 'moto', es: 'Moto', pt: 'Moto', url: 'https://auctions.yahoo.co.jp/category/list/26316/?s1=new&o1=d' },
@@ -1802,27 +1802,27 @@ export default function Home() {
                     setSearchType('categories');
                     setProducts([]);
                   }}
-                  className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
+                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
-                  CATEGORIAS
+                  {t.categories}
                 </button>
                 <button
                   onClick={() => {
                     setSearchType('keyword');
                     setProducts([]);
                   }}
-                  className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
+                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
-                  BUSQUEDA
+                  {t.search}
                 </button>
                 <button
                   onClick={() => {
                     setSearchType('url');
                     setProducts([]);
                   }}
-                  className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400'}`}
+                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
-                  URL
+                  {t.urlTab}
                 </button>
               </div>
 
@@ -1834,12 +1834,12 @@ export default function Home() {
                       placeholder={t.searchPlaceholder}
                       value={searchUrl}
                       onChange={(e) => setSearchUrl(e.target.value)}
-                      className="flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                      className="flex-1 p-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
                     />
                     <button
                       onClick={handleImport}
                       disabled={loading}
-                      className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 whitespace-nowrap text-sm shadow-sm"
+                      className="bg-indigo-600 text-white min-w-[120px] px-6 py-3.5 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 whitespace-nowrap text-sm shadow-sm"
                     >
                       {loading ? '...' : t.import}
                     </button>
@@ -1895,12 +1895,12 @@ export default function Home() {
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleKeywordSearch()}
-                      className="flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                      className="flex-1 p-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
                     />
                     <button
                       onClick={handleKeywordSearch}
                       disabled={loading || isSearching}
-                      className="bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm shadow-sm"
+                      className="bg-indigo-600 text-white min-w-[120px] px-6 py-3.5 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm shadow-sm"
                     >
                       {isSearching ? '...' : t.search}
                     </button>
@@ -1913,61 +1913,61 @@ export default function Home() {
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded overflow-hidden shadow hover:shadow-md transition border border-gray-200"
+                  className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition"
                 >
-                  {/* 上段: 画像(正方形) + 情報 */}
-                  <div className="flex p-3 gap-3">
-                    <div className="w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 relative">
+                  {/* 上段: 画像(w-32) + タイトル情報 */}
+                  <div className="flex p-4 gap-4">
+                    <div className="w-32 h-32 flex-shrink-0 relative">
                       <img
                         src={product.imageUrl}
                         alt={product.title}
-                        className="w-full h-full object-cover rounded border border-gray-100"
+                        className="w-full h-full object-cover rounded shadow-sm border border-gray-100"
                       />
                     </div>
-                    <div className="flex flex-col flex-1 min-w-0 h-24 sm:h-32 justify-between">
-                      <div>
-                        <h3 className="text-[11px] font-bold text-gray-800 line-clamp-3 leading-tight mb-1">
+                    <div className="flex flex-col flex-1 min-w-0 justify-between py-0.5">
+                      <div className="flex flex-col gap-1">
+                        <h3 className="text-xs sm:text-sm font-bold text-gray-800 line-clamp-3 leading-tight">
                           {product.title}
                         </h3>
-                      </div>
-                      <div className="text-right">
                         <a
                           href={product.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[10px] text-blue-600 font-bold hover:underline"
+                          className="text-[11px] text-indigo-600 font-bold hover:underline"
                         >
-                          {t.viewOnYahoo}
+                          Ver en Yahoo! →
                         </a>
                       </div>
                     </div>
                   </div>
 
-                  {/* 中段: 価格・入札情報セクション */}
-                  <div className="px-3 pb-3 space-y-2 border-t border-gray-50 pt-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-gray-500 font-bold uppercase">{t.currentPrice}</span>
-                      <span className="text-sm font-black text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
+                  {/* 中段: 詳細価格セクション */}
+                  <div className="px-4 pb-4 space-y-3 pt-2">
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-xs font-bold text-gray-500">
+                        <span className="uppercase">{t.currentPrice}:</span>
+                        <span className="text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
+                      </div>
+
+                      <div className="text-[10px] text-gray-400 font-bold italic leading-tight">
+                        * {t.shippingUnknown}
+                      </div>
                     </div>
 
-                    <div className="text-[9px] text-gray-400 font-bold leading-tight">
-                      * {t.shippingUnknown}
-                    </div>
-
-                    <div className="flex justify-between items-center text-[10px] font-bold border-y border-gray-50 py-1">
-                      <div className="flex gap-1 items-center">
+                    <div className="flex justify-between items-center text-[11px] font-bold border-y border-gray-100 py-2">
+                      <div className="flex gap-2 items-center">
                         <span className="text-gray-400 uppercase">{t.bids}:</span>
                         <span className="text-gray-900">{product.bids}</span>
                       </div>
-                      <div className="flex gap-1 items-center">
+                      <div className="flex gap-2 items-center">
                         <span className="text-gray-400 uppercase">Termina:</span>
                         <span className="text-red-500">{product.timeLeft || '1d 12h'}</span>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-center py-1">
-                      <span className="text-[10px] text-indigo-600 font-black uppercase tracking-tighter">USD aprox:</span>
-                      <span className="text-2xl font-black text-indigo-600 leading-none">
+                    <div className="flex flex-col items-center py-2 bg-indigo-50/50 rounded-lg">
+                      <span className="text-[11px] text-indigo-600 font-black uppercase tracking-wider mb-1">USD aprox:</span>
+                      <span className="text-3xl font-black text-indigo-600 leading-none">
                         ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
                       </span>
                     </div>
@@ -1976,7 +1976,7 @@ export default function Home() {
                   {/* 下段: 全幅オファーボタン */}
                   <button
                     onClick={() => fetchProductDetailForOffer(product.url)}
-                    className="w-full bg-indigo-600 text-white py-3 font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition"
+                    className="w-full bg-indigo-600 text-white py-4 font-black uppercase tracking-widest text-sm hover:bg-indigo-700 transition shadow-inner"
                   >
                     {t.makeOffer}
                   </button>
