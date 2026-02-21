@@ -129,6 +129,19 @@ export async function GET(request: Request) {
     if (items.length === 0) {
       $('.item, .s_item, .Product__item, .sdc, .lb-item, .lb-item-border, .lb-item-container').each((i, el) => {
         const $el = $(el);
+
+        // PR広告商品（上部に固定される商品等）を除外
+        if (
+          $el.hasClass('item--pr') ||
+          $el.hasClass('s_item--pr') ||
+          $el.hasClass('Product--pr') ||
+          $el.find('[class*="--pr"]').length > 0 ||
+          $el.text().includes('ストアPR') ||
+          $el.find('span:contains("PR")').length > 0
+        ) {
+          return; // skip
+        }
+
         const title = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__title, .title a, .lb-item__title').text().trim() || $el.find('h3').text().trim();
         const url = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link, .title a, .lb-item__link').attr('href') || $el.find('a').attr('href');
         const dataClParams = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link, .title a, .lb-item__link').attr('data-cl-params') || $el.find('a').attr('data-cl-params') || '';
