@@ -294,7 +294,7 @@ export async function GET(request: Request) {
     // 次のページが本当に存在するかどうかはヤフオクの仕様上「実際に取得してみないと分からない」ため、裏で先読みする
     if (!hasNextPageDom && hasNextPageByCount && typeof rawContainerCount !== 'undefined') {
       try {
-        const nextBValue = (page * itemsPerPage) - itemsPerPage + 51; // 1ページ目はb=1, 2ページ目はb=51
+        const nextBValue = (page * itemsPerPage) + 1; // 次ページの先頭インデックス
         const connector = searchUrl.includes('?') ? '&' : '?';
         const nextTargetUrl = searchUrl.replace(/&b=\d+/, '') + `${connector}b=${nextBValue}`;
         const nextRes = await fetch(nextTargetUrl, {

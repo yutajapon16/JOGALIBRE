@@ -201,13 +201,13 @@ const CATEGORIES = [
     es: 'Carros JDM',
     pt: 'Carros JDM',
     sub: [
-      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B9%E3%83%BC%E3%83%97%E3%83%A9&auccat=26360&va=%E3%82%B9%E3%83%BC%E3%83%97%E3%83%A9&b=1&n=100' },
-      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B9%E3%82%AB%E3%82%A4%E3%83%A9%E3%82%A4%E3%83%B3+GT-R&auccat=26360&va=%E3%82%B9%E3%82%AB%E3%82%A4%E3%83%A9%E3%82%A4%E3%83%B3+GT-R&b=1&n=100' },
-      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%A9%E3%83%B3%E3%82%B5%E3%83%BC%E3%82%A8%E3%83%9C%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3&auccat=26360&va=%E3%83%A9%E3%83%B3%E3%82%B5%E3%83%BC%E3%82%A8%E3%83%9C%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3&b=1&n=100' },
-      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/search/search?p=RX-7&auccat=26360&va=RX-7&b=1&n=100' },
-      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B7%E3%83%AB%E3%83%93%E3%82%A2&auccat=26360&va=%E3%82%B7%E3%83%AB%E3%83%93%E3%82%A2&b=1&n=100' },
-      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%A4%E3%83%B3%E3%83%97%E3%83%AC%E3%83%83%E3%82%B5+STI&auccat=26360&va=%E3%82%A4%E3%83%B3%E3%83%97%E3%83%AC%E3%83%83%E3%82%B5+STI&b=1&n=100' },
-      { id: 'desarme', es: 'Vehiculo Para Desarme', pt: 'Veículo Para Desmanche', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?o1=d&s1=new&exflg=1&b=1&n=100' },
+      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B9%E3%83%BC%E3%83%97%E3%83%A9&auccat=26360&va=%E3%82%B9%E3%83%BC%E3%83%97%E3%83%A9&b=1&n=50' },
+      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B9%E3%82%AB%E3%82%A4%E3%83%A9%E3%82%A4%E3%83%B3+GT-R&auccat=26360&va=%E3%82%B9%E3%82%AB%E3%82%A4%E3%83%A9%E3%82%A4%E3%83%B3+GT-R&b=1&n=50' },
+      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%A9%E3%83%B3%E3%82%B5%E3%83%BC%E3%82%A8%E3%83%9C%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3&auccat=26360&va=%E3%83%A9%E3%83%B3%E3%82%B5%E3%83%BC%E3%82%A8%E3%83%9C%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3&b=1&n=50' },
+      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/search/search?p=RX-7&auccat=26360&va=RX-7&b=1&n=50' },
+      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B7%E3%83%AB%E3%83%93%E3%82%A2&auccat=26360&va=%E3%82%B7%E3%83%AB%E3%83%93%E3%82%A2&b=1&n=50' },
+      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%A4%E3%83%B3%E3%83%97%E3%83%AC%E3%83%83%E3%82%B5+STI&auccat=26360&va=%E3%82%A4%E3%83%B3%E3%83%97%E3%83%AC%E3%83%83%E3%82%B5+STI&b=1&n=50' },
+      { id: 'desarme', es: 'Vehiculo Para Desarme', pt: 'Veículo Para Desmanche', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?o1=d&s1=new&exflg=1&b=1&n=50' },
     ]
   },
   { id: 'moto', es: 'Moto', pt: 'Moto', url: 'https://auctions.yahoo.co.jp/category/list/26316/?s1=new&o1=d' },
@@ -216,9 +216,9 @@ const CATEGORIES = [
     es: 'Llantas',
     pt: 'Rodas',
     sub: [
-      { id: 'll16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200188/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200188&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d' },
-      { id: 'll17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200189/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200189&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d' },
-      { id: 'll18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200190/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200190&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d' },
+      { id: 'll16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200188/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200188&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
+      { id: 'll17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200189/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200189&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
+      { id: 'll18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200190/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200190&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
     ]
   },
   {
@@ -226,13 +226,13 @@ const CATEGORIES = [
     es: 'Aros',
     pt: 'Aros',
     sub: [
-      { id: 'ar16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084008474/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084008474&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=118472,118483,118474,119521,118478,118481,115842,102328,120288,119007' },
-      { id: 'ar17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040548/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040548&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=118472%2C118478%2C118474%2C119007%2C119521%2C118481%2C115842%2C159741%2C118483%2C102328' },
-      { id: 'ar18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040547/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040547&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=115842,119007,118474,102328,118472,118483,119521,118478,118481,128485' },
+      { id: 'ar16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084008474/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084008474&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=118472,118483,118474,119521,118478,118481,115842,102328,120288,119007' },
+      { id: 'ar17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040548/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040548&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=118472%2C118478%2C118474%2C119007%2C119521%2C118481%2C115842%2C159741%2C118483%2C102328' },
+      { id: 'ar18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040547/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040547&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=115842,119007,118474,102328,118472,118483,119521,118478,118481,128485' },
     ]
   },
-  { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=128485,103816,105215,103820,119942,119941,119938' },
-  { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=102214,103815,115842,128485,159741,103823' },
+  { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=128485,103816,105215,103820,119942,119941,119938' },
+  { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=102214,103815,115842,128485,159741,103823' },
 ];
 
 export default function Home() {
