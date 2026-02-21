@@ -188,41 +188,76 @@ export async function GET(request: Request) {
 
     // パターン3: 中古車カテゴリ等、特殊な構造の場合 (.Product等がない)
     if (items.length === 0) {
-      const seenIds = new Set();
-      $('.bd').each((i, el) => {
-        const $el = $(el);
-        const aTag = $el.find('.a__title a');
-        if (aTag.length === 0) return;
+      const itemsMap = new Map();
 
-        const url = aTag.attr('href');
-        const title = aTag.text().trim();
-        if (!url || !title) return;
+      $('a').each((i, el) => {
+        const href = $(el).attr('href');
+        if (!href || !href.match(/\/auction\/([a-zA-Z0-9]+)$/)) return;
 
-        const rawHtml = $el.html() || '';
-        if (rawHtml.includes('ストアPR') || rawHtml.includes('PR ') || $el.find('[class*="pr"], [class*="PR"]').length > 0) {
+        const idMatch = href.match(/\/auction\/([a-zA-Z0-9]+)/);
+        const id = idMatch ? idMatch[1] : null;
+        if (!id) return;
+
+        const parentHtml = $(el).parent().html() || '';
+        if (parentHtml.includes('ストアPR') || parentHtml.includes('PR ') || $(el).closest('[class*="pr"], [class*="PR"]').length > 0) {
           return; // skip PR
         }
 
-        const priceText = $el.find('.pri1 dd').text().replace(/[^\d]/g, '');
-        const price = parseInt(priceText) || 0;
+        const $el = $(el);
+        let title = $el.text().replace(/\s+/g, ' ').trim() || $el.attr('title') || $el.find('img').attr('alt');
 
-        const bidsText = $el.find('.pri2 dt.bi + dd').text().replace(/[^\d]/g, '');
-        const bids = parseInt(bidsText) || 0;
-
-        const timeText = $el.find('.pri2 dt.rem + dd').text().trim();
-        let timeLeft = parseTimeLeft(timeText || '-');
-
-        let imageUrl = $el.find('.i img').attr('src');
-        if (imageUrl && imageUrl.includes('blank.gif')) {
-          imageUrl = $el.find('.i img').attr('data-original') || $el.find('.i img').attr('data-src');
+        if (!itemsMap.has(id)) {
+          itemsMap.set(id, { id, title: title || '', url: href, imageUrl: '', currentPrice: 0, bids: 0, timeLeft: '-' });
         }
 
-        const idMatch = url.match(/\/auction\/([a-zA-Z0-9]+)/);
-        const id = idMatch ? idMatch[1] : `search-p3-${page}-${i}`;
+        const currentItem = itemsMap.get(id);
 
-        if (!seenIds.has(id)) {
-          seenIds.add(id);
-          items.push({ id, title, url, imageUrl, currentPrice: price, bids, timeLeft: timeLeft || '-', source: 'yahoo_car_category' });
+        if (!currentItem.title && title && title.length > 5) {
+          currentItem.title = title;
+        }
+
+        const imgNode = $el.find('img');
+        if (imgNode.length > 0 && !currentItem.imageUrl) {
+          let src = imgNode.attr('src');
+          if (!src || src.includes('blank.gif')) {
+            src = imgNode.attr('data-original') || imgNode.attr('data-src');
+          }
+          if (src) currentItem.imageUrl = src;
+        }
+
+        const container = $el.closest('tr, table, li, div.i, div.a, div');
+        if (container.length > 0 && currentItem.currentPrice === 0) {
+          const priceTags = container.find('[class*="price"], [class*="Price"], span, dd, dt, p, div').filter((idx, ele) => $(ele).text().includes('円'));
+          if (priceTags.length > 0) {
+            const priceText = priceTags.first().text().replace(/[^\d]/g, '');
+            if (priceText) currentItem.currentPrice = parseInt(priceText) || 0;
+          }
+
+          const timeTags = container.find('span, dd, dt, p, div').filter((idx, ele) => $(ele).text().includes('日') || $(ele).text().includes('時間') || $(ele).text().includes('分'));
+          if (timeTags.length > 0) {
+            const dt = timeTags.first().text().trim();
+            let parsedTime = parseTimeLeft(dt || '-');
+            if (parsedTime && currentItem.timeLeft === '-') currentItem.timeLeft = parsedTime;
+          }
+
+          const bidsText = container.find('dt.bi + dd, [class*="bid"], [class*="Bid"]').text().replace(/[^\d]/g, '');
+          if (bidsText) currentItem.bids = parseInt(bidsText) || 0;
+        }
+      });
+
+      // Filter and push valid items
+      Array.from(itemsMap.values()).forEach((item, index) => {
+        if (item.title && item.title.length > 5) {
+          items.push({
+            id: item.id,
+            title: item.title,
+            url: item.url,
+            imageUrl: item.imageUrl,
+            currentPrice: item.currentPrice,
+            bids: item.bids,
+            timeLeft: item.timeLeft,
+            source: 'yahoo_car_category'
+          });
         }
       });
     }
