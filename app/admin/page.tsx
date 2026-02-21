@@ -977,25 +977,15 @@ export default function AdminDashboard() {
                       />
                     )}
 
-                    <div className="flex-1 flex flex-col min-h-[128px] py-0.5 overflow-hidden">
-                      <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{request.productTitle}</h3>
-                      <div className="flex flex-col gap-0.5 flex-1">
+                    <div className="flex-1 flex flex-col justify-between min-h-[128px] py-0.5 overflow-hidden">
+                      <div className="flex flex-col gap-0.5">
+                        <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{request.productTitle}</h3>
                         {request.productEndTime && (
                           <p className="text-[10px] text-gray-500 mb-1">
                             終了まで: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
                           </p>
                         )}
-                        <div className="flex flex-col gap-2 w-full mt-auto">
-                          <a
-                            href={request.productUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
-                          >
-                            ヤフオクURL →
-                          </a>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1 mt-2">
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getStatusColor(request.status)}`}>
                             {getStatusText(request.status)}
                           </span>
@@ -1012,13 +1002,21 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      <div className="mt-auto flex items-end justify-between">
-                        <div className="text-left flex items-baseline gap-1">
+                      <div className="flex flex-col gap-2 w-full mt-auto pt-2">
+                        <div className="text-left flex items-baseline gap-1 mb-1">
                           <span className="text-xs text-gray-500">希望入札額:</span>
                           <span className="text-lg font-bold text-indigo-600 leading-none">
                             ${Math.round(request.maxBid).toLocaleString('en-US')}
                           </span>
                         </div>
+                        <a
+                          href={request.productUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
+                        >
+                          ヤフオクURL
+                        </a>
                       </div>
                     </div>
                   </div>
