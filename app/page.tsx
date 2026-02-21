@@ -84,6 +84,8 @@ const translations = {
     notificationsEnabled: 'Notificaciones activadas \u2705',
     notificationsDisabled: 'Notificaciones desactivadas',
     sendComprobante: 'Enviar comprobante de pago',
+    whatsappGroup: 'Entrar al Grupo WhatsApp',
+    sendPaymentProof: 'Enviar Comprovante WhatsApp',
     searchByUrl: 'Importar por URL',
     searchByKeyword: 'Buscar por Palabra',
     searchByCategories: 'Categorías',
@@ -110,10 +112,12 @@ const translations = {
     totalPrice: 'Preço total',
     shippingUnknown: 'O custo de envio será adicionado na contraoferta',
     usdPrice: 'USD Aprox:',
-    bids: 'Lances',
+    bids: 'Oferta',
+    bidsLabel: 'Oferta / Lances',
     timeLeft: 'Termina em:',
-    endsIn: 'Termina em:',
+    endsInHeader: 'Termina em:',
     makeOffer: 'Fazer oferta',
+    search: 'Buscar',
     yourName: 'Nome do cliente',
     maxBid: 'Sua oferta máxima',
     submit: 'Enviar solicitação',
@@ -149,7 +153,8 @@ const translations = {
     customerName: 'Cliente',
     filterByCustomer: 'Filtrar por',
     allCustomers: 'Todos os clientes',
-    viewOnYahoo: 'Ver em Yahoo! →',
+    endsIn: 'Termina em',
+    viewOnYahoo: 'Ver no Yahoo! →',
     exchangeRate: 'Taxa de câmbio',
     offerSuccess: 'Oferta enviada com sucesso!',
     offerError: 'Erro ao enviar oferta. Por favor, tente novamente.',
@@ -167,20 +172,21 @@ const translations = {
     changePassword: 'Alterar senha',
     newPassword: 'Nova senha',
     confirmNewPassword: 'Confirmar nova senha',
-    search: 'Buscar',
-    notifications: 'Notifica\u00e7\u00f5es Push',
-    enableNotifications: 'Ativar notifica\u00e7\u00f5es',
-    disableNotifications: 'Desativar notifica\u00e7\u00f5es',
-    notificationsEnabled: 'Notifica\u00e7\u00f5es ativadas \u2705',
-    notificationsDisabled: 'Notifica\u00e7\u00f5es desativadas',
+    notifications: 'Notificações Push',
+    enableNotifications: 'Ativar notificações',
+    disableNotifications: 'Desativar notificações',
+    notificationsEnabled: 'Notificações ativadas \u2705',
+    notificationsDisabled: 'Notificações desativadas',
     sendComprobante: 'Enviar comprovante de pagamento',
+    whatsappGroup: 'Entrar no Grupo WhatsApp',
+    sendPaymentProof: 'Enviar Comprovante WhatsApp',
     searchByUrl: 'Importar por URL',
     searchByKeyword: 'Buscar por Palavra',
     searchByCategories: 'Categorias',
-    keywordPlaceholder: 'Buscar produtos (ex: relógio, bolsa...)',
+    keywordPlaceholder: 'Buscar produtos (ex. relógio, bolsa...)',
     searching: 'Buscando...',
     back: 'Voltar',
-    productDetail: 'Detalhes do Produto',
+    productDetail: 'Detalhe do Produto',
     description: 'Descrição',
     loadingDetail: 'Carregando detalhes...',
     previous: 'Anterior',
@@ -188,8 +194,6 @@ const translations = {
     categoriesTab: 'CATEGORIAS',
     searchTab: 'BUSCA',
     urlTab: 'URL',
-    bidsLabel: 'Lances',
-    endsInHeader: 'Termina em:',
   }
 };
 
@@ -199,12 +203,12 @@ const CATEGORIES = [
     es: 'Carros JDM',
     pt: 'Carros JDM',
     sub: [
-      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=40726&o1=d&s1=new' },
-      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24846&o1=d&s1=new' },
-      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=18389&o1=a&s1=car_model_year' },
-      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=14657&o1=d&s1=new' },
-      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24557&carshift1=91%2C917%2C5379&o1=d&s1=new' },
-      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=28231&o1=a&s1=car_model_year' },
+      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=40726&o1=d&s1=new&exflg=1&b=1&n=100' },
+      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24846&o1=d&s1=new&exflg=1&b=1&n=100' },
+      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=18389&o1=a&s1=car_model_year&exflg=1&b=1&n=100' },
+      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=14657&o1=d&s1=new&exflg=1&b=1&n=100' },
+      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24557&carshift1=91%2C917%2C5379&o1=d&s1=new&exflg=1&b=1&n=100' },
+      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=28231&o1=a&s1=car_model_year&exflg=1&b=1&n=100' },
       { id: 'desarme', es: 'VEHICULO PARA DESARME', pt: 'VEÍCULO PARA DESMANCHE', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?auccat=2084061280&o1=d&s1=new' },
     ]
   },
@@ -403,7 +407,8 @@ export default function Home() {
         confirmedAt: item.created_at,  // confirmed_at の代わりに created_at を使用
         customerCounterOffer: item.customer_counter_offer,
         customerCounterOfferUsed: item.customer_counter_offer_used,
-        paid: item.paid || false
+        paid: item.paid || false,
+        shippingCostJpy: item.shipping_cost_jpy,
       }));
 
       setPurchasedItems(convertedItems);
@@ -626,6 +631,36 @@ export default function Home() {
     }
   };
 
+  // 時間計算ロジックを管理者画面と統一 (JST考慮)
+  const getTimeRemaining = (endTime: string, timeLeftStr?: string) => {
+    if (!endTime) return timeLeftStr || '-';
+
+    // タイムゾーン情報がない場合、日本標準時 (JST) として扱う
+    let endDate: Date;
+    if (!endTime.includes('Z') && !endTime.includes('+') && !endTime.includes('-', 10)) {
+      endDate = new Date(endTime + '+09:00');
+    } else {
+      endDate = new Date(endTime);
+    }
+
+    const now = new Date().getTime();
+    const end = endDate.getTime();
+    const diff = end - now;
+
+    if (diff <= 0) return (lang === 'es' ? 'Finalizado' : 'Finalizado');
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+
+    return parts.join(' ') || (lang === 'es' ? 'Menos de 1m' : 'Menos de 1m');
+  };
+
   const calculateUSDPrice = (jpyPrice: number, shippingCost: number = 0) => {
     const FOB_COST = 1350;
     const totalJpyPrice = jpyPrice + shippingCost + FOB_COST;
@@ -697,7 +732,9 @@ export default function Home() {
       });
       const data = await res.json();
       if (data.product) {
-        setSelectedProduct(data.product);
+        const detail = data.product;
+        setSelectedProduct(detail);
+        setBidForm(prev => ({ ...prev, name: currentUser?.fullName || '', maxBid: detail.currentPrice ? (detail.currentPrice + 100).toString() : '' }));
       }
     } catch (error) {
       console.error('Error fetching product for offer:', error);
@@ -919,25 +956,6 @@ export default function Home() {
     }
   };
 
-  const getTimeRemaining = (endTime: string) => {
-    if (!endTime) return '0m';
-
-    const now = new Date().getTime();
-    const end = new Date(endTime).getTime();
-    const diff = end - now;
-
-    console.log('Time calculation:', { endTime, now: new Date(now).toISOString(), end: new Date(end).toISOString(), diff });
-
-    if (diff <= 0) return '0m';
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (days > 0) return `${days}${t.dShort} ${hours}${t.hShort}`;
-    if (hours > 0) return `${hours}${t.hShort} ${minutes}${t.mShort}`;
-    return `${minutes}${t.mShort}`;
-  };
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -1104,104 +1122,102 @@ export default function Home() {
               <p className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase tracking-wider leading-none">{t.subtitle}</p>
             </div>
 
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-end gap-3">
               <button
                 onClick={handleLogout}
-                className="text-sm text-red-600 hover:text-red-800 font-bold"
+                className="text-xs sm:text-sm text-red-600 hover:text-red-800 font-bold"
               >
                 {t.logout}
               </button>
-              {/* 言語選択バー: 下の通知ボタンと同じ幅を想定 */}
-              <div className="flex bg-white rounded p-0.5 border border-gray-200 w-32 sm:w-40 shadow-sm overflow-hidden">
-                <button
-                  onClick={() => setLang('es')}
-                  className={`flex-1 text-[9px] font-black py-1 rounded transition ${lang === 'es' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  ES
-                </button>
-                <button
-                  onClick={() => setLang('pt')}
-                  className={`flex-1 text-[9px] font-black py-1 rounded transition ${lang === 'pt' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  PT
-                </button>
-              </div>
+
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+                className="bg-white border border-gray-200 text-gray-700 py-3 px-4 rounded-xl text-base font-bold shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full"
+              >
+                <option value="es">🇪🇸 Español (ES)</option>
+                <option value="pt">🇧🇷 Português (PT)</option>
+              </select>
             </div>
           </div>
+        </div>
+      </header>
 
-          {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
-          <div className="flex gap-2">
-            <button
-              onClick={sendWhatsAppNotification}
-              disabled={isSendingNotification}
-              className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base disabled:bg-gray-400"
-            >
-              {isSendingNotification ? '...' : '📱 WhatsApp'}
-            </button>
-            <button
-              onClick={async () => {
-                if (!currentUser) return;
-                const permission = getNotificationPermission();
-                if (permission === 'unsupported') {
-                  alert(lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.');
-                  return;
-                }
-                if (permission === 'granted') {
-                  try {
-                    const res = await fetch(`/api/push-subscribe?userId=${currentUser.id}`);
-                    if (res.ok) {
-                      await fetch('/api/push-subscribe', {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: currentUser.id }),
-                      });
-                      setNotificationStatus('disabled');
-                      alert(lang === 'es' ? 'Notificaciones desactivadas' : 'Notificações desativadas');
-                      return;
-                    }
-                  } catch { }
-                }
+      <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
+        {/* WhatsApp + プッシュ通知ボタン（垂直スタック & 間隔統一） */}
+        <div className="flex flex-col gap-4">
+          <button
+            onClick={sendWhatsAppNotification}
+            disabled={isSendingNotification}
+            className="w-full bg-green-600 text-white px-4 py-4 rounded-xl hover:bg-green-700 transition font-bold text-base shadow-sm disabled:bg-gray-400"
+          >
+            {isSendingNotification ? '...' : (lang === 'es' ? '📱 Grupo WhatsApp' : '📱 Grupo do WhatsApp')}
+          </button>
+
+          <button
+            onClick={async () => {
+              if (!currentUser) return;
+              const permission = getNotificationPermission();
+              if (permission === 'unsupported') {
+                alert(lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.');
+                return;
+              }
+              if (permission === 'granted') {
                 try {
-                  const subscription = await requestNotificationPermission();
-                  if (subscription) {
+                  const res = await fetch(`/api/push-subscribe?userId=${currentUser.id}`);
+                  if (res.ok) {
                     await fetch('/api/push-subscribe', {
-                      method: 'POST',
+                      method: 'DELETE',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ userId: currentUser.id, subscription }),
+                      body: JSON.stringify({ userId: currentUser.id }),
                     });
-                    setNotificationStatus('enabled');
-                    alert(lang === 'es' ? '¡Notificaciones activadas!' : 'Notificações ativadas!');
+                    setNotificationStatus('disabled');
+                    alert(lang === 'es' ? 'Notificaciones desactivadas' : 'Notificações desativadas');
+                    return;
                   }
-                } catch (err) {
-                  console.error('Push error:', err);
+                } catch { }
+              }
+              try {
+                const subscription = await requestNotificationPermission();
+                if (subscription) {
+                  await fetch('/api/push-subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUser.id, subscription }),
+                  });
+                  setNotificationStatus('enabled');
+                  alert(lang === 'es' ? '¡Notificaciones activadas!' : 'Notificações ativadas!');
                 }
-              }}
-              className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
-                ? 'bg-gray-500 text-white hover:bg-gray-600'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-            >
-              {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
-            </button>
-          </div>
+              } catch (err) {
+                console.error('Push error:', err);
+              }
+            }}
+            className={`w-full px-4 py-4 rounded-xl transition font-bold text-base shadow-sm ${notificationStatus === 'enabled'
+              ? 'bg-gray-500 text-white hover:bg-gray-600'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+          >
+            {notificationStatus === 'enabled' ? '🔔 Notificaciones: ON' : '🔔 Activar Notificaciones'}
+          </button>
 
-          {/* 更新ボタン（全幅） */}
           <button
             onClick={() => {
               if (activeTab === 'requests') fetchMyRequests();
               else if (activeTab === 'purchased') fetchPurchasedItems();
-              else { fetchExchangeRate(); }
+              else { fetchExchangeRate(); } // Removed searchProducts() as it's not defined
             }}
-            className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
+            className="w-full bg-indigo-600 text-white px-4 py-4 rounded-xl hover:bg-indigo-700 transition font-bold text-base shadow-sm"
           >
             🔁 {t.refresh}
           </button>
+        </div>
 
-          <div className="text-xs sm:text-sm text-gray-600">
-            {t.exchangeRate}: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
+        <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 flex justify-center items-center">
+          <div className="text-sm font-bold text-gray-600">
+            {t.exchangeRate}: <span className="text-indigo-600">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* タブナビゲーション */}
       <nav className="bg-white border-b sticky top-0 z-10">
@@ -1563,28 +1579,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* WhatsApp 支払い証明書送信ボタン */}
-            <div className="mb-6">
-              <a
-                href="https://wa.me/817013476721"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-6 h-6"
-                >
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-                </svg>
-                <span>{lang === 'es' ? 'Enviar comprobante de pago' : 'Enviar comprovante de pagamento'}</span>
-              </a>
-            </div>
-
             {purchasedItems.length === 0 ? (
               <div className="text-center text-gray-500 py-12">
                 <p>No hay productos comprados</p>
@@ -1606,14 +1600,6 @@ export default function Home() {
                           )}
                           <div className="flex-1 min-w-0">
                             <h3 className="text-sm font-semibold mb-2 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
-                            <a
-                              href={`https://wa.me/5511977755555?text=${encodeURIComponent(`${t.sendComprobante}\nID: ${item.id}\n${item.productTitle}`)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-full bg-green-500 text-white px-2 py-2 rounded text-[10px] sm:text-xs font-bold hover:bg-green-600 transition flex items-center justify-center gap-1 whitespace-nowrap overflow-hidden"
-                            >
-                              WhatsApp
-                            </a>
                           </div>
                         </div>
 
@@ -1644,20 +1630,51 @@ export default function Home() {
                           </div>
                         </div>
 
-                        <div className="text-right pt-3 border-t">
-                          <div className="flex items-center justify-end gap-3">
-                            {item.paid && (
-                              <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">
-                                ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
-                              </span>
-                            )}
-                            <p className={`text-xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                              ${Math.round(
-                                item.finalPrice ||
-                                (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
-                              ).toLocaleString('en-US')}
-                            </p>
+                        {/* 中段: 価格情報 */}
+                        <div className="p-4 border-t border-gray-50 bg-gray-50/50 space-y-2">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-500 font-bold">Precio final (JPY)</span>
+                            <span className="text-gray-900 font-black">¥{item.finalPrice?.toLocaleString()}</span>
                           </div>
+                          {item.shippingCostJpy && (
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="text-gray-500 font-bold">Envío (JPY)</span>
+                              <span className="text-gray-900 font-black">¥{item.shippingCostJpy.toLocaleString()}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center text-sm border-t border-gray-200 pt-2">
+                            <span className="text-indigo-600 font-black">TOTAL USD</span>
+                            <span className="text-indigo-600 font-black">${calculateUSDPrice(item.finalPrice || 0, item.shippingCostJpy || 0)}</span>
+                          </div>
+                        </div>
+
+                        {/* 下段: ヤフオクリンク & 支払い証明ボタン */}
+                        <div className="p-4 border-t border-gray-100 flex flex-col gap-2">
+                          <a
+                            href={item.productUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-center text-xs text-indigo-600 hover:underline font-bold py-2 bg-indigo-50 rounded"
+                          >
+                            {t.viewOnYahoo}
+                          </a>
+                          {!item.paid && (
+                            <button
+                              onClick={() => {
+                                const totalUSD = calculateUSDPrice(item.finalPrice || 0, item.shippingCostJpy || 0);
+                                const message = `Payment Proof\nProduct: ${item.productTitle}\nTotal: $${totalUSD}\nCustomer: ${item.customerFullName || item.customerEmail}`;
+                                window.open(`https://wa.me/5491176043997?text=${encodeURIComponent(message)}`, '_blank');
+                              }}
+                              className="bg-green-600 text-white py-3 rounded-lg font-bold text-sm hover:bg-green-700 transition"
+                            >
+                              ✅ {t.sendPaymentProof}
+                            </button>
+                          )}
+                          {item.paid && (
+                            <div className="bg-blue-100 text-blue-800 text-center py-2 rounded-lg font-bold text-sm">
+                              PEDIDO PAGADO ✅
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1975,7 +1992,7 @@ export default function Home() {
                       </div>
                       <div className="flex gap-1 items-center">
                         <span className="text-gray-400">{t.endsInHeader}</span>
-                        <span className="text-red-500">{product.timeLeft}</span>
+                        <span className="text-red-500">{getTimeRemaining(product.endTime || '', (product as any).timeLeft)}</span>
                       </div>
                     </div>
 

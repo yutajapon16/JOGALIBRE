@@ -50,39 +50,41 @@ export async function GET(request: Request) {
     const $ = cheerio.load(html);
     const items: any[] = [];
 
-    // 時間パース用のヘルパー関数
+    // 時間パース用のヘルパー関数 (より詳細に抽出するように改善)
     const parseTimeLeft = (raw: string) => {
       if (!raw) return '';
-      const daysMatch = raw.match(/(\d+)日/);
-      const hoursMatch = raw.match(/(\d+)時間/);
-      const minutesMatch = raw.match(/(\d+)分/);
+      // 全角半角、空白を許容
+      const cleanRaw = raw.replace(/\s+/g, '');
+      const daysMatch = cleanRaw.match(/(\d+)日/);
+      const hoursMatch = cleanRaw.match(/(\d+)時間/);
+      const minutesMatch = cleanRaw.match(/(\d+)分/);
 
       const parts = [];
       if (daysMatch) parts.push(`${daysMatch[1]}d`);
       if (hoursMatch) parts.push(`${hoursMatch[1]}h`);
       if (minutesMatch) parts.push(`${minutesMatch[1]}m`);
 
-      // "あと11時間" のような形式に対応
+      // "あと11時間" や "11h" などの形式にも対応
       if (parts.length === 0) {
-        const hoursOnlyMatch = raw.match(/あと(\d+)時間/);
-        const minutesOnlyMatch = raw.match(/あと(\d+)分/);
-        if (hoursOnlyMatch) parts.push(`${hoursOnlyMatch[1]}h`);
-        if (minutesOnlyMatch) parts.push(`${minutesOnlyMatch[1]}m`);
+        const hMatch = cleanRaw.match(/(\d+)h/i) || cleanRaw.match(/あと(\d+)時間/);
+        const mMatch = cleanRaw.match(/(\d+)m/i) || cleanRaw.match(/あと(\d+)分/);
+        if (hMatch) parts.push(`${hMatch[1]}h`);
+        if (mMatch) parts.push(`${mMatch[1]}m`);
       }
 
-      return parts.join(' ') || raw.replace(/残り|あと/g, '').trim();
+      return parts.join(' ') || raw.replace(/残り|あと|残り時間/g, '').trim();
     };
 
     // パターン1: 検索結果ページ (.Product)
-    $('.Product').each((i, el) => {
+    $('.Product, .Product__item').each((i, el) => {
       const $el = $(el);
-      const title = $el.find('.Product__titleLink').text().trim();
-      const url = $el.find('.Product__titleLink').attr('href');
-      const imageUrl = $el.find('.Product__imageData').attr('src') || $el.find('img').attr('src');
-      const priceText = $el.find('.Product__priceValue').first().text().replace(/[^\d]/g, '');
+      const title = $el.find('.Product__titleLink, .item__titleLink').text().trim();
+      const url = $el.find('.Product__titleLink, .item__titleLink').attr('href');
+      const imageUrl = $el.find('.Product__imageData, .item__imageData').attr('src') || $el.find('img').attr('src');
+      const priceText = $el.find('.Product__priceValue, .item__priceValue').first().text().replace(/[^\d]/g, '');
       const price = parseInt(priceText) || 0;
-      const bids = parseInt($el.find('.Product__bid').text()) || 0;
-      const timeLeftRaw = $el.find('.Product__time').text().trim();
+      const bids = parseInt($el.find('.Product__bid, .item__bid').text()) || 0;
+      const timeLeftRaw = $el.find('.Product__time, .item__time, .time, .date').text().trim();
       const timeLeft = parseTimeLeft(timeLeftRaw);
       const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
       const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
@@ -92,25 +94,25 @@ export async function GET(request: Request) {
       }
     });
 
-    // パターン2: カテゴリページ (.item, .s_item, .Product__item, .sdc, .lb-item)
+    // パターン2: カテゴリページ (.item, .s_item, .Product__item, .sdc, .lb-item, .lb-item-border)
     if (items.length === 0) {
-      $('.item, .s_item, .Product__item, .sdc, .lb-item, .lb-item-border').each((i, el) => {
+      $('.item, .s_item, .Product__item, .sdc, .lb-item, .lb-item-border, .lb-item-container').each((i, el) => {
         const $el = $(el);
-        const title = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__title, .title a').text().trim() || $el.find('h3').text().trim();
-        const url = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link, .title a').attr('href') || $el.find('a').attr('href');
-        let imageUrl = $el.find('.item__imageData, .s_item__imageData, .Product__imageData, .sdc__image, .image img, .thumb img').attr('src') || $el.find('img').attr('src');
+        const title = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__title, .title a, .lb-item__title').text().trim() || $el.find('h3').text().trim();
+        const url = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link, .title a, .lb-item__link').attr('href') || $el.find('a').attr('href');
+        let imageUrl = $el.find('.item__imageData, .s_item__imageData, .Product__imageData, .sdc__image, .image img, .thumb img, .lb-item__image').attr('src') || $el.find('img').attr('src');
 
         // Lazy load や data-original, data-src への対応
         if (!imageUrl || imageUrl.includes('blank.gif')) {
           imageUrl = $el.find('img').attr('data-original') || $el.find('img').attr('data-src') || $el.find('img').attr('src');
         }
 
-        const priceText = $el.find('.item__priceValue, .s_item__priceValue, .Product__priceValue, .sdc__price, .price, .bid').first().text().replace(/[^\d]/g, '') || $el.find('.price').text().replace(/[^\d]/g, '');
+        const priceText = $el.find('.item__priceValue, .s_item__priceValue, .Product__priceValue, .sdc__price, .price, .bid, .lb-item__price').first().text().replace(/[^\d]/g, '') || $el.find('.price').text().replace(/[^\d]/g, '');
         const price = parseInt(priceText) || 0;
-        const bids = parseInt($el.find('.item__bid, .s_item__bid, .Product__bid, .sdc__bid, .bid').text()) || 0;
+        const bids = parseInt($el.find('.item__bid, .s_item__bid, .Product__bid, .sdc__bid, .bid, .lb-item__bid').text()) || 0;
 
-        // 残り時間の抽出と変換
-        const timeLeftRaw = $el.find('.Product__time, .item__time, .sdc-time, .time, .date').text().trim();
+        // 残り時間の抽出
+        const timeLeftRaw = $el.find('.Product__time, .item__time, .sdc-time, .time, .date, .lb-item__time').text().trim();
         const timeLeft = parseTimeLeft(timeLeftRaw);
 
         const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
