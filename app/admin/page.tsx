@@ -562,10 +562,10 @@ export default function AdminDashboard() {
   const formatDateTime = (dateString: string) => {
     if (!dateString) return '-';
 
-    // タイムゾーン情報がない場合、UTC として扱う
+    // タイムゾーン情報がない場合、日本標準時 (JST) として扱う
     let date: Date;
     if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-      date = new Date(dateString + 'Z');
+      date = new Date(dateString + '+09:00');
     } else {
       date = new Date(dateString);
     }
@@ -604,10 +604,10 @@ export default function AdminDashboard() {
   const getTimeRemaining = (endTime: string) => {
     if (!endTime) return '-';
 
-    // タイムゾーン情報がない場合、UTC として扱う
+    // タイムゾーン情報がない場合、日本標準時 (JST) として扱う
     let endDate: Date;
     if (!endTime.includes('Z') && !endTime.includes('+') && !endTime.includes('-', 10)) {
-      endDate = new Date(endTime + 'Z');
+      endDate = new Date(endTime + '+09:00');
     } else {
       endDate = new Date(endTime);
     }

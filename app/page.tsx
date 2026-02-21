@@ -17,9 +17,9 @@ const translations = {
     shippingCost: 'Costo de envío',
     totalPrice: 'Precio total',
     shippingUnknown: 'El costo de envío se agregará en la contraoferta',
-    usdPrice: 'Precio USD',
+    usdPrice: 'USD Aprox:',
     bids: 'Oferta',
-    bidsLabel: 'Oferta',
+    bidsLabel: 'Oferta / Lances',
     timeLeft: 'Termina en:',
     endsInHeader: 'Termina en:',
     makeOffer: 'Hacer oferta',
@@ -109,9 +109,9 @@ const translations = {
     shippingCost: 'Custo de envio',
     totalPrice: 'Preço total',
     shippingUnknown: 'O custo de envio será adicionado na contraoferta',
-    usdPrice: 'Preço USD',
+    usdPrice: 'USD Aprox:',
     bids: 'Lances',
-    timeLeft: 'Tempo restante',
+    timeLeft: 'Termina em:',
     endsIn: 'Termina em:',
     makeOffer: 'Fazer oferta',
     yourName: 'Nome do cliente',
@@ -1094,25 +1094,25 @@ export default function Home() {
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
-          {/* 1行目: ロゴ + ログアウト */}
+          {/* 1行目: ロゴ & ログアウト + 言語選択 */}
           <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-bold text-black leading-none">{t.title}</h1>
-              <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-black leading-none">{t.title}</h1>
+                <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase tracking-wider leading-none">{t.subtitle}</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="text-sm text-red-600 hover:text-red-800 whitespace-nowrap"
-            >
-              {t.logout}
-            </button>
-          </div>
 
-          <div className="flex flex-col gap-2">
-            {/* 言語選択 & サブタイトル (水平配置) */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 border-y border-gray-100 py-2">
-              <p className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider">{t.subtitle}</p>
-              <div className="flex bg-white rounded p-0.5 border border-gray-200 w-32 shadow-sm">
+            <div className="flex flex-col items-end gap-2">
+              <button
+                onClick={handleLogout}
+                className="text-sm text-red-600 hover:text-red-800 font-bold"
+              >
+                {t.logout}
+              </button>
+              {/* 言語選択バー: 下の通知ボタンと同じ幅を想定 */}
+              <div className="flex bg-white rounded p-0.5 border border-gray-200 w-32 sm:w-40 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setLang('es')}
                   className={`flex-1 text-[9px] font-black py-1 rounded transition ${lang === 'es' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-600'}`}
@@ -1127,78 +1127,78 @@ export default function Home() {
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
-            <div className="flex gap-2">
-              <button
-                onClick={sendWhatsAppNotification}
-                disabled={isSendingNotification}
-                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base disabled:bg-gray-400"
-              >
-                {isSendingNotification ? '...' : '📱 WhatsApp'}
-              </button>
-              <button
-                onClick={async () => {
-                  if (!currentUser) return;
-                  const permission = getNotificationPermission();
-                  if (permission === 'unsupported') {
-                    alert(lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.');
-                    return;
-                  }
-                  if (permission === 'granted') {
-                    try {
-                      const res = await fetch(`/api/push-subscribe?userId=${currentUser.id}`);
-                      if (res.ok) {
-                        await fetch('/api/push-subscribe', {
-                          method: 'DELETE',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ userId: currentUser.id }),
-                        });
-                        setNotificationStatus('disabled');
-                        alert(lang === 'es' ? 'Notificaciones desactivadas' : 'Notificações desativadas');
-                        return;
-                      }
-                    } catch { }
-                  }
-                  try {
-                    const subscription = await requestNotificationPermission();
-                    if (subscription) {
-                      await fetch('/api/push-subscribe', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: currentUser.id, subscription }),
-                      });
-                      setNotificationStatus('enabled');
-                      alert(lang === 'es' ? '¡Notificaciones activadas!' : 'Notificações ativadas!');
-                    }
-                  } catch (err) {
-                    console.error('Push error:', err);
-                  }
-                }}
-                className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
-                  ? 'bg-gray-500 text-white hover:bg-gray-600'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-              >
-                {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
-              </button>
-            </div>
-
-            {/* 更新ボタン（全幅） */}
+          {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
+          <div className="flex gap-2">
             <button
-              onClick={() => {
-                if (activeTab === 'requests') fetchMyRequests();
-                else if (activeTab === 'purchased') fetchPurchasedItems();
-                else { fetchExchangeRate(); }
-              }}
-              className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
+              onClick={sendWhatsAppNotification}
+              disabled={isSendingNotification}
+              className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base disabled:bg-gray-400"
             >
-              🔁 {t.refresh}
+              {isSendingNotification ? '...' : '📱 WhatsApp'}
             </button>
+            <button
+              onClick={async () => {
+                if (!currentUser) return;
+                const permission = getNotificationPermission();
+                if (permission === 'unsupported') {
+                  alert(lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.');
+                  return;
+                }
+                if (permission === 'granted') {
+                  try {
+                    const res = await fetch(`/api/push-subscribe?userId=${currentUser.id}`);
+                    if (res.ok) {
+                      await fetch('/api/push-subscribe', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: currentUser.id }),
+                      });
+                      setNotificationStatus('disabled');
+                      alert(lang === 'es' ? 'Notificaciones desactivadas' : 'Notificações desativadas');
+                      return;
+                    }
+                  } catch { }
+                }
+                try {
+                  const subscription = await requestNotificationPermission();
+                  if (subscription) {
+                    await fetch('/api/push-subscribe', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: currentUser.id, subscription }),
+                    });
+                    setNotificationStatus('enabled');
+                    alert(lang === 'es' ? '¡Notificaciones activadas!' : 'Notificações ativadas!');
+                  }
+                } catch (err) {
+                  console.error('Push error:', err);
+                }
+              }}
+              className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
+                ? 'bg-gray-500 text-white hover:bg-gray-600'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+            >
+              {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
+            </button>
+          </div>
 
-            <div className="text-xs sm:text-sm text-gray-600">
-              {t.exchangeRate}: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
-            </div>
+          {/* 更新ボタン（全幅） */}
+          <button
+            onClick={() => {
+              if (activeTab === 'requests') fetchMyRequests();
+              else if (activeTab === 'purchased') fetchPurchasedItems();
+              else { fetchExchangeRate(); }
+            }}
+            className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
+          >
+            🔁 {t.refresh}
+          </button>
+
+          <div className="text-xs sm:text-sm text-gray-600">
+            {t.exchangeRate}: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
           </div>
         </div>
       </header>
@@ -1246,7 +1246,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </nav>
+      </nav >
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {activeTab === 'requests' ? (
@@ -1946,7 +1946,7 @@ export default function Home() {
                           {product.title}
                         </h3>
                         <a
-                          href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(product.url)}`}
+                          href={product.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[11px] text-indigo-600 font-bold hover:underline"
@@ -1970,29 +1970,29 @@ export default function Home() {
 
                     <div className="flex justify-between items-center text-[10px] font-bold border-y border-gray-50 py-1">
                       <div className="flex gap-1 items-center">
-                        <span className="text-gray-400 uppercase">{t.bidsLabel}:</span>
+                        <span className="text-gray-400">{t.bidsLabel}:</span>
                         <span className="text-gray-900">{product.bids}</span>
                       </div>
                       <div className="flex gap-1 items-center">
-                        <span className="text-gray-400 uppercase">{t.endsInHeader}</span>
-                        <span className="text-red-500">{product.timeLeft || '1d 12h'}</span>
+                        <span className="text-gray-400">{t.endsInHeader}</span>
+                        <span className="text-red-500">{product.timeLeft}</span>
                       </div>
                     </div>
 
-                    {/* USD金額 & オファーボタン (セットで右寄せ) */}
-                    <div className="mt-auto pt-2 flex flex-col items-end">
-                      <div className="bg-indigo-50/50 rounded p-2 flex flex-col items-end min-w-[140px]">
-                        <span className="text-[10px] text-indigo-600 font-black uppercase tracking-tighter">USD aprox:</span>
-                        <span className="text-2xl font-black text-indigo-600 leading-none mb-2">
+                    {/* USD金額 & オファー申請ボタン */}
+                    <div className="mt-auto pt-2 flex flex-col gap-2">
+                      <div className="bg-indigo-50/50 rounded p-2 flex justify-between items-center">
+                        <span className="text-[10px] text-indigo-600 font-black tracking-tighter">{t.usdPrice}</span>
+                        <span className="text-xl font-black text-indigo-600 leading-none">
                           ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
                         </span>
-                        <button
-                          onClick={() => fetchProductDetailForOffer(product.url)}
-                          className="w-full bg-indigo-600 text-white py-2 font-black uppercase tracking-widest text-[10px] hover:bg-indigo-700 transition rounded-sm shadow-sm"
-                        >
-                          {t.makeOffer}
-                        </button>
                       </div>
+                      <button
+                        onClick={() => fetchProductDetailForOffer(product.url)}
+                        className="w-full bg-indigo-600 text-white py-3 font-black uppercase tracking-widest text-[10px] hover:bg-indigo-700 transition rounded shadow-sm"
+                      >
+                        {t.makeOffer}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -2032,91 +2032,93 @@ export default function Home() {
       </main>
 
 
-      {selectedProduct && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-30 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">{t.makeOffer}</h2>
+      {
+        selectedProduct && (
+          <div className="fixed inset-0 bg-gray-900 bg-opacity-30 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full p-6">
+              <h2 className="text-2xl font-bold mb-4">{t.makeOffer}</h2>
 
-            <div className="flex gap-3 mb-4">
-              <img
-                src={selectedProduct.imageUrl}
-                alt={selectedProduct.title}
-                className="w-32 h-32 object-cover rounded flex-shrink-0"
-              />
-              <div className="flex-1 flex flex-col py-0.5 overflow-hidden">
-                <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{selectedProduct.title}</h3>
-                <div className="flex flex-col gap-0.5">
-                  <p className="text-xs text-gray-600">
-                    {t.currentPrice}: ¥{selectedProduct.currentPrice.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    USD: ${calculateUSDPrice(selectedProduct.currentPrice, selectedProduct.shippingCost || 0)}
+              <div className="flex gap-3 mb-4">
+                <img
+                  src={selectedProduct.imageUrl}
+                  alt={selectedProduct.title}
+                  className="w-32 h-32 object-cover rounded flex-shrink-0"
+                />
+                <div className="flex-1 flex flex-col py-0.5 overflow-hidden">
+                  <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{selectedProduct.title}</h3>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-xs text-gray-600">
+                      {t.currentPrice}: ¥{selectedProduct.currentPrice.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      USD: ${calculateUSDPrice(selectedProduct.currentPrice, selectedProduct.shippingCost || 0)}
+                    </p>
+                  </div>
+                  <a
+                    href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(selectedProduct.url)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 hover:underline text-xs inline-block mt-auto"
+                  >
+                    {t.viewOnYahoo}
+                  </a>
+                </div>
+              </div>
+
+              {/* 商品説明の追加 */}
+              {selectedProduct.translatedDescription && (
+                <div className="mt-4 mb-4 p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto border border-gray-100">
+                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t.description}</h4>
+                  <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                    {selectedProduct.translatedDescription}
                   </p>
                 </div>
-                <a
-                  href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(selectedProduct.url)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-indigo-600 hover:underline text-xs inline-block mt-auto"
-                >
-                  {t.viewOnYahoo}
-                </a>
-              </div>
+              )}
+
+              <form onSubmit={handleBidRequest} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium mb-1">{t.yourName}</label>
+                  <input
+                    type="text"
+                    value={bidForm.name}
+                    onChange={(e) => setBidForm({ ...bidForm, name: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">{t.maxBid}</label>
+                  <input
+                    type="number"
+                    value={bidForm.maxBid}
+                    onChange={(e) => setBidForm({ ...bidForm, maxBid: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                    required
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      setBidForm({ name: '', maxBid: '' });
+                    }}
+                    className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+                  >
+                    {t.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                  >
+                    {t.submit}
+                  </button>
+                </div>
+              </form>
             </div>
-
-            {/* 商品説明の追加 */}
-            {selectedProduct.translatedDescription && (
-              <div className="mt-4 mb-4 p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto border border-gray-100">
-                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t.description}</h4>
-                <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
-                  {selectedProduct.translatedDescription}
-                </p>
-              </div>
-            )}
-
-            <form onSubmit={handleBidRequest} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium mb-1">{t.yourName}</label>
-                <input
-                  type="text"
-                  value={bidForm.name}
-                  onChange={(e) => setBidForm({ ...bidForm, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1">{t.maxBid}</label>
-                <input
-                  type="number"
-                  value={bidForm.maxBid}
-                  onChange={(e) => setBidForm({ ...bidForm, maxBid: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm"
-                  required
-                />
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedProduct(null);
-                    setBidForm({ name: '', maxBid: '' });
-                  }}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
-                >
-                  {t.cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
-                >
-                  {t.submit}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {
         showCounterModal && selectedRequestForCounter && (
@@ -2165,7 +2167,8 @@ export default function Home() {
               </div>
             </div>
           </div>
-        )}
-    </div>
+        )
+      }
+    </div >
   );
 }

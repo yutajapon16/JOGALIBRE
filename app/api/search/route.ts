@@ -50,6 +50,29 @@ export async function GET(request: Request) {
     const $ = cheerio.load(html);
     const items: any[] = [];
 
+    // 時間パース用のヘルパー関数
+    const parseTimeLeft = (raw: string) => {
+      if (!raw) return '';
+      const daysMatch = raw.match(/(\d+)日/);
+      const hoursMatch = raw.match(/(\d+)時間/);
+      const minutesMatch = raw.match(/(\d+)分/);
+
+      const parts = [];
+      if (daysMatch) parts.push(`${daysMatch[1]}d`);
+      if (hoursMatch) parts.push(`${hoursMatch[1]}h`);
+      if (minutesMatch) parts.push(`${minutesMatch[1]}m`);
+
+      // "あと11時間" のような形式に対応
+      if (parts.length === 0) {
+        const hoursOnlyMatch = raw.match(/あと(\d+)時間/);
+        const minutesOnlyMatch = raw.match(/あと(\d+)分/);
+        if (hoursOnlyMatch) parts.push(`${hoursOnlyMatch[1]}h`);
+        if (minutesOnlyMatch) parts.push(`${minutesOnlyMatch[1]}m`);
+      }
+
+      return parts.join(' ') || raw.replace(/残り|あと/g, '').trim();
+    };
+
     // パターン1: 検索結果ページ (.Product)
     $('.Product').each((i, el) => {
       const $el = $(el);
@@ -59,11 +82,13 @@ export async function GET(request: Request) {
       const priceText = $el.find('.Product__priceValue').first().text().replace(/[^\d]/g, '');
       const price = parseInt(priceText) || 0;
       const bids = parseInt($el.find('.Product__bid').text()) || 0;
+      const timeLeftRaw = $el.find('.Product__time').text().trim();
+      const timeLeft = parseTimeLeft(timeLeftRaw);
       const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
       const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
       if (title && url) {
-        items.push({ id, title, url, imageUrl, currentPrice: price, bids, source: 'yahoo_search' });
+        items.push({ id, title, url, imageUrl, currentPrice: price, bids, timeLeft, source: 'yahoo_search' });
       }
     });
 
@@ -85,21 +110,8 @@ export async function GET(request: Request) {
         const bids = parseInt($el.find('.item__bid, .s_item__bid, .Product__bid, .sdc__bid, .bid').text()) || 0;
 
         // 残り時間の抽出と変換
-        let timeLeftRaw = $el.find('.Product__time, .item__time, .sdc-time, .time, .date').text().trim();
-        let timeLeft = '';
-        if (timeLeftRaw) {
-          // "残り 1日 12時間" -> "1d 12h"
-          const daysMatch = timeLeftRaw.match(/(\d+)日/);
-          const hoursMatch = timeLeftRaw.match(/(\d+)時間/);
-          const minutesMatch = timeLeftRaw.match(/(\d+)分/);
-
-          const parts = [];
-          if (daysMatch) parts.push(`${daysMatch[1]}d`);
-          if (hoursMatch) parts.push(`${hoursMatch[1]}h`);
-          if (minutesMatch) parts.push(`${minutesMatch[1]}m`);
-
-          timeLeft = parts.join(' ') || timeLeftRaw.replace(/残り/g, '').trim();
-        }
+        const timeLeftRaw = $el.find('.Product__time, .item__time, .sdc-time, .time, .date').text().trim();
+        const timeLeft = parseTimeLeft(timeLeftRaw);
 
         const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
         const id = productIdMatch ? productIdMatch[1] : `cat-${page}-${i}`;
