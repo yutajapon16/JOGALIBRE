@@ -1889,9 +1889,9 @@ export default function Home() {
                   {currentCategory && (
                     <button
                       onClick={() => setCurrentCategory(null)}
-                      className="mb-4 flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold text-sm"
+                      className="mb-4 w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold py-2 bg-indigo-50 rounded px-6 block shadow-sm border border-indigo-100 transition-colors"
                     >
-                      ← {t.back} ({lang === 'es' ? currentCategory.es : currentCategory.pt})
+                      {t.back} ({lang === 'es' ? currentCategory.es : currentCategory.pt})
                     </button>
                   )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1956,7 +1956,7 @@ export default function Home() {
                   className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition"
                 >
                   {/* 上段: 画像(w-32) + タイトル情報 */}
-                  <div className="flex p-4 gap-4">
+                  <div className="flex p-4 gap-4 h-[160px]">
                     <div className="w-32 h-32 flex-shrink-0 relative">
                       <img
                         src={product.imageUrl}
@@ -1964,21 +1964,19 @@ export default function Home() {
                         className="w-full h-full object-cover rounded shadow-sm border border-gray-100"
                       />
                     </div>
-                    <div className="flex flex-col flex-1 min-w-0 justify-between py-0.5">
-                      <div className="flex flex-col gap-1">
-                        <h3 className="text-xs sm:text-sm font-bold text-gray-800 line-clamp-3 leading-tight">
-                          {product.title}
-                        </h3>
-                        <div className="flex flex-col gap-2 w-full mt-auto">
-                          <a
-                            href={product.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-1 block w-full"
-                          >
-                            {t.viewOnYahoo}
-                          </a>
-                        </div>
+                    <div className="flex flex-col flex-1 min-w-0 justify-between h-32 py-0.5 overflow-hidden">
+                      <h3 className="text-xs sm:text-sm font-bold text-gray-800 line-clamp-3 leading-tight" title={product.title}>
+                        {product.title}
+                      </h3>
+                      <div className="flex flex-col gap-2 w-full mt-auto pt-2">
+                        <a
+                          href={product.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-1 block w-full"
+                        >
+                          {t.viewOnYahoo}
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -2072,11 +2070,11 @@ export default function Home() {
                 />
                 <div className="flex-1 flex flex-col py-0.5 overflow-hidden">
                   <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{selectedProduct.title}</h3>
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-0.5 mt-auto mb-2">
                     <p className="text-xs text-gray-600">
                       {t.currentPrice}: ¥{selectedProduct.currentPrice.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-sm font-bold text-indigo-700">
                       USD: ${calculateUSDPrice(selectedProduct.currentPrice, selectedProduct.shippingCost || 0)}
                     </p>
                   </div>
@@ -2084,7 +2082,7 @@ export default function Home() {
                     href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(selectedProduct.url)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-indigo-600 hover:underline text-xs inline-block mt-auto"
+                    className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-1 block w-full"
                   >
                     {t.viewOnYahoo}
                   </a>
