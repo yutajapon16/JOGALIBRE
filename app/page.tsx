@@ -78,7 +78,6 @@ const translations = {
     changePassword: 'Cambiar contraseña',
     newPassword: 'Nueva contraseña',
     confirmNewPassword: 'Confirmar nueva contraseña',
-    search: 'Buscar',
     notifications: 'Notificaciones Push',
     enableNotifications: 'Activar notificaciones',
     disableNotifications: 'Desactivar notificaciones',
@@ -2096,63 +2095,77 @@ export default function Home() {
                   required
                 />
               </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedProduct(null);
+                    setBidForm({ name: '', maxBid: '' });
+                  }}
+                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                >
+                  {t.submit}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-            </form>
-            </form >
-          </div >
-        </div >
-        </div >
-  )
-}
-{
-  showCounterModal && selectedRequestForCounter && (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <h2 className="text-xl font-bold mb-4">{t.counterOfferAction}</h2>
-        <p className="text-sm text-gray-600 mb-2">
-          {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer).toLocaleString('en-US')}
-        </p>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">{t.yourCounterOffer}</label>
-          <input
-            type="number"
-            value={customerCounterAmount}
-            onChange={(e) => setCustomerCounterAmount(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            placeholder="USD"
-          />
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={() => {
-              setShowCounterModal(false);
-              setSelectedRequestForCounter(null);
-              setCustomerCounterAmount('');
-            }}
-            className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
-          >
-            {t.cancel}
-          </button>
-          <button
-            onClick={() => {
-              if (customerCounterAmount && !isNaN(parseFloat(customerCounterAmount))) {
-                handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', parseFloat(customerCounterAmount));
-                setShowCounterModal(false);
-                setSelectedRequestForCounter(null);
-                setCustomerCounterAmount('');
-              }
-            }}
-            className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
-          >
-            {lang === 'es' ? 'Enviar' : 'Enviar'}
-          </button>
-        </div>
-      </div>
-        </div>
       )}
+
+      {
+        showCounterModal && selectedRequestForCounter && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <h2 className="text-xl font-bold mb-4">{t.counterOfferAction}</h2>
+              <p className="text-sm text-gray-600 mb-2">
+                {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer).toLocaleString('en-US')}
+              </p>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">{t.yourCounterOffer}</label>
+                <input
+                  type="number"
+                  value={customerCounterAmount}
+                  onChange={(e) => setCustomerCounterAmount(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                  placeholder="USD"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowCounterModal(false);
+                    setSelectedRequestForCounter(null);
+                    setCustomerCounterAmount('');
+                  }}
+                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  onClick={() => {
+                    if (customerCounterAmount && !isNaN(parseFloat(customerCounterAmount))) {
+                      handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', parseFloat(customerCounterAmount));
+                      setShowCounterModal(false);
+                      setSelectedRequestForCounter(null);
+                      setCustomerCounterAmount('');
+                    }
+                  }}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+                >
+                  {lang === 'es' ? 'Enviar' : 'Enviar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
