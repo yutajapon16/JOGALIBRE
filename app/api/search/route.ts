@@ -7,8 +7,15 @@ export async function GET(request: Request) {
   const lang = searchParams.get('lang') || 'es';
   const urlParam = searchParams.get('url');
   const page = parseInt(searchParams.get('page') || '1');
-  const itemsPerPage = 20;
 
+  // デフォルトは50件。URLパラメータに n= があればそれを優先する
+  let itemsPerPage = 50;
+  if (urlParam) {
+    const matchN = urlParam.match(/[?&]n=(\d+)/);
+    if (matchN) {
+      itemsPerPage = parseInt(matchN[1], 10) || 50;
+    }
+  }
   if (!q && !urlParam) {
     return NextResponse.json({ items: [], nextPage: false });
   }
@@ -273,12 +280,22 @@ export async function GET(request: Request) {
       });
     }
 
-    // 次のページがあるか判定 (簡易版: 件数がnと同じなら次があると仮定)
-    const nextPage = items.length >= itemsPerPage;
+    // 次のページがあるか判定 (DOMでの確実な判定 + 件数判定のフォールバック)
+    // パターン1/2の場合、ページャーの次へリンクがあれば確実
+    const hasNextPageDom = $('.Pager__list--next, .Pager__next, li.next a, a:contains("次のページ"), a:contains("次へ")').length > 0;
+
+    // パターン3(中古車等)の場合、DOMに次へリンクがないことがあるため、取得件数でフォールバック判定
+    // PR広告除外や不要なHTMLブロック除外によって itemsPerPage より少なくなるため、
+    // 実質的に「要求件数の約70%〜80%以上取得できていれば次がある」と推測する（Yahoo車カテゴリは最大40〜50枠）
+    const assumedMaxItems = Math.min(itemsPerPage, 50); // 中古車は最大50枠程度
+    const hasNextPageByCount = items.length >= (assumedMaxItems * 0.7);
+
+    // itemsが0件なら絶対に次は無い
+    let nextPage = items.length > 0 ? (hasNextPageDom || hasNextPageByCount) : false;
 
     return NextResponse.json({ items, translatedKeyword, nextPage });
   } catch (error) {
     console.error('Search error:', error);
-    return NextResponse.json({ error: 'Failed to search' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to search', message: String(error), stack: error instanceof Error ? error.stack : undefined }, { status: 500 });
   }
 }
