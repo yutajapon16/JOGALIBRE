@@ -189,41 +189,40 @@ export async function GET(request: Request) {
     // パターン3: 中古車カテゴリ等、特殊な構造の場合 (.Product等がない)
     if (items.length === 0) {
       const seenIds = new Set();
-      $('a').each((i, el) => {
-        const href = $(el).attr('href');
-        if (!href || !href.match(/\/auction\/([a-zA-Z0-9]+)$/)) return;
-
+      $('.bd').each((i, el) => {
         const $el = $(el);
-        const title = $el.text().replace(/\s+/g, ' ').trim() || $el.attr('title') || $el.find('img').attr('alt');
-        if (!title || title.length < 5) return;
+        const aTag = $el.find('.a__title a');
+        if (aTag.length === 0) return;
 
-        let searchBlock = $el.closest('tr, table, li, div[class*="item"]');
-        if (searchBlock.length === 0) {
-          searchBlock = $el;
-        }
+        const url = aTag.attr('href');
+        const title = aTag.text().trim();
+        if (!url || !title) return;
 
-        const rawHtml = searchBlock.html() || '';
-        if (rawHtml.includes('ストアPR') || rawHtml.includes('PR ') || searchBlock.find('[class*="pr"], [class*="PR"]').length > 0) {
+        const rawHtml = $el.html() || '';
+        if (rawHtml.includes('ストアPR') || rawHtml.includes('PR ') || $el.find('[class*="pr"], [class*="PR"]').length > 0) {
           return; // skip PR
         }
 
-        let imageUrl = searchBlock.find('img[src*="auction"]').attr('src') || searchBlock.find('img').attr('src');
-        if (!imageUrl || imageUrl.includes('blank.gif')) {
-          imageUrl = searchBlock.find('img').attr('data-original') || searchBlock.find('img').attr('data-src');
+        const priceText = $el.find('.pri1 dd').text().replace(/[^\d]/g, '');
+        const price = parseInt(priceText) || 0;
+
+        const bidsText = $el.find('.pri2 dt.bi + dd').text().replace(/[^\d]/g, '');
+        const bids = parseInt(bidsText) || 0;
+
+        const timeText = $el.find('.pri2 dt.rem + dd').text().trim();
+        let timeLeft = parseTimeLeft(timeText || '-');
+
+        let imageUrl = $el.find('.i img').attr('src');
+        if (imageUrl && imageUrl.includes('blank.gif')) {
+          imageUrl = $el.find('.i img').attr('data-original') || $el.find('.i img').attr('data-src');
         }
 
-        const priceText = searchBlock.find('[class*="price"], [class*="Price"], span').filter((idx, ele) => $(ele).text().includes('円')).first().text().replace(/[^\d]/g, '');
-        const price = priceText ? parseInt(priceText) : 0;
-
-        const dt = searchBlock.find('span').filter((idx, ele) => $(ele).text().includes('日') || $(ele).text().includes('時間')).first().text().trim();
-        let timeLeft = parseTimeLeft(dt || '-');
-
-        const idMatch = href.match(/\/auction\/([a-zA-Z0-9]+)/);
+        const idMatch = url.match(/\/auction\/([a-zA-Z0-9]+)/);
         const id = idMatch ? idMatch[1] : `search-p3-${page}-${i}`;
 
-        if (title && href && !seenIds.has(id)) {
+        if (!seenIds.has(id)) {
           seenIds.add(id);
-          items.push({ id, title, url: href, imageUrl, currentPrice: price, bids: 0, timeLeft: timeLeft || '-', source: 'yahoo_car_category' });
+          items.push({ id, title, url, imageUrl, currentPrice: price, bids, timeLeft: timeLeft || '-', source: 'yahoo_car_category' });
         }
       });
     }

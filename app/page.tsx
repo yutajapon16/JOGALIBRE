@@ -1644,20 +1644,20 @@ export default function Home() {
                         </div>
 
                         <div className="text-right pt-3 border-t">
-                          <div className="flex items-center justify-end gap-3">
+                          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
                             {item.paid && (
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5 shrink-0">
                                 {item.paidAt && (
-                                  <span className="text-xs font-bold text-gray-600">
+                                  <span className="text-[11px] font-bold text-gray-600 whitespace-nowrap">
                                     {formatDateTime(item.paidAt)}
                                   </span>
                                 )}
-                                <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">
+                                <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full whitespace-nowrap shrink-0">
                                   ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
                                 </span>
                               </div>
                             )}
-                            <p className={`text-xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                            <p className={`text-lg sm:text-xl font-bold whitespace-nowrap shrink-0 ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
                               ${Math.round(
                                 item.finalPrice ||
                                 (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
