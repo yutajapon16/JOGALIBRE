@@ -93,6 +93,9 @@ const translations = {
     loadingDetail: 'Cargando detalles...',
     previous: 'Anterior',
     next: 'Próximo',
+    categoriesTab: 'CATEGORIAS',
+    searchTab: 'BUSQUEDA',
+    urlTab: 'URL',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -180,6 +183,9 @@ const translations = {
     loadingDetail: 'Carregando detalhes...',
     previous: 'Anterior',
     next: 'Próximo',
+    categoriesTab: 'CATEGORIAS',
+    searchTab: 'BUSCA',
+    urlTab: 'URL',
   }
 };
 
@@ -1804,7 +1810,7 @@ export default function Home() {
                   }}
                   className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
-                  {t.categories}
+                  {t.categoriesTab}
                 </button>
                 <button
                   onClick={() => {
@@ -1813,7 +1819,7 @@ export default function Home() {
                   }}
                   className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
-                  {t.search}
+                  {t.searchTab}
                 </button>
                 <button
                   onClick={() => {
