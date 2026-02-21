@@ -5,15 +5,15 @@ export async function GET() {
     // 市場レート取得
     const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
     const data = await response.json();
-    
-    // TTBレート相当の計算: 市場レート - 3円
+
+    // TTBレート相当の計算: 市場レート - 4円
     const marketRate = data.rates.JPY;
-    const ttbRate = marketRate - 3;
-    
+    const ttbRate = marketRate - 4;
+
     return NextResponse.json({
       usdToJpy: ttbRate,
       marketRate: marketRate,
-      ttbAdjustment: -3,
+      ttbAdjustment: -4,
       lastUpdated: new Date().toISOString()
     });
   } catch (error) {
