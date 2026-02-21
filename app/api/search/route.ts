@@ -190,72 +190,83 @@ export async function GET(request: Request) {
     if (items.length === 0) {
       const itemsMap = new Map();
 
-      $('a').each((i, el) => {
-        const href = $(el).attr('href');
-        if (!href || !href.match(/\/auction\/([a-zA-Z0-9]+)$/)) return;
+      const processContainer = ($el: cheerio.Cheerio) => {
+        const aTag = $el.find('a[href*="/auction/"]').first();
+        if (aTag.length === 0) return;
+        const href = aTag.attr('href');
+        if (!href) return;
 
         const idMatch = href.match(/\/auction\/([a-zA-Z0-9]+)/);
-        const id = idMatch ? idMatch[1] : null;
-        if (!id) return;
+        if (!idMatch) return;
+        const id = idMatch[1];
 
-        const parentHtml = $(el).parent().html() || '';
-        if (parentHtml.includes('ストアPR') || parentHtml.includes('PR ') || $(el).closest('[class*="pr"], [class*="PR"]').length > 0) {
-          return; // skip PR
+        // PRチェックの修正: class="pr" は価格ラベルなので [class*="pr"] は使わない
+        const rawHtml = $el.html() || '';
+        if (
+          rawHtml.includes('ストアPR') ||
+          $el.find('span.Product__label--pr').length > 0 ||
+          $el.find('.item--pr, .Product--pr, .s_item--pr').length > 0
+        ) {
+          return; // skip true PR
         }
-
-        const $el = $(el);
-        let title = $el.text().replace(/\s+/g, ' ').trim() || $el.attr('title') || $el.find('img').attr('alt');
 
         if (!itemsMap.has(id)) {
-          itemsMap.set(id, { id, title: title || '', url: href, imageUrl: '', currentPrice: 0, bids: 0, timeLeft: '-' });
+          itemsMap.set(id, { id, title: '', url: href, imageUrl: '', currentPrice: 0, bids: 0, timeLeft: '-' });
+        }
+        const item = itemsMap.get(id);
+
+        const titleText = $el.find('h3 a, h2 a, .a__title a, a[title]').text().replace(/\s+/g, ' ').trim() || aTag.text().replace(/\s+/g, ' ').trim() || $el.find('img').attr('alt');
+        if (titleText && titleText.length > 5 && !item.title) {
+          item.title = titleText;
         }
 
-        const currentItem = itemsMap.get(id);
-
-        if (!currentItem.title && title && title.length > 5) {
-          currentItem.title = title;
-        }
-
-        const imgNode = $el.find('img');
-        if (imgNode.length > 0 && !currentItem.imageUrl) {
+        const imgNode = $el.find('img[src*="auction"], .i img, img').first();
+        if (imgNode.length > 0 && !item.imageUrl) {
           let src = imgNode.attr('src');
           if (!src || src.includes('blank.gif')) {
             src = imgNode.attr('data-original') || imgNode.attr('data-src');
           }
-          if (src) currentItem.imageUrl = src;
+          if (src) item.imageUrl = src;
         }
 
-        const container = $el.closest('tr, table, li, div.i, div.a, div');
-        if (container.length > 0 && currentItem.currentPrice === 0) {
-          const priceTags = container.find('[class*="price"], [class*="Price"], span, dd, dt, p, div').filter((idx, ele) => $(ele).text().includes('円'));
-          if (priceTags.length > 0) {
-            const priceText = priceTags.first().text().replace(/[^\d]/g, '');
-            if (priceText) currentItem.currentPrice = parseInt(priceText) || 0;
+        if (item.currentPrice === 0) {
+          let priceText = $el.find('.pr + dd, .pri1 dd, [class*="price"]').text().replace(/[^\d]/g, '');
+          if (!priceText) {
+            priceText = $el.find('span, dd, dt, p, div').filter((idx, ele) => $(ele).text().includes('円')).first().text().replace(/[^\d]/g, '');
           }
-
-          const timeTags = container.find('span, dd, dt, p, div').filter((idx, ele) => $(ele).text().includes('日') || $(ele).text().includes('時間') || $(ele).text().includes('分'));
-          if (timeTags.length > 0) {
-            const dt = timeTags.first().text().trim();
-            let parsedTime = parseTimeLeft(dt || '-');
-            if (parsedTime && currentItem.timeLeft === '-') currentItem.timeLeft = parsedTime;
-          }
-
-          const bidsText = container.find('dt.bi + dd, [class*="bid"], [class*="Bid"]').text().replace(/[^\d]/g, '');
-          if (bidsText) currentItem.bids = parseInt(bidsText) || 0;
+          if (priceText) item.currentPrice = parseInt(priceText) || 0;
         }
-      });
+
+        const bidsText = $el.find('dt.bi + dd, .Product__bid').text().replace(/[^\d]/g, '');
+        if (bidsText) item.bids = parseInt(bidsText) || 0;
+
+        if (item.timeLeft === '-') {
+          let timeText = $el.find('dt.rem + dd').text().trim();
+          if (!timeText) {
+            timeText = $el.find('span, dd, dt, p, div').filter((idx, ele) => $(ele).text().includes('日') || $(ele).text().includes('時間') || $(ele).text().includes('分')).first().text().trim();
+          }
+          if (timeText) item.timeLeft = parseTimeLeft(timeText) || '-';
+        }
+      };
+
+      // Vercel環境対策: .bd があれば確実、なければフォールバック
+      if ($('.bd').length > 0) {
+        $('.bd').each((i, el) => processContainer($(el)));
+      } else {
+        $('tr, li, div.i, div.Product, div.BaseItem').each((i, el) => processContainer($(el)));
+      }
 
       // Filter and push valid items
-      Array.from(itemsMap.values()).forEach((item, index) => {
+      Array.from(itemsMap.values()).forEach((item) => {
         if (item.title && item.title.length > 5) {
           items.push({
-            id: item.id,
-            title: item.title,
-            url: item.url,
-            imageUrl: item.imageUrl,
-            currentPrice: item.currentPrice,
-            bids: item.bids,
-            timeLeft: item.timeLeft,
+            id: item.id as string,
+            title: item.title as string,
+            url: item.url as string,
+            imageUrl: item.imageUrl as string,
+            currentPrice: item.currentPrice as number,
+            bids: item.bids as number,
+            timeLeft: item.timeLeft as string,
             source: 'yahoo_car_category'
           });
         }
