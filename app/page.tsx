@@ -783,10 +783,14 @@ export default function Home() {
         setProducts(data.items);
         setNextPageExists(data.nextPage || false);
         // スクロール処理 (固定ヘッダー分80pxほどズラす)
-        if (page > 1 && resultsRef.current) {
-          const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 80;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        }
+        setTimeout(() => {
+          if (resultsRef.current) {
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 80;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -816,10 +820,14 @@ export default function Home() {
         setProducts(data.items);
         setNextPageExists(data.nextPage || false);
         // スクロール処理 (固定ヘッダー分80pxほどズラす)
-        if (page > 1 && resultsRef.current) {
-          const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 80;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        }
+        setTimeout(() => {
+          if (resultsRef.current) {
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 80;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -1871,43 +1879,58 @@ export default function Home() {
 
               {searchType === 'categories' && (
                 <div className="animate-in fade-in duration-300">
-                  {currentCategory && (
+                  {/* 商品リスト表示中の「戻る」ボタン */}
+                  {activeCategoryUrl && currentCategory && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => {
+                          setActiveCategoryUrl(null);
+                          setProducts([]);
+                          setSearchPage(1);
+                          setNextPageExists(false);
+                        }}
+                        className="w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold py-2 bg-indigo-50 rounded px-6 block shadow-sm border border-indigo-100 transition-colors"
+                      >
+                        {t.back} ({lang === 'es' ? currentCategory.es : currentCategory.pt})
+                      </button>
+                    </div>
+                  )}
+
+                  {/* カテゴリ選択中の「戻る」ボタン */}
+                  {!activeCategoryUrl && currentCategory && (
                     <button
                       onClick={() => setCurrentCategory(null)}
                       className="mb-4 w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold py-2 bg-indigo-50 rounded px-6 block shadow-sm border border-indigo-100 transition-colors"
                     >
-                      {t.back} ({lang === 'es' ? currentCategory.es : currentCategory.pt})
+                      {t.back} ({lang === 'es' ? 'Categorías principales' : 'Categorias principais'})
                     </button>
                   )}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {(currentCategory ? currentCategory.sub : CATEGORIES).map((cat: any) => (
-                      <button
-                        key={cat.id}
-                        onClick={async () => {
-                          if (cat.sub) {
-                            setCurrentCategory(cat);
-                          } else if (cat.url) {
-                            fetchCategoryItems(cat.url, 1);
-                            // スクロール処理 (固定ヘッダー分80pxほどズラす)
-                            setTimeout(() => {
-                              if (resultsRef.current) {
-                                const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 80;
-                                window.scrollTo({ top: y, behavior: 'smooth' });
-                              }
-                            }, 100);
-                          }
-                        }}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-white"
-                      >
-                        <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600">
-                          {lang === 'es' ? cat.es : cat.pt}
-                        </span>
-                        <span className="text-gray-400 group-hover:text-indigo-600 font-bold">
-                          {cat.sub ? '→' : '↓'}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+
+                  {/* カテゴリグリッド（商品リスト表示中は非表示にする） */}
+                  {!activeCategoryUrl && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {(currentCategory ? currentCategory.sub : CATEGORIES).map((cat: any) => (
+                        <button
+                          key={cat.id}
+                          onClick={async () => {
+                            if (cat.sub) {
+                              setCurrentCategory(cat);
+                            } else if (cat.url) {
+                              fetchCategoryItems(cat.url, 1);
+                            }
+                          }}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-white"
+                        >
+                          <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600">
+                            {lang === 'es' ? cat.es : cat.pt}
+                          </span>
+                          <span className="text-gray-400 group-hover:text-indigo-600 font-bold">
+                            {cat.sub ? '→' : '↓'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
