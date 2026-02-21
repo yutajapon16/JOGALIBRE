@@ -18,9 +18,12 @@ const translations = {
     totalPrice: 'Precio total',
     shippingUnknown: 'El costo de envío se agregará en la contraoferta',
     usdPrice: 'Precio USD',
-    bids: 'Ofertas',
-    timeLeft: 'Tiempo restante',
+    bids: 'Oferta',
+    bidsLabel: 'Oferta',
+    timeLeft: 'Termina en:',
+    endsInHeader: 'Termina en:',
     makeOffer: 'Hacer oferta',
+    search: 'Buscar',
     yourName: 'Nombre del cliente',
     maxBid: 'Tu oferta máxima',
     submit: 'Enviar solicitud',
@@ -110,6 +113,7 @@ const translations = {
     usdPrice: 'Preço USD',
     bids: 'Lances',
     timeLeft: 'Tempo restante',
+    endsIn: 'Termina em:',
     makeOffer: 'Fazer oferta',
     yourName: 'Nome do cliente',
     maxBid: 'Sua oferta máxima',
@@ -146,7 +150,6 @@ const translations = {
     customerName: 'Cliente',
     filterByCustomer: 'Filtrar por',
     allCustomers: 'Todos os clientes',
-    endsIn: 'Termina em',
     viewOnYahoo: 'Ver em Yahoo! →',
     exchangeRate: 'Taxa de câmbio',
     offerSuccess: 'Oferta enviada com sucesso!',
@@ -186,6 +189,8 @@ const translations = {
     categoriesTab: 'CATEGORIAS',
     searchTab: 'BUSCA',
     urlTab: 'URL',
+    bidsLabel: 'Lances',
+    endsInHeader: 'Termina em:',
   }
 };
 
@@ -1090,34 +1095,40 @@ export default function Home() {
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
-          {/* 1行目: ロゴ + ログアウト/言語切り替え */}
+          {/* 1行目: ロゴ + ログアウト */}
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-black leading-none">{t.title}</h1>
               <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
-              <div className="flex flex-col">
-                <h1 className="text-2xl sm:text-3xl font-bold text-black leading-none">{t.title}</h1>
-                <p className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider mt-0.5">{t.subtitle}</p>
-              </div>
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <button
-                onClick={handleLogout}
-                className="text-sm text-red-600 hover:text-red-800 whitespace-nowrap"
-              >
-                {t.logout}
-              </button>
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                className="border border-gray-300 rounded-lg px-2 py-1 text-xs w-40"
-              >
-                <option value="es">Español</option>
-                <option value="pt">Português</option>
-              </select>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-red-600 hover:text-red-800 whitespace-nowrap"
+            >
+              {t.logout}
+            </button>
           </div>
 
           <div className="flex flex-col gap-2">
+            {/* 言語選択 & サブタイトル (水平配置) */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 border-y border-gray-100 py-2">
+              <p className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider">{t.subtitle}</p>
+              <div className="flex bg-white rounded p-0.5 border border-gray-200 w-32 shadow-sm">
+                <button
+                  onClick={() => setLang('es')}
+                  className={`flex-1 text-[9px] font-black py-1 rounded transition ${lang === 'es' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  ES
+                </button>
+                <button
+                  onClick={() => setLang('pt')}
+                  className={`flex-1 text-[9px] font-black py-1 rounded transition ${lang === 'pt' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  PT
+                </button>
+              </div>
+            </div>
+
             {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
             <div className="flex gap-2">
               <button
@@ -1597,12 +1608,12 @@ export default function Home() {
                           <div className="flex-1 min-w-0">
                             <h3 className="text-sm font-semibold mb-2 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
                             <a
-                              href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(item.productUrl)}`}
+                              href={`https://wa.me/5511977755555?text=${encodeURIComponent(`${t.sendComprobante}\nID: ${item.id}\n${item.productTitle}`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-indigo-600 hover:underline text-xs inline-block"
+                              className="w-full bg-green-500 text-white px-2 py-2 rounded text-[10px] sm:text-xs font-bold hover:bg-green-600 transition flex items-center justify-center gap-1 whitespace-nowrap overflow-hidden"
                             >
-                              {t.viewOnYahoo}
+                              WhatsApp
                             </a>
                           </div>
                         </div>
@@ -1936,56 +1947,55 @@ export default function Home() {
                           {product.title}
                         </h3>
                         <a
-                          href={product.url}
+                          href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(product.url)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[11px] text-indigo-600 font-bold hover:underline"
                         >
-                          Ver en Yahoo! →
+                          {t.viewOnYahoo}
                         </a>
                       </div>
                     </div>
                   </div>
 
-                  {/* 中段: 詳細価格セクション */}
-                  <div className="px-4 pb-4 space-y-3 pt-2">
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center text-xs font-bold text-gray-500">
-                        <span className="uppercase">{t.currentPrice}:</span>
-                        <span className="text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
-                      </div>
-
-                      <div className="text-[10px] text-gray-400 font-bold italic leading-tight">
-                        * {t.shippingUnknown}
-                      </div>
+                  {/* 中段: 価格・入札情報セクション */}
+                  <div className="px-3 pb-3 space-y-2 border-t border-gray-50 pt-3 flex-1 flex flex-col">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] text-gray-500 font-bold uppercase">{t.currentPrice}</span>
+                      <span className="text-sm font-black text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
                     </div>
 
-                    <div className="flex justify-between items-center text-[11px] font-bold border-y border-gray-100 py-2">
-                      <div className="flex gap-2 items-center">
-                        <span className="text-gray-400 uppercase">{t.bids}:</span>
+                    <div className="text-[9px] text-gray-400 font-bold leading-tight">
+                      * {t.shippingUnknown}
+                    </div>
+
+                    <div className="flex justify-between items-center text-[10px] font-bold border-y border-gray-50 py-1">
+                      <div className="flex gap-1 items-center">
+                        <span className="text-gray-400 uppercase">{t.bidsLabel}:</span>
                         <span className="text-gray-900">{product.bids}</span>
                       </div>
-                      <div className="flex gap-2 items-center">
-                        <span className="text-gray-400 uppercase">Termina:</span>
+                      <div className="flex gap-1 items-center">
+                        <span className="text-gray-400 uppercase">{t.endsInHeader}</span>
                         <span className="text-red-500">{product.timeLeft || '1d 12h'}</span>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-center py-2 bg-indigo-50/50 rounded-lg">
-                      <span className="text-[11px] text-indigo-600 font-black uppercase tracking-wider mb-1">USD aprox:</span>
-                      <span className="text-3xl font-black text-indigo-600 leading-none">
-                        ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
-                      </span>
+                    {/* USD金額 & オファーボタン (セットで右寄せ) */}
+                    <div className="mt-auto pt-2 flex flex-col items-end">
+                      <div className="bg-indigo-50/50 rounded p-2 flex flex-col items-end min-w-[140px]">
+                        <span className="text-[10px] text-indigo-600 font-black uppercase tracking-tighter">USD aprox:</span>
+                        <span className="text-2xl font-black text-indigo-600 leading-none mb-2">
+                          ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
+                        </span>
+                        <button
+                          onClick={() => fetchProductDetailForOffer(product.url)}
+                          className="w-full bg-indigo-600 text-white py-2 font-black uppercase tracking-widest text-[10px] hover:bg-indigo-700 transition rounded-sm shadow-sm"
+                        >
+                          {t.makeOffer}
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* 下段: 全幅オファーボタン */}
-                  <button
-                    onClick={() => fetchProductDetailForOffer(product.url)}
-                    className="w-full bg-indigo-600 text-white py-4 font-black uppercase tracking-widest text-sm hover:bg-indigo-700 transition shadow-inner"
-                  >
-                    {t.makeOffer}
-                  </button>
                 </div>
               ))}
             </div>
@@ -2086,74 +2096,61 @@ export default function Home() {
                   required
                 />
               </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedProduct(null);
-                    setBidForm({ name: '', maxBid: '' });
-                  }}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
-                >
-                  {t.cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
-                >
-                  {t.submit}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
-      )}
-      {showCounterModal && selectedRequestForCounter && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4">{t.counterOfferAction}</h2>
-            <p className="text-sm text-gray-600 mb-2">
-              {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer).toLocaleString('en-US')}
-            </p>
+            </form>
+            </form >
+          </div >
+        </div >
+        </div >
+  )
+}
+{
+  showCounterModal && selectedRequestForCounter && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <h2 className="text-xl font-bold mb-4">{t.counterOfferAction}</h2>
+        <p className="text-sm text-gray-600 mb-2">
+          {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer).toLocaleString('en-US')}
+        </p>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">{t.yourCounterOffer}</label>
-              <input
-                type="number"
-                value={customerCounterAmount}
-                onChange={(e) => setCustomerCounterAmount(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                placeholder="USD"
-              />
-            </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">{t.yourCounterOffer}</label>
+          <input
+            type="number"
+            value={customerCounterAmount}
+            onChange={(e) => setCustomerCounterAmount(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            placeholder="USD"
+          />
+        </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowCounterModal(false);
-                  setSelectedRequestForCounter(null);
-                  setCustomerCounterAmount('');
-                }}
-                className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
-              >
-                {t.cancel}
-              </button>
-              <button
-                onClick={() => {
-                  if (customerCounterAmount && !isNaN(parseFloat(customerCounterAmount))) {
-                    handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', parseFloat(customerCounterAmount));
-                    setShowCounterModal(false);
-                    setSelectedRequestForCounter(null);
-                    setCustomerCounterAmount('');
-                  }
-                }}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
-              >
-                {lang === 'es' ? 'Enviar' : 'Enviar'}
-              </button>
-            </div>
-          </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              setShowCounterModal(false);
+              setSelectedRequestForCounter(null);
+              setCustomerCounterAmount('');
+            }}
+            className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
+          >
+            {t.cancel}
+          </button>
+          <button
+            onClick={() => {
+              if (customerCounterAmount && !isNaN(parseFloat(customerCounterAmount))) {
+                handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', parseFloat(customerCounterAmount));
+                setShowCounterModal(false);
+                setSelectedRequestForCounter(null);
+                setCustomerCounterAmount('');
+              }
+            }}
+            className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+          >
+            {lang === 'es' ? 'Enviar' : 'Enviar'}
+          </button>
+        </div>
+      </div>
         </div>
       )}
     </div>
