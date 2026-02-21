@@ -2108,9 +2108,9 @@ export default function Home() {
                     type="text"
                     value={bidForm.name}
                     onChange={(e) => setBidForm({ ...bidForm, name: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base shadow-sm focus:ring-2 focus:ring-indigo-500 font-bold"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base shadow-sm focus:ring-2 focus:ring-indigo-500 font-bold placeholder:text-gray-300 placeholder:font-normal"
                     required
-                    placeholder={lang === 'es' ? 'Nombre del cliente' : 'Nome do cliente'}
+                    placeholder={lang === 'es' ? 'Nombre y Apellido del Cliente' : 'Nome e Sobrenome do Cliente'}
                   />
                 </div>
                 <div>
@@ -2123,7 +2123,7 @@ export default function Home() {
                       type="number"
                       value={bidForm.maxBid}
                       onChange={(e) => setBidForm({ ...bidForm, maxBid: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg pl-8 pr-4 py-3 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-gray-300 rounded-lg pl-8 pr-4 py-3 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300 placeholder:font-normal"
                       required
                       min="1"
                       placeholder="USD"
