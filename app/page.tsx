@@ -203,13 +203,13 @@ const CATEGORIES = [
     es: 'Carros JDM',
     pt: 'Carros JDM',
     sub: [
-      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=40726&o1=d&s1=new&exflg=1&b=1&n=100' },
-      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24846&o1=d&s1=new&exflg=1&b=1&n=100' },
-      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=18389&o1=a&s1=car_model_year&exflg=1&b=1&n=100' },
-      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=14657&o1=d&s1=new&exflg=1&b=1&n=100' },
-      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=24557&carshift1=91%2C917%2C5379&o1=d&s1=new&exflg=1&b=1&n=100' },
-      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/category/list/26360/?auccat=26360&brand_id=28231&o1=a&s1=car_model_year&exflg=1&b=1&n=100' },
-      { id: 'desarme', es: 'Vehiculo Para Desarme', pt: 'Veículo Para Desmanche', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?auccat=2084061280&o1=d&s1=new' },
+      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/search/search?p=SUPRA+JZA80&auccat=26318&exflg=1&b=1&n=100' },
+      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/search/search?p=SKYLINE+GT-R&auccat=26318&exflg=1&b=1&n=100' },
+      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/search/search?p=LANCER+EVOLUTION&auccat=26318&exflg=1&b=1&n=100' },
+      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/search/search?p=RX-7+FD3S&auccat=26318&exflg=1&b=1&n=100' },
+      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/search/search?p=SILVIA+S15&auccat=26318&exflg=1&b=1&n=100' },
+      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/search/search?p=IMPREZA+WRX&auccat=26318&exflg=1&b=1&n=100' },
+      { id: 'desarme', es: 'Vehiculo Para Desarme', pt: 'Veículo Para Desmanche', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?o1=d&s1=new&exflg=1&b=1&n=100' },
     ]
   },
   { id: 'moto', es: 'Moto', pt: 'Moto', url: 'https://auctions.yahoo.co.jp/category/list/26316/?s1=new&o1=d' },
@@ -783,9 +783,10 @@ export default function Home() {
       if (data.items) {
         setProducts(data.items);
         setNextPageExists(data.nextPage || false);
-        // スクロール処理
-        if (page > 1) {
-          resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // スクロール処理 (固定ヘッダー分80pxほどズラす)
+        if (page > 1 && resultsRef.current) {
+          const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top: y, behavior: 'smooth' });
         }
       }
     } catch (error) {
@@ -815,9 +816,10 @@ export default function Home() {
       if (data.items) {
         setProducts(data.items);
         setNextPageExists(data.nextPage || false);
-        // スクロール処理
-        if (page > 1) {
-          resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // スクロール処理 (固定ヘッダー分80pxほどズラす)
+        if (page > 1 && resultsRef.current) {
+          const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top: y, behavior: 'smooth' });
         }
       }
     } catch (error) {
@@ -1118,21 +1120,21 @@ export default function Home() {
               <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider ml-1 hidden sm:block">{t.subtitle}</p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                className="bg-white border text-gray-700 py-1 px-2 rounded-md text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
-              >
-                <option value="es">Español</option>
-                <option value="pt">Português</option>
-              </select>
+            <div className="flex flex-col items-end gap-1">
               <button
                 onClick={handleLogout}
                 className="text-xs text-red-600 hover:text-red-800 font-bold"
               >
                 {t.logout}
               </button>
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+                className="bg-white border text-gray-700 py-0.5 px-2 rounded-md text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
+              >
+                <option value="es">Español</option>
+                <option value="pt">Português</option>
+              </select>
             </div>
           </div>
           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-3 sm:hidden">{t.subtitle}</p>
@@ -1314,14 +1316,17 @@ export default function Home() {
                               </span>
                             )}
                           </div>
-                          <a
-                            href={`https://translate.google.com/translate?sl=ja&tl=${lang}&u=${encodeURIComponent(request.productUrl)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-indigo-600 hover:underline text-xs inline-block mt-auto"
-                          >
-                            {t.viewOnYahoo}
-                          </a>
+
+                          <div className="flex flex-col gap-2 w-full mt-auto pt-2">
+                            <a
+                              href={request.productUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
+                            >
+                              {t.viewOnYahoo}
+                            </a>
+                          </div>
                         </div>
                       </div>
 
@@ -1874,9 +1879,12 @@ export default function Home() {
                             setCurrentCategory(cat);
                           } else if (cat.url) {
                             fetchCategoryItems(cat.url, 1);
-                            // 即時スクロールを試行（データロード前でも位置を確保）
+                            // スクロール処理 (固定ヘッダー分80pxほどズラす)
                             setTimeout(() => {
-                              resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              if (resultsRef.current) {
+                                const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 80;
+                                window.scrollTo({ top: y, behavior: 'smooth' });
+                              }
                             }, 100);
                           }
                         }}
@@ -1937,14 +1945,16 @@ export default function Home() {
                         <h3 className="text-xs sm:text-sm font-bold text-gray-800 line-clamp-3 leading-tight">
                           {product.title}
                         </h3>
-                        <a
-                          href={product.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[11px] text-indigo-600 font-bold hover:underline"
-                        >
-                          {t.viewOnYahoo}
-                        </a>
+                        <div className="flex flex-col gap-2 w-full mt-auto">
+                          <a
+                            href={product.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-1 block w-full"
+                          >
+                            {t.viewOnYahoo}
+                          </a>
+                        </div>
                       </div>
                     </div>
                   </div>

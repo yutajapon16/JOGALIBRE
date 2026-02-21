@@ -98,12 +98,25 @@ export async function GET(request: Request) {
 
       const title = $el.find('.Product__titleLink, .item__titleLink').text().trim();
       const url = $el.find('.Product__titleLink, .item__titleLink').attr('href');
+      const dataClParams = $el.find('.Product__titleLink, .item__titleLink').attr('data-cl-params') || '';
       const imageUrl = $el.find('.Product__imageData, .item__imageData').attr('src') || $el.find('img').attr('src');
       const priceText = $el.find('.Product__priceValue, .item__priceValue').first().text().replace(/[^\d]/g, '');
       const price = parseInt(priceText) || 0;
       const bids = parseInt($el.find('.Product__bid, .item__bid').text()) || 0;
       const timeLeftRaw = $el.find('.Product__time, .item__time, .time, .date').text().trim();
-      const timeLeft = parseTimeLeft(timeLeftRaw);
+      let timeLeft = parseTimeLeft(timeLeftRaw);
+
+      // UnixTimeからの正確な時間計算 (data-cl-params内 end:1772115843; 等)
+      const endMatch = dataClParams.match(/end:(\d+);/);
+      if (endMatch) {
+        const endTime = parseInt(endMatch[1], 10) * 1000;
+        const diff = Math.max(0, endTime - Date.now());
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        timeLeft = `${d}d ${h}h ${m}m`;
+      }
+
       const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
       const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
@@ -118,6 +131,7 @@ export async function GET(request: Request) {
         const $el = $(el);
         const title = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__title, .title a, .lb-item__title').text().trim() || $el.find('h3').text().trim();
         const url = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link, .title a, .lb-item__link').attr('href') || $el.find('a').attr('href');
+        const dataClParams = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link, .title a, .lb-item__link').attr('data-cl-params') || $el.find('a').attr('data-cl-params') || '';
         let imageUrl = $el.find('.item__imageData, .s_item__imageData, .Product__imageData, .sdc__image, .image img, .thumb img, .lb-item__image').attr('src') || $el.find('img').attr('src');
 
         // Lazy load や data-original, data-src への対応
@@ -131,7 +145,18 @@ export async function GET(request: Request) {
 
         // 残り時間の抽出
         const timeLeftRaw = $el.find('.Product__time, .item__time, .sdc-time, .time, .date, .lb-item__time').text().trim();
-        const timeLeft = parseTimeLeft(timeLeftRaw);
+        let timeLeft = parseTimeLeft(timeLeftRaw);
+
+        // UnixTimeからの正確な時間計算 (data-cl-params内 end:1772115843; 等)
+        const endMatch = dataClParams.match(/end:(\d+);/);
+        if (endMatch) {
+          const endTime = parseInt(endMatch[1], 10) * 1000;
+          const diff = Math.max(0, endTime - Date.now());
+          const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+          const m = Math.floor((diff / 1000 / 60) % 60);
+          timeLeft = `${d}d ${h}h ${m}m`;
+        }
 
         const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
         const id = productIdMatch ? productIdMatch[1] : `cat-${page}-${i}`;

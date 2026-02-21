@@ -688,12 +688,14 @@ export default function AdminDashboard() {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">管理画面</h1>
               <img src="/icons/admin-icon.png" alt="管理画面" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
             </div>
-            <button
-              onClick={handleLogout}
-              className="text-red-600 hover:text-red-700 font-semibold"
-            >
-              ログアウト
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-700 font-semibold"
+              >
+                ログアウト
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -977,21 +979,23 @@ export default function AdminDashboard() {
 
                     <div className="flex-1 flex flex-col min-h-[128px] py-0.5 overflow-hidden">
                       <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{request.productTitle}</h3>
-                      <div className="flex flex-col gap-0.5">
-                        <a
-                          href={request.productUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-indigo-600 hover:underline text-xs inline-block"
-                        >
-                          ヤフオクURL →
-                        </a>
+                      <div className="flex flex-col gap-0.5 flex-1">
                         {request.productEndTime && (
-                          <p className="text-[10px] text-gray-500">
+                          <p className="text-[10px] text-gray-500 mb-1">
                             終了まで: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
                           </p>
                         )}
-                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                        <div className="flex flex-col gap-2 w-full mt-auto">
+                          <a
+                            href={request.productUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
+                          >
+                            ヤフオクURL →
+                          </a>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1 mt-2">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getStatusColor(request.status)}`}>
                             {getStatusText(request.status)}
                           </span>
