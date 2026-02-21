@@ -876,7 +876,10 @@ export default function AdminDashboard() {
                             <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{item.productTitle}</h3>
                             <div className="text-xs text-gray-600 mb-2 mt-1 space-y-0.5">
                               <p><span className="font-semibold text-gray-800">顧客名: {item.customerName}</span></p>
-                              <p>{formatDateTime(item.confirmedAt)}</p>
+                              <p className="flex flex-col">
+                                <span>確認日時:</span>
+                                <span>{formatDateTime(item.confirmedAt)}</span>
+                              </p>
                             </div>
                             <div className="flex flex-col gap-2 w-full mt-auto">
                               <a
@@ -928,7 +931,9 @@ export default function AdminDashboard() {
                           {item.paid && (
                             <div className="flex justify-end items-center gap-2 mt-1">
                               {item.paidAt && (
-                                <span className="text-xs font-semibold text-gray-500">着金確認: {formatDateTime(item.paidAt)}</span>
+                                <span className="text-xs font-semibold text-gray-500">
+                                  {formatDateTime(item.paidAt)}
+                                </span>
                               )}
                               <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
                                 ✓ 支払済

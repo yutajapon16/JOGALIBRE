@@ -401,6 +401,7 @@ export default function Home() {
         customerWhatsapp: item.customer_whatsapp,
         language: item.language,
         confirmedAt: item.created_at,  // confirmed_at の代わりに created_at を使用
+        paidAt: item.paid_at,
         customerCounterOffer: item.customer_counter_offer,
         customerCounterOfferUsed: item.customer_counter_offer_used,
         paid: item.paid || false,
@@ -1642,31 +1643,19 @@ export default function Home() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-gray-50 rounded text-xs">
-                          <div>
-                            <p className="text-gray-600">{lang === 'es' ? 'Nombre' : 'Nome'}</p>
-                            <p className="font-semibold">{item.customerFullName || item.customerName}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">WhatsApp</p>
-                            <p className="font-semibold">{item.customerWhatsapp || '-'}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">{lang === 'es' ? 'Correo' : 'E-mail'}</p>
-                            <p className="font-semibold break-all">{item.customerEmail}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">{lang === 'es' ? 'Idioma' : 'Idioma'}</p>
-                            <p className="font-semibold">{item.language === 'es' ? 'Español' : 'Português'}</p>
-                          </div>
-                        </div>
-
                         <div className="text-right pt-3 border-t">
                           <div className="flex items-center justify-end gap-3">
                             {item.paid && (
-                              <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">
-                                ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                {item.paidAt && (
+                                  <span className="text-xs font-bold text-gray-600">
+                                    {formatDateTime(item.paidAt)}
+                                  </span>
+                                )}
+                                <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full">
+                                  ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
+                                </span>
+                              </div>
                             )}
                             <p className={`text-xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
                               ${Math.round(
