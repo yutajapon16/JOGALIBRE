@@ -872,16 +872,18 @@ export default function AdminDashboard() {
                               className="w-32 h-32 object-cover rounded flex-shrink-0"
                             />
                           )}
-                          <div className="flex-1 flex flex-col justify-between overflow-hidden" style={{ maxHeight: '128px' }}>
-                            <h3 className="text-sm sm:text-base font-semibold" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.productTitle}</h3>
-                            <a
-                              href={item.productUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-indigo-600 hover:underline text-sm inline-block flex-shrink-0"
-                            >
-                              ヤフオクURL →
-                            </a>
+                          <div className="flex-1 flex flex-col justify-between min-h-[128px] py-0.5 overflow-hidden">
+                            <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{item.productTitle}</h3>
+                            <div className="flex flex-col gap-2 w-full mt-auto pt-2">
+                              <a
+                                href={item.productUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
+                              >
+                                ヤフオクURL
+                              </a>
+                            </div>
                           </div>
                         </div>
 
