@@ -284,6 +284,7 @@ export default function AdminDashboard() {
         customerWhatsapp: item.customer_whatsapp,
         language: item.language,
         confirmedAt: item.created_at,  // confirmed_at の代わりに created_at を使用
+        paidAt: item.paid_at,
         paid: item.paid || false
       }));
 
