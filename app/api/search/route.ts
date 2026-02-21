@@ -194,6 +194,7 @@ export async function GET(request: Request) {
     }
 
     // パターン3: 中古車カテゴリ等、特殊な構造の場合 (.Product等がない)
+    let rawContainerCount = 0;
     if (items.length === 0) {
       const itemsMap = new Map();
 
@@ -258,9 +259,12 @@ export async function GET(request: Request) {
 
       // Vercel環境対策: .bd があれば確実、なければフォールバック
       if ($('.bd').length > 0) {
+        rawContainerCount = $('.bd').length;
         $('.bd').each((i, el) => processContainer($(el)));
       } else {
-        $('tr, li, div.i, div.Product, div.BaseItem').each((i, el) => processContainer($(el)));
+        const fallbackEls = $('tr, li, div.i, div.Product, div.BaseItem');
+        rawContainerCount = fallbackEls.length;
+        fallbackEls.each((i, el) => processContainer($(el)));
       }
 
       // Filter and push valid items
@@ -280,15 +284,51 @@ export async function GET(request: Request) {
       });
     }
 
-    // 次のページがあるか判定 (DOMでの確実な判定 + 件数判定のフォールバック)
+    // 次のページがあるか判定 (DOMでの確実な判定 + ベースの取得件数による確実な足切り + 先読み判定)
     // パターン1/2の場合、ページャーの次へリンクがあれば確実
     const hasNextPageDom = $('.Pager__list--next, .Pager__next, li.next a, a:contains("次のページ"), a:contains("次へ")').length > 0;
 
-    // パターン3(中古車等)の場合、DOMに次へリンクがないことがあるため、取得件数でフォールバック判定
-    // PR広告除外や不要なHTMLブロック除外によって itemsPerPage より少なくなるため、
-    // 実質的に「要求件数の約70%〜80%以上取得できていれば次がある」と推測する（Yahoo車カテゴリは最大40〜50枠）
-    const assumedMaxItems = Math.min(itemsPerPage, 50); // 中古車は最大50枠程度
-    const hasNextPageByCount = items.length >= (assumedMaxItems * 0.7);
+    let hasNextPageByCount = typeof rawContainerCount !== 'undefined' ? rawContainerCount >= 50 : items.length >= (Math.min(itemsPerPage, 50) * 0.7);
+
+    // 中古車カテゴリ等(パターン3)で、1ページに限界数(50枠近く)が返ってきている場合、
+    // 次のページが本当に存在するかどうかはヤフオクの仕様上「実際に取得してみないと分からない」ため、裏で先読みする
+    if (!hasNextPageDom && hasNextPageByCount && typeof rawContainerCount !== 'undefined') {
+      try {
+        const nextBValue = (page * itemsPerPage) - itemsPerPage + 51; // 1ページ目はb=1, 2ページ目はb=51
+        const connector = searchUrl.includes('?') ? '&' : '?';
+        const nextTargetUrl = searchUrl.replace(/&b=\d+/, '') + `${connector}b=${nextBValue}`;
+        const nextRes = await fetch(nextTargetUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        });
+        const nextHtml = await nextRes.text();
+        const $next = cheerio.load(nextHtml);
+
+        let validNextItems = 0;
+        $next('.bd').each((i, el) => {
+          const rawH = $next(el).html() || '';
+          if (!rawH.includes('ストアPR') && $next(el).find('[class*="--pr"]').length === 0) {
+            validNextItems++;
+          }
+        });
+
+        // フォールバック
+        if (validNextItems === 0 && $next('.bd').length === 0) {
+          $next('tr, li, div.i').each((i, el) => {
+            const rawH = $next(el).html() || '';
+            if (!rawH.includes('ストアPR') && $next(el).find('[class*="--pr"]').length === 0) {
+              validNextItems++;
+            }
+          });
+        }
+
+        hasNextPageByCount = validNextItems > 0;
+      } catch (e) {
+        console.error('Prefetch error:', e);
+        // エラー時はフェールセーフで元の判定（true）を残す
+      }
+    }
 
     // itemsが0件なら絶対に次は無い
     let nextPage = items.length > 0 ? (hasNextPageDom || hasNextPageByCount) : false;
