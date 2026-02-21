@@ -874,7 +874,11 @@ export default function AdminDashboard() {
                           )}
                           <div className="flex-1 flex flex-col justify-between min-h-[128px] py-0.5 overflow-hidden">
                             <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{item.productTitle}</h3>
-                            <div className="flex flex-col gap-2 w-full mt-auto pt-2">
+                            <div className="text-xs text-gray-600 mb-2 mt-1 space-y-0.5">
+                              <p><span className="font-semibold text-gray-800">{item.customerFullName || item.customerName}</span></p>
+                              <p>{formatDateTime(item.confirmedAt)}</p>
+                            </div>
+                            <div className="flex flex-col gap-2 w-full mt-auto">
                               <a
                                 href={item.productUrl}
                                 target="_blank"
@@ -888,10 +892,6 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-gray-50 rounded text-xs sm:text-sm">
-                          <div>
-                            <p className="text-gray-600">氏名</p>
-                            <p className="font-semibold">{item.customerFullName || item.customerName}</p>
-                          </div>
                           <div>
                             <p className="text-gray-600">WhatsApp</p>
                             <p className="font-semibold">{item.customerWhatsapp || '未登録'}</p>
@@ -908,29 +908,30 @@ export default function AdminDashboard() {
                             <p className="text-gray-600">顧客名</p>
                             <p className="font-semibold">{item.customerName}</p>
                           </div>
-                          <div>
-                            <p className="text-gray-600">確認日時</p>
-                            <p className="font-semibold">{formatDateTime(item.confirmedAt)}</p>
-                          </div>
                         </div>
 
                         <div className="text-right pt-3 border-t">
                           <div className="flex items-center justify-between mb-2">
-                            <label className="flex items-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={item.paid}
-                                onChange={(e) => updatePaidStatus(item.id, e.target.checked)}
-                                className="w-5 h-5 mr-2 cursor-pointer"
-                              />
-                              <span className="text-sm font-semibold text-gray-700">支払済</span>
-                            </label>
+                            <div className="flex flex-col items-start gap-1">
+                              <label className="flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={item.paid}
+                                  onChange={(e) => updatePaidStatus(item.id, e.target.checked)}
+                                  className="w-5 h-5 mr-2 cursor-pointer"
+                                />
+                                <span className="text-sm font-semibold text-gray-700">支払済</span>
+                              </label>
+                              {item.paid && item.paidAt && (
+                                <span className="text-xs font-semibold text-gray-500 ml-7">着金確認: {formatDateTime(item.paidAt)}</span>
+                              )}
+                            </div>
                             <p className={`text-xl sm:text-2xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
                               ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
                             </p>
                           </div>
                           {item.paid && (
-                            <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                            <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full mt-1">
                               ✓ 支払済
                             </span>
                           )}

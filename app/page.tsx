@@ -1624,7 +1624,11 @@ export default function Home() {
                             />
                           )}
                           <div className="flex-1 min-w-0 flex flex-col justify-between items-start">
-                            <h3 className="text-sm font-semibold mb-2 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
+                            <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
+                            <div className="text-xs text-gray-600 mb-2 mt-1 space-y-0.5 w-full">
+                              <p><span className="font-semibold text-gray-800">{lang === 'es' ? 'Cliente:' : 'Cliente:'} {item.customerName}</span></p>
+                              <p>{t.confirmedDate}: {formatDateTime(item.confirmedAt)}</p>
+                            </div>
                             <div className="flex flex-col gap-2 w-full mt-auto">
                               <a
                                 href={item.productUrl}
@@ -1654,14 +1658,6 @@ export default function Home() {
                           <div>
                             <p className="text-gray-600">{lang === 'es' ? 'Idioma' : 'Idioma'}</p>
                             <p className="font-semibold">{item.language === 'es' ? 'Español' : 'Português'}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">{lang === 'es' ? 'Cliente' : 'Cliente'}</p>
-                            <p className="font-semibold">{item.customerName}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600">{t.confirmedDate}</p>
-                            <p className="font-semibold">{formatDateTime(item.confirmedAt)}</p>
                           </div>
                         </div>
 

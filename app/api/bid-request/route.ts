@@ -497,7 +497,14 @@ export async function PATCH(request: Request) {
       if (counterOffer !== undefined) updateData.counter_offer = counterOffer;
       if (shippingCostJpy !== undefined) updateData.shipping_cost_jpy = shippingCostJpy;
       if (finalStatus !== undefined) updateData.final_status = finalStatus;
-      if (paid !== undefined) updateData.paid = paid;
+      if (paid !== undefined) {
+        updateData.paid = paid;
+        if (paid === true && !currentRequest.paid_at) {
+          updateData.paid_at = new Date().toISOString();
+        } else if (paid === false) {
+          updateData.paid_at = null;
+        }
+      }
     }
 
     // 両方または顧客が更新可能なフィールド
