@@ -33,8 +33,8 @@ const translations = {
     password: 'Contraseña',
     loginButton: 'Iniciar sesión',
     logout: 'Cerrar sesión',
-    myRequests: 'Mis Solicitudes',
-    purchasedItems: 'Productos Comprados',
+    myRequests: 'Solicitudes',
+    purchasedItems: 'Comprados',
     backToSearch: 'Volver a búsqueda',
     status: 'Estado',
     pending: 'Pendiente',
@@ -99,6 +99,7 @@ const translations = {
     next: 'Próximo',
     categoriesTab: 'Categoría',
     searchTab: 'Palabra',
+    searchBottomTab: 'Busca',
     urlTab: 'URL',
     favoritesTab: 'Favoritos',
     addedToFavorites: 'Añadido a favoritos',
@@ -194,6 +195,7 @@ const translations = {
     next: 'Próximo',
     categoriesTab: 'Categoria',
     searchTab: 'Palavra',
+    searchBottomTab: 'Busca',
     urlTab: 'URL',
     favoritesTab: 'Favoritos',
     addedToFavorites: 'Adicionado aos favoritos',
@@ -1517,7 +1519,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-1 sm:px-4">
           <div className="flex justify-between items-center h-16 sm:h-20">
             {[
-              { key: 'search' as const, label: t.searchTab, icon: '🔍' },
+              { key: 'search' as const, label: t.searchBottomTab, icon: '🔍' },
               { key: 'favorites' as const, label: t.favoritesTab, icon: '⭐' },
               { key: 'requests' as const, label: t.myRequests, icon: '📋' },
               { key: 'purchased' as const, label: t.purchasedItems, icon: '🛒' },
