@@ -363,7 +363,9 @@ export default function Home() {
               if (searchType === 'keyword' && keyword) {
                 await handleKeywordSearch(undefined, 1);
               } else if (searchType === 'categories') {
-                await fetchCategoryItems(activeCategoryUrl || undefined, 1);
+                if (activeCategoryUrl) {
+                  await fetchCategoryItems(activeCategoryUrl, 1);
+                }
               }
             } else if (activeTab === 'requests') {
               await fetchMyRequests();
