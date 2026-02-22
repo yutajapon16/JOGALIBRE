@@ -44,6 +44,7 @@ export default function AdminDashboard() {
   const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
   const [isSendingNotification, setIsSendingNotification] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<'loading' | 'enabled' | 'disabled' | 'unsupported'>('loading');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
 
   // セッションチェック（最初に実行）
@@ -80,6 +81,62 @@ export default function AdminDashboard() {
       return () => clearInterval(interval);
     }
   }, [currentUser]);
+
+  // PWA (ホーム画面追加時) 向けのカスタム Pull-to-Refresh 実装
+  useEffect(() => {
+    let startY = 0;
+    let isPulling = false;
+    let isAtTop = true;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      isAtTop = window.scrollY <= 5;
+      if (isAtTop) {
+        startY = e.touches[0].clientY;
+        isPulling = true;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isPulling || !isAtTop) return;
+      const pullDistance = e.touches[0].clientY - startY;
+      setIsRefreshing(pullDistance > 100);
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!isPulling || !isAtTop) return;
+      const pullDistance = e.changedTouches[0].clientY - startY;
+
+      if (pullDistance > 120 && isAtTop) {
+        setIsRefreshing(true);
+        setTimeout(async () => {
+          try {
+            if (showPurchased) {
+              await fetchPurchasedItems();
+            } else {
+              await fetchBidRequests();
+            }
+          } catch (error) {
+            console.error('Refresh error:', error);
+          } finally {
+            setIsRefreshing(false);
+          }
+        }, 500);
+      } else {
+        setIsRefreshing(false);
+      }
+      isPulling = false;
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [showPurchased, currentUser]);
 
   // 通知状態チェック
   useEffect(() => {
@@ -682,6 +739,13 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* PWA用 Pull-to-Refresh インジケーター */}
+      {isRefreshing && (
+        <div className="fixed top-0 left-0 right-0 z-[100] flex justify-center py-4 bg-white/80 backdrop-blur-sm shadow-sm transition-all duration-300">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      )}
+
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-4">

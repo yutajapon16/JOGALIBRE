@@ -100,6 +100,7 @@ export async function GET(request: Request) {
 
       // PR広告商品（一番目に固定される商品）を除外
       if (
+        $el.find('a[data-cl-params*="_cl_vmodule:sfdu"]').length > 0 ||
         $el.hasClass('Product--pr') ||
         $el.find('span.Product__label--pr').length > 0 ||
         $el.find('[class*="--pr"]').length > 0 ||
@@ -145,6 +146,7 @@ export async function GET(request: Request) {
 
         // PR広告商品（上部に固定される商品等）を除外
         if (
+          $el.find('a[data-cl-params*="_cl_vmodule:sfdu"]').length > 0 ||
           $el.hasClass('item--pr') ||
           $el.hasClass('s_item--pr') ||
           $el.hasClass('Product--pr') ||
