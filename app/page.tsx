@@ -1323,23 +1323,7 @@ export default function Home() {
     return (
       <div key={`product-${isFavoriteTab ? 'fav' : 'search'}-${index}-${product.id}`} className="bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col h-full group">
 
-        {/* お気に入り（★）ボタン */}
-        <button
-          onClick={(e) => toggleFavorite(product, e)}
-          disabled={isTogglingFavorite === product.id}
-          className="absolute top-2 right-2 z-10 p-2 sm:p-2.5 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center group-hover:shadow-md"
-        >
-          {isTogglingFavorite === product.id ? (
-            <svg className="animate-spin h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          ) : (
-            <span className={`text-xl sm:text-2xl leading-none ${isFav ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300'} transition-colors`}>
-              {isFav ? '★' : '☆'}
-            </span>
-          )}
-        </button>
+
 
         <div className="relative aspect-square w-full">
           <img
@@ -1350,7 +1334,27 @@ export default function Home() {
           />
         </div>
         <div className="p-3 sm:p-4 flex flex-col flex-1">
-          <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 mb-2 min-h-[2.5rem] leading-tight flex-grow">{product.title}</h3>
+          <div className="flex items-start justify-between gap-2 mb-2 min-h-[2.5rem]">
+            <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 leading-tight flex-grow">{product.title}</h3>
+            {/* お気に入り（★）ボタン */}
+            <button
+              onClick={(e) => toggleFavorite(product, e)}
+              disabled={isTogglingFavorite === product.id}
+              className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center flex-shrink-0"
+              style={{ marginTop: '-4px', marginRight: '-4px' }}
+            >
+              {isTogglingFavorite === product.id ? (
+                <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <span className={`text-xl sm:text-2xl leading-none ${isFav ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300'} transition-colors`}>
+                  {isFav ? '★' : '☆'}
+                </span>
+              )}
+            </button>
+          </div>
 
           <div className="mt-auto space-y-1.5 sm:space-y-2">
             <div className="flex justify-between items-center bg-gray-50 p-1.5 sm:p-2 rounded mt-1 sm:mt-2">
