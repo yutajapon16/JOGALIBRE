@@ -98,12 +98,8 @@ export async function GET(request: Request) {
     $('.Product, .Product__item').each((i, el) => {
       const $el = $(el);
 
-      const rawHtml = $el.html() || '';
-      const dataClParams = $el.find('.Product__titleLink, .item__titleLink').attr('data-cl-params') || '';
-
-      // PR広告商品（一番目に固定される商品等、トラッキングモジュールsfdu）を除外
+      // PR広告商品（一番目に固定される商品）を除外
       if (
-        dataClParams.includes('_cl_vmodule:sfdu') ||
         $el.hasClass('Product--pr') ||
         $el.find('span.Product__label--pr').length > 0 ||
         $el.find('[class*="--pr"]').length > 0 ||
@@ -115,6 +111,7 @@ export async function GET(request: Request) {
 
       const title = $el.find('.Product__titleLink, .item__titleLink').text().trim();
       const url = $el.find('.Product__titleLink, .item__titleLink').attr('href');
+      const dataClParams = $el.find('.Product__titleLink, .item__titleLink').attr('data-cl-params') || '';
       const imageUrl = $el.find('.Product__imageData, .item__imageData').attr('src') || $el.find('img').attr('src');
       const priceText = $el.find('.Product__priceValue, .item__priceValue').first().text().replace(/[^\d]/g, '');
       const price = parseInt(priceText) || 0;
@@ -146,12 +143,8 @@ export async function GET(request: Request) {
       $('.item, .s_item, .Product__item, .sdc, .lb-item, .lb-item-border, .lb-item-container').each((i, el) => {
         const $el = $(el);
 
-        const rawHtml = $el.html() || '';
-        const dataClParams = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link, .title a, .lb-item__link').attr('data-cl-params') || $el.find('a').attr('data-cl-params') || '';
-
-        // PR広告商品（上部に固定される商品等、トラッキングモジュールsfdu）を除外
+        // PR広告商品（上部に固定される商品等）を除外
         if (
-          dataClParams.includes('_cl_vmodule:sfdu') ||
           $el.hasClass('item--pr') ||
           $el.hasClass('s_item--pr') ||
           $el.hasClass('Product--pr') ||
@@ -164,6 +157,7 @@ export async function GET(request: Request) {
 
         const title = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__title, .title a, .lb-item__title').text().trim() || $el.find('h3').text().trim();
         const url = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link, .title a, .lb-item__link').attr('href') || $el.find('a').attr('href');
+        const dataClParams = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link, .title a, .lb-item__link').attr('data-cl-params') || $el.find('a').attr('data-cl-params') || '';
         let imageUrl = $el.find('.item__imageData, .s_item__imageData, .Product__imageData, .sdc__image, .image img, .thumb img, .lb-item__image').attr('src') || $el.find('img').attr('src');
 
         // Lazy load や data-original, data-src への対応
