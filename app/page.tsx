@@ -1375,8 +1375,12 @@ export default function Home() {
 
             <button
               onClick={() => {
-                setSelectedProduct(product);
-                setBidForm({ name: '', maxBid: '' });
+                if (product.url) {
+                  fetchProductDetailForOffer(product.url);
+                } else {
+                  setSelectedProduct(product);
+                  setBidForm({ name: '', maxBid: '' });
+                }
               }}
               className="w-full bg-indigo-600 text-white font-bold py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg hover:bg-indigo-700 transition shadow-sm hover:shadow active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-2 mt-auto text-xs sm:text-sm"
               style={{ minHeight: '40px' }}
@@ -2149,7 +2153,7 @@ export default function Home() {
                     setKeyword('');
                     setSearchUrl('');
                   }}
-                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
+                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
                   {t.categoriesTab}
                 </button>
@@ -2161,7 +2165,7 @@ export default function Home() {
                     setActiveCategoryUrl(null);
                     setSearchUrl('');
                   }}
-                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
+                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
                   {t.searchTab}
                 </button>
@@ -2173,7 +2177,7 @@ export default function Home() {
                     setActiveCategoryUrl(null);
                     setKeyword('');
                   }}
-                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
+                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
                   {t.urlTab}
                 </button>
@@ -2293,78 +2297,8 @@ export default function Home() {
               )}
             </div>
 
-            <div ref={resultsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition"
-                >
-                  {/* 上段: 画像(w-32) + タイトル情報 */}
-                  <div className="flex p-4 gap-4 h-[160px]">
-                    <div className="w-32 h-32 flex-shrink-0 relative">
-                      <img
-                        src={product.imageUrl}
-                        alt={product.title}
-                        className="w-full h-full object-cover rounded shadow-sm border border-gray-100"
-                      />
-                    </div>
-                    <div className="flex flex-col flex-1 min-w-0 justify-between h-32 py-0.5 overflow-hidden">
-                      <h3 className="text-xs sm:text-sm font-bold text-gray-800 line-clamp-3 leading-tight" title={product.title}>
-                        {product.title}
-                      </h3>
-                      <div className="flex flex-col gap-2 w-full mt-auto pt-2">
-                        <a
-                          href={product.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-1 block w-full"
-                        >
-                          {t.viewOnYahoo}
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 中段: 価格・入札情報セクション */}
-                  <div className="px-3 pb-3 space-y-2 border-t border-gray-50 pt-3 flex-1 flex flex-col">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-gray-500 font-bold uppercase">{t.currentPrice}</span>
-                      <span className="text-sm font-black text-gray-900">¥{product.currentPrice.toLocaleString()}</span>
-                    </div>
-
-                    <div className="text-[9px] text-gray-400 font-bold leading-tight">
-                      * {t.shippingUnknown}
-                    </div>
-
-                    <div className="flex justify-between items-center text-[10px] font-bold border-y border-gray-50 py-1">
-                      <div className="flex gap-1 items-center">
-                        <span className="text-gray-400">{t.bidsLabel}:</span>
-                        <span className="text-gray-900">{product.bids}</span>
-                      </div>
-                      <div className="flex gap-1 items-center">
-                        <span className="text-gray-400">{t.endsInHeader}</span>
-                        <span className="text-red-500">{getTimeRemaining(product.endTime || '', (product as any).timeLeft)}</span>
-                      </div>
-                    </div>
-
-                    {/* USD金額 & オファー申請ボタン */}
-                    <div className="mt-auto pt-2 flex flex-col gap-2">
-                      <div className="bg-indigo-50/50 rounded p-2 flex justify-between items-center">
-                        <span className="text-[10px] text-indigo-600 font-black tracking-tighter">{t.usdPrice}</span>
-                        <span className="text-xl font-black text-indigo-600 leading-none">
-                          ${calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => fetchProductDetailForOffer(product.url)}
-                        className="w-full bg-indigo-600 text-white py-3 font-black uppercase tracking-widest text-[10px] hover:bg-indigo-700 transition rounded shadow-sm"
-                      >
-                        {t.makeOffer}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div ref={resultsRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mt-4">
+              {products.map((product, index) => renderProductCard(product, index, false))}
             </div>
 
             {/* ページネーション */}
