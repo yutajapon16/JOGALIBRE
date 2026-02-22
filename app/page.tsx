@@ -277,6 +277,7 @@ export default function Home() {
   const [selectedRequestForCounter, setSelectedRequestForCounter] = useState<any>(null);  // ← 追加
   const [customerCounterAmount, setCustomerCounterAmount] = useState('');  // ← 追加
   const [isSendingNotification, setIsSendingNotification] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const t = translations[lang];
 
@@ -316,8 +317,65 @@ export default function Home() {
         }
       }
     });
-
     return () => subscription.unsubscribe();
+  }, []);
+
+  // PWA (ホーム画面追加時) 向けのカスタム Pull-to-Refresh 実装
+  useEffect(() => {
+    let startY = 0;
+    let isPulling = false;
+    let isAtTop = true;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      // 画面一番上にいるかどうかの判定 (多少の誤差を許容)
+      isAtTop = window.scrollY <= 5;
+      if (isAtTop) {
+        startY = e.touches[0].clientY;
+        isPulling = true;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isPulling || !isAtTop) return;
+      const currentY = e.touches[0].clientY;
+      const pullDistance = currentY - startY;
+
+      // 下に約100px以上引っ張った場合、UI表示用フラグを立てる（必要であれば）
+      if (pullDistance > 100) {
+        setIsRefreshing(true);
+      } else {
+        setIsRefreshing(false);
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!isPulling || !isAtTop) return;
+      const endY = e.changedTouches[0].clientY;
+      const pullDistance = endY - startY;
+
+      // 120px以上下に引っ張って離されたら画面をリロードする
+      if (pullDistance > 120 && isAtTop) {
+        setIsRefreshing(true);
+        // UIにスピナーを表示する時間を確保するため少し待ってからリロード
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      } else {
+        setIsRefreshing(false);
+      }
+
+      isPulling = false;
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
   }, []);
 
   const fetchExchangeRate = async () => {
@@ -475,10 +533,14 @@ export default function Home() {
     return `${formatter.format(date)} ${localLabel}`;
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = (formData.get('email') as string) || loginForm.email;
+    const password = (formData.get('password') as string) || loginForm.password;
+
     try {
-      await signIn(loginForm.email, loginForm.password);
+      await signIn(email, password);
       const user = await getCurrentUser();
       setCurrentUser(user);
       setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
@@ -490,16 +552,16 @@ export default function Home() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = (formData.get('email') as string) || loginForm.email;
+    const password = (formData.get('password') as string) || loginForm.password;
+    const fullName = (formData.get('fullName') as string) || loginForm.fullName;
+    const whatsapp = (formData.get('whatsapp') as string) || loginForm.whatsapp;
+
     try {
-      await signUp(
-        loginForm.email,
-        loginForm.password,
-        'customer',
-        loginForm.fullName,
-        loginForm.whatsapp
-      );
+      await signUp(email, password, 'customer', fullName, whatsapp);
 
       // メール確認が必要な場合は成功メッセージを表示
       alert(lang === 'es'
@@ -994,9 +1056,11 @@ export default function Home() {
                   </label>
                   <input
                     type="text"
+                    name="fullName"
                     value={loginForm.fullName}
                     onChange={(e) => setLoginForm({ ...loginForm, fullName: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    autoComplete="name"
                     required
                   />
                 </div>
@@ -1004,10 +1068,12 @@ export default function Home() {
                   <label className="block text-sm font-medium mb-2">WhatsApp</label>
                   <input
                     type="tel"
+                    name="whatsapp"
                     value={loginForm.whatsapp}
                     onChange={(e) => setLoginForm({ ...loginForm, whatsapp: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2"
                     placeholder="+55 11 98765-4321"
+                    autoComplete="tel"
                     required
                   />
                 </div>
@@ -1017,9 +1083,11 @@ export default function Home() {
               <label className="block text-sm font-medium mb-2">{t.email}</label>
               <input
                 type="email"
+                name="email"
                 value={loginForm.email}
                 onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                autoComplete="username"
                 required
               />
             </div>
@@ -1027,9 +1095,11 @@ export default function Home() {
               <label className="block text-sm font-medium mb-2">{t.password}</label>
               <input
                 type="password"
+                name="password"
                 value={loginForm.password}
                 onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                autoComplete="current-password"
                 required
                 minLength={6}
               />
@@ -1116,7 +1186,18 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 relative">
+      {/* Pull to Refresh インジケーター表示 */}
+      {isRefreshing && (
+        <div className="fixed top-0 left-0 right-0 flex justify-center pt-4 z-[9999] pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-white rounded-full p-2 shadow-xl border border-indigo-100 ring-4 ring-indigo-50">
+            <svg className="animate-spin h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        </div>
+      )}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ & ログアウト */}
@@ -1831,6 +1912,8 @@ export default function Home() {
                   onClick={() => {
                     setSearchType('categories');
                     setProducts([]);
+                    setCurrentCategory(null);
+                    setActiveCategoryUrl(null);
                   }}
                   className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
@@ -1880,7 +1963,7 @@ export default function Home() {
               {searchType === 'categories' && (
                 <div className="animate-in fade-in duration-300">
                   {/* 商品リスト表示中の「戻る」ボタン */}
-                  {activeCategoryUrl && currentCategory && (
+                  {activeCategoryUrl && (
                     <div className="mb-4">
                       <button
                         onClick={() => {
@@ -1888,15 +1971,28 @@ export default function Home() {
                           setProducts([]);
                           setSearchPage(1);
                           setNextPageExists(false);
+                          // 単独カテゴリ（Moto等）の場合はリセットし、サブカテゴリありの場合は currentCategory を維持して1つ前に戻る
                         }}
                         className="w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold py-2 bg-indigo-50 rounded px-6 block shadow-sm border border-indigo-100 transition-colors"
                       >
-                        {t.back} ({lang === 'es' ? currentCategory.es : currentCategory.pt})
+                        {(() => {
+                          let catName = '';
+                          if (currentCategory) {
+                            catName = lang === 'es' ? currentCategory.es : currentCategory.pt;
+                          } else {
+                            // 単独カテゴリ（Moto等）の名称をURLから推測するか、メインカテゴリ一覧から探す
+                            const found = CATEGORIES.find(c => c.url && activeCategoryUrl.includes(c.url.split('?')[0]));
+                            if (found) {
+                              catName = lang === 'es' ? found.es : found.pt;
+                            }
+                          }
+                          return catName ? `${t.back} (${catName})` : t.back;
+                        })()}
                       </button>
                     </div>
                   )}
 
-                  {/* カテゴリ選択中の「戻る」ボタン */}
+                  {/* カテゴリ選択中の「戻る」ボタン (サブカテゴリ内からトップへ戻る) */}
                   {!activeCategoryUrl && currentCategory && (
                     <button
                       onClick={() => setCurrentCategory(null)}
