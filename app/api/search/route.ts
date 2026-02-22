@@ -333,6 +333,39 @@ export async function GET(request: Request) {
     // itemsが0件なら絶対に次は無い
     let nextPage = items.length > 0 ? (hasNextPageDom || hasNextPageByCount) : false;
 
+    // --- タイトル一括自動翻訳 (無料Google Translate API) ---
+    if (items.length > 0 && lang !== 'ja') {
+      try {
+        // 全タイトルを \n で結合して1リクエストで送信
+        const titlesToTranslate = items.map(item => item.title).join('\\n');
+
+        // Google Translate API (gtx) を呼び出し
+        const translateRes = await fetch(
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(titlesToTranslate)}`
+        );
+        const translateData = await translateRes.json();
+
+        // 翻訳結果は配列の配列で返ってくる [["翻訳1\n", "原文1\n"], ["翻訳2\n", "原文2\n"], ...]
+        if (translateData && translateData[0]) {
+          let fullTranslatedText = '';
+          for (let i = 0; i < translateData[0].length; i++) {
+            fullTranslatedText += translateData[0][i][0];
+          }
+          const translatedTitles = fullTranslatedText.split('\\n');
+
+          // 元の items 配列に翻訳後のタイトルを適用
+          items.forEach((item, index) => {
+            if (translatedTitles[index] && translatedTitles[index].trim()) {
+              item.title = translatedTitles[index].trim();
+            }
+          });
+        }
+      } catch (translateError) {
+        console.error('Batch title translation error:', translateError);
+        // 翻訳に失敗した場合はそのまま日本語のタイトルで続行する（フェールセーフ）
+      }
+    }
+
     return NextResponse.json({ items, translatedKeyword, nextPage });
   } catch (error) {
     console.error('Search error:', error);

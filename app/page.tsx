@@ -1354,6 +1354,14 @@ export default function Home() {
           <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 mb-2 min-h-[2.5rem] leading-tight flex-grow">{product.title}</h3>
 
           <div className="mt-auto space-y-1.5 sm:space-y-2">
+            <a
+              href={product.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-center text-[10px] sm:text-xs text-indigo-600 hover:underline font-bold py-1 sm:py-1.5 bg-indigo-50 rounded block w-full mb-1"
+            >
+              {t.viewOnYahoo}
+            </a>
             <div className="flex justify-between items-center bg-gray-50 p-1.5 sm:p-2 rounded mt-1 sm:mt-2">
               <span className="text-[10px] sm:text-xs text-gray-500 font-medium">{t.bidsLabel}:</span>
               <span className="text-[10px] sm:text-xs font-bold text-gray-700 bg-white px-1.5 sm:px-2 py-0.5 rounded shadow-sm">{product.bids || 0}</span>
