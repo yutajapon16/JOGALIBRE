@@ -1332,29 +1332,26 @@ export default function Home() {
             className="w-full h-full object-cover"
             loading="lazy"
           />
+          {/* お気に入り（★）ボタン（画像上・右下） */}
+          <button
+            onClick={(e) => toggleFavorite(product, e)}
+            disabled={isTogglingFavorite === product.id}
+            className="absolute bottom-2 right-2 z-10 p-2 sm:p-2.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center group-hover:shadow-md"
+          >
+            {isTogglingFavorite === product.id ? (
+              <svg className="animate-spin h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <span className={`text-xl sm:text-2xl leading-none ${isFav ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300'} transition-colors`}>
+                {isFav ? '★' : '☆'}
+              </span>
+            )}
+          </button>
         </div>
         <div className="p-3 sm:p-4 flex flex-col flex-1">
-          <div className="flex items-start justify-between gap-2 mb-2 min-h-[2.5rem]">
-            <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 leading-tight flex-grow">{product.title}</h3>
-            {/* お気に入り（★）ボタン */}
-            <button
-              onClick={(e) => toggleFavorite(product, e)}
-              disabled={isTogglingFavorite === product.id}
-              className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center flex-shrink-0"
-              style={{ marginTop: '-4px', marginRight: '-4px' }}
-            >
-              {isTogglingFavorite === product.id ? (
-                <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <span className={`text-xl sm:text-2xl leading-none ${isFav ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300'} transition-colors`}>
-                  {isFav ? '★' : '☆'}
-                </span>
-              )}
-            </button>
-          </div>
+          <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 mb-2 min-h-[2.5rem] leading-tight flex-grow">{product.title}</h3>
 
           <div className="mt-auto space-y-1.5 sm:space-y-2">
             <div className="flex justify-between items-center bg-gray-50 p-1.5 sm:p-2 rounded mt-1 sm:mt-2">
@@ -1367,13 +1364,15 @@ export default function Home() {
             </div>
 
             <div className="my-2 sm:my-3">
-              <div className="flex items-center gap-1.5 bg-green-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
+              <div className="flex items-center justify-between bg-green-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
                 <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">USD</span>
-                <span className="font-extrabold text-green-700 text-lg sm:text-xl leading-none tabular-nums tracking-tight">
-                  <span className="text-sm font-semibold mr-0.5">$</span>
-                  {calculateUSDPrice(product.currentPrice, product.shippingCost)}
-                </span>
-                <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
+                <div className="flex items-center">
+                  <span className="font-extrabold text-green-700 text-lg sm:text-xl leading-none tabular-nums tracking-tight">
+                    <span className="text-sm font-semibold mr-0.5">$</span>
+                    {calculateUSDPrice(product.currentPrice, product.shippingCost)}
+                  </span>
+                  <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
+                </div>
               </div>
             </div>
 
@@ -1390,9 +1389,6 @@ export default function Home() {
               style={{ minHeight: '40px' }}
             >
               <span>{t.makeOffer}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
             </button>
           </div>
         </div>
