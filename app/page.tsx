@@ -978,7 +978,7 @@ export default function Home() {
         // スクロール処理 (固定ヘッダー分80pxほどズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 80;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 10;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1015,7 +1015,7 @@ export default function Home() {
         // スクロール処理 (固定ヘッダー分80pxほどズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 80;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 10;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1351,7 +1351,7 @@ export default function Home() {
           </button>
         </div>
         <div className="p-3 sm:p-4 flex flex-col flex-1">
-          <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 mb-2 min-h-[2.5rem] leading-tight flex-grow">{product.title}</h3>
+          <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 h-[2rem] sm:h-[2.5rem] mb-2 leading-tight flex-grow-0 w-full overflow-hidden text-ellipsis">{product.title}</h3>
 
           <div className="mt-auto space-y-1.5 sm:space-y-2">
             <a
@@ -1577,7 +1577,7 @@ export default function Home() {
       </nav>
 
       {/* ボトムナビゲーション用に下部の余白を追加 */}
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 pb-24 sm:pb-32">
+      <main className="max-w-7xl mx-auto px-4 pt-3 sm:pt-4 pb-24 sm:pb-32 sm:px-6 lg:px-8">
         {activeTab === 'favorites' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-8">
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.favoritesTab}</h2>
