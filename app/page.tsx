@@ -97,9 +97,12 @@ const translations = {
     loadingDetail: 'Cargando detalles...',
     previous: 'Anterior',
     next: 'Próximo',
-    categoriesTab: 'CATEGORIAS',
-    searchTab: 'BUSQUEDA',
+    categoriesTab: 'Categoría',
+    searchTab: 'Palabra',
     urlTab: 'URL',
+    favoritesTab: 'Favoritos',
+    addedToFavorites: 'Añadido a favoritos',
+    removedFromFavorites: 'Eliminado de favoritos',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -128,8 +131,8 @@ const translations = {
     password: 'Senha',
     loginButton: 'Entrar',
     logout: 'Sair',
-    myRequests: 'Minhas Solicitações',
-    purchasedItems: 'Produtos Comprados',
+    myRequests: 'Solicitações',
+    purchasedItems: 'Comprados',
     backToSearch: 'Voltar para busca',
     status: 'Estado',
     pending: 'Pendente',
@@ -189,9 +192,12 @@ const translations = {
     loadingDetail: 'Carregando detalhes...',
     previous: 'Anterior',
     next: 'Próximo',
-    categoriesTab: 'CATEGORIAS',
-    searchTab: 'BUSCA',
+    categoriesTab: 'Categoria',
+    searchTab: 'Palavra',
     urlTab: 'URL',
+    favoritesTab: 'Favoritos',
+    addedToFavorites: 'Adicionado aos favoritos',
+    removedFromFavorites: 'Removido dos favoritos',
   }
 };
 
@@ -252,7 +258,9 @@ export default function Home() {
     fullName: '',
     whatsapp: ''
   });
-  const [activeTab, setActiveTab] = useState<'search' | 'requests' | 'purchased' | 'mypage'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage'>('search');
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState<string | null>(null);
   const [searchType, setSearchType] = useState<'url' | 'keyword' | 'categories'>('categories');
   const resultsRef = useRef<HTMLDivElement>(null);
   const [keyword, setKeyword] = useState('');
@@ -367,6 +375,8 @@ export default function Home() {
                   await fetchCategoryItems(activeCategoryUrl, 1);
                 }
               }
+            } else if (activeTab === 'favorites') {
+              await fetchFavorites();
             } else if (activeTab === 'requests') {
               await fetchMyRequests();
             } else if (activeTab === 'purchased') {
@@ -488,6 +498,107 @@ export default function Home() {
       setPurchasedTotal(data.total || 0);
     } catch (error) {
       console.error('Error fetching purchased items:', error);
+    }
+  };
+
+  const fetchFavorites = async () => {
+    if (currentUser) {
+      try {
+        const { data, error } = await supabase
+          .from('favorites')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // format to match product structure
+        const formattedFavorites = (data || []).map(f => ({
+          id: f.product_id,
+          title: f.product_title,
+          url: f.product_url,
+          imageUrl: f.product_image,
+          currentPrice: f.product_price,
+          bids: f.bids,
+          timeLeft: f.time_left,
+          isFavorite: true, // internal flag
+          dbId: f.id // needed for delete
+        }));
+
+        setFavorites(formattedFavorites);
+      } catch (error) {
+        console.error('Error fetching favorites:', error);
+      }
+    }
+  };
+
+  const toggleFavorite = async (product: any, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    if (!currentUser) {
+      alert(lang === 'es' ? 'Por favor inicie sesión para agregar a favoritos' : 'Por favor faça login para adicionar aos favoritos');
+      return;
+    }
+
+    setIsTogglingFavorite(product.id);
+
+    try {
+      // Check if it's already a favorite (search in state)
+      const existingFav = favorites.find(f => f.id === product.id);
+
+      if (existingFav) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('id', existingFav.dbId);
+
+        if (error) throw error;
+
+        // Update local state without refetching for speed
+        setFavorites(prev => prev.filter(f => f.id !== product.id));
+      } else {
+        // Add to favorites
+        const newFav = {
+          user_id: currentUser.id,
+          product_id: product.id,
+          product_title: product.title,
+          product_url: product.url,
+          product_image: product.imageUrl,
+          product_price: product.currentPrice,
+          bids: product.bids || 0,
+          time_left: product.timeLeft || ''
+        };
+
+        const { data, error } = await supabase
+          .from('favorites')
+          .insert([newFav])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Update local state
+        setFavorites(prev => [{
+          id: data.product_id,
+          title: data.product_title,
+          url: data.product_url,
+          imageUrl: data.product_image,
+          currentPrice: data.product_price,
+          bids: data.bids,
+          timeLeft: data.time_left,
+          isFavorite: true,
+          dbId: data.id
+        }, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      alert(lang === 'es' ? 'Error al actualizar favoritos' : 'Erro ao atualizar favoritos');
+    } finally {
+      setIsTogglingFavorite(null);
     }
   };
 
@@ -1203,6 +1314,82 @@ export default function Home() {
     );
   }
 
+  // 共通のカード描画関数
+  const renderProductCard = (product: any, index: number, isFavoriteTab: boolean = false) => {
+    const isFav = favorites.some(f => f.id === product.id);
+
+    return (
+      <div key={`product-${isFavoriteTab ? 'fav' : 'search'}-${index}-${product.id}`} className="bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col h-full group">
+
+        {/* お気に入り（★）ボタン */}
+        <button
+          onClick={(e) => toggleFavorite(product, e)}
+          disabled={isTogglingFavorite === product.id}
+          className="absolute top-2 right-2 z-10 p-2 sm:p-2.5 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center group-hover:shadow-md"
+        >
+          {isTogglingFavorite === product.id ? (
+            <svg className="animate-spin h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          ) : (
+            <span className={`text-xl sm:text-2xl leading-none ${isFav ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300'} transition-colors`}>
+              {isFav ? '★' : '☆'}
+            </span>
+          )}
+        </button>
+
+        <div className="relative aspect-square w-full">
+          <img
+            src={product.imageUrl}
+            alt={product.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+        <div className="p-3 sm:p-4 flex flex-col flex-1">
+          <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 mb-2 min-h-[2.5rem] leading-tight flex-grow">{product.title}</h3>
+
+          <div className="mt-auto space-y-1.5 sm:space-y-2">
+            <div className="flex justify-between items-center bg-gray-50 p-1.5 sm:p-2 rounded mt-1 sm:mt-2">
+              <span className="text-[10px] sm:text-xs text-gray-500 font-medium">{t.bidsLabel}:</span>
+              <span className="text-[10px] sm:text-xs font-bold text-gray-700 bg-white px-1.5 sm:px-2 py-0.5 rounded shadow-sm">{product.bids || 0}</span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] sm:text-xs bg-red-50 p-1.5 sm:p-2 rounded text-red-700 font-medium">
+              <span>{t.timeLeft}:</span>
+              <span className="text-right line-clamp-2 max-w-[60%] font-semibold">{getTimeRemaining('', product.timeLeft)}</span>
+            </div>
+
+            <div className="my-2 sm:my-3">
+              <div className="flex items-center gap-1.5 bg-green-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
+                <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">USD</span>
+                <span className="font-extrabold text-green-700 text-lg sm:text-xl leading-none tabular-nums tracking-tight">
+                  <span className="text-sm font-semibold mr-0.5">$</span>
+                  {calculateUSDPrice(product.currentPrice, product.shippingCost)}
+                </span>
+                <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setSelectedProduct(product);
+                setBidForm({ name: '', maxBid: '' });
+              }}
+              className="w-full bg-indigo-600 text-white font-bold py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg hover:bg-indigo-700 transition shadow-sm hover:shadow active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-2 mt-auto text-xs sm:text-sm"
+              style={{ minHeight: '40px' }}
+            >
+              <span>{t.makeOffer}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 relative">
       {/* Pull to Refresh インジケーター表示 */}
@@ -1325,12 +1512,13 @@ export default function Home() {
         </div>
       </div>
 
-      {/* タブナビゲーション */}
-      <nav className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex">
+      {/* ボトムナビゲーション */}
+      <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t z-50 pb-safe">
+        <div className="max-w-7xl mx-auto px-1 sm:px-4">
+          <div className="flex justify-between items-center h-16 sm:h-20">
             {[
-              { key: 'search' as const, label: t.search, icon: '🔍' },
+              { key: 'search' as const, label: t.searchTab, icon: '🔍' },
+              { key: 'favorites' as const, label: t.favoritesTab, icon: '⭐' },
               { key: 'requests' as const, label: t.myRequests, icon: '📋' },
               { key: 'purchased' as const, label: t.purchasedItems, icon: '🛒' },
               { key: 'mypage' as const, label: t.myPage, icon: '👤' },
@@ -1357,21 +1545,45 @@ export default function Home() {
                     }
                   }
                 }}
-                className={`flex-1 py-3 text-center text-xs sm:text-sm font-medium border-b-2 transition ${activeTab === tab.key
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                className={`flex-1 flex flex-col items-center justify-center h-full transition-colors relative min-w-0 ${activeTab === tab.key
+                  ? 'text-indigo-600'
+                  : 'text-gray-400 hover:text-gray-600'
                   }`}
               >
-                <span className="block text-lg">{tab.icon}</span>
-                <span className="hidden sm:block">{tab.label}</span>
+                {/* 選択時のインジケーター */}
+                {activeTab === tab.key && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-indigo-600 rounded-b-full"></div>
+                )}
+                <span className={`text-xl sm:text-2xl mb-1 ${activeTab === tab.key ? 'scale-110' : ''} transition-transform`}>{tab.icon}</span>
+                <span className="text-[10px] sm:text-xs font-bold tracking-tight truncate w-full text-center px-1">{tab.label}</span>
               </button>
             ))}
           </div>
         </div>
-      </nav >
+      </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {activeTab === 'requests' ? (
+      {/* ボトムナビゲーション用に下部の余白を追加 */}
+      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 pb-24 sm:pb-32">
+        {activeTab === 'favorites' ? (
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-8">
+            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.favoritesTab}</h2>
+            {favorites.length === 0 ? (
+              <div className="text-center text-gray-500 py-12">
+                <p>{lang === 'es' ? 'No tienes productos en favoritos' : 'Você não tem produtos nos favoritos'}</p>
+                <button
+                  onClick={() => setActiveTab('search')}
+                  className="mt-4 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-full font-bold text-sm hover:bg-indigo-100 transition"
+                >
+                  {t.searchTab}
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mt-4">
+                {favorites.map((product, index) => renderProductCard(product, index, true))}
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'requests' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myRequests}</h2>
 
