@@ -101,10 +101,8 @@ export async function GET(request: Request) {
       const rawHtml = $el.html() || '';
       const dataClParams = $el.find('.Product__titleLink, .item__titleLink').attr('data-cl-params') || '';
 
-      // PR広告商品（一番目に固定される商品等、トラッキングモジュールsfdu）を除外
+      // PR広告商品を除外
       if (
-        rawHtml.includes('_cl_vmodule:sfdu') ||
-        dataClParams.includes('_cl_vmodule:sfdu') ||
         dataClParams.includes('pr') ||
         $el.hasClass('Product--pr') ||
         $el.find('span.Product__label--pr').length > 0 ||
@@ -151,10 +149,8 @@ export async function GET(request: Request) {
         const rawHtml = $el.html() || '';
         const dataClParams = $el.find('.item__titleLink, .s_item__titleLink, .Product__titleLink, .sdc__link, .title a, .lb-item__link').attr('data-cl-params') || $el.find('a').attr('data-cl-params') || '';
 
-        // PR広告商品（上部に固定される商品等、トラッキングモジュールsfdu）を除外
+        // PR広告商品を除外
         if (
-          rawHtml.includes('_cl_vmodule:sfdu') ||
-          dataClParams.includes('_cl_vmodule:sfdu') ||
           dataClParams.includes('pr') ||
           $el.hasClass('item--pr') ||
           $el.hasClass('s_item--pr') ||

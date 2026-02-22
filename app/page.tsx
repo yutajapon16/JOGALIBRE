@@ -353,12 +353,28 @@ export default function Home() {
       const endY = e.changedTouches[0].clientY;
       const pullDistance = endY - startY;
 
-      // 120px以上下に引っ張って離されたら画面をリロードする
+      // 120px以上下に引っ張って離されたらデータを再ロードする
       if (pullDistance > 120 && isAtTop) {
         setIsRefreshing(true);
-        // UIにスピナーを表示する時間を確保するため少し待ってからリロード
-        setTimeout(() => {
-          window.location.reload();
+        // UIにスピナーを表示する時間を確保するため少し待ってからデータフェッチ
+        setTimeout(async () => {
+          try {
+            if (activeTab === 'search') {
+              if (searchType === 'keyword' && keyword) {
+                await handleKeywordSearch(undefined, 1);
+              } else if (searchType === 'categories') {
+                await fetchCategoryItems(activeCategoryUrl || undefined, 1);
+              }
+            } else if (activeTab === 'requests') {
+              await fetchMyRequests();
+            } else if (activeTab === 'purchased') {
+              await fetchPurchasedItems();
+            }
+          } catch (e) {
+            console.error('Refresh error:', e);
+          } finally {
+            setIsRefreshing(false);
+          }
         }, 500);
       } else {
         setIsRefreshing(false);
@@ -376,7 +392,7 @@ export default function Home() {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, []);
+  }, [activeTab, searchType, keyword, activeCategoryUrl, currentUser]);
 
   const fetchExchangeRate = async () => {
     try {
