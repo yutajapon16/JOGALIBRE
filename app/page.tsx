@@ -19,7 +19,7 @@ const translations = {
     shippingUnknown: 'El costo de envío se agregará en la contraoferta',
     usdPrice: 'USD Aprox:',
     bids: 'Oferta',
-    bidsLabel: 'Oferta / Lances',
+    bidsLabel: 'Ofertas',
     timeLeft: 'Termina en:',
     endsInHeader: 'Termina en:',
     makeOffer: 'Hacer oferta',
@@ -113,7 +113,7 @@ const translations = {
     shippingUnknown: 'O custo de envio será adicionado na contraoferta',
     usdPrice: 'USD Aprox:',
     bids: 'Oferta',
-    bidsLabel: 'Oferta / Lances',
+    bidsLabel: 'Lances',
     timeLeft: 'Termina em:',
     endsInHeader: 'Termina em:',
     viewOnYahoo: 'Ver no Yahoo!',
@@ -1932,6 +1932,8 @@ export default function Home() {
                     setProducts([]);
                     setCurrentCategory(null);
                     setActiveCategoryUrl(null);
+                    setKeyword('');
+                    setSearchUrl('');
                   }}
                   className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
@@ -1941,6 +1943,9 @@ export default function Home() {
                   onClick={() => {
                     setSearchType('keyword');
                     setProducts([]);
+                    setCurrentCategory(null);
+                    setActiveCategoryUrl(null);
+                    setSearchUrl('');
                   }}
                   className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
@@ -1950,6 +1955,9 @@ export default function Home() {
                   onClick={() => {
                     setSearchType('url');
                     setProducts([]);
+                    setCurrentCategory(null);
+                    setActiveCategoryUrl(null);
+                    setKeyword('');
                   }}
                   className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold uppercase tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
