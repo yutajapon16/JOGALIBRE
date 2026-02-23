@@ -1360,7 +1360,7 @@ export default function Home() {
           </button>
         </div>
         <div className="p-3 sm:p-4 flex flex-col flex-1">
-          <h3 className="font-semibold text-[11px] sm:text-xs text-gray-800 line-clamp-2 leading-tight flex-grow-0 w-full overflow-hidden text-ellipsis block h-[2.2rem] sm:h-[2.4rem] mb-2">{product.title}</h3>
+          <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 leading-[1.25rem] h-[2.5rem] overflow-hidden w-full mb-2">{product.title}</h3>
 
           <div className="mt-auto space-y-1.5 sm:space-y-2">
             <a
@@ -1461,7 +1461,7 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
         {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
-        <div className="flex gap-2 mb-2">
+        <div className="flex gap-2">
           <button
             onClick={sendWhatsAppNotification}
             disabled={isSendingNotification}
@@ -1523,12 +1523,12 @@ export default function Home() {
             else if (activeTab === 'purchased') fetchPurchasedItems();
             else { fetchExchangeRate(); }
           }}
-          className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full mb-4"
+          className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
         >
           🔁 {t.refresh}
         </button>
 
-        <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 flex justify-center items-center mb-4">
+        <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 flex justify-center items-center">
           <div className="text-sm font-bold text-gray-600">
             {t.exchangeRate}: <span className="text-indigo-600">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
           </div>
@@ -1586,7 +1586,7 @@ export default function Home() {
       </nav>
 
       {/* ボトムナビゲーション用に下部の余白を追加 */}
-      <main className="max-w-7xl mx-auto px-4 pt-3 sm:pt-4 pb-24 sm:pb-32 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto px-4 pt-0 sm:pt-0 pb-24 sm:pb-32 sm:px-6 lg:px-8">
         {activeTab === 'favorites' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-8">
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.favoritesTab}</h2>

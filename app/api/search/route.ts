@@ -340,9 +340,14 @@ export async function GET(request: Request) {
         const DELIMITER = ' ||| ';
         const titlesToTranslate = items.map(item => item.title).join(DELIMITER);
 
-        // Google Translate API (gtx) を呼び出し
+        // Google Translate API (gtx) を呼び出し (GETだとURL長制限に引っかかるためPOSTに変更)
         const translateRes = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(titlesToTranslate)}`
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ q: titlesToTranslate }).toString()
+          }
         );
         const translateData = await translateRes.json();
 
