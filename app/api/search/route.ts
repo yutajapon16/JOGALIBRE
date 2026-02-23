@@ -91,7 +91,7 @@ export async function GET(request: Request) {
         formattedTime = `${d} ${h} ${m}`;
       }
 
-      return formattedTime || raw.replace(/残り|あと|残り時間/g, '').trim();
+      return formattedTime || raw.replace(/残り|あと|残り時間|まで/g, '').trim();
     };
 
     // パターン1: 検索結果ページ (.Product)
@@ -134,7 +134,7 @@ export async function GET(request: Request) {
       const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
       if (title && url) {
-        items.push({ id, title, titleJa: title, url, imageUrl, currentPrice: price, bids, timeLeft, source: 'yahoo_search' });
+        items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, source: 'yahoo_search' });
       }
     });
 
@@ -188,7 +188,7 @@ export async function GET(request: Request) {
         const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
         if (title && url) {
-          items.push({ id, title, titleJa: title, url, imageUrl, currentPrice: price, bids, timeLeft, source: 'yahoo_category' });
+          items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, source: 'yahoo_category' });
         }
       });
     }
@@ -248,6 +248,17 @@ export async function GET(request: Request) {
         const bidsText = $el.find('dt.bi + dd, .Product__bid').text().replace(/[^\d]/g, '');
         if (bidsText) item.bids = parseInt(bidsText) || 0;
 
+        const dataClParams = $el.find('a[data-cl-params]').attr('data-cl-params') || aTag.attr('data-cl-params') || '';
+        const endMatch = dataClParams.match(/end:(\d+);/);
+        if (endMatch && item.timeLeft === '-') {
+          const endTime = parseInt(endMatch[1], 10) * 1000;
+          const diff = Math.max(0, endTime - Date.now());
+          const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+          const m = Math.floor((diff / 1000 / 60) % 60);
+          item.timeLeft = `${d}d ${h}h ${m}m`;
+        }
+
         if (item.timeLeft === '-') {
           let timeText = $el.find('dt.rem + dd').text().trim();
           if (!timeText) {
@@ -276,6 +287,7 @@ export async function GET(request: Request) {
             titleJa: item.title as string,
             url: item.url as string,
             imageUrl: item.imageUrl as string,
+            images: [item.imageUrl], // ギャラリー対応のためのフォールバック
             currentPrice: item.currentPrice as number,
             bids: item.bids as number,
             timeLeft: item.timeLeft as string,
