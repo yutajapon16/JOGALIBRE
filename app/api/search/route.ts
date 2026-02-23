@@ -133,8 +133,31 @@ export async function GET(request: Request) {
       const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
       const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
+      // 同一商品内の全画像を取得
+      const itemImages: string[] = [];
+      $el.find('img').each((idx, img) => {
+        let src = $(img).attr('src');
+        if (!src || src.includes('blank.gif')) {
+          src = $(img).attr('data-original') || $(img).attr('data-src') || $(img).attr('src');
+        }
+        if (src && !itemImages.includes(src) && (src.includes('auctions.c.yimg.jp') || src.includes('img.auctions.yahoo.co.jp'))) {
+          itemImages.push(src);
+        }
+      });
+
       if (title && url) {
-        items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, source: 'yahoo_search' });
+        items.push({
+          id,
+          title,
+          titleJa: title,
+          url,
+          imageUrl,
+          images: itemImages.length > 0 ? itemImages : [imageUrl],
+          currentPrice: price,
+          bids,
+          timeLeft,
+          source: 'yahoo_search'
+        });
       }
     });
 
@@ -187,8 +210,31 @@ export async function GET(request: Request) {
         const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
         const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
+        // 同一商品内の全画像を取得
+        const itemImages: string[] = [];
+        $el.find('img').each((idx, img) => {
+          let src = $(img).attr('src');
+          if (!src || src.includes('blank.gif')) {
+            src = $(img).attr('data-original') || $(img).attr('data-src') || $(img).attr('src');
+          }
+          if (src && !itemImages.includes(src) && (src.includes('auctions.c.yimg.jp') || src.includes('img.auctions.yahoo.co.jp'))) {
+            itemImages.push(src);
+          }
+        });
+
         if (title && url) {
-          items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, source: 'yahoo_category' });
+          items.push({
+            id,
+            title,
+            titleJa: title,
+            url,
+            imageUrl,
+            images: itemImages.length > 0 ? itemImages : [imageUrl],
+            currentPrice: price,
+            bids,
+            timeLeft,
+            source: 'yahoo_category'
+          });
         }
       });
     }
@@ -240,8 +286,8 @@ export async function GET(request: Request) {
           }
         });
 
-        if (containerImages.length > 0 && !item.imageUrl) {
-          item.imageUrl = containerImages[0];
+        if (containerImages.length > 0) {
+          if (!item.imageUrl) item.imageUrl = containerImages[0];
           item.images = containerImages;
         }
 
