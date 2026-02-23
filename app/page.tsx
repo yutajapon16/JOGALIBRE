@@ -290,6 +290,9 @@ export default function Home() {
   const [customerCounterAmount, setCustomerCounterAmount] = useState('');  // ← 追加
   const [isSendingNotification, setIsSendingNotification] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const t = translations[lang];
 
@@ -331,6 +334,57 @@ export default function Home() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 60000); // 1分おきにチェック
+      return () => clearInterval(interval);
+    }
+  }, [currentUser]);
+
+  const fetchNotifications = async () => {
+    if (!currentUser) return;
+    try {
+      const { data, error } = await supabase
+        .from('app_notifications')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setNotifications(data || []);
+
+      // 開いたときに既読にする
+      if (data && data.some(n => !n.is_read)) {
+        await supabase
+          .from('app_notifications')
+          .update({ is_read: true })
+          .eq('user_id', currentUser.id)
+          .eq('is_read', false);
+        fetchUnreadCount();
+      }
+    } catch (e) {
+      console.error('Error fetching notifications:', e);
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    if (!currentUser) return;
+    try {
+      const { count, error } = await supabase
+        .from('app_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', currentUser.id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+      setUnreadCount(count || 0);
+    } catch (e) {
+      console.error('Error fetching unread count:', e);
+    }
+  };
 
   // PWA (ホーム画面追加時) 向けのカスタム Pull-to-Refresh 実装
   useEffect(() => {
@@ -1351,13 +1405,39 @@ export default function Home() {
 
 
 
-        <div className="relative aspect-square w-full">
-          <img
-            src={product.imageUrl}
-            alt={product.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+        <div className="relative aspect-square w-full group/gallery">
+          {product.images && product.images.length > 1 ? (
+            <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full">
+              {product.images.map((imgUrl: string, idx: number) => (
+                <div key={idx} className="flex-shrink-0 w-full h-full snap-center">
+                  <img
+                    src={imgUrl}
+                    alt={`${product.title} - ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <img
+              src={product.imageUrl}
+              alt={product.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          )}
+
+          {/* 画像インジケーター（複数ある場合のみ） */}
+          {product.images && product.images.length > 1 && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+              {product.images.slice(0, 5).map((_: any, i: number) => (
+                <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/50 shadow-sm"></div>
+              ))}
+              {product.images.length > 5 && <div className="text-[8px] text-white font-bold">+</div>}
+            </div>
+          )}
+
           {/* お気に入り（★）ボタン（画像上・右下） */}
           <button
             onClick={(e) => toggleFavorite(product, e)}
@@ -1445,35 +1525,54 @@ export default function Home() {
         </div>
       )}
       <header className="bg-white shadow sticky top-0 z-50 pt-safe">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
-          {/* 1行目: ロゴ & ログアウト */}
-          <div className="flex justify-between items-center mb-1">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
+          {/* 1行目: ロゴ & 言語選択 & ログアウト */}
+          <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-bold text-black leading-none">{t.title}</h1>
               <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-6 h-6 sm:w-8 sm:h-8 rounded" />
             </div>
 
-            <button
-              onClick={handleLogout}
-              className="px-3 py-2 -mr-2 text-xs text-red-600 hover:text-red-800 font-extrabold flex items-center justify-center min-w-[44px] min-h-[44px] transition-colors hover:bg-red-50 rounded-lg relative z-[60]"
-            >
-              {t.logout}
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+                className="bg-gray-50 border border-gray-200 text-gray-700 py-1 px-2 rounded-lg text-[10px] sm:text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
+              >
+                <option value="es">ES</option>
+                <option value="pt">PT</option>
+              </select>
+
+              <button
+                onClick={handleLogout}
+                className="px-2 py-1 text-[10px] sm:text-xs text-red-600 hover:text-red-800 font-extrabold transition-colors hover:bg-red-50 rounded-lg"
+              >
+                {t.logout}
+              </button>
+            </div>
           </div>
 
-
-          {/* 2行目: サブタイトル & 言語選択 */}
+          {/* 2行目: サブタイトル & お知らせボタン */}
           <div className="flex justify-between items-center">
             <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t.subtitle}</p>
 
-            <select
-              value={lang}
-              onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-              className="bg-white border text-gray-700 py-0.5 px-2 rounded-md text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
+            <button
+              onClick={() => {
+                setShowNotifications(true);
+                fetchNotifications();
+              }}
+              className="relative flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors"
             >
-              <option value="es">Español</option>
-              <option value="pt">Português</option>
-            </select>
+              <span>{lang === 'es' ? 'Avisos' : 'Avisos'}</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
+              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </button>
           </div>
         </div>
       </header>
@@ -2526,6 +2625,77 @@ export default function Home() {
           </div>
         )
       }
-    </div >
+      {/* お知らせモーダル */}
+      {showNotifications && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl shadow-xl flex flex-col max-h-[90vh] sm:max-h-[80vh] overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+            <div className="p-4 border-b flex justify-between items-center bg-white sticky top-0 z-10">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {lang === 'es' ? 'Avisos' : 'Avisos'}
+              </h2>
+              <button
+                onClick={() => setShowNotifications(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-gray-50">
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                  <svg className="w-12 h-12 mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p className="text-sm font-medium">{lang === 'es' ? 'No hay avisos nuevos' : 'Não há avisos novos'}</p>
+                </div>
+              ) : (
+                <div className="space-y-2 sm:space-y-3">
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`p-3 sm:p-4 rounded-xl border transition-all ${!n.is_read ? 'bg-white border-indigo-100 shadow-sm ring-1 ring-indigo-50' : 'bg-gray-50/50 border-gray-100 opacity-80'
+                        }`}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${!n.is_read ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'
+                          }`}>
+                          {n.title}
+                        </span>
+                        <span className="text-[9px] text-gray-400 font-medium">
+                          {new Date(n.created_at).toLocaleString(lang === 'es' ? 'es-ES' : 'pt-BR', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-700 font-semibold leading-relaxed line-clamp-3">
+                        {n.body}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t bg-white safe-area-bottom">
+              <button
+                onClick={() => setShowNotifications(false)}
+                className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors shadow-sm"
+              >
+                {lang === 'es' ? 'Cerrar' : 'Fechar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

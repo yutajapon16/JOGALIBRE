@@ -112,6 +112,27 @@ export async function POST(request: NextRequest) {
         const sentCount = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
         const sent = sentCount > 0;
 
+        // DBに通知履歴を保存
+        try {
+            const logs = targetUserIds.map(uid => ({
+                user_id: uid,
+                title: title || 'JOGALIBRE',
+                body: body || '',
+                url: url || '/',
+                is_read: false
+            }));
+
+            if (logs.length > 0) {
+                const { error: logError } = await supabase
+                    .from('app_notifications')
+                    .insert(logs);
+
+                if (logError) console.error('通知履歴保存エラー:', logError);
+            }
+        } catch (dbErr) {
+            console.error('DB保存クリティカルエラー:', dbErr);
+        }
+
         return NextResponse.json({ success: true, sent, sentCount });
     } catch (error) {
         console.error('通知送信エラー:', error);

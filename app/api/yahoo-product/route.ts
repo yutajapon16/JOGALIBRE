@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     let endTime = null;
     let shippingCost = 0;
     let shippingUnknown = false;
+    let allImages: string[] = [];
 
     const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
 
@@ -71,11 +72,14 @@ export async function POST(request: Request) {
               itemData.productName ||
               '';
 
-            imageUrl = itemData.img?.url ||
+            // 全画像URLを取得
+            allImages = itemData.images?.map((img: any) => img.url) || [];
+
+            imageUrl = allImages[0] ||
+              itemData.img?.url ||
               itemData.image ||
               itemData.imageUrl ||
               itemData.thumbnail ||
-              itemData.images?.[0]?.url ||
               imageUrl;
 
             // 終了時刻を取得（UNIXタイムスタンプまたはISO文字列）
@@ -266,7 +270,8 @@ export async function POST(request: Request) {
       shippingUnknown: shippingUnknown,
       description: description,
       translatedDescription: translatedDescription,
-      titleJa: title
+      titleJa: title,
+      images: allImages.length > 0 ? allImages : [imageUrl]
     };
 
     console.log('Final product:', product);
