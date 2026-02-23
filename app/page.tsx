@@ -1138,6 +1138,20 @@ export default function Home() {
         })
       });
 
+      // 管理者へ通知
+      if (currentUser) {
+        fetch('/api/push-send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sendToAdmins: true,
+            title: 'JOGALIBRE',
+            body: `Result Confirm: ${currentUser.fullName || currentUser.email}`,
+            url: '/admin'
+          })
+        }).catch(e => console.error('Admin push error', e));
+      }
+
       fetchMyRequests();
     } catch (error) {
       console.error('Error confirming:', error);
@@ -1167,8 +1181,9 @@ export default function Home() {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+      <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full relative z-10 pt-safe">
+
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-bold text-black">{t.title}</h1>
             <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-10 h-10 rounded" />
@@ -1414,11 +1429,12 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 relative">
+    <div className="min-h-screen-safe bg-gray-100 relative">
       {/* Pull to Refresh インジケーター表示 */}
       {isRefreshing && (
-        <div className="fixed top-0 left-0 right-0 flex justify-center pt-4 z-[9999] pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-white rounded-full p-2 shadow-xl border border-indigo-100 ring-4 ring-indigo-50">
+        <div className="fixed top-0 left-0 right-0 flex justify-center pt-safe z-[9999] pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-white rounded-full p-2 shadow-xl border border-indigo-100 ring-4 ring-indigo-50 mt-4">
+
             <svg className="animate-spin h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -1426,7 +1442,7 @@ export default function Home() {
           </div>
         </div>
       )}
-      <header className="bg-white shadow">
+      <header className="bg-white shadow sticky top-0 z-50 pt-safe">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ & ログアウト */}
           <div className="flex justify-between items-center mb-1">
@@ -1437,11 +1453,12 @@ export default function Home() {
 
             <button
               onClick={handleLogout}
-              className="text-xs text-red-600 hover:text-red-800 font-bold"
+              className="px-3 py-2 -mr-2 text-xs text-red-600 hover:text-red-800 font-extrabold flex items-center justify-center min-w-[44px] min-h-[44px] transition-colors hover:bg-red-50 rounded-lg relative z-[60]"
             >
               {t.logout}
             </button>
           </div>
+
 
           {/* 2行目: サブタイトル & 言語選択 */}
           <div className="flex justify-between items-center">
@@ -1788,6 +1805,15 @@ export default function Home() {
                           </p>
                           <p className="text-xs text-gray-600">
                             {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* ステータスが承認（approved）かつ最終結果（finalStatus）が未設定の場合の汎用メッセージ */}
+                      {request.status === 'approved' && !request.finalStatus && !request.customerCounterOffer && !request.counterOffer && (
+                        <div className="mb-2 p-3 bg-green-50 rounded">
+                          <p className="text-xs text-gray-600">
+                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando o resultado do leilão.'}
                           </p>
                         </div>
                       )}
