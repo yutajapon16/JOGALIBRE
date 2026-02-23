@@ -1394,7 +1394,7 @@ export default function Home() {
             </div>
             <div className="flex justify-between items-center text-[10px] sm:text-xs bg-red-50 p-1.5 sm:p-2 rounded text-red-700 font-medium">
               <span>{t.timeLeft}:</span>
-              <span className="text-right line-clamp-2 max-w-[60%] font-semibold">{getTimeRemaining('', product.timeLeft)}</span>
+              <span className="text-right line-clamp-2 max-w-[60%] font-semibold">{getTimeRemaining(product.endTime || '', product.timeLeft)}</span>
             </div>
 
             <div className="my-2 sm:my-3">
