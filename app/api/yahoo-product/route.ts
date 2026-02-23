@@ -239,9 +239,23 @@ export async function POST(request: Request) {
       }
     }
 
+    // タイトルの翻訳
+    let translatedTitle = title;
+    if (title && lang !== 'ja') {
+      try {
+        const transRes = await fetch(
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(title)}`
+        );
+        const transData = await transRes.json();
+        translatedTitle = transData?.[0]?.[0]?.[0] || title;
+      } catch (e) {
+        console.error('Title translation error:', e);
+      }
+    }
+
     const product = {
       id: productId,
-      title: title || 'タイトル取得失敗',
+      title: translatedTitle || 'タイトル取得失敗',
       currentPrice: currentPrice,
       bids: bids,
       endTime: endTime,

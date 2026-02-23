@@ -947,7 +947,7 @@ export default function Home() {
           'Content-Type': 'application/json',
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         },
-        body: JSON.stringify({ url: searchUrl })
+        body: JSON.stringify({ url: searchUrl, lang })
       });
 
       const data = await res.json();
@@ -957,7 +957,7 @@ export default function Home() {
         // スクロール処理 (画面上部に商品ボックスが来るようにズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 10;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 100;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -987,7 +987,7 @@ export default function Home() {
         // スクロール処理 (固定ヘッダー分80pxほどズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 10;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 100;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1016,7 +1016,7 @@ export default function Home() {
 
     setActiveCategoryUrl(targetUrl);
     try {
-      const res = await fetch(`/api/search?url=${encodeURIComponent(targetUrl)}&page=${page}`);
+      const res = await fetch(`/api/search?url=${encodeURIComponent(targetUrl)}&page=${page}&lang=${lang}`);
       const data = await res.json();
       if (data.items) {
         setProducts(data.items);
@@ -1024,7 +1024,7 @@ export default function Home() {
         // スクロール処理 (固定ヘッダー分80pxほどズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 10;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 100;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
