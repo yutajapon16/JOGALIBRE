@@ -250,16 +250,14 @@ export async function GET(request: Request) {
 
         const dataClParams = $el.find('a[data-cl-params]').attr('data-cl-params') || aTag.attr('data-cl-params') || '';
         const endMatch = dataClParams.match(/end:(\d+);/);
-        if (endMatch && item.timeLeft === '-') {
+        if (endMatch) {
           const endTime = parseInt(endMatch[1], 10) * 1000;
           const diff = Math.max(0, endTime - Date.now());
           const d = Math.floor(diff / (1000 * 60 * 60 * 24));
           const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
           const m = Math.floor((diff / 1000 / 60) % 60);
           item.timeLeft = `${d}d ${h}h ${m}m`;
-        }
-
-        if (item.timeLeft === '-') {
+        } else {
           let timeText = $el.find('dt.rem + dd').text().trim();
           if (!timeText) {
             timeText = $el.find('span, dd, dt, p, div').filter((idx, ele) => $(ele).text().includes('日') || $(ele).text().includes('時間') || $(ele).text().includes('分')).first().text().trim();

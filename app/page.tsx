@@ -1407,18 +1407,46 @@ export default function Home() {
 
         <div className="relative aspect-square w-full group/gallery">
           {product.images && product.images.length > 1 ? (
-            <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full">
-              {product.images.map((imgUrl: string, idx: number) => (
-                <div key={idx} className="flex-shrink-0 w-full h-full snap-center">
-                  <img
-                    src={imgUrl}
-                    alt={`${product.title} - ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              ))}
-            </div>
+            <>
+              <div
+                id={`gallery-${product.id}`}
+                className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full transition-all"
+              >
+                {product.images.map((imgUrl: string, idx: number) => (
+                  <div key={idx} className="flex-shrink-0 w-full h-full snap-center">
+                    <img
+                      src={imgUrl}
+                      alt={`${product.title} - ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+              {/* 左右の矢印ボタン（PC・タブレット向け、スマホでもタップ可能） */}
+              <div className="absolute inset-0 flex items-center justify-between p-2 opacity-0 group-hover/gallery:opacity-100 transition-opacity pointer-events-none">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const el = document.getElementById(`gallery-${product.id}`);
+                    if (el) el.scrollBy({ left: -el.clientWidth, behavior: 'smooth' });
+                  }}
+                  className="p-1.5 rounded-full bg-white/80 shadow-md pointer-events-auto hover:bg-white transition-colors"
+                >
+                  <svg className="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const el = document.getElementById(`gallery-${product.id}`);
+                    if (el) el.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
+                  }}
+                  className="p-1.5 rounded-full bg-white/80 shadow-md pointer-events-auto hover:bg-white transition-colors"
+                >
+                  <svg className="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+            </>
           ) : (
             <img
               src={product.imageUrl}
@@ -1430,11 +1458,11 @@ export default function Home() {
 
           {/* 画像インジケーター（複数ある場合のみ） */}
           {product.images && product.images.length > 1 && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 bg-black/20 px-2 py-1 rounded-full backdrop-blur-[2px]">
               {product.images.slice(0, 5).map((_: any, i: number) => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/50 shadow-sm"></div>
+                <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/60 shadow-sm"></div>
               ))}
-              {product.images.length > 5 && <div className="text-[8px] text-white font-bold">+</div>}
+              {product.images.length > 5 && <div className="text-[8px] text-white font-bold leading-none">+</div>}
             </div>
           )}
 
@@ -2485,11 +2513,34 @@ export default function Home() {
               <h2 className="text-2xl font-bold mb-4">{t.makeOffer}</h2>
 
               <div className="flex gap-3 mb-4">
-                <img
-                  src={selectedProduct.imageUrl}
-                  alt={selectedProduct.title}
-                  className="w-32 h-32 object-cover rounded flex-shrink-0"
-                />
+                <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 relative group/modal-gallery">
+                  {selectedProduct.images && selectedProduct.images.length > 1 ? (
+                    <>
+                      <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full">
+                        {selectedProduct.images.map((imgUrl: string, idx: number) => (
+                          <div key={idx} className="flex-shrink-0 w-full h-full snap-center">
+                            <img
+                              src={imgUrl}
+                              alt={`${selectedProduct.title} - ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5 z-10">
+                        {selectedProduct.images.slice(0, 3).map((_: any, i: number) => (
+                          <div key={i} className="w-1 h-1 rounded-full bg-white/60 shadow-sm"></div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <img
+                      src={selectedProduct.imageUrl}
+                      alt={selectedProduct.title}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
                 <div className="flex-1 flex flex-col py-0.5 overflow-hidden">
                   <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{selectedProduct.title}</h3>
                   <div className="flex flex-col gap-0.5 mt-auto mb-2">
