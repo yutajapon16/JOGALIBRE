@@ -954,6 +954,15 @@ export default function Home() {
       console.log('Imported product data:', data.product);
       if (data.product) {
         setProducts([data.product]);
+        // スクロール処理 (画面上部に商品ボックスが来るようにズラす)
+        setTimeout(() => {
+          if (resultsRef.current) {
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 10;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
       }
     } catch (error) {
       console.error('Error importing product:', error);
