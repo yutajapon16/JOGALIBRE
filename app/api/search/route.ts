@@ -119,11 +119,13 @@ export async function GET(request: Request) {
       const timeLeftRaw = $el.find('.Product__time, .item__time, .time, .date').text().trim();
       let timeLeft = parseTimeLeft(timeLeftRaw);
 
+      let endTimeISO = '';
       // UnixTimeからの正確な時間計算 (data-cl-params内 end:1772115843; 等)
       const endMatch = dataClParams.match(/end:(\d+);/);
       if (endMatch) {
-        const endTime = parseInt(endMatch[1], 10) * 1000;
-        const diff = Math.max(0, endTime - Date.now());
+        const endTimeUnix = parseInt(endMatch[1], 10) * 1000;
+        endTimeISO = new Date(endTimeUnix).toISOString();
+        const diff = Math.max(0, endTimeUnix - Date.now());
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
         const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
         const m = Math.floor((diff / 1000 / 60) % 60);
@@ -134,7 +136,7 @@ export async function GET(request: Request) {
       const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
       if (title && url) {
-        items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, source: 'yahoo_search' });
+        items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, endTime: endTimeISO, source: 'yahoo_search' });
       }
     });
 
@@ -173,11 +175,13 @@ export async function GET(request: Request) {
         const timeLeftRaw = $el.find('.Product__time, .item__time, .sdc-time, .time, .date, .lb-item__time').text().trim();
         let timeLeft = parseTimeLeft(timeLeftRaw);
 
+        let endTimeISO = '';
         // UnixTimeからの正確な時間計算 (data-cl-params内 end:1772115843; 等)
         const endMatch = dataClParams.match(/end:(\d+);/);
         if (endMatch) {
-          const endTime = parseInt(endMatch[1], 10) * 1000;
-          const diff = Math.max(0, endTime - Date.now());
+          const endTimeUnix = parseInt(endMatch[1], 10) * 1000;
+          endTimeISO = new Date(endTimeUnix).toISOString();
+          const diff = Math.max(0, endTimeUnix - Date.now());
           const d = Math.floor(diff / (1000 * 60 * 60 * 24));
           const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
           const m = Math.floor((diff / 1000 / 60) % 60);
@@ -188,7 +192,7 @@ export async function GET(request: Request) {
         const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
         if (title && url) {
-          items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, source: 'yahoo_category' });
+          items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, endTime: endTimeISO, source: 'yahoo_category' });
         }
       });
     }

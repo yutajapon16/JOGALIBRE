@@ -260,12 +260,23 @@ export async function POST(request: Request) {
       }
     }
 
+    // 残り時間の計算 (詳細取得用)
+    let timeLeft = '-';
+    if (endTime) {
+      const diff = Math.max(0, new Date(endTime).getTime() - Date.now());
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diff / 1000 / 60) % 60);
+      timeLeft = `${d}d ${h}h ${m}m`;
+    }
+
     const product = {
       id: productId,
       title: translatedTitle || 'タイトル取得失敗',
       currentPrice: currentPrice,
       bids: bids,
       endTime: endTime,
+      timeLeft: timeLeft, // 追加
       imageUrl: imageUrl,
       url: url,
       source: 'yahoo_url_import',

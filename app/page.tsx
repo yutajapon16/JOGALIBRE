@@ -579,6 +579,7 @@ export default function Home() {
           currentPrice: f.product_price,
           bids: f.bids,
           timeLeft: f.time_left,
+          endTime: f.product_end_time, // 追加: リアルタイムカウントダウン用
           isFavorite: true, // internal flag
           dbId: f.id // needed for delete
         }));
@@ -628,7 +629,8 @@ export default function Home() {
           product_image: product.imageUrl,
           product_price: product.currentPrice,
           bids: product.bids || 0,
-          time_left: product.timeLeft || ''
+          time_left: product.timeLeft || '',
+          product_end_time: product.endTime || null // 追加
         };
 
         const { data, error } = await supabase
@@ -648,6 +650,7 @@ export default function Home() {
           currentPrice: data.product_price,
           bids: data.bids,
           timeLeft: data.time_left,
+          endTime: data.product_end_time, // 追加
           isFavorite: true,
           dbId: data.id
         }, ...prev]);
