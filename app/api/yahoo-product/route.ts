@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { url } = await request.json();
+    const body = await request.json();
+    const url = body.url;
+    const lang = body.lang || 'ja';
 
     if (!url || !url.includes('auctions.yahoo.co.jp')) {
       return NextResponse.json(
@@ -221,9 +223,7 @@ export async function POST(request: Request) {
 
     // 説明文の翻訳 (オプション: パラメータで言語が指定されている場合)
     let translatedDescription = '';
-    const { lang = 'ja' } = await (async () => {
-      try { return await request.clone().json(); } catch (e) { return {}; }
-    })();
+    // ここで lang を再宣言しない
 
     if (description && lang !== 'ja') {
       try {

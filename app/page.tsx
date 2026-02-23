@@ -959,7 +959,7 @@ export default function Home() {
         // スクロール処理 (画面上部に商品ボックスが来るようにズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 120;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 110;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -989,7 +989,7 @@ export default function Home() {
         // スクロール処理 (固定ヘッダー分80pxほどズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 120;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 110;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1026,7 +1026,7 @@ export default function Home() {
         // スクロール処理 (固定ヘッダー分80pxほどズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 120;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 110;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1186,7 +1186,7 @@ export default function Home() {
       <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full relative z-10 pt-safe">
 
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2 mt-4">
             <h1 className="text-3xl font-bold text-black">{t.title}</h1>
             <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-10 h-10 rounded" />
           </div>
