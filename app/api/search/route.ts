@@ -336,8 +336,9 @@ export async function GET(request: Request) {
     // --- タイトル一括自動翻訳 (無料Google Translate API) ---
     if (items.length > 0 && lang !== 'ja') {
       try {
-        // 全タイトルを \n で結合して1リクエストで送信
-        const titlesToTranslate = items.map(item => item.title).join('\\n');
+        // 全タイトルをユニークな文字列 " ||| " で結合して1リクエストで送信
+        const DELIMITER = ' ||| ';
+        const titlesToTranslate = items.map(item => item.title).join(DELIMITER);
 
         // Google Translate API (gtx) を呼び出し
         const translateRes = await fetch(
@@ -345,13 +346,15 @@ export async function GET(request: Request) {
         );
         const translateData = await translateRes.json();
 
-        // 翻訳結果は配列の配列で返ってくる [["翻訳1\n", "原文1\n"], ["翻訳2\n", "原文2\n"], ...]
+        // 翻訳結果は配列の配列で返ってくる
         if (translateData && translateData[0]) {
           let fullTranslatedText = '';
           for (let i = 0; i < translateData[0].length; i++) {
             fullTranslatedText += translateData[0][i][0];
           }
-          const translatedTitles = fullTranslatedText.split('\\n');
+
+          // Google翻訳がパイプ周りのスペースを勝手に詰める/開けることがあるため、正規表現で柔軟にスプリットする
+          const translatedTitles = fullTranslatedText.split(/\s*\|\|\|\s*/);
 
           // 元の items 配列に翻訳後のタイトルを適用
           items.forEach((item, index) => {

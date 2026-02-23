@@ -1351,7 +1351,7 @@ export default function Home() {
           </button>
         </div>
         <div className="p-3 sm:p-4 flex flex-col flex-1">
-          <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 h-[2rem] sm:h-[2.5rem] mb-2 leading-tight flex-grow-0 w-full overflow-hidden text-ellipsis">{product.title}</h3>
+          <h3 className="font-semibold text-[11px] sm:text-xs text-gray-800 line-clamp-2 leading-tight flex-grow-0 w-full overflow-hidden text-ellipsis block h-[2.2rem] sm:h-[2.4rem] mb-2">{product.title}</h3>
 
           <div className="mt-auto space-y-1.5 sm:space-y-2">
             <a
@@ -1514,12 +1514,12 @@ export default function Home() {
             else if (activeTab === 'purchased') fetchPurchasedItems();
             else { fetchExchangeRate(); }
           }}
-          className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full mb-3"
+          className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full mb-4"
         >
           🔁 {t.refresh}
         </button>
 
-        <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 flex justify-center items-center">
+        <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 flex justify-center items-center mb-4">
           <div className="text-sm font-bold text-gray-600">
             {t.exchangeRate}: <span className="text-indigo-600">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
           </div>
