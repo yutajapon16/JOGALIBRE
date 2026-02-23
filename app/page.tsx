@@ -781,7 +781,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           productId: selectedProduct.id,
-          productTitle: selectedProduct.title,
+          productTitle: selectedProduct.titleJa || selectedProduct.title,
           productUrl: selectedProduct.url,
           productImage: selectedProduct.imageUrl,
           productPrice: selectedProduct.currentPrice,

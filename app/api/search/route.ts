@@ -134,7 +134,7 @@ export async function GET(request: Request) {
       const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
       if (title && url) {
-        items.push({ id, title, url, imageUrl, currentPrice: price, bids, timeLeft, source: 'yahoo_search' });
+        items.push({ id, title, titleJa: title, url, imageUrl, currentPrice: price, bids, timeLeft, source: 'yahoo_search' });
       }
     });
 
@@ -188,7 +188,7 @@ export async function GET(request: Request) {
         const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
         if (title && url) {
-          items.push({ id, title, url, imageUrl, currentPrice: price, bids, timeLeft, source: 'yahoo_category' });
+          items.push({ id, title, titleJa: title, url, imageUrl, currentPrice: price, bids, timeLeft, source: 'yahoo_category' });
         }
       });
     }
@@ -273,6 +273,7 @@ export async function GET(request: Request) {
           items.push({
             id: item.id as string,
             title: item.title as string,
+            titleJa: item.title as string,
             url: item.url as string,
             imageUrl: item.imageUrl as string,
             currentPrice: item.currentPrice as number,

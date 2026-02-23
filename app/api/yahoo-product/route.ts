@@ -265,7 +265,8 @@ export async function POST(request: Request) {
       shippingCost: shippingCost,
       shippingUnknown: shippingUnknown,
       description: description,
-      translatedDescription: translatedDescription
+      translatedDescription: translatedDescription,
+      titleJa: title
     };
 
     console.log('Final product:', product);
