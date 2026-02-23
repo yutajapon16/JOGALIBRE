@@ -1415,73 +1415,14 @@ export default function Home() {
 
 
 
-        <div className="relative aspect-square w-full group/gallery">
-          {product.images && product.images.length > 1 ? (
-            <>
-              <div
-                id={`gallery-${product.id}`}
-                className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full transition-all"
-              >
-                {product.images.map((imgUrl: string, idx: number) => (
-                  <div key={idx} className="flex-shrink-0 w-full h-full snap-center">
-                    <img
-                      src={imgUrl}
-                      alt={`${product.title} - ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                ))}
-              </div>
+        <div className="relative aspect-square w-full">
+          <img
+            src={product.imageUrl}
+            alt={product.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
 
-              {/* 画像枚数バッジ */}
-              <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm z-10 pointer-events-none flex items-center gap-1 shadow-sm">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /></svg>
-                {product.images.length} {lang === 'es' ? 'fotos' : 'fotos'}
-              </div>
-
-              {/* 左右の矢印ボタン（PC・タブレット向け、スマホでもタップ可能） */}
-              <div className="absolute inset-0 flex items-center justify-between p-1 sm:p-2 opacity-100 sm:opacity-0 sm:group-hover/gallery:opacity-100 transition-opacity pointer-events-none">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const el = document.getElementById(`gallery-${product.id}`);
-                    if (el) el.scrollBy({ left: -el.clientWidth, behavior: 'smooth' });
-                  }}
-                  className="p-1 sm:p-1.5 rounded-full bg-white/90 shadow-md pointer-events-auto hover:bg-white transition-colors"
-                >
-                  <svg className="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const el = document.getElementById(`gallery-${product.id}`);
-                    if (el) el.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
-                  }}
-                  className="p-1 sm:p-1.5 rounded-full bg-white/90 shadow-md pointer-events-auto hover:bg-white transition-colors"
-                >
-                  <svg className="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
-                </button>
-              </div>
-            </>
-          ) : (
-            <img
-              src={product.imageUrl}
-              alt={product.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          )}
-
-          {/* 画像インジケーター（複数ある場合のみ） */}
-          {product.images && product.images.length > 1 && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm shadow-sm">
-              {product.images.slice(0, 8).map((_: any, i: number) => (
-                <div key={i} className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white/80"></div>
-              ))}
-              {product.images.length > 8 && <div className="text-[8px] text-white font-bold leading-none translate-y-[1px]">+</div>}
-            </div>
-          )}
 
           {/* お気に入り（★）ボタン（画像上・右下） */}
           <button
