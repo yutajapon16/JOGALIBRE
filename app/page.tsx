@@ -981,6 +981,16 @@ export default function Home() {
         const detail = data.product;
         setSelectedProduct(detail);
         setBidForm({ name: '', maxBid: '' });
+
+        // 商品リスト(products)を同期更新
+        setProducts(prev => prev.map(p =>
+          p.url === detail.url ? { ...p, ...detail, images: detail.images || [detail.imageUrl] } : p
+        ));
+
+        // お気に入りリスト(favorites)も同期更新（もし存在すれば）
+        setFavorites(prev => prev.map(f =>
+          f.url === detail.url ? { ...f, ...detail, images: detail.images || [detail.imageUrl] } : f
+        ));
       }
     } catch (error) {
       console.error('Error fetching product for offer:', error);

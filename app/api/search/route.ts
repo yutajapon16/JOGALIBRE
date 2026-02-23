@@ -228,13 +228,21 @@ export async function GET(request: Request) {
           item.title = titleText;
         }
 
-        const imgNode = $el.find('img[src*="auction"], .i img, img').first();
-        if (imgNode.length > 0 && !item.imageUrl) {
-          let src = imgNode.attr('src');
+        const imgNodes = $el.find('img[src*="auction"], .i img, img');
+        const containerImages: string[] = [];
+        imgNodes.each((idx, node) => {
+          let src = $(node).attr('src');
           if (!src || src.includes('blank.gif')) {
-            src = imgNode.attr('data-original') || imgNode.attr('data-src');
+            src = $(node).attr('data-original') || $(node).attr('data-src');
           }
-          if (src) item.imageUrl = src;
+          if (src && (src.includes('auctions.c.yimg.jp') || src.includes('img.auctions.yahoo.co.jp'))) {
+            containerImages.push(src);
+          }
+        });
+
+        if (containerImages.length > 0 && !item.imageUrl) {
+          item.imageUrl = containerImages[0];
+          item.images = containerImages;
         }
 
         if (item.currentPrice === 0) {
@@ -285,7 +293,7 @@ export async function GET(request: Request) {
             titleJa: item.title as string,
             url: item.url as string,
             imageUrl: item.imageUrl as string,
-            images: [item.imageUrl], // ギャラリー対応のためのフォールバック
+            images: item.images || [item.imageUrl], // ギャラリー対応
             currentPrice: item.currentPrice as number,
             bids: item.bids as number,
             timeLeft: item.timeLeft as string,

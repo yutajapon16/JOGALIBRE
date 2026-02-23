@@ -73,7 +73,10 @@ export async function POST(request: Request) {
               '';
 
             // 全画像URLを取得
-            allImages = itemData.images?.map((img: any) => img.url) || [];
+            allImages = itemData.images?.map((img: any) => img.url) ||
+              itemData.imageDetail?.map((img: any) => img.url) ||
+              itemData.gallery?.map((img: any) => img.url) ||
+              [];
 
             imageUrl = allImages[0] ||
               itemData.img?.url ||
