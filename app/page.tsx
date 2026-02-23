@@ -100,6 +100,7 @@ const translations = {
     categoriesTab: 'Categoría',
     searchTab: 'Palabra',
     searchBottomTab: 'Busca',
+    searchAction: 'Buscar',
     urlTab: 'URL',
     favoritesTab: 'Favoritos',
     addedToFavorites: 'Añadido a favoritos',
@@ -196,6 +197,7 @@ const translations = {
     categoriesTab: 'Categoria',
     searchTab: 'Palavra',
     searchBottomTab: 'Busca',
+    searchAction: 'Buscar',
     urlTab: 'URL',
     favoritesTab: 'Favoritos',
     addedToFavorites: 'Adicionado aos favoritos',
@@ -957,7 +959,7 @@ export default function Home() {
         // スクロール処理 (画面上部に商品ボックスが来るようにズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 100;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 120;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -987,7 +989,7 @@ export default function Home() {
         // スクロール処理 (固定ヘッダー分80pxほどズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 100;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 120;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1024,7 +1026,7 @@ export default function Home() {
         // スクロール処理 (固定ヘッダー分80pxほどズラす)
         setTimeout(() => {
           if (resultsRef.current) {
-            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 100;
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 120;
             window.scrollTo({ top: y, behavior: 'smooth' });
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1614,7 +1616,7 @@ export default function Home() {
                   onClick={() => setActiveTab('search')}
                   className="mt-4 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-full font-bold text-sm hover:bg-indigo-100 transition"
                 >
-                  {t.searchTab}
+                  {t.searchAction}
                 </button>
               </div>
             ) : (
