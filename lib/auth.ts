@@ -84,25 +84,34 @@ export async function updateProfile(fullName: string, whatsapp: string) {
 }
 
 export async function getCurrentUser(): Promise<User | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user || (await supabase.auth.getUser()).data.user;
 
-  if (!user) return null;
+    if (!user) return null;
 
-  const { data: roleData } = await supabase
-    .from('user_roles')
-    .select('role, full_name, whatsapp')
-    .eq('id', user.id)
-    .single();
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role, full_name, whatsapp')
+      .eq('id', user.id)
+      .single();
 
-  if (!roleData) return null;
+    if (roleError || !roleData) {
+      console.warn('Role data not found for user:', user.id);
+      return null;
+    }
 
-  return {
-    id: user.id,
-    email: user.email!,
-    role: roleData.role as UserRole,
-    fullName: roleData.full_name || undefined,
-    whatsapp: roleData.whatsapp || undefined,
-  };
+    return {
+      id: user.id,
+      email: user.email!,
+      role: roleData.role as UserRole,
+      fullName: roleData.full_name || undefined,
+      whatsapp: roleData.whatsapp || undefined,
+    };
+  } catch (error) {
+    console.error('Error in getCurrentUser:', error);
+    return null;
+  }
 }
 
 export function onAuthStateChange(callback: (user: User | null) => void) {

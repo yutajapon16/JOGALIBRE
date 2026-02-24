@@ -56,12 +56,13 @@ export default function AdminDashboard() {
       }
     });
 
-    // セッション変更を監視（トークンリフレッシュ時の自動復元のみ）
+    // セッション変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Admin Auth event:', event);
       if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
-      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        // トークンリフレッシュ時のみセッション復元（ログイン処理との競合を防止）
+      } else if (session?.user) {
+        // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
         const user = await getCurrentUser();
         if (user?.role === 'admin') {
           setCurrentUser(user);
