@@ -1,68 +1,22 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/auth-helpers-nextjs';
 
-
+// Bearerトークンからユーザーを取得するヘルパー
+async function getUserFromRequest(request: Request) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  const token = authHeader.split(' ')[1];
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !user) return null;
+  return user;
+}
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const supabaseRoute = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Server Component からの呼び出し時は無視される
-            }
-          },
-        },
-      }
-    );
-    let { data: { session }, error: sessionError } = await supabaseRoute.auth.getSession();
-
-    // クッキーでセッションが見つからない場合、Authorization ヘッダーを試行
-    let userFromToken = session?.user || null;
-    if (!session) {
-      const authHeader = request.headers.get('Authorization');
-      console.log('Auth Header:', authHeader ? 'Present (starts with ' + authHeader.substring(0, 15) + '...)' : 'MISSING');
-
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        const { data: { user: oauthUser }, error: oauthError } = await supabaseAdmin.auth.getUser(token);
-
-        if (oauthError) {
-          console.error('Token verification error:', oauthError.message);
-        }
-
-        if (!oauthError && oauthUser) {
-          userFromToken = oauthUser;
-          console.log('Authenticated via Authorization header successfully');
-        }
-      }
-    }
-
-    console.log('=== Bid Request POST Debug ===');
-    if (sessionError) console.error('Session Error:', sessionError);
-    console.log('Auth Method:', session ? 'Cookie' : (userFromToken ? 'Header' : 'None'));
-    console.log('User:', userFromToken?.email, 'ID:', userFromToken?.id);
-
+    const userFromToken = await getUserFromRequest(request);
     if (!userFromToken) {
-      console.error('No authenticated user found (Cookie or Token)');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // session ではなく userFromToken を以降で使用する準備
-    // (既存の session.user.id 参照を userFromToken.id に読み替える)
     const effectiveUser = userFromToken;
 
     const { data: roleData, error: roleError } = await supabaseAdmin
@@ -142,46 +96,10 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const supabaseRoute = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Server Component からの呼び出し時は無視される
-            }
-          },
-        },
-      }
-    );
-    const { data: { session } } = await supabaseRoute.auth.getSession();
-
-    // クッキーでセッションが見つからない場合、Authorization ヘッダーを試行
-    let userFromToken = session?.user || null;
-    if (!session) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        const { data: { user: oauthUser } } = await supabaseAdmin.auth.getUser(token);
-        if (oauthUser) {
-          userFromToken = oauthUser;
-        }
-      }
-    }
-
+    const userFromToken = await getUserFromRequest(request);
     if (!userFromToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const effectiveUser = userFromToken;
 
     const { data: roleData } = await supabaseAdmin
@@ -329,46 +247,10 @@ async function getUserInfo(email: string) {
 
 export async function DELETE(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const supabaseRoute = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Server Component からの呼び出し時は無視される
-            }
-          },
-        },
-      }
-    );
-    const { data: { session } } = await supabaseRoute.auth.getSession();
-
-    // クッキーでセッションが見つからない場合、Authorization ヘッダーを試行
-    let userFromToken = session?.user || null;
-    if (!session) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        const { data: { user: oauthUser } } = await supabaseAdmin.auth.getUser(token);
-        if (oauthUser) {
-          userFromToken = oauthUser;
-        }
-      }
-    }
-
+    const userFromToken = await getUserFromRequest(request);
     if (!userFromToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const effectiveUser = userFromToken;
 
     const { data: roleData } = await supabaseAdmin
@@ -417,46 +299,10 @@ export async function DELETE(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const supabaseRoute = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Server Component からの呼び出し時は無視される
-            }
-          },
-        },
-      }
-    );
-    const { data: { session } } = await supabaseRoute.auth.getSession();
-
-    // クッキーでセッションが見つからない場合、Authorization ヘッダーを試行
-    let userFromToken = session?.user || null;
-    if (!session) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        const { data: { user: oauthUser } } = await supabaseAdmin.auth.getUser(token);
-        if (oauthUser) {
-          userFromToken = oauthUser;
-        }
-      }
-    }
-
+    const userFromToken = await getUserFromRequest(request);
     if (!userFromToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
     const effectiveUser = userFromToken;
 
     const { data: roleData } = await supabaseAdmin
