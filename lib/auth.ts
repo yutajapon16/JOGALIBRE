@@ -8,6 +8,7 @@ export interface User {
   role: UserRole;
   fullName?: string;
   whatsapp?: string;
+  customerId?: string;
 }
 
 export async function signUp(
@@ -94,35 +95,47 @@ export async function getCurrentUser(): Promise<User | null> {
 
     if (!user) return null;
 
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('role, full_name, whatsapp')
-      .eq('id', user.id)
-      .single();
-
-    if (roleError || !roleData) {
-      console.warn('Role data not found for user:', user.id, 'Error:', roleError);
-      // 管理者アドレスならadmin、それ以外はcustomerとしてフォールバック
-      const isExportAdmin = user.email?.toLowerCase() === 'export@joga.ltd';
-      return {
-        id: user.id,
-        email: user.email!,
-        role: isExportAdmin ? 'admin' : 'customer'
-      };
+    // サーバーサイドAPI経由でプロフィールを取得（RLSを回避）
+    const accessToken = session?.access_token;
+    if (accessToken) {
+      try {
+        const res = await fetch('/api/profile', {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        if (res.ok) {
+          const { profile } = await res.json();
+          if (profile) {
+            return {
+              id: user.id,
+              email: user.email!,
+              role: profile.role as UserRole,
+              fullName: profile.full_name || undefined,
+              whatsapp: profile.whatsapp || undefined,
+              customerId: profile.customer_id || undefined,
+            };
+          }
+        }
+      } catch (apiError) {
+        console.warn('Profile API call failed, using fallback:', apiError);
+      }
     }
 
+    // フォールバック: メタデータから取得
+    const metadata = user.user_metadata || {};
+    const isExportAdmin = user.email?.toLowerCase() === 'export@joga.ltd';
     return {
       id: user.id,
       email: user.email!,
-      role: roleData.role as UserRole,
-      fullName: roleData.full_name || undefined,
-      whatsapp: roleData.whatsapp || undefined,
+      role: isExportAdmin ? 'admin' : ((metadata.role as UserRole) || 'customer'),
+      fullName: metadata.full_name || undefined,
+      whatsapp: metadata.whatsapp || undefined,
     };
   } catch (error) {
     console.error('Error in getCurrentUser:', error);
     return null;
   }
 }
+
 
 export function onAuthStateChange(callback: (user: User | null) => void) {
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
