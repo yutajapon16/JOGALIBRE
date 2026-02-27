@@ -51,6 +51,10 @@ export async function signIn(email: string, password: string) {
 
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
+  if (typeof window !== 'undefined') {
+    localStorage.clear();
+    sessionStorage.clear();
+  }
   if (error) throw error;
 }
 
@@ -97,8 +101,14 @@ export async function getCurrentUser(): Promise<User | null> {
       .single();
 
     if (roleError || !roleData) {
-      console.warn('Role data not found for user:', user.id);
-      return null;
+      console.warn('Role data not found for user:', user.id, 'Error:', roleError);
+      // 管理者アドレスならadmin、それ以外はcustomerとしてフォールバック
+      const isExportAdmin = user.email?.toLowerCase() === 'export@joga.ltd';
+      return {
+        id: user.id,
+        email: user.email!,
+        role: isExportAdmin ? 'admin' : 'customer'
+      };
     }
 
     return {
