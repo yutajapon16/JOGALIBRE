@@ -41,6 +41,13 @@ export async function signUp(
 }
 
 export async function signIn(email: string, password: string) {
+  // 古い壊れたセッションをクリアしてから新規ログイン
+  try {
+    await supabase.auth.signOut({ scope: 'local' });
+  } catch {
+    // 無視（既にログアウト状態の場合）
+  }
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -51,11 +58,9 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
+  // supabase.auth.signOut() が自動的にセッショントークンを
+  // localStorage から削除するため、手動での clear() は不要
   const { error } = await supabase.auth.signOut();
-  if (typeof window !== 'undefined') {
-    localStorage.clear();
-    sessionStorage.clear();
-  }
   if (error) throw error;
 }
 

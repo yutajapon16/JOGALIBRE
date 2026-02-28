@@ -729,8 +729,7 @@ export default function Home() {
 
     try {
       await signIn(email, password);
-      const user = await getCurrentUser();
-      setCurrentUser(user);
+      // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
       setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
     } catch (error) {
       console.error('Login error:', error);

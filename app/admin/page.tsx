@@ -66,6 +66,10 @@ export default function AdminDashboard() {
         const user = await getCurrentUser();
         if (user?.role === 'admin') {
           setCurrentUser(user);
+        } else if (event === 'SIGNED_IN') {
+          // 管理者以外がログインした場合
+          await supabase.auth.signOut({ scope: 'local' });
+          alert('管理者アカウントでログインしてください');
         }
       }
     });
@@ -167,16 +171,8 @@ export default function AdminDashboard() {
     e.preventDefault();
     try {
       await signIn(loginForm.email, loginForm.password);
-      const user = await getCurrentUser();
-
-      // 管理者ロールチェック
-      if (user?.role !== 'admin') {
-        await signOut();
-        alert('管理者アカウントでログインしてください');
-        return;
-      }
-
-      setCurrentUser(user);
+      // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
+      // ロールチェックは onAuthStateChange 内で行われる（admin のみ setCurrentUser）
       setLoginForm({ email: '', password: '' });
     } catch (error) {
       console.error('Login error:', error);
