@@ -110,32 +110,26 @@ export async function getCurrentUser(): Promise<User | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    // セッションからAccess Tokenを取得
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token;
+    // クライアントから直接user_rolesテーブルを参照
+    try {
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role, full_name, whatsapp, customer_id')
+        .eq('id', user.id)
+        .single();
 
-    // サーバーサイドAPI経由でプロフィールを取得（RLSを回避）
-    if (accessToken) {
-      try {
-        const res = await fetch('/api/profile', {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        if (res.ok) {
-          const { profile } = await res.json();
-          if (profile) {
-            return {
-              id: user.id,
-              email: user.email!,
-              role: profile.role as UserRole,
-              fullName: profile.full_name || undefined,
-              whatsapp: profile.whatsapp || undefined,
-              customerId: profile.customer_id || undefined,
-            };
-          }
-        }
-      } catch (apiError) {
-        console.warn('Profile API call failed, using fallback:', apiError);
+      if (!roleError && roleData) {
+        return {
+          id: user.id,
+          email: user.email!,
+          role: roleData.role as UserRole,
+          fullName: roleData.full_name || undefined,
+          whatsapp: roleData.whatsapp || undefined,
+          customerId: roleData.customer_id || undefined,
+        };
       }
+    } catch (dbError) {
+      console.warn('Direct DB query failed, using fallback:', dbError);
     }
 
     // フォールバック: メタデータから取得

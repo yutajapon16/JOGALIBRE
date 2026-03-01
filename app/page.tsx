@@ -606,16 +606,20 @@ export default function Home() {
   const fetchFavorites = async () => {
     if (currentUser) {
       try {
-        const { data, error } = await supabase
-          .from('favorites')
-          .select('*')
-          .eq('user_id', currentUser.id)
-          .order('created_at', { ascending: false });
+        const { data: { session: clientSession } } = await supabase.auth.getSession();
+        const accessToken = clientSession?.access_token;
 
-        if (error) throw error;
+        const res = await fetch('/api/favorites', {
+          headers: {
+            'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+          }
+        });
+
+        if (!res.ok) throw new Error('Failed to fetch favorites');
+        const { favorites: data } = await res.json();
 
         // format to match product structure
-        const formattedFavorites = (data || []).map(f => ({
+        const formattedFavorites = (data || []).map((f: any) => ({
           id: f.product_id,
           title: f.product_title,
           url: f.product_url,
@@ -623,8 +627,8 @@ export default function Home() {
           currentPrice: f.product_price,
           bids: f.bids,
           timeLeft: f.time_left,
-          isFavorite: true, // internal flag
-          dbId: f.id // needed for delete
+          isFavorite: true,
+          dbId: f.id
         }));
 
         setFavorites(formattedFavorites);
@@ -648,42 +652,49 @@ export default function Home() {
     setIsTogglingFavorite(product.id);
 
     try {
-      // Check if it's already a favorite (search in state)
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+      const authHeaders: Record<string, string> = {
+        'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+      };
+
+      // お気に入り済みか確認（ローカルstate）
       const existingFav = favorites.find(f => f.id === product.id);
 
       if (existingFav) {
-        // Remove from favorites
-        const { error } = await supabase
-          .from('favorites')
-          .delete()
-          .eq('id', existingFav.dbId);
+        // お気に入り削除
+        const res = await fetch(`/api/favorites?id=${existingFav.dbId}`, {
+          method: 'DELETE',
+          headers: authHeaders
+        });
 
-        if (error) throw error;
+        if (!res.ok) throw new Error('Delete failed');
 
-        // Update local state without refetching for speed
+        // ローカルstate更新
         setFavorites(prev => prev.filter(f => f.id !== product.id));
       } else {
-        // Add to favorites
-        const newFav = {
-          user_id: currentUser.id,
-          product_id: product.id,
-          product_title: product.title,
-          product_url: product.url,
-          product_image: product.imageUrl,
-          product_price: product.currentPrice,
-          bids: product.bids || 0,
-          time_left: product.timeLeft || ''
-        };
+        // お気に入り追加
+        const res = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders
+          },
+          body: JSON.stringify({
+            productId: product.id,
+            productTitle: product.title,
+            productUrl: product.url,
+            productImage: product.imageUrl,
+            productPrice: product.currentPrice,
+            bids: product.bids || 0,
+            timeLeft: product.timeLeft || ''
+          })
+        });
 
-        const { data, error } = await supabase
-          .from('favorites')
-          .insert([newFav])
-          .select()
-          .single();
+        if (!res.ok) throw new Error('Add failed');
+        const { favorite: data } = await res.json();
 
-        if (error) throw error;
-
-        // Update local state
+        // ローカルstate更新
         setFavorites(prev => [{
           id: data.product_id,
           title: data.product_title,
