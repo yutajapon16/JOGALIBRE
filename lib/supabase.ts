@@ -1,14 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
-export const supabase = createClient(
+// クライアントサイド用Supabaseクライアント
+// @supabase/ssr を使用してcookieベースのセッション管理に対応
+export const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-        auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            storageKey: 'jogalibre-auth'
-        }
-    }
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );

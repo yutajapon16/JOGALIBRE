@@ -76,3 +76,12 @@ a {
 .snap-center {
   scroll-snap-align: center;
 }
+
+/* ボタン押下時の視覚フィードバック */
+button {
+  transition: transform 100ms ease;
+}
+
+button:active {
+  transform: scale(0.95);
+}

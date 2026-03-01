@@ -47,6 +47,18 @@ export default function AdminDashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
 
+  // 全ボタンに触覚フィードバック（振動）を適用
+  useEffect(() => {
+    const handleButtonClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('button') && navigator.vibrate) {
+        navigator.vibrate(10);
+      }
+    };
+    document.addEventListener('click', handleButtonClick, true);
+    return () => document.removeEventListener('click', handleButtonClick, true);
+  }, []);
+
   // セッションチェック（最初に実行）
   useEffect(() => {
     // 初回セッション復元
@@ -480,18 +492,29 @@ export default function AdminDashboard() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
+      if (!accessToken) {
+        alert('セッションが切れています。ページをリロードしてください。');
+        window.location.reload();
+        return;
+      }
+
       const res = await fetch('/api/bid-request?id=' + id, {
         method: 'DELETE',
         headers: {
-          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+          'Authorization': `Bearer ${accessToken}`
         }
       });
 
       if (res.ok) {
         fetchBidRequests();
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Delete failed:', res.status, errorData);
+        alert('削除に失敗しました。ページをリロードしてください。');
       }
     } catch (error) {
       console.error('Error confirming rejection:', error);
+      alert('通信エラーが発生しました。');
     }
   };
 

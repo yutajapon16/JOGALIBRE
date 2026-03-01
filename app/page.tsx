@@ -296,6 +296,18 @@ export default function Home() {
 
   const t = translations[lang];
 
+  // 全ボタンに触覚フィードバック（振動）を適用
+  useEffect(() => {
+    const handleButtonClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('button') && navigator.vibrate) {
+        navigator.vibrate(10);
+      }
+    };
+    document.addEventListener('click', handleButtonClick, true);
+    return () => document.removeEventListener('click', handleButtonClick, true);
+  }, []);
+
   useEffect(() => {
     fetchExchangeRate();
   }, []);
