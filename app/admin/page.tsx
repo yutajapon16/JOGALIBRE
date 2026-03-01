@@ -194,7 +194,7 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     await signOut();
-    setCurrentUser(null);
+    window.location.href = '/admin';
   };
 
   const fetchExchangeRate = async () => {

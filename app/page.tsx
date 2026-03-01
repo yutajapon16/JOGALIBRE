@@ -779,18 +779,8 @@ export default function Home() {
 
   const handleLogout = async () => {
     await signOut();
-    setCurrentUser(null);
-
-    // ログアウト時にデータをクリア
-    setSearchUrl('');
-    setProducts([]);
-    setSelectedProduct(null);
-    setBidForm({ name: '', maxBid: '' });
-    setMyRequests([]);
-    setPurchasedItems([]);
-    setPurchasedTotal(0);
-    setActiveTab('search');
-    setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
+    // cookieベースセッションのため、ページリロードで確実にクリア
+    window.location.href = '/';
   };
 
   // ← ここに追加！

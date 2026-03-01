@@ -58,10 +58,21 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
-  // supabase.auth.signOut() が自動的にセッショントークンを
-  // localStorage から削除するため、手動での clear() は不要
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.warn('signOut error (continuing with cleanup):', error);
+  }
+  // cookieベースセッションの場合、Supabase関連cookieを手動クリア
+  if (typeof document !== 'undefined') {
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const name = cookie.split('=')[0].trim();
+      if (name.startsWith('sb-') || name.includes('supabase')) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+      }
+    }
+  }
 }
 
 // パスワードリセットメール送信
