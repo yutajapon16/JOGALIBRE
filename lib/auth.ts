@@ -106,13 +106,15 @@ export async function updateProfile(fullName: string, whatsapp: string) {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user || (await supabase.auth.getUser()).data.user;
-
+    // @supabase/ssr ではgetUser()でサーバー検証を行う
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    // サーバーサイドAPI経由でプロフィールを取得（RLSを回避）
+    // セッションからAccess Tokenを取得
+    const { data: { session } } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
+
+    // サーバーサイドAPI経由でプロフィールを取得（RLSを回避）
     if (accessToken) {
       try {
         const res = await fetch('/api/profile', {

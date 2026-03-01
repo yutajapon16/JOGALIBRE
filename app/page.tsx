@@ -477,6 +477,29 @@ export default function Home() {
     };
   }, [activeTab, searchType, keyword, activeCategoryUrl, currentUser]);
 
+  // 日本語タイトルを選択言語に翻訳するヘルパー
+  const translateTitles = async (titles: string[], targetLang: string): Promise<string[]> => {
+    if (targetLang === 'ja' || titles.length === 0) return titles;
+    try {
+      const DELIMITER = ' ||| ';
+      const joined = titles.join(DELIMITER);
+      const res = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${targetLang}&dt=t`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ q: joined }).toString()
+        }
+      );
+      const data = await res.json();
+      const translated = data?.[0]?.map((x: any) => x[0]).join('') || joined;
+      return translated.split(DELIMITER).map((t: string) => t.trim());
+    } catch (e) {
+      console.error('Title translation error:', e);
+      return titles;
+    }
+  };
+
   const fetchExchangeRate = async () => {
     try {
       const res = await fetch('/api/exchange-rate');
@@ -565,7 +588,15 @@ export default function Home() {
         shippingCostJpy: item.shipping_cost_jpy,
       }));
 
-      setPurchasedItems(convertedItems);
+      // 商品タイトルを選択言語に翻訳
+      const titles = convertedItems.map((item: any) => item.productTitle || '');
+      const translatedTitles = await translateTitles(titles, lang);
+      const itemsWithTranslation = convertedItems.map((item: any, i: number) => ({
+        ...item,
+        productTitle: translatedTitles[i] || item.productTitle
+      }));
+
+      setPurchasedItems(itemsWithTranslation);
       setPurchasedTotal(data.total || 0);
     } catch (error) {
       console.error('Error fetching purchased items:', error);
@@ -958,7 +989,15 @@ export default function Home() {
         adminNeedsConfirm: req.admin_needs_confirm
       }));
 
-      setMyRequests(convertedRequests);
+      // 商品タイトルを選択言語に翻訳
+      const titles = convertedRequests.map((req: any) => req.productTitle || '');
+      const translatedTitles = await translateTitles(titles, lang);
+      const requestsWithTranslation = convertedRequests.map((req: any, i: number) => ({
+        ...req,
+        productTitle: translatedTitles[i] || req.productTitle
+      }));
+
+      setMyRequests(requestsWithTranslation);
     } catch (error) {
       console.error('Error fetching requests:', error);
     }
