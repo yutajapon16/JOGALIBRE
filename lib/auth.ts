@@ -109,41 +109,7 @@ export async function getCurrentUser(): Promise<User | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    // 方法1: getSession()でアクセストークン取得→Bearer付きAPI呼び出し
-    // 方法2: トークンなしでcookieベースAPI呼び出し
-    // どちらかで/api/profileからプロフィールを取得する
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token;
-
-      const headers: Record<string, string> = {};
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-      }
-
-      const res = await fetch('/api/profile', {
-        headers,
-        credentials: 'include', // cookieを明示的に送信
-      });
-
-      if (res.ok) {
-        const { profile } = await res.json();
-        if (profile) {
-          return {
-            id: user.id,
-            email: user.email!,
-            role: profile.role as UserRole,
-            fullName: profile.full_name || undefined,
-            whatsapp: profile.whatsapp || undefined,
-            customerId: profile.customer_id || undefined,
-          };
-        }
-      }
-    } catch (apiError) {
-      console.warn('Profile API call failed, using fallback:', apiError);
-    }
-
-    // フォールバック: メタデータから取得
+    // 基本情報のみ返す（プロフィール詳細はpage.tsx側でfetchUserProfileにて取得）
     const metadata = user.user_metadata || {};
     const isExportAdmin = user.email?.toLowerCase() === 'export@joga.ltd';
     return {

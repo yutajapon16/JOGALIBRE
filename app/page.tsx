@@ -351,15 +351,12 @@ export default function Home() {
   useEffect(() => {
     if (currentUser) {
       fetchUnreadCount();
-      // currentUserが更新されたらprofileFormも自動更新
-      setProfileForm({
-        fullName: currentUser.fullName || '',
-        whatsapp: currentUser.whatsapp || ''
-      });
+      // セッション確立後にプロフィールを取得
+      fetchUserProfile();
       const interval = setInterval(fetchUnreadCount, 60000);
       return () => clearInterval(interval);
     }
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   const fetchNotifications = async () => {
     if (!currentUser) return;
@@ -514,6 +511,40 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
+    }
+  };
+
+  // プロフィール取得（fetchMyRequestsと同じ実証済みパターン）
+  const fetchUserProfile = async () => {
+    if (!currentUser) return;
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/profile', {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+
+      if (res.ok) {
+        const { profile } = await res.json();
+        if (profile) {
+          setCurrentUser(prev => prev ? {
+            ...prev,
+            role: profile.role || prev.role,
+            fullName: profile.full_name || undefined,
+            whatsapp: profile.whatsapp || undefined,
+            customerId: profile.customer_id || undefined,
+          } : prev);
+          setProfileForm({
+            fullName: profile.full_name || '',
+            whatsapp: profile.whatsapp || ''
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
     }
   };
 
