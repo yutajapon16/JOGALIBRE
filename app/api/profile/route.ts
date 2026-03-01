@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// Bearerトークンからユーザーを取得するヘルパー（後方互換用）
+// Bearerトークンからユーザーを取得
 async function getUserFromBearerToken(request: Request) {
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
@@ -14,21 +13,34 @@ async function getUserFromBearerToken(request: Request) {
     return user;
 }
 
-// cookieからユーザーを取得するヘルパー（@supabase/ssr対応）
-async function getUserFromCookies() {
+// リクエストのcookieヘッダーから直接ユーザーを取得
+// next/headersの cookies() ではなくリクエストから直接パースする
+async function getUserFromRequestCookies(request: Request) {
     try {
-        const cookieStore = await cookies();
+        const cookieHeader = request.headers.get('cookie');
+        if (!cookieHeader) return null;
+
+        // cookieヘッダーをパースして配列形式に変換
+        const parsedCookies = cookieHeader.split(';').map(c => {
+            const [name, ...rest] = c.trim().split('=');
+            return { name, value: decodeURIComponent(rest.join('=')) };
+        });
+
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             {
                 cookies: {
                     getAll() {
-                        return cookieStore.getAll();
+                        return parsedCookies;
+                    },
+                    setAll() {
+                        // Route Handlerではcookieの書き込みは不要
                     },
                 },
             }
         );
+
         const { data: { user }, error } = await supabase.auth.getUser();
         if (error || !user) return null;
         return user;
@@ -42,12 +54,12 @@ async function getUserFromCookies() {
 export async function GET(request: Request) {
     try {
         // Bearerトークンを優先、無ければcookieから認証
-        const user = await getUserFromBearerToken(request) || await getUserFromCookies();
+        const user = await getUserFromBearerToken(request) || await getUserFromRequestCookies(request);
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // supabaseAdmin（service role key）でRLSを回避してプロフィール取得
+        // supabaseAdmin（service role key）でRLSを完全に回避
         const { data: roleData, error: roleError } = await supabaseAdmin
             .from('user_roles')
             .select('role, full_name, whatsapp, customer_id')

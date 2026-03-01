@@ -351,7 +351,12 @@ export default function Home() {
   useEffect(() => {
     if (currentUser) {
       fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 60000); // 1分おきにチェック
+      // currentUserが更新されたらprofileFormも自動更新
+      setProfileForm({
+        fullName: currentUser.fullName || '',
+        whatsapp: currentUser.whatsapp || ''
+      });
+      const interval = setInterval(fetchUnreadCount, 60000);
       return () => clearInterval(interval);
     }
   }, [currentUser]);

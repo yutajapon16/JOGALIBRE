@@ -106,15 +106,26 @@ export async function updateProfile(fullName: string, whatsapp: string) {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    // @supabase/ssr ではgetUser()でサーバー検証を行う
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    // サーバーAPI経由でプロフィールを取得
-    // Bearerトークン不要: 同一オリジンのfetchはcookieを自動送信
-    // サーバー側でcookieからユーザー認証し、supabaseAdminでRLS回避
+    // 方法1: getSession()でアクセストークン取得→Bearer付きAPI呼び出し
+    // 方法2: トークンなしでcookieベースAPI呼び出し
+    // どちらかで/api/profileからプロフィールを取得する
     try {
-      const res = await fetch('/api/profile');
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      const headers: Record<string, string> = {};
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      const res = await fetch('/api/profile', {
+        headers,
+        credentials: 'include', // cookieを明示的に送信
+      });
+
       if (res.ok) {
         const { profile } = await res.json();
         if (profile) {
