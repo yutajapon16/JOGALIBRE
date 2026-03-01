@@ -110,26 +110,26 @@ export async function getCurrentUser(): Promise<User | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    // クライアントから直接user_rolesテーブルを参照
+    // サーバーAPI経由でプロフィールを取得
+    // Bearerトークン不要: 同一オリジンのfetchはcookieを自動送信
+    // サーバー側でcookieからユーザー認証し、supabaseAdminでRLS回避
     try {
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role, full_name, whatsapp, customer_id')
-        .eq('id', user.id)
-        .single();
-
-      if (!roleError && roleData) {
-        return {
-          id: user.id,
-          email: user.email!,
-          role: roleData.role as UserRole,
-          fullName: roleData.full_name || undefined,
-          whatsapp: roleData.whatsapp || undefined,
-          customerId: roleData.customer_id || undefined,
-        };
+      const res = await fetch('/api/profile');
+      if (res.ok) {
+        const { profile } = await res.json();
+        if (profile) {
+          return {
+            id: user.id,
+            email: user.email!,
+            role: profile.role as UserRole,
+            fullName: profile.full_name || undefined,
+            whatsapp: profile.whatsapp || undefined,
+            customerId: profile.customer_id || undefined,
+          };
+        }
       }
-    } catch (dbError) {
-      console.warn('Direct DB query failed, using fallback:', dbError);
+    } catch (apiError) {
+      console.warn('Profile API call failed, using fallback:', apiError);
     }
 
     // フォールバック: メタデータから取得
