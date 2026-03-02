@@ -277,8 +277,7 @@ export default function Home() {
   const [purchasedItems, setPurchasedItems] = useState<any[]>([]);
   // マイページ用state
   const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '' });
-  const [debugMsg, setDebugMsg] = useState('');
-  
+
   // キャッシュ済みのメタデータから確実に入力欄を初期復元する
   useEffect(() => {
     if (currentUser) {
@@ -546,8 +545,6 @@ export default function Home() {
 
       if (res.ok) {
         const { profile } = await res.json();
-        console.log('Profile raw API response:', profile); // デバッグ用ログ
-        setDebugMsg('API OK: ' + (profile ? profile.full_name : 'null profile'));
 
         if (profile) {
           setCurrentUser(prev => {
@@ -558,7 +555,6 @@ export default function Home() {
               whatsapp: profile.whatsapp || undefined,
               customerId: profile.customer_id || undefined,
             } : prev;
-            console.log('Next currentUser state:', nextUser); // デバッグ用ログ
             return nextUser;
           });
 
@@ -566,19 +562,15 @@ export default function Home() {
             fullName: profile.full_name || '',
             whatsapp: profile.whatsapp || ''
           };
-          console.log('Next profileForm state:', newForm); // デバッグ用ログ
           setProfileForm(newForm);
         } else {
-          setDebugMsg('API Warn: Profile object is null');
           console.warn('Profile API returned null or undefined profile object');
         }
       } else {
         const errText = await res.text();
-        setDebugMsg('API Error ' + res.status + ': ' + errText);
         console.error('Profile API HTTP status NOT OK:', res.status, errText);
       }
     } catch (error: any) {
-      setDebugMsg('Fetch Exception: ' + error.message);
       console.error('Error fetching user profile:', error);
     }
   };
@@ -2326,14 +2318,6 @@ export default function Home() {
                   {profileSaving ? '...' : t.saveProfile}
                 </button>
               </div>
-            </div>
-
-            {/* 診断（デバッグ）情報 - 開発テスト用 */}
-            <div className="mt-4 mb-8 p-3 bg-gray-100 rounded text-[10px] sm:text-xs text-gray-500 font-mono break-all leading-relaxed">
-              <strong>[Diagnostics]</strong><br/>
-              API Status: {debugMsg || 'Waiting...'}<br/>
-              Auth Cache Name: {currentUser?.fullName || 'empty'}<br/>
-              Auth Cache WA: {currentUser?.whatsapp || 'empty'}
             </div>
 
             {/* パスワード変更 */}
