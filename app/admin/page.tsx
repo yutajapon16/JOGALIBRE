@@ -70,7 +70,6 @@ export default function AdminDashboard() {
 
     // セッション変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Admin Auth event:', event);
       if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
       } else if (session?.user) {
@@ -282,9 +281,6 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
 
-      console.log('=== ADMIN DEBUG ===');
-      console.log('Raw data:', data);
-      console.log('bidRequests:', data.bidRequests);
 
       // スネークケースからキャメルケースに変換
       const convertedRequests = (data.bidRequests || []).map((req: any) => ({
@@ -315,7 +311,6 @@ export default function AdminDashboard() {
         customerMessage: req.customer_message,
         adminNeedsConfirm: req.admin_needs_confirm
       }));
-      console.log('Converted requests:', convertedRequests);
 
       setBidRequests(convertedRequests);
       setLoading(false);  // ← これを追加

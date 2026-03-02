@@ -348,7 +348,6 @@ export default function Home() {
 
     // セッション変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event);
       if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
       } else if (session?.user) {
@@ -721,10 +720,7 @@ export default function Home() {
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
 
     try {
-      console.log('[DEBUG] Starting toggleFavorite for:', product.id);
-      console.log('[DEBUG] Calling getSession...');
       const { data: { session: clientSession } } = await supabase.auth.getSession();
-      console.log('[DEBUG] getSession finished. Access token exists:', !!clientSession?.access_token);
       const accessToken = clientSession?.access_token;
       const authHeaders: Record<string, string> = {
         'Authorization': accessToken ? `Bearer ${accessToken}` : ''
@@ -960,9 +956,6 @@ export default function Home() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
-      console.log('=== API Fetch Debug ===');
-      console.log('Token exists:', !!accessToken);
-      console.log('Session user:', clientSession?.user?.email);
 
       const res = await fetch('/api/bid-request', {
         method: 'POST',
@@ -1162,7 +1155,6 @@ export default function Home() {
       });
 
       const data = await res.json();
-      console.log('Imported product data:', data.product);
       if (data.product) {
         setProducts([data.product]);
         // スクロール処理 (画面上部に商品ボックスが来るようにズラす)
@@ -2331,13 +2323,9 @@ export default function Home() {
                   onClick={async () => {
                     if (profileSaving) return;
                     setProfileSaving(true);
-                    console.log('[DEBUG] Starting profile update...');
                     try {
-                      console.log('[DEBUG] Calling updateProfile API...');
                       await updateProfile(profileForm.fullName, profileForm.whatsapp);
-                      console.log('[DEBUG] API completed. Calling getCurrentUser...');
                       const user = await getCurrentUser();
-                      console.log('[DEBUG] getCurrentUser completed.');
                       setCurrentUser(user);
                       alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
                     } catch (error: any) {

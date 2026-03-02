@@ -21,7 +21,6 @@ export async function POST(request: Request) {
 
     const html = await response.text();
 
-    console.log('HTML length:', html.length);
 
     let title = '';
     let currentPrice = 0;
@@ -37,7 +36,6 @@ export async function POST(request: Request) {
     if (nextDataMatch) {
       try {
         const jsonData = JSON.parse(nextDataMatch[1]);
-        console.log('Found __NEXT_DATA__');
 
         const pageProps = jsonData.props?.pageProps;
 
@@ -45,14 +43,10 @@ export async function POST(request: Request) {
           const initialState = pageProps.initialState;
 
           if (initialState) {
-            console.log('Found initialState, keys:', Object.keys(initialState).slice(0, 20));
 
             const itemData = initialState.item?.detail?.item || {};
-            console.log('ItemData keys:', Object.keys(itemData).slice(0, 40));
 
             // paymentとoptionの中身を確認
-            console.log('payment object:', JSON.stringify(itemData.payment, null, 2));
-            console.log('option object:', JSON.stringify(itemData.option, null, 2));
 
             currentPrice = itemData.price ||
               itemData.currentPrice ||
@@ -103,14 +97,11 @@ export async function POST(request: Request) {
             });
 
             // 送料を取得 - HTMLから直接抽出
-            console.log('chargeForShipping:', itemData.chargeForShipping);
 
             // 送料セクションを探す
             const shippingSection = html.match(/送料[\s\S]{0,500}?円/);
             if (shippingSection) {
-              console.log('Shipping section found:', shippingSection[0].substring(0, 200));
             } else {
-              console.log('Shipping section NOT found');
             }
 
             // HTMLから送料を抽出（複数のパターンを試す）
@@ -132,13 +123,11 @@ export async function POST(request: Request) {
 
             for (const pattern of shippingPatterns) {
               const match = html.match(pattern);
-              console.log('Testing pattern:', pattern, 'Match:', match ? match[1] : 'NO MATCH');
               if (match && match[1]) {
                 const extractedCost = parseInt(match[1].replace(/,/g, ''));
                 if (!isNaN(extractedCost) && extractedCost > 0) {
                   shippingCost = extractedCost;
                   shippingUnknown = false;
-                  console.log('Found shipping cost in HTML:', shippingCost, 'from pattern:', pattern);
                   break;
                 }
               }
@@ -176,10 +165,8 @@ export async function POST(request: Request) {
             });
           }
 
-          console.log('Available pageProps keys:', Object.keys(pageProps).slice(0, 30));
         }
       } catch (e) {
-        console.log('JSON parse error:', e);
       }
     }
 
@@ -288,7 +275,6 @@ export async function POST(request: Request) {
       images: allImages.length > 0 ? allImages : [imageUrl]
     };
 
-    console.log('Final product:', product);
 
     return NextResponse.json({ product });
 

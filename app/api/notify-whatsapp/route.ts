@@ -7,9 +7,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { userType, email } = body;
 
-    console.log('=== WhatsApp Notification Request ===');
-    console.log('User Type:', userType);
-    console.log('Email:', email);
 
     if (userType === 'admin') {
       // 管理者が送信：未確認の顧客に通知
@@ -19,8 +16,6 @@ export async function POST(request: Request) {
         .eq('customer_confirmed', false)
         .order('created_at', { ascending: false });
 
-      console.log('Pending requests:', pendingRequests);
-      console.log('Query error:', error);
 
       if (!pendingRequests || pendingRequests.length === 0) {
         return NextResponse.json({
@@ -38,16 +33,13 @@ export async function POST(request: Request) {
         customerGroups.get(req.customer_email)!.push(req);
       }
 
-      console.log('Customer groups:', customerGroups.size);
 
       // 各顧客にWhatsApp送信
       const results = [];
       for (const [customerEmail, requests] of customerGroups.entries()) {
         const userInfo = await getUserInfo(customerEmail);
-        console.log(`Customer ${customerEmail} - WhatsApp:`, userInfo?.whatsapp);
 
         if (!userInfo?.whatsapp) {
-          console.log(`No WhatsApp for ${customerEmail}, skipping`);
           results.push({
             email: customerEmail,
             whatsapp: null,
@@ -72,7 +64,6 @@ export async function POST(request: Request) {
         });
       }
 
-      console.log('Send results:', results);
 
       const outsideWindowCount = results.filter(r => r.outsideWindow).length;
 
@@ -94,7 +85,6 @@ export async function POST(request: Request) {
         .eq('customer_confirmed', false)
         .order('created_at', { ascending: false });
 
-      console.log('Customer requests for admin notification:', myRequests);
 
       if (!myRequests || myRequests.length === 0) {
         return NextResponse.json({
@@ -104,7 +94,6 @@ export async function POST(request: Request) {
       }
 
       const adminWhatsApp = process.env.ADMIN_WHATSAPP_NUMBER;
-      console.log('Admin WhatsApp from env:', adminWhatsApp);
 
       if (!adminWhatsApp) {
         console.error('ADMIN_WHATSAPP_NUMBER is not set in environment variables');
@@ -124,7 +113,6 @@ export async function POST(request: Request) {
       const message = `🔔 JOGALIBRE: ${displayName} 様から ${count} 件の確認待ちリクエストがあります。\n管理画面: https://jogalibre.vercel.app/admin`;
 
       const result = await sendWhatsAppMessage(adminWhatsApp, message);
-      console.log('Admin notification result:', result);
 
       return NextResponse.json({
         success: result.success,

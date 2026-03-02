@@ -28,7 +28,6 @@ export async function POST(request: Request) {
     if (roleError) {
       console.warn('Role fetch error (could be missing entry):', roleError);
     }
-    console.log('User Role:', roleData?.role);
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
@@ -36,7 +35,6 @@ export async function POST(request: Request) {
 
     // 顧客の場合は自身のメールアドレスを強制使用
     const finalEmail = isAdmin ? customerEmail : effectiveUser.email;
-    console.log('Final Email for record:', finalEmail);
 
     const bidRequest = {
       id: Date.now().toString(),
@@ -65,7 +63,6 @@ export async function POST(request: Request) {
       admin_needs_confirm: false
     };
 
-    console.log('Inserting bid request...');
     const { data, error } = await supabaseAdmin
       .from('bid_requests')
       .insert([bidRequest])
@@ -80,7 +77,6 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('Bid request created successfully:', data.id);
     return NextResponse.json({
       success: true,
       bidRequest: data
