@@ -69,12 +69,17 @@ export async function GET(request: Request) {
         // supabaseAdmin（service role key）でRLSを完全に回避
         const { data: roleData, error: roleError } = await supabaseAdmin
             .from('user_roles')
-            .select('role, full_name, whatsapp, customer_id')
+            .select('*') // 特定のカラム指定で存在しないカラムがあった場合のクラッシュを防ぐ
             .eq('id', user.id)
             .single();
 
-        if (roleError || !roleData) {
-            return NextResponse.json({ profile: null });
+        if (roleError) {
+            console.error('Database error fetching user_roles:', roleError);
+            return NextResponse.json({ profile: null, errorDetail: roleError.message });
+        }
+
+        if (!roleData) {
+            return NextResponse.json({ profile: null, errorDetail: 'No data found in user_roles' });
         }
 
         return NextResponse.json({ profile: roleData });
