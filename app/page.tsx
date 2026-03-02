@@ -535,7 +535,6 @@ export default function Home() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
-      console.log('Fetching user profile for currentUser id:', currentUser.id);
       const res = await fetch(`/api/profile?t=${Date.now()}`, {
         headers: {
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
