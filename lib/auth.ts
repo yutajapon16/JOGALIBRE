@@ -112,7 +112,9 @@ export async function updateProfile(fullName: string, whatsapp: string) {
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to update profile via API: ${res.status}`);
+      const errorText = await res.text();
+      console.error('API Error Response:', res.status, errorText);
+      throw new Error(`Failed to update profile via API: ${res.status} ${errorText}`);
     }
 
     // Auth Metadata のローカルキャッシュも更新して不整合を防ぐ
@@ -121,7 +123,7 @@ export async function updateProfile(fullName: string, whatsapp: string) {
     });
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating profile:', error);
     throw error;
   }
