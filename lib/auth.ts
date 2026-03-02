@@ -93,15 +93,38 @@ export async function updatePassword(newPassword: string) {
 
 // プロフィール更新（氏名・WhatsApp）
 export async function updateProfile(fullName: string, whatsapp: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
 
-  const { error } = await supabase
-    .from('user_roles')
-    .update({ full_name: fullName, whatsapp })
-    .eq('id', user.id);
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
 
-  if (error) throw error;
+    const res = await fetch('/api/profile', {
+      method: 'POST',
+      headers,
+      credentials: 'include', // cookieベースでも認証させる
+      body: JSON.stringify({ fullName, whatsapp }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to update profile via API: ${res.status}`);
+    }
+
+    // Auth Metadata のローカルキャッシュも更新して不整合を防ぐ
+    await supabase.auth.updateUser({
+      data: { full_name: fullName, whatsapp: whatsapp }
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    throw error;
+  }
 }
 
 export async function getCurrentUser(): Promise<User | null> {
@@ -109,15 +132,27 @@ export async function getCurrentUser(): Promise<User | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    // 基本情報のみ返す（プロフィール詳細はpage.tsx側でfetchUserProfileにて取得）
-    const metadata = user.user_metadata || {};
     const isExportAdmin = user.email?.toLowerCase() === 'export@joga.ltd';
+
+    // キャッシュの不整合を防ぐため、常にDB(user_roles)から最新情報を取得する
+    const { data: roleData, error } = await supabase
+      .from('user_roles')
+      .select('role, full_name, whatsapp')
+      .eq('id', user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"
+      console.warn('Could not fetch user_roles from DB, falling back to metadata:', error);
+    }
+
+    const metadata = user.user_metadata || {};
+
     return {
       id: user.id,
       email: user.email!,
-      role: isExportAdmin ? 'admin' : ((metadata.role as UserRole) || 'customer'),
-      fullName: metadata.full_name || undefined,
-      whatsapp: metadata.whatsapp || undefined,
+      role: isExportAdmin ? 'admin' : (roleData?.role || metadata.role || 'customer'),
+      fullName: roleData?.full_name || metadata.full_name || undefined,
+      whatsapp: roleData?.whatsapp || metadata.whatsapp || undefined,
     };
   } catch (error) {
     console.error('Error in getCurrentUser:', error);
