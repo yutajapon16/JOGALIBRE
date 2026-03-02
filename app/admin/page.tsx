@@ -75,7 +75,7 @@ export default function AdminDashboard() {
         setCurrentUser(null);
       } else if (session?.user) {
         // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
-        const user = await getCurrentUser();
+        const user = await getCurrentUser(session.user);
         if (user?.role === 'admin') {
           setCurrentUser(user);
         } else if (event === 'SIGNED_IN') {

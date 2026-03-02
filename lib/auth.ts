@@ -146,53 +146,83 @@ export async function updateProfile(fullName: string, whatsapp: string) {
   }
 }
 
-export async function getCurrentUser(): Promise<User | null> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+export async function getCurrentUser(alreadyFetchedUser?: any): Promise<User | null> {
+  // 関数全体（getUser + user_roles取得）が3秒を超えたら強制的にタイムアウトさせる
+  const timeoutPromise = new Promise<null>((_, reject) => {
+    setTimeout(() => reject(new Error('getCurrentUser overall timeout')), 3000);
+  });
 
-    const isExportAdmin = user.email?.toLowerCase() === 'export@joga.ltd';
-
-    // キャッシュの不整合を防ぐためDB(user_roles)から最新情報を取得するが、
-    // ハングアップを防ぐため3秒でタイムアウトさせる
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-    let roleData = null;
-    let fetchError = null;
-
+  const fetchUserLogic = async () => {
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role, full_name, whatsapp')
-        .eq('id', user.id)
-        .abortSignal(controller.signal)
-        .single();
+      let user = alreadyFetchedUser;
 
-      roleData = data;
-      fetchError = error;
-    } catch (e: any) {
-      // タイムアウトやネットワークエラー
-      fetchError = e;
-    } finally {
-      clearTimeout(timeoutId);
+      if (!user) {
+        // getUserはネットワークリクエストを伴うためハングのリスクがある
+        const { data } = await supabase.auth.getUser();
+        user = data?.user;
+      }
+      if (!user) return null;
+
+      const isExportAdmin = user.email?.toLowerCase() === 'export@joga.ltd';
+
+      // キャッシュの不整合を防ぐためDB(user_roles)から最新情報を取得する
+      const controller = new AbortController();
+      const dbTimeoutId = setTimeout(() => controller.abort(), 2000);
+
+      let roleData = null;
+      let fetchError = null;
+
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role, full_name, whatsapp')
+          .eq('id', user.id)
+          .abortSignal(controller.signal)
+          .single();
+
+        roleData = data;
+        fetchError = error;
+      } catch (e: any) {
+        fetchError = e;
+      } finally {
+        clearTimeout(dbTimeoutId);
+      }
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.warn('Could not fetch user_roles from DB, falling back to metadata:', fetchError);
+      }
+
+      const metadata = user.user_metadata || {};
+
+      return {
+        id: user.id,
+        email: user.email!,
+        role: isExportAdmin ? 'admin' : (roleData?.role || metadata.role || 'customer'),
+        fullName: roleData?.full_name || metadata.full_name || undefined,
+        whatsapp: roleData?.whatsapp || metadata.whatsapp || undefined,
+      };
+    } catch (error) {
+      console.error('Error inside fetchUserLogic:', error);
+      return null;
     }
+  };
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "No rows found"
-      console.warn('Could not fetch user_roles from DB, falling back to metadata:', fetchError);
-    }
-
-    const metadata = user.user_metadata || {};
-
-    return {
-      id: user.id,
-      email: user.email!,
-      role: isExportAdmin ? 'admin' : (roleData?.role || metadata.role || 'customer'),
-      fullName: roleData?.full_name || metadata.full_name || undefined,
-      whatsapp: roleData?.whatsapp || metadata.whatsapp || undefined,
-    };
+  try {
+    const result = await Promise.race([fetchUserLogic(), timeoutPromise]);
+    return result as User | null;
   } catch (error) {
-    console.error('Error in getCurrentUser:', error);
+    console.error('getCurrentUser timed out or crashed completely:', error);
+    // タイムアウトした場合は、既に取得済みの`alreadyFetchedUser`があれば、最低限の情報を返す
+    if (alreadyFetchedUser) {
+      const metadata = alreadyFetchedUser.user_metadata || {};
+      return {
+        id: alreadyFetchedUser.id,
+        email: alreadyFetchedUser.email!,
+        role: alreadyFetchedUser.email?.toLowerCase() === 'export@joga.ltd' ? 'admin' : (metadata.role || 'customer'),
+        fullName: metadata.full_name,
+        whatsapp: metadata.whatsapp
+      };
+    }
     return null;
   }
 }
