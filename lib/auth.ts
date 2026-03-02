@@ -153,15 +153,33 @@ export async function getCurrentUser(): Promise<User | null> {
 
     const isExportAdmin = user.email?.toLowerCase() === 'export@joga.ltd';
 
-    // キャッシュの不整合を防ぐため、常にDB(user_roles)から最新情報を取得する
-    const { data: roleData, error } = await supabase
-      .from('user_roles')
-      .select('role, full_name, whatsapp')
-      .eq('id', user.id)
-      .single();
+    // キャッシュの不整合を防ぐためDB(user_roles)から最新情報を取得するが、
+    // ハングアップを防ぐため3秒でタイムアウトさせる
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"
-      console.warn('Could not fetch user_roles from DB, falling back to metadata:', error);
+    let roleData = null;
+    let fetchError = null;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role, full_name, whatsapp')
+        .eq('id', user.id)
+        .abortSignal(controller.signal)
+        .single();
+
+      roleData = data;
+      fetchError = error;
+    } catch (e: any) {
+      // タイムアウトやネットワークエラー
+      fetchError = e;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "No rows found"
+      console.warn('Could not fetch user_roles from DB, falling back to metadata:', fetchError);
     }
 
     const metadata = user.user_metadata || {};
