@@ -521,6 +521,7 @@ export default function Home() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
+      console.log('Fetching user profile for currentUser id:', currentUser.id);
       const res = await fetch('/api/profile', {
         headers: {
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
@@ -529,19 +530,32 @@ export default function Home() {
 
       if (res.ok) {
         const { profile } = await res.json();
+        console.log('Profile raw API response:', profile); // デバッグ用ログ
+
         if (profile) {
-          setCurrentUser(prev => prev ? {
-            ...prev,
-            role: profile.role || prev.role,
-            fullName: profile.full_name || undefined,
-            whatsapp: profile.whatsapp || undefined,
-            customerId: profile.customer_id || undefined,
-          } : prev);
-          setProfileForm({
+          setCurrentUser(prev => {
+            const nextUser = prev ? {
+              ...prev,
+              role: profile.role || prev.role,
+              fullName: profile.full_name || undefined,
+              whatsapp: profile.whatsapp || undefined,
+              customerId: profile.customer_id || undefined,
+            } : prev;
+            console.log('Next currentUser state:', nextUser); // デバッグ用ログ
+            return nextUser;
+          });
+
+          const newForm = {
             fullName: profile.full_name || '',
             whatsapp: profile.whatsapp || ''
-          });
+          };
+          console.log('Next profileForm state:', newForm); // デバッグ用ログ
+          setProfileForm(newForm);
+        } else {
+          console.warn('Profile API returned null or undefined profile object');
         }
+      } else {
+        console.error('Profile API HTTP status NOT OK:', res.status);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
