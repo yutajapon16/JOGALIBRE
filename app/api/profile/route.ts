@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabase-admin';
@@ -73,6 +74,55 @@ export async function GET(request: Request) {
         return NextResponse.json({ profile: roleData });
     } catch (error) {
         console.error('Error in GET /api/profile:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+// POST: プロフィール情報を更新 (RLSを回避して確実な上書き)
+export async function POST(request: Request) {
+    try {
+        // 認証
+        const user = await getUserFromBearerToken(request) || await getUserFromRequestCookies(request);
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const body = await request.json();
+        const { fullName, whatsapp } = body;
+
+        // supabaseAdmin（service role key）でRLSを完全に回避してUPSERT
+        const { data: roleData, error: roleError } = await supabaseAdmin
+            .from('user_roles')
+            .upsert({
+                id: user.id,
+                email: user.email,
+                full_name: fullName,
+                whatsapp: whatsapp
+                // role は基本変更しない前提、既存の値がない場合はDBのデフォルト(customer)になる
+            }, {
+                onConflict: 'id'
+            })
+            .select('*')
+            .single();
+
+        if (roleError) {
+            console.error('Error upserting user_roles:', roleError);
+            return NextResponse.json({ error: 'Failed to update profile in DB' }, { status: 500 });
+        }
+
+        // ついでに User Metadata の方も更新しておく (supabaseAdminなら可能)
+        const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(
+            user.id,
+            { user_metadata: { full_name: fullName, whatsapp: whatsapp } }
+        );
+
+        if (updateAuthError) {
+            console.error('Error updating user auth metadata:', updateAuthError);
+        }
+
+        return NextResponse.json({ profile: roleData });
+    } catch (error) {
+        console.error('Error in POST /api/profile:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
