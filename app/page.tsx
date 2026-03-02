@@ -330,6 +330,8 @@ export default function Home() {
           setNotificationStatus('unsupported');
         }
       }
+    }).catch(err => {
+      console.error('Fast failure in initial getCurrentUser:', err);
     });
 
     // セッション変更を監視

@@ -21,10 +21,16 @@ async function getUserFromRequestCookies(request: Request) {
         const cookieHeader = request.headers.get('cookie');
         if (!cookieHeader) return null;
 
-        // cookieヘッダーをパースして配列形式に変換
+        // cookieヘッダーをパースして配列形式に変換 (安全なデコード)
         const parsedCookies = cookieHeader.split(';').map(c => {
             const [name, ...rest] = c.trim().split('=');
-            return { name, value: decodeURIComponent(rest.join('=')) };
+            let value = rest.join('=');
+            try {
+                value = decodeURIComponent(value);
+            } catch (e) {
+                // デコード失敗時はそのままの値を使う
+            }
+            return { name, value };
         });
 
         const supabase = createServerClient(
