@@ -671,13 +671,18 @@ export default function Home() {
         const { data: { session: clientSession } } = await supabase.auth.getSession();
         const accessToken = clientSession?.access_token;
 
-        const res = await fetch('/api/favorites', {
+        const res = await fetch(`/api/favorites?t=${Date.now()}`, {
           headers: {
             'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-          }
+          },
+          credentials: 'include'
         });
 
-        if (!res.ok) throw new Error('Failed to fetch favorites');
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error('Failed to fetch favorites:', res.status, errText);
+          throw new Error('Failed to fetch favorites');
+        }
         const { favorites: data } = await res.json();
 
         // format to match product structure
@@ -725,35 +730,45 @@ export default function Home() {
 
       if (existingFav) {
         // お気に入り削除
-        const res = await fetch(`/api/favorites?id=${existingFav.dbId}`, {
+        const res = await fetch(`/api/favorites?id=${existingFav.dbId}&t=${Date.now()}`, {
           method: 'DELETE',
-          headers: authHeaders
+          headers: authHeaders,
+          credentials: 'include'
         });
 
-        if (!res.ok) throw new Error('Delete failed');
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error('Delete favorite failed:', res.status, errText);
+          throw new Error('Delete failed');
+        }
 
         // ローカルstate更新
         setFavorites(prev => prev.filter(f => f.id !== product.id));
       } else {
         // お気に入り追加
-        const res = await fetch('/api/favorites', {
+        const res = await fetch(`/api/favorites?t=${Date.now()}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...authHeaders
           },
+          credentials: 'include',
           body: JSON.stringify({
             productId: product.id,
             productTitle: product.title,
             productUrl: product.url,
-            productImage: product.imageUrl,
+            productImage: product.imageUrl || (product.images && product.images[0]),
             productPrice: product.currentPrice,
             bids: product.bids || 0,
             timeLeft: product.timeLeft || ''
           })
         });
 
-        if (!res.ok) throw new Error('Add failed');
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error('Add favorite failed:', res.status, errText);
+          throw new Error('Add failed');
+        }
         const { favorite: data } = await res.json();
 
         // ローカルstate更新
