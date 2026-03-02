@@ -717,9 +717,14 @@ export default function Home() {
     }
 
     setIsTogglingFavorite(product.id);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
 
     try {
+      console.log('[DEBUG] Starting toggleFavorite for:', product.id);
+      console.log('[DEBUG] Calling getSession...');
       const { data: { session: clientSession } } = await supabase.auth.getSession();
+      console.log('[DEBUG] getSession finished. Access token exists:', !!clientSession?.access_token);
       const accessToken = clientSession?.access_token;
       const authHeaders: Record<string, string> = {
         'Authorization': accessToken ? `Bearer ${accessToken}` : ''
@@ -733,8 +738,11 @@ export default function Home() {
         const res = await fetch(`/api/favorites?id=${existingFav.dbId}&t=${Date.now()}`, {
           method: 'DELETE',
           headers: authHeaders,
-          credentials: 'include'
+          credentials: 'include',
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!res.ok) {
           const errText = await res.text();
@@ -753,16 +761,19 @@ export default function Home() {
             ...authHeaders
           },
           credentials: 'include',
+          signal: controller.signal,
           body: JSON.stringify({
             productId: product.id,
-            productTitle: product.title,
+            productTitle: product.titleJa || product.title || '',
             productUrl: product.url,
-            productImage: product.imageUrl || (product.images && product.images[0]),
-            productPrice: product.currentPrice,
+            productImage: product.imageUrl || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : ''),
+            productPrice: product.currentPrice || '',
             bids: product.bids || 0,
             timeLeft: product.timeLeft || ''
           })
         });
+
+        clearTimeout(timeoutId);
 
         if (!res.ok) {
           const errText = await res.text();
@@ -785,8 +796,13 @@ export default function Home() {
         }, ...prev]);
       }
     } catch (error: any) {
+      clearTimeout(timeoutId);
       console.error('Error toggling favorite:', error);
-      alert(lang === 'es' ? 'Error al actualizar favoritos' : 'Erro ao atualizar favoritos');
+      if (error.name === 'AbortError') {
+        alert(lang === 'es' ? 'La solicitud tardó demasiado. Por favor, inténtelo de nuevo.' : 'A solicitação demorou muito. Por favor, tente novamente.');
+      } else {
+        alert(lang === 'es' ? 'Error al actualizar favoritos' : 'Erro ao atualizar favoritos');
+      }
     } finally {
       setIsTogglingFavorite(null);
     }
@@ -2315,9 +2331,13 @@ export default function Home() {
                   onClick={async () => {
                     if (profileSaving) return;
                     setProfileSaving(true);
+                    console.log('[DEBUG] Starting profile update...');
                     try {
+                      console.log('[DEBUG] Calling updateProfile API...');
                       await updateProfile(profileForm.fullName, profileForm.whatsapp);
+                      console.log('[DEBUG] API completed. Calling getCurrentUser...');
                       const user = await getCurrentUser();
+                      console.log('[DEBUG] getCurrentUser completed.');
                       setCurrentUser(user);
                       alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
                     } catch (error: any) {

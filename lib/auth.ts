@@ -93,6 +93,9 @@ export async function updatePassword(newPassword: string) {
 
 // プロフィール更新（氏名・WhatsApp）
 export async function updateProfile(fullName: string, whatsapp: string) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
+
   try {
     const { data: { session } } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
@@ -108,8 +111,11 @@ export async function updateProfile(fullName: string, whatsapp: string) {
       method: 'POST',
       headers,
       credentials: 'include', // cookieベースでも認証させる
+      signal: controller.signal,
       body: JSON.stringify({ fullName, whatsapp }),
     });
+
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       const errorText = await res.text();
@@ -117,14 +123,25 @@ export async function updateProfile(fullName: string, whatsapp: string) {
       throw new Error(`Failed to update profile via API: ${res.status} ${errorText}`);
     }
 
-    // Auth Metadata のローカルキャッシュも更新して不整合を防ぐ
-    await supabase.auth.updateUser({
-      data: { full_name: fullName, whatsapp: whatsapp }
-    });
+    // Auth Metadata のローカルキャッシュ更新（エラーが起きても全体処理は止めない）
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { full_name: fullName, whatsapp: whatsapp }
+      });
+      if (updateError) {
+        console.warn('Non-fatal error updating local auth metadata:', updateError);
+      }
+    } catch (e) {
+      console.warn('Exception while updating local metadata:', e);
+    }
 
     return true;
   } catch (error: any) {
+    clearTimeout(timeoutId);
     console.error('Error updating profile:', error);
+    if (error.name === 'AbortError') {
+      throw new Error('API Request Timeout');
+    }
     throw error;
   }
 }
