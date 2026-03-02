@@ -524,10 +524,11 @@ export default function Home() {
       const accessToken = clientSession?.access_token;
 
       console.log('Fetching user profile for currentUser id:', currentUser.id);
-      const res = await fetch('/api/profile', {
+      const res = await fetch(`/api/profile?t=${Date.now()}`, {
         headers: {
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-        }
+        },
+        credentials: 'include'
       });
 
       if (res.ok) {
@@ -1761,7 +1762,8 @@ export default function Home() {
                   if (tab.key === 'requests') fetchMyRequests();
                   if (tab.key === 'purchased') fetchPurchasedItems();
                   if (tab.key === 'mypage' && currentUser) {
-                    setProfileForm({ fullName: currentUser.fullName || '', whatsapp: currentUser.whatsapp || '' });
+                    // タブを開くたびに最新データを取得して確実に入力欄を埋める
+                    fetchUserProfile();
                     // 通知状態をチェック
                     const permission = getNotificationPermission();
                     if (permission === 'unsupported') {
