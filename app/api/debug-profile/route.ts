@@ -61,13 +61,16 @@ export async function GET(request: Request) {
             .eq('id', userId)
             .single();
 
+        const currentRole = dbDataBefore?.role || 'customer';
+
         // 強制的にupsertを実行 (admin権限)
         const { data: upsertData, error: upsertError } = await supabaseAdmin
             .from('user_roles')
             .upsert({
                 id: userId,
                 full_name: fullName,
-                whatsapp: whatsapp
+                whatsapp: whatsapp,
+                role: currentRole
             }, {
                 onConflict: 'id'
             })

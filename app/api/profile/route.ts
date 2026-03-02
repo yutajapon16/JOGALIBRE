@@ -96,6 +96,15 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { fullName, whatsapp } = body;
 
+        // 既存のロールを取得
+        const { data: existingData } = await supabaseAdmin
+            .from('user_roles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        const currentRole = existingData?.role || 'customer';
+
         // supabaseAdmin（service role key）でRLSを完全に回避してUPSERT
         const { data: roleData, error: roleError } = await supabaseAdmin
             .from('user_roles')
@@ -103,8 +112,8 @@ export async function POST(request: Request) {
                 id: user.id,
                 email: user.email,
                 full_name: fullName,
-                whatsapp: whatsapp
-                // role は基本変更しない前提、既存の値がない場合はDBのデフォルト(customer)になる
+                whatsapp: whatsapp,
+                role: currentRole // 既存のロールを引き継ぐ、無い場合はcustomer
             }, {
                 onConflict: 'id'
             })
