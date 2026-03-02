@@ -790,189 +790,511 @@ export default function Home() {
     } finally {
       setIsTogglingFavorite(null);
     }
-  } catch (error: any) {
-    console.error('Global error toggling favorite:', error);
-    setIsTogglingFavorite(null);
-  }
-};
+  };
 
-const getCustomerList = () => {
-  const uniqueCustomers = new Map<string, string>();
-  purchasedItems.forEach(item => {
-    if (!uniqueCustomers.has(item.customerName)) {
-      uniqueCustomers.set(item.customerName, item.customerName);
+  const getCustomerList = () => {
+    const uniqueCustomers = new Map<string, string>();
+    purchasedItems.forEach(item => {
+      if (!uniqueCustomers.has(item.customerName)) {
+        uniqueCustomers.set(item.customerName, item.customerName);
+      }
+    });
+    return Array.from(uniqueCustomers.values()).sort((a, b) => a.localeCompare(b));
+  };
+
+
+
+  const getCustomerTotal = (customerName: string) => {
+    return purchasedItems
+      .filter(item => item.customerName === customerName)
+      .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+  };
+
+  const formatDateTime = (dateString: string) => {
+    if (!dateString) return '-';
+
+    // タイムゾーン情報がない場合、UTC として扱う
+    let date: Date;
+    if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
+      date = new Date(dateString + 'Z');
+    } else {
+      date = new Date(dateString);
     }
-  });
-  return Array.from(uniqueCustomers.values()).sort((a, b) => a.localeCompare(b));
-};
 
+    if (isNaN(date.getTime())) return dateString;
 
+    // ローカルタイムゾーンの取得
+    const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-const getCustomerTotal = (customerName: string) => {
-  return purchasedItems
-    .filter(item => item.customerName === customerName)
-    .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
-};
+    // 略称の取得
+    let localLabel = new Intl.DateTimeFormat('en-US', {
+      timeZone: localTimeZone,
+      timeZoneName: 'short'
+    }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || '';
 
-const formatDateTime = (dateString: string) => {
-  if (!dateString) return '-';
+    // GMT-3 などのオフセット表示を BRT 等の略称にマッピング
+    if (localTimeZone === 'America/Sao_Paulo' || localLabel.includes('GMT-3')) {
+      localLabel = 'BRT';
+    } else if (localTimeZone === 'Asia/Tokyo' || localLabel.includes('GMT+9')) {
+      localLabel = 'JST';
+    }
 
-  // タイムゾーン情報がない場合、UTC として扱う
-  let date: Date;
-  if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-    date = new Date(dateString + 'Z');
-  } else {
-    date = new Date(dateString);
-  }
-
-  if (isNaN(date.getTime())) return dateString;
-
-  // ローカルタイムゾーンの取得
-  const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  // 略称の取得
-  let localLabel = new Intl.DateTimeFormat('en-US', {
-    timeZone: localTimeZone,
-    timeZoneName: 'short'
-  }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || '';
-
-  // GMT-3 などのオフセット表示を BRT 等の略称にマッピング
-  if (localTimeZone === 'America/Sao_Paulo' || localLabel.includes('GMT-3')) {
-    localLabel = 'BRT';
-  } else if (localTimeZone === 'Asia/Tokyo' || localLabel.includes('GMT+9')) {
-    localLabel = 'JST';
-  }
-
-  const formatter = new Intl.DateTimeFormat('ja-JP', {
-    timeZone: localTimeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
-
-  return `${formatter.format(date)} ${localLabel}`;
-};
-
-const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  const formData = new FormData(e.currentTarget);
-  const email = (formData.get('email') as string) || loginForm.email;
-  const password = (formData.get('password') as string) || loginForm.password;
-
-  try {
-    await signIn(email, password);
-    // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
-    setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
-  } catch (error) {
-    console.error('Login error:', error);
-    alert(lang === 'es'
-      ? 'Error al iniciar sesión. Verifica tu email y contraseña.'
-      : 'Erro ao fazer login. Verifique seu email e senha.');
-  }
-};
-
-const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  const formData = new FormData(e.currentTarget);
-  const email = (formData.get('email') as string) || loginForm.email;
-  const password = (formData.get('password') as string) || loginForm.password;
-  const fullName = (formData.get('fullName') as string) || loginForm.fullName;
-  const whatsapp = (formData.get('whatsapp') as string) || loginForm.whatsapp;
-
-  try {
-    await signUp(email, password, 'customer', fullName, whatsapp);
-
-    // メール確認が必要な場合は成功メッセージを表示
-    alert(lang === 'es'
-      ? '¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta.'
-      : 'Conta criada! Por favor, verifique seu e-mail para confirmar sua conta.');
-
-    setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
-    setShowSignUp(false);
-  } catch (error) {
-    console.error('Sign up error:', error);
-    alert(lang === 'es'
-      ? 'Error al crear cuenta. El email puede estar en uso.'
-      : 'Erro ao criar conta. O email pode já estar em uso.');
-  }
-};
-
-const handleLogout = async () => {
-  await signOut();
-  // cookieベースセッションのため、ページリロードで確実にクリア
-  window.location.href = '/';
-};
-
-// ← ここに追加！
-const getFilteredPurchasedItems = () => {
-  let filtered = purchasedItems;
-
-  // 顧客名でフィルタリング
-  if (selectedCustomer && selectedCustomer !== 'all') {
-    filtered = filtered.filter(item => item.customerName === selectedCustomer);
-  }
-
-  // 期間でフィルタリング
-  if (purchasedPeriod !== 'all') {
-    const now = new Date();
-    const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
-    const days = (daysMap as any)[purchasedPeriod];
-    const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-
-    filtered = filtered.filter(item =>
-      new Date(item.confirmedAt).getTime() >= cutoffDate.getTime()
-    );
-  }
-
-  return filtered;
-};
-
-const handleBidRequest = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  if (!selectedProduct || !bidForm.name || !bidForm.maxBid) return;
-
-  // 10件制限チェック
-  if (myRequests.length >= 10) {
-    alert(lang === 'es'
-      ? 'Has alcanzado el límite máximo de 10 solicitudes. Por favor, espera a que se procesen las actuales.'
-      : 'Você atingiu o limite máximo de 10 solicitações. Aguarde o processamento das atuais.');
-    return;
-  }
-
-  try {
-    // 念のためセッションから最新のトークンを取得
-    const { data: { session: clientSession } } = await supabase.auth.getSession();
-    const accessToken = clientSession?.access_token;
-
-    console.log('=== API Fetch Debug ===');
-    console.log('Token exists:', !!accessToken);
-    console.log('Session user:', clientSession?.user?.email);
-
-    const res = await fetch('/api/bid-request', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-      },
-      body: JSON.stringify({
-        productId: selectedProduct.id,
-        productTitle: selectedProduct.titleJa || selectedProduct.title,
-        productUrl: selectedProduct.url,
-        productImage: selectedProduct.imageUrl,
-        productPrice: selectedProduct.currentPrice,
-        productEndTime: selectedProduct.endTime,
-        maxBid: parseFloat(bidForm.maxBid),
-        customerName: bidForm.name,
-        customerEmail: currentUser?.email,
-        language: lang
-      })
+    const formatter = new Intl.DateTimeFormat('ja-JP', {
+      timeZone: localTimeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
     });
 
-    if (res.ok) {
+    return `${formatter.format(date)} ${localLabel}`;
+  };
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = (formData.get('email') as string) || loginForm.email;
+    const password = (formData.get('password') as string) || loginForm.password;
+
+    try {
+      await signIn(email, password);
+      // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
+    } catch (error) {
+      console.error('Login error:', error);
+      alert(lang === 'es'
+        ? 'Error al iniciar sesión. Verifica tu email y contraseña.'
+        : 'Erro ao fazer login. Verifique seu email e senha.');
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = (formData.get('email') as string) || loginForm.email;
+    const password = (formData.get('password') as string) || loginForm.password;
+    const fullName = (formData.get('fullName') as string) || loginForm.fullName;
+    const whatsapp = (formData.get('whatsapp') as string) || loginForm.whatsapp;
+
+    try {
+      await signUp(email, password, 'customer', fullName, whatsapp);
+
+      // メール確認が必要な場合は成功メッセージを表示
+      alert(lang === 'es'
+        ? '¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta.'
+        : 'Conta criada! Por favor, verifique seu e-mail para confirmar sua conta.');
+
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
+      setShowSignUp(false);
+    } catch (error) {
+      console.error('Sign up error:', error);
+      alert(lang === 'es'
+        ? 'Error al crear cuenta. El email puede estar en uso.'
+        : 'Erro ao criar conta. O email pode já estar em uso.');
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    // cookieベースセッションのため、ページリロードで確実にクリア
+    window.location.href = '/';
+  };
+
+  // ← ここに追加！
+  const getFilteredPurchasedItems = () => {
+    let filtered = purchasedItems;
+
+    // 顧客名でフィルタリング
+    if (selectedCustomer && selectedCustomer !== 'all') {
+      filtered = filtered.filter(item => item.customerName === selectedCustomer);
+    }
+
+    // 期間でフィルタリング
+    if (purchasedPeriod !== 'all') {
+      const now = new Date();
+      const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
+      const days = (daysMap as any)[purchasedPeriod];
+      const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+      filtered = filtered.filter(item =>
+        new Date(item.confirmedAt).getTime() >= cutoffDate.getTime()
+      );
+    }
+
+    return filtered;
+  };
+
+  const handleBidRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedProduct || !bidForm.name || !bidForm.maxBid) return;
+
+    // 10件制限チェック
+    if (myRequests.length >= 10) {
+      alert(lang === 'es'
+        ? 'Has alcanzado el límite máximo de 10 solicitudes. Por favor, espera a que se procesen las actuales.'
+        : 'Você atingiu o limite máximo de 10 solicitações. Aguarde o processamento das atuais.');
+      return;
+    }
+
+    try {
+      // 念のためセッションから最新のトークンを取得
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      console.log('=== API Fetch Debug ===');
+      console.log('Token exists:', !!accessToken);
+      console.log('Session user:', clientSession?.user?.email);
+
+      const res = await fetch('/api/bid-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({
+          productId: selectedProduct.id,
+          productTitle: selectedProduct.titleJa || selectedProduct.title,
+          productUrl: selectedProduct.url,
+          productImage: selectedProduct.imageUrl,
+          productPrice: selectedProduct.currentPrice,
+          productEndTime: selectedProduct.endTime,
+          maxBid: parseFloat(bidForm.maxBid),
+          customerName: bidForm.name,
+          customerEmail: currentUser?.email,
+          language: lang
+        })
+      });
+
+      if (res.ok) {
+        // 管理者へ通知
+        if (currentUser) {
+          fetch('/api/push-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sendToAdmins: true,
+              title: 'JOGALIBRE',
+              body: `更新通知： ${currentUser.fullName || bidForm.name}`,
+              url: '/admin'
+            })
+          }).catch(e => console.error('Admin push error', e));
+        }
+
+        alert(t.offerSuccess);
+        setSelectedProduct(null);
+        setBidForm({ name: '', maxBid: '' });
+        setSearchUrl('');  // URLをクリア
+        setProducts([]);   // 商品リストをクリア
+        fetchMyRequests();
+      } else {
+        alert(t.offerError);
+      }
+    } catch (error) {
+      console.error('Error submitting bid request:', error);
+      alert(t.offerError);
+    }
+  };
+
+  // 時間計算ロジックを管理者画面と統一 (JST考慮)
+  const getTimeRemaining = (endTime: string, timeLeftStr?: string) => {
+    if (!endTime) return timeLeftStr || '-';
+
+    // タイムゾーン情報がない場合、日本標準時 (JST) として扱う
+    let endDate: Date;
+    if (!endTime.includes('Z') && !endTime.includes('+') && !endTime.includes('-', 10)) {
+      endDate = new Date(endTime + '+09:00');
+    } else {
+      endDate = new Date(endTime);
+    }
+
+    const now = new Date().getTime();
+    const end = endDate.getTime();
+    const diff = end - now;
+
+    if (diff <= 0) return (lang === 'es' ? 'Finalizado' : 'Finalizado');
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+
+    return parts.join(' ') || (lang === 'es' ? 'Menos de 1m' : 'Menos de 1m');
+  };
+
+  const calculateUSDPrice = (jpyPrice: number, shippingCost: number = 0) => {
+    const FOB_COST = 1350;
+    const totalJpyPrice = jpyPrice + shippingCost + FOB_COST;
+    const priceWithProfit = totalJpyPrice / 0.8;
+    const usdPrice = priceWithProfit / exchangeRate;
+    const roundedUp = Math.ceil(usdPrice / 10) * 10;
+    return roundedUp.toLocaleString('en-US');
+  };
+
+  const fetchMyRequests = async () => {
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/bid-request?email=${currentUser?.email}`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+      const data = await res.json();
+
+      // スネークケースからキャメルケースに変換
+      const convertedRequests = (data.bidRequests || []).map((req: any) => ({
+        id: req.id,
+        productId: req.product_id,
+        productTitle: req.product_title,
+        productUrl: req.product_url,
+        productImage: req.product_image,
+        productPrice: req.product_price,
+        productEndTime: req.product_end_time,
+        maxBid: req.max_bid,
+        customerName: req.customer_name,
+        customerEmail: req.customer_email,
+        language: req.language,
+        status: req.status,
+        createdAt: req.created_at,
+        approvedAt: req.approved_at,
+        rejectReason: req.reject_reason,
+        counterOffer: req.counter_offer,
+        shippingCostJpy: req.shipping_cost_jpy,
+        customerCounterOffer: req.customer_counter_offer,
+        customerCounterOfferUsed: req.customer_counter_offer_used,
+        finalStatus: req.final_status,
+        finalPrice: req.final_price,
+        customerConfirmed: req.customer_confirmed,
+        customerMessage: req.customer_message,
+        adminNeedsConfirm: req.admin_needs_confirm
+      }));
+
+      // 商品タイトルを選択言語に翻訳
+      const titles = convertedRequests.map((req: any) => req.productTitle || '');
+      const translatedTitles = await translateTitles(titles, lang);
+      const requestsWithTranslation = convertedRequests.map((req: any, i: number) => ({
+        ...req,
+        productTitle: translatedTitles[i] || req.productTitle
+      }));
+
+      setMyRequests(requestsWithTranslation);
+    } catch (error) {
+      console.error('Error fetching requests:', error);
+    }
+  };
+
+  const fetchProductDetailForOffer = async (url: string) => {
+    setLoading(true);
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/yahoo-product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({ url, lang })
+      });
+      const data = await res.json();
+      if (data.product) {
+        const detail = data.product;
+        setSelectedProduct(detail);
+        setBidForm({ name: '', maxBid: '' });
+
+        // 商品リスト(products)を同期更新
+        setProducts(prev => prev.map(p =>
+          p.url === detail.url ? { ...p, ...detail, images: detail.images || [detail.imageUrl] } : p
+        ));
+
+        // お気に入りリスト(favorites)も同期更新（もし存在すれば）
+        setFavorites(prev => prev.map(f =>
+          f.url === detail.url ? { ...f, ...detail, images: detail.images || [detail.imageUrl] } : f
+        ));
+      }
+    } catch (error) {
+      console.error('Error fetching product for offer:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!searchUrl.trim()) return;
+
+    setLoading(true);
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/yahoo-product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({ url: searchUrl, lang })
+      });
+
+      const data = await res.json();
+      console.log('Imported product data:', data.product);
+      if (data.product) {
+        setProducts([data.product]);
+        // スクロール処理 (画面上部に商品ボックスが来るようにズラす)
+        setTimeout(() => {
+          if (resultsRef.current) {
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 110;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Error importing product:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeywordSearch = async (e?: React.FormEvent, page: number = 1) => {
+    if (e) e.preventDefault();
+    if (!keyword.trim()) return;
+
+    setIsSearching(true);
+    setLoading(true);
+    setSearchPage(page);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(keyword)}&lang=${lang}&page=${page}`);
+      const data = await res.json();
+      if (data.items) {
+        setProducts(data.items);
+        setNextPageExists(data.nextPage || false);
+        // スクロール処理 (固定ヘッダー分80pxほどズラす)
+        setTimeout(() => {
+          if (resultsRef.current) {
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 110;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+      setLoading(false);
+    }
+  };
+
+  const fetchCategoryItems = async (url: string, page: number = 1) => {
+    setIsSearching(true);
+    setLoading(true);
+    setSearchPage(page);
+
+    // カテゴリURLに exflg=1 を付与して検索結果形式を安定させる
+    let targetUrl = url;
+    if (!targetUrl.includes('exflg=1')) {
+      const connector = targetUrl.includes('?') ? '&' : '?';
+      targetUrl += `${connector}exflg=1`;
+    }
+
+    setActiveCategoryUrl(targetUrl);
+    try {
+      const res = await fetch(`/api/search?url=${encodeURIComponent(targetUrl)}&page=${page}&lang=${lang}`);
+      const data = await res.json();
+      if (data.items) {
+        setProducts(data.items);
+        setNextPageExists(data.nextPage || false);
+        // スクロール処理 (固定ヘッダー分80pxほどズラす)
+        setTimeout(() => {
+          if (resultsRef.current) {
+            const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 110;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'counter_offer': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getFinalStatusColor = (finalStatus: string) => {
+    switch (finalStatus) {
+      case 'won': return 'bg-green-100 text-green-800';
+      case 'lost': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleCounterOfferResponse = async (requestId: string, action: 'accept' | 'reject' | 'counter', counterAmount?: number) => {
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      if (action === 'accept') {
+        await fetch('/api/bid-request', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+          },
+          body: JSON.stringify({
+            id: requestId,
+            customerAction: 'accept_counter'
+          })
+        });
+      } else if (action === 'reject') {
+        await fetch('/api/bid-request', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+          },
+          body: JSON.stringify({
+            id: requestId,
+            customerAction: 'reject_counter'
+          })
+        });
+      } else if (action === 'counter' && counterAmount) {
+        await fetch('/api/bid-request', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+          },
+          body: JSON.stringify({
+            id: requestId,
+            customerCounterOffer: counterAmount
+          })
+        });
+      }
+
       // 管理者へ通知
       if (currentUser) {
         fetch('/api/push-send', {
@@ -981,1247 +1303,600 @@ const handleBidRequest = async (e: React.FormEvent) => {
           body: JSON.stringify({
             sendToAdmins: true,
             title: 'JOGALIBRE',
-            body: `更新通知： ${currentUser.fullName || bidForm.name}`,
+            body: `更新通知： ${currentUser.fullName || currentUser.email}`,
             url: '/admin'
           })
         }).catch(e => console.error('Admin push error', e));
       }
 
-      alert(t.offerSuccess);
-      setSelectedProduct(null);
-      setBidForm({ name: '', maxBid: '' });
-      setSearchUrl('');  // URLをクリア
-      setProducts([]);   // 商品リストをクリア
       fetchMyRequests();
-    } else {
-      alert(t.offerError);
+    } catch (error) {
+      console.error('Error responding to counter offer:', error);
     }
-  } catch (error) {
-    console.error('Error submitting bid request:', error);
-    alert(t.offerError);
-  }
-};
+  };
 
-// 時間計算ロジックを管理者画面と統一 (JST考慮)
-const getTimeRemaining = (endTime: string, timeLeftStr?: string) => {
-  if (!endTime) return timeLeftStr || '-';
+  const handleFinalStatusConfirm = async (requestId: string, message?: string) => {
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
 
-  // タイムゾーン情報がない場合、日本標準時 (JST) として扱う
-  let endDate: Date;
-  if (!endTime.includes('Z') && !endTime.includes('+') && !endTime.includes('-', 10)) {
-    endDate = new Date(endTime + '+09:00');
-  } else {
-    endDate = new Date(endTime);
-  }
+      await fetch('/api/bid-request', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({
+          id: requestId,
+          customerConfirmed: true,
+          customerMessage: message || ''
+        })
+      });
 
-  const now = new Date().getTime();
-  const end = endDate.getTime();
-  const diff = end - now;
-
-  if (diff <= 0) return (lang === 'es' ? 'Finalizado' : 'Finalizado');
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-  const parts = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0) parts.push(`${minutes}m`);
-
-  return parts.join(' ') || (lang === 'es' ? 'Menos de 1m' : 'Menos de 1m');
-};
-
-const calculateUSDPrice = (jpyPrice: number, shippingCost: number = 0) => {
-  const FOB_COST = 1350;
-  const totalJpyPrice = jpyPrice + shippingCost + FOB_COST;
-  const priceWithProfit = totalJpyPrice / 0.8;
-  const usdPrice = priceWithProfit / exchangeRate;
-  const roundedUp = Math.ceil(usdPrice / 10) * 10;
-  return roundedUp.toLocaleString('en-US');
-};
-
-const fetchMyRequests = async () => {
-  try {
-    const { data: { session: clientSession } } = await supabase.auth.getSession();
-    const accessToken = clientSession?.access_token;
-
-    const res = await fetch(`/api/bid-request?email=${currentUser?.email}`, {
-      headers: {
-        'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+      // 管理者へ通知
+      if (currentUser) {
+        fetch('/api/push-send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sendToAdmins: true,
+            title: 'JOGALIBRE',
+            body: `Result Confirm: ${currentUser.fullName || currentUser.email}`,
+            url: '/admin'
+          })
+        }).catch(e => console.error('Admin push error', e));
       }
-    });
-    const data = await res.json();
 
-    // スネークケースからキャメルケースに変換
-    const convertedRequests = (data.bidRequests || []).map((req: any) => ({
-      id: req.id,
-      productId: req.product_id,
-      productTitle: req.product_title,
-      productUrl: req.product_url,
-      productImage: req.product_image,
-      productPrice: req.product_price,
-      productEndTime: req.product_end_time,
-      maxBid: req.max_bid,
-      customerName: req.customer_name,
-      customerEmail: req.customer_email,
-      language: req.language,
-      status: req.status,
-      createdAt: req.created_at,
-      approvedAt: req.approved_at,
-      rejectReason: req.reject_reason,
-      counterOffer: req.counter_offer,
-      shippingCostJpy: req.shipping_cost_jpy,
-      customerCounterOffer: req.customer_counter_offer,
-      customerCounterOfferUsed: req.customer_counter_offer_used,
-      finalStatus: req.final_status,
-      finalPrice: req.final_price,
-      customerConfirmed: req.customer_confirmed,
-      customerMessage: req.customer_message,
-      adminNeedsConfirm: req.admin_needs_confirm
-    }));
-
-    // 商品タイトルを選択言語に翻訳
-    const titles = convertedRequests.map((req: any) => req.productTitle || '');
-    const translatedTitles = await translateTitles(titles, lang);
-    const requestsWithTranslation = convertedRequests.map((req: any, i: number) => ({
-      ...req,
-      productTitle: translatedTitles[i] || req.productTitle
-    }));
-
-    setMyRequests(requestsWithTranslation);
-  } catch (error) {
-    console.error('Error fetching requests:', error);
-  }
-};
-
-const fetchProductDetailForOffer = async (url: string) => {
-  setLoading(true);
-  try {
-    const { data: { session: clientSession } } = await supabase.auth.getSession();
-    const accessToken = clientSession?.access_token;
-
-    const res = await fetch('/api/yahoo-product', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-      },
-      body: JSON.stringify({ url, lang })
-    });
-    const data = await res.json();
-    if (data.product) {
-      const detail = data.product;
-      setSelectedProduct(detail);
-      setBidForm({ name: '', maxBid: '' });
-
-      // 商品リスト(products)を同期更新
-      setProducts(prev => prev.map(p =>
-        p.url === detail.url ? { ...p, ...detail, images: detail.images || [detail.imageUrl] } : p
-      ));
-
-      // お気に入りリスト(favorites)も同期更新（もし存在すれば）
-      setFavorites(prev => prev.map(f =>
-        f.url === detail.url ? { ...f, ...detail, images: detail.images || [detail.imageUrl] } : f
-      ));
-    }
-  } catch (error) {
-    console.error('Error fetching product for offer:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handleImport = async () => {
-  if (!searchUrl.trim()) return;
-
-  setLoading(true);
-  try {
-    const { data: { session: clientSession } } = await supabase.auth.getSession();
-    const accessToken = clientSession?.access_token;
-
-    const res = await fetch('/api/yahoo-product', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-      },
-      body: JSON.stringify({ url: searchUrl, lang })
-    });
-
-    const data = await res.json();
-    console.log('Imported product data:', data.product);
-    if (data.product) {
-      setProducts([data.product]);
-      // スクロール処理 (画面上部に商品ボックスが来るようにズラす)
-      setTimeout(() => {
-        if (resultsRef.current) {
-          const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 110;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        } else {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }, 100);
-    }
-  } catch (error) {
-    console.error('Error importing product:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-const handleKeywordSearch = async (e?: React.FormEvent, page: number = 1) => {
-  if (e) e.preventDefault();
-  if (!keyword.trim()) return;
-
-  setIsSearching(true);
-  setLoading(true);
-  setSearchPage(page);
-  try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(keyword)}&lang=${lang}&page=${page}`);
-    const data = await res.json();
-    if (data.items) {
-      setProducts(data.items);
-      setNextPageExists(data.nextPage || false);
-      // スクロール処理 (固定ヘッダー分80pxほどズラす)
-      setTimeout(() => {
-        if (resultsRef.current) {
-          const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 110;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        } else {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }, 100);
-    }
-  } catch (error) {
-    console.error('Search error:', error);
-  } finally {
-    setIsSearching(false);
-    setLoading(false);
-  }
-};
-
-const fetchCategoryItems = async (url: string, page: number = 1) => {
-  setIsSearching(true);
-  setLoading(true);
-  setSearchPage(page);
-
-  // カテゴリURLに exflg=1 を付与して検索結果形式を安定させる
-  let targetUrl = url;
-  if (!targetUrl.includes('exflg=1')) {
-    const connector = targetUrl.includes('?') ? '&' : '?';
-    targetUrl += `${connector}exflg=1`;
-  }
-
-  setActiveCategoryUrl(targetUrl);
-  try {
-    const res = await fetch(`/api/search?url=${encodeURIComponent(targetUrl)}&page=${page}&lang=${lang}`);
-    const data = await res.json();
-    if (data.items) {
-      setProducts(data.items);
-      setNextPageExists(data.nextPage || false);
-      // スクロール処理 (固定ヘッダー分80pxほどズラす)
-      setTimeout(() => {
-        if (resultsRef.current) {
-          const y = resultsRef.current.getBoundingClientRect().top + window.scrollY - 110;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        } else {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }, 100);
-    }
-  } catch (error) {
-    console.error('Search error:', error);
-  } finally {
-    setIsSearching(false);
-    setLoading(false);
-  }
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'pending': return 'bg-yellow-100 text-yellow-800';
-    case 'approved': return 'bg-green-100 text-green-800';
-    case 'rejected': return 'bg-red-100 text-red-800';
-    case 'counter_offer': return 'bg-blue-100 text-blue-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-};
-
-const getFinalStatusColor = (finalStatus: string) => {
-  switch (finalStatus) {
-    case 'won': return 'bg-green-100 text-green-800';
-    case 'lost': return 'bg-red-100 text-red-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-};
-
-const handleCounterOfferResponse = async (requestId: string, action: 'accept' | 'reject' | 'counter', counterAmount?: number) => {
-  try {
-    const { data: { session: clientSession } } = await supabase.auth.getSession();
-    const accessToken = clientSession?.access_token;
-
-    if (action === 'accept') {
-      await fetch('/api/bid-request', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-        },
-        body: JSON.stringify({
-          id: requestId,
-          customerAction: 'accept_counter'
-        })
-      });
-    } else if (action === 'reject') {
-      await fetch('/api/bid-request', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-        },
-        body: JSON.stringify({
-          id: requestId,
-          customerAction: 'reject_counter'
-        })
-      });
-    } else if (action === 'counter' && counterAmount) {
-      await fetch('/api/bid-request', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-        },
-        body: JSON.stringify({
-          id: requestId,
-          customerCounterOffer: counterAmount
-        })
-      });
-    }
-
-    // 管理者へ通知
-    if (currentUser) {
-      fetch('/api/push-send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sendToAdmins: true,
-          title: 'JOGALIBRE',
-          body: `更新通知： ${currentUser.fullName || currentUser.email}`,
-          url: '/admin'
-        })
-      }).catch(e => console.error('Admin push error', e));
-    }
-
-    fetchMyRequests();
-  } catch (error) {
-    console.error('Error responding to counter offer:', error);
-  }
-};
-
-const handleFinalStatusConfirm = async (requestId: string, message?: string) => {
-  try {
-    const { data: { session: clientSession } } = await supabase.auth.getSession();
-    const accessToken = clientSession?.access_token;
-
-    await fetch('/api/bid-request', {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-      },
-      body: JSON.stringify({
-        id: requestId,
-        customerConfirmed: true,
-        customerMessage: message || ''
-      })
-    });
-
-    // 管理者へ通知
-    if (currentUser) {
-      fetch('/api/push-send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sendToAdmins: true,
-          title: 'JOGALIBRE',
-          body: `Result Confirm: ${currentUser.fullName || currentUser.email}`,
-          url: '/admin'
-        })
-      }).catch(e => console.error('Admin push error', e));
-    }
-
-    fetchMyRequests();
-  } catch (error) {
-    console.error('Error confirming:', error);
-  }
-};
-
-// ← ここに追加！
-const confirmRejection = async (requestId: string) => {
-  try {
-    const { data: { session: clientSession } } = await supabase.auth.getSession();
-    const accessToken = clientSession?.access_token;
-
-    const res = await fetch(`/api/bid-request?id=${requestId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-      }
-    });
-
-    if (res.ok) {
       fetchMyRequests();
+    } catch (error) {
+      console.error('Error confirming:', error);
     }
-  } catch (error) {
-    console.error('Error confirming rejection:', error);
-  }
-};
+  };
 
-if (!currentUser) {
-  return (
-    <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full relative z-10 pt-safe">
+  // ← ここに追加！
+  const confirmRejection = async (requestId: string) => {
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
 
-        <div className="flex items-center gap-3 mb-2 mt-4">
-          <h1 className="text-3xl font-bold text-black">{t.title}</h1>
-          <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-10 h-10 rounded" />
-        </div>
-        <p className="text-gray-600 mb-6">{t.subtitle}</p>
+      const res = await fetch(`/api/bid-request?id=${requestId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-2">{t.language}</label>
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2"
-          >
-            <option value="es">Español</option>
-            <option value="pt">Português</option>
-          </select>
-        </div>
+      if (res.ok) {
+        fetchMyRequests();
+      }
+    } catch (error) {
+      console.error('Error confirming rejection:', error);
+    }
+  };
 
-        <form onSubmit={showSignUp ? handleSignUp : handleLogin} className="space-y-4">
-          {showSignUp && (
-            <>
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  {lang === 'es' ? 'Nombre completo' : 'Nome completo'}
-                </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={loginForm.fullName}
-                  onChange={(e) => setLoginForm({ ...loginForm, fullName: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                  autoComplete="name"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">WhatsApp</label>
-                <input
-                  type="tel"
-                  name="whatsapp"
-                  value={loginForm.whatsapp}
-                  onChange={(e) => setLoginForm({ ...loginForm, whatsapp: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                  placeholder="+55 11 98765-4321"
-                  autoComplete="tel"
-                  required
-                />
-              </div>
-            </>
-          )}
-          <div>
-            <label className="block text-sm font-medium mb-2">{t.email}</label>
-            <input
-              type="email"
-              name="email"
-              value={loginForm.email}
-              onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-              autoComplete="username"
-              required
-            />
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full relative z-10 pt-safe">
+
+          <div className="flex items-center gap-3 mb-2 mt-4">
+            <h1 className="text-3xl font-bold text-black">{t.title}</h1>
+            <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-10 h-10 rounded" />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">{t.password}</label>
-            <input
-              type="password"
-              name="password"
-              value={loginForm.password}
-              onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-              autoComplete="current-password"
-              required
-              minLength={6}
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
-          >
-            {showSignUp ? (lang === 'es' ? 'Crear Cuenta' : 'Criar Conta') : t.loginButton}
-          </button>
-        </form>
+          <p className="text-gray-600 mb-6">{t.subtitle}</p>
 
-        {!showSignUp && !showResetPassword && (
-          <div className="mt-3 text-center">
-            <button
-              onClick={() => setShowResetPassword(true)}
-              className="text-sm text-gray-500 hover:underline"
-            >
-              {lang === 'es' ? '¿Olvidaste tu contraseña?' : 'Esqueceu sua senha?'}
-            </button>
-          </div>
-        )}
-
-        {showResetPassword && (
-          <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
-            <p className="text-sm text-gray-700 mb-3">
-              {lang === 'es'
-                ? 'Ingresa tu email para recibir un enlace de recuperación:'
-                : 'Digite seu e-mail para receber um link de recuperação:'}
-            </p>
-            <input
-              type="email"
-              value={resetEmail}
-              onChange={(e) => setResetEmail(e.target.value)}
-              placeholder={lang === 'es' ? 'tu@email.com' : 'seu@email.com'}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={async () => {
-                  if (!resetEmail.trim()) return;
-                  try {
-                    await resetPassword(resetEmail);
-                    alert(lang === 'es'
-                      ? 'Se envió un enlace de recuperación a tu email.'
-                      : 'Um link de recuperação foi enviado para seu e-mail.');
-                    setShowResetPassword(false);
-                    setResetEmail('');
-                  } catch (error) {
-                    console.error('Reset password error:', error);
-                    alert(lang === 'es'
-                      ? 'Error al enviar el enlace. Verifica tu email.'
-                      : 'Erro ao enviar o link. Verifique seu e-mail.');
-                  }
-                }}
-                className="flex-1 bg-yellow-500 text-white py-2 rounded-lg font-semibold hover:bg-yellow-600 transition text-sm"
-              >
-                {lang === 'es' ? 'Enviar enlace' : 'Enviar link'}
-              </button>
-              <button
-                onClick={() => { setShowResetPassword(false); setResetEmail(''); }}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-400 transition text-sm"
-              >
-                {lang === 'es' ? 'Cancelar' : 'Cancelar'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => { setShowSignUp(!showSignUp); setShowResetPassword(false); }}
-            className="text-sm text-indigo-600 hover:underline"
-          >
-            {showSignUp
-              ? (lang === 'es' ? '¿Ya tienes cuenta? Inicia sesión' : 'Já tem conta? Faça login')
-              : (lang === 'es' ? '¿No tienes cuenta? Regístrate' : 'Não tem conta? Cadastre-se')
-            }
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// 共通のカード描画関数
-const renderProductCard = (product: any, index: number, isFavoriteTab: boolean = false) => {
-  const isFav = favorites.some(f => f.id === product.id);
-
-  return (
-    <div key={`product-${isFavoriteTab ? 'fav' : 'search'}-${index}-${product.id}`} className="bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col h-full group">
-
-
-
-      <div className="relative aspect-square w-full">
-        <img
-          src={product.imageUrl}
-          alt={product.title}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
-
-
-        {/* お気に入り（★）ボタン（画像上・右下） */}
-        <button
-          onClick={(e) => toggleFavorite(product, e)}
-          disabled={isTogglingFavorite === product.id}
-          className="absolute bottom-2 right-2 z-10 p-2 sm:p-2.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center group-hover:shadow-md"
-        >
-          {isTogglingFavorite === product.id ? (
-            <svg className="animate-spin h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          ) : (
-            <span className={`text-xl sm:text-2xl leading-none ${isFav ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300'} transition-colors`}>
-              {isFav ? '★' : '☆'}
-            </span>
-          )}
-        </button>
-      </div>
-      <div className="p-3 sm:p-4 flex flex-col flex-1">
-        <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 leading-[1.25rem] h-[2.5rem] overflow-hidden w-full mb-2">{product.title}</h3>
-
-        <div className="mt-auto space-y-1.5 sm:space-y-2">
-          <a
-            href={product.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-center text-[10px] sm:text-xs text-indigo-600 hover:underline font-bold py-1 sm:py-1.5 bg-indigo-50 rounded block w-full mb-1"
-          >
-            {t.viewOnYahoo}
-          </a>
-          <div className="flex justify-between items-center bg-gray-50 p-1.5 sm:p-2 rounded mt-1 sm:mt-2">
-            <span className="text-[10px] sm:text-xs text-gray-500 font-medium">{t.bidsLabel}:</span>
-            <span className="text-[10px] sm:text-xs font-bold text-gray-700 bg-white px-1.5 sm:px-2 py-0.5 rounded shadow-sm">{product.bids || 0}</span>
-          </div>
-          <div className="flex justify-between items-center text-[10px] sm:text-xs bg-red-50 p-1.5 sm:p-2 rounded text-red-700 font-medium">
-            <span>{t.timeLeft}:</span>
-            <span className="text-right line-clamp-2 max-w-[60%] font-semibold">{getTimeRemaining(product.endTime || '', product.timeLeft)}</span>
-          </div>
-
-          <div className="my-2 sm:my-3">
-            <div className="flex items-center justify-between bg-green-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
-              <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">USD</span>
-              <div className="flex items-center">
-                <span className="font-extrabold text-green-700 text-lg sm:text-xl leading-none tabular-nums tracking-tight">
-                  <span className="text-sm font-semibold mr-0.5">$</span>
-                  {calculateUSDPrice(product.currentPrice, product.shippingCost)}
-                </span>
-                <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              if (product.url) {
-                fetchProductDetailForOffer(product.url);
-              } else {
-                setSelectedProduct(product);
-                setBidForm({ name: '', maxBid: '' });
-              }
-            }}
-            className="w-full bg-indigo-600 text-white font-bold py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg hover:bg-indigo-700 transition shadow-sm hover:shadow active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-2 mt-auto text-xs sm:text-sm"
-            style={{ minHeight: '40px' }}
-          >
-            <span>{t.makeOffer}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-return (
-  <div className="min-h-screen-safe bg-gray-100 relative">
-    {/* Pull to Refresh インジケーター表示 */}
-    {isRefreshing && (
-      <div className="fixed top-0 left-0 right-0 flex justify-center pt-safe z-[9999] pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
-        <div className="bg-white rounded-full p-2 shadow-xl border border-indigo-100 ring-4 ring-indigo-50 mt-4">
-
-          <svg className="animate-spin h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        </div>
-      </div>
-    )}
-    <header className="bg-white shadow sticky top-0 z-50 pt-safe">
-      <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
-        {/* 1行目: ロゴ & 言語選択 & ログアウト */}
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-black leading-none">{t.title}</h1>
-            <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-6 h-6 sm:w-8 sm:h-8 rounded" />
-          </div>
-
-          <div className="flex items-center gap-2">
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2">{t.language}</label>
             <select
               value={lang}
               onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-              className="bg-gray-50 border border-gray-200 text-gray-700 py-1 px-2 rounded-lg text-[10px] sm:text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2"
             >
-              <option value="es">ES</option>
-              <option value="pt">PT</option>
+              <option value="es">Español</option>
+              <option value="pt">Português</option>
             </select>
-
-            <button
-              onClick={handleLogout}
-              className="px-2 py-1 text-[10px] sm:text-xs text-red-600 hover:text-red-800 font-extrabold transition-colors hover:bg-red-50 rounded-lg"
-            >
-              {t.logout}
-            </button>
           </div>
-        </div>
 
-        {/* 2行目: サブタイトル & お知らせボタン */}
-        <div className="flex justify-between items-center">
-          <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t.subtitle}</p>
-
-          <button
-            onClick={() => {
-              setShowNotifications(true);
-              fetchNotifications();
-            }}
-            className="relative flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors"
-          >
-            <span>{lang === 'es' ? 'Avisos' : 'Avisos'}</span>
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white animate-pulse">
-                {unreadCount}
-              </span>
+          <form onSubmit={showSignUp ? handleSignUp : handleLogin} className="space-y-4">
+            {showSignUp && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {lang === 'es' ? 'Nombre completo' : 'Nome completo'}
+                  </label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={loginForm.fullName}
+                    onChange={(e) => setLoginForm({ ...loginForm, fullName: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    autoComplete="name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">WhatsApp</label>
+                  <input
+                    type="tel"
+                    name="whatsapp"
+                    value={loginForm.whatsapp}
+                    onChange={(e) => setLoginForm({ ...loginForm, whatsapp: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    placeholder="+55 11 98765-4321"
+                    autoComplete="tel"
+                    required
+                  />
+                </div>
+              </>
             )}
-            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
-      {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
-      <div className="flex gap-2">
-        <button
-          onClick={sendWhatsAppNotification}
-          disabled={isSendingNotification}
-          className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base disabled:bg-gray-400"
-        >
-          {isSendingNotification ? '...' : '📱 WhatsApp'}
-        </button>
-        <button
-          onClick={async () => {
-            if (!currentUser) return;
-            const permission = getNotificationPermission();
-            if (permission === 'unsupported') {
-              alert(lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.');
-              return;
-            }
-            if (permission === 'granted') {
-              try {
-                const res = await fetch(`/api/push-subscribe?userId=${currentUser.id}`);
-                if (res.ok) {
-                  await fetch('/api/push-subscribe', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUser.id }),
-                  });
-                  setNotificationStatus('disabled');
-                  alert(lang === 'es' ? 'Notificaciones desactivadas' : 'Notificações desativadas');
-                  return;
-                }
-              } catch { }
-            }
-            try {
-              const subscription = await requestNotificationPermission();
-              if (subscription) {
-                await fetch('/api/push-subscribe', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: currentUser.id, subscription }),
-                });
-                setNotificationStatus('enabled');
-                alert(lang === 'es' ? '¡Notificaciones activadas!' : 'Notificações ativadas!');
-              }
-            } catch (err) {
-              console.error('Push error:', err);
-            }
-          }}
-          className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
-            ? 'bg-gray-500 text-white hover:bg-gray-600'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-        >
-          {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
-        </button>
-      </div>
-
-      {/* 更新ボタン（全幅） */}
-      <button
-        onClick={() => {
-          if (activeTab === 'requests') fetchMyRequests();
-          else if (activeTab === 'purchased') fetchPurchasedItems();
-          else { fetchExchangeRate(); }
-        }}
-        className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
-      >
-        🔁 {t.refresh}
-      </button>
-
-      <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 flex justify-center items-center">
-        <div className="text-sm font-bold text-gray-600">
-          {t.exchangeRate}: <span className="text-indigo-600">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
-        </div>
-      </div>
-    </div>
-
-    {/* ボトムナビゲーション */}
-    <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t z-50 pb-safe">
-      <div className="max-w-7xl mx-auto px-1 sm:px-4">
-        <div className="flex justify-between items-center h-16 sm:h-20">
-          {[
-            { key: 'search' as const, label: t.searchBottomTab, icon: '🔍' },
-            { key: 'favorites' as const, label: t.favoritesTab, icon: '⭐' },
-            { key: 'requests' as const, label: t.myRequests, icon: '📋' },
-            { key: 'purchased' as const, label: t.purchasedItems, icon: '🛒' },
-            { key: 'mypage' as const, label: t.myPage, icon: '👤' },
-          ].map((tab) => (
+            <div>
+              <label className="block text-sm font-medium mb-2">{t.email}</label>
+              <input
+                type="email"
+                name="email"
+                value={loginForm.email}
+                onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                autoComplete="username"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">{t.password}</label>
+              <input
+                type="password"
+                name="password"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                autoComplete="current-password"
+                required
+                minLength={6}
+              />
+            </div>
             <button
-              key={tab.key}
-              onClick={() => {
-                setActiveTab(tab.key);
-                if (tab.key === 'requests') fetchMyRequests();
-                if (tab.key === 'purchased') fetchPurchasedItems();
-                if (tab.key === 'mypage' && currentUser) {
-                  // タブを開くたびに最新データを取得して確実に入力欄を埋める
-                  fetchUserProfile();
-                  // 通知状態をチェック
-                  const permission = getNotificationPermission();
-                  if (permission === 'unsupported') {
-                    setNotificationStatus('unsupported');
-                  } else if (permission === 'granted') {
-                    // サブスクリプションがDBにあるか確認
-                    fetch(`/api/push-subscribe?userId=${currentUser.id}`)
-                      .then(r => r.ok ? setNotificationStatus('enabled') : setNotificationStatus('disabled'))
-                      .catch(() => setNotificationStatus('disabled'));
-                  } else {
-                    setNotificationStatus('disabled');
-                  }
-                }
-              }}
-              className={`flex-1 flex flex-col items-center justify-center h-full transition-colors relative min-w-0 ${activeTab === tab.key
-                ? 'text-indigo-600'
-                : 'text-gray-400 hover:text-gray-600'
-                }`}
+              type="submit"
+              className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
             >
-              {/* 選択時のインジケーター */}
-              {activeTab === tab.key && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-indigo-600 rounded-b-full"></div>
-              )}
-              <span className={`text-xl sm:text-2xl mb-1 ${activeTab === tab.key ? 'scale-110' : ''} transition-transform`}>{tab.icon}</span>
-              <span className="text-[10px] sm:text-xs font-bold tracking-tight truncate w-full text-center px-1">{tab.label}</span>
+              {showSignUp ? (lang === 'es' ? 'Crear Cuenta' : 'Criar Conta') : t.loginButton}
             </button>
-          ))}
-        </div>
-      </div>
-    </nav>
+          </form>
 
-    {/* ボトムナビゲーション用に下部の余白を追加 */}
-    <main className="max-w-7xl mx-auto px-4 pt-0 sm:pt-0 pb-24 sm:pb-32 sm:px-6 lg:px-8">
-      {activeTab === 'favorites' ? (
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.favoritesTab}</h2>
-          {favorites.length === 0 ? (
-            <div className="text-center text-gray-500 py-12">
-              <p>{lang === 'es' ? 'No tienes productos en favoritos' : 'Você não tem produtos nos favoritos'}</p>
+          {!showSignUp && !showResetPassword && (
+            <div className="mt-3 text-center">
               <button
-                onClick={() => setActiveTab('search')}
-                className="mt-4 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-full font-bold text-sm hover:bg-indigo-100 transition"
+                onClick={() => setShowResetPassword(true)}
+                className="text-sm text-gray-500 hover:underline"
               >
-                {t.searchAction}
+                {lang === 'es' ? '¿Olvidaste tu contraseña?' : 'Esqueceu sua senha?'}
               </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mt-4">
-              {favorites.map((product, index) => renderProductCard(product, index, true))}
+          )}
+
+          {showResetPassword && (
+            <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+              <p className="text-sm text-gray-700 mb-3">
+                {lang === 'es'
+                  ? 'Ingresa tu email para recibir un enlace de recuperación:'
+                  : 'Digite seu e-mail para receber um link de recuperação:'}
+              </p>
+              <input
+                type="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                placeholder={lang === 'es' ? 'tu@email.com' : 'seu@email.com'}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (!resetEmail.trim()) return;
+                    try {
+                      await resetPassword(resetEmail);
+                      alert(lang === 'es'
+                        ? 'Se envió un enlace de recuperación a tu email.'
+                        : 'Um link de recuperação foi enviado para seu e-mail.');
+                      setShowResetPassword(false);
+                      setResetEmail('');
+                    } catch (error) {
+                      console.error('Reset password error:', error);
+                      alert(lang === 'es'
+                        ? 'Error al enviar el enlace. Verifica tu email.'
+                        : 'Erro ao enviar o link. Verifique seu e-mail.');
+                    }
+                  }}
+                  className="flex-1 bg-yellow-500 text-white py-2 rounded-lg font-semibold hover:bg-yellow-600 transition text-sm"
+                >
+                  {lang === 'es' ? 'Enviar enlace' : 'Enviar link'}
+                </button>
+                <button
+                  onClick={() => { setShowResetPassword(false); setResetEmail(''); }}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-400 transition text-sm"
+                >
+                  {lang === 'es' ? 'Cancelar' : 'Cancelar'}
+                </button>
+              </div>
             </div>
           )}
-        </div>
-      ) : activeTab === 'requests' ? (
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myRequests}</h2>
 
-          {myRequests.length === 0 ? (
-            <div className="text-center text-gray-500 py-12">
-              <p>No hay solicitudes</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {myRequests
-                .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-                .map((request) => (
-                  <div key={request.id} className="border rounded-lg p-4">
-                    <div className="flex gap-4 mb-3">
-                      {request.productImage && (
-                        <img
-                          src={request.productImage}
-                          alt={request.productTitle}
-                          className="w-32 h-32 object-cover rounded"
-                        />
-                      )}
-                      <div className="flex-1 min-h-[128px] flex flex-col py-0.5 min-w-0">
-                        <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{request.productTitle}</h3>
-                        <div className="flex flex-col gap-0.5">
-                          <div className="text-xs">
-                            <span className="text-gray-600">{lang === 'es' ? 'Cliente: ' : 'Cliente: '}</span>
-                            <span className="font-semibold">{request.customerName}</span>
-                          </div>
-                          <p className="text-xs text-gray-600">
-                            {t.maxBid}: <span className="font-bold text-blue-600">${Math.round(request.maxBid).toLocaleString('en-US')}</span>
-                          </p>
-                          {request.productEndTime && (
-                            <p className="text-[10px] text-gray-500">
-                              {t.endsIn}: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex flex-row flex-wrap gap-1 mt-1">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center ${getStatusColor(request.status)}`}>
-                            {t[request.status as keyof typeof t] || request.status}
-                          </span>
-                          {request.finalStatus && (
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center ${getFinalStatusColor(request.finalStatus)}`}>
-                              {t[request.finalStatus as keyof typeof t]}
-                            </span>
-                          )}
-                          {request.adminNeedsConfirm && (
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center bg-red-100 text-red-800`}>
-                              {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col gap-2 w-full mt-auto pt-2">
-                          <a
-                            href={request.productUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
-                          >
-                            {t.viewOnYahoo}
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-
-                    {request.status === 'rejected' && !request.customerCounterOffer && (
-                      <div className="mb-2 p-3 bg-red-50 rounded">
-                        {request.rejectReason && (
-                          <>
-                            <p className="text-sm text-gray-600">{t.rejectReason}:</p>
-                            <p className="text-red-700 mb-2">{request.rejectReason}</p>
-                          </>
-                        )}
-                        <button
-                          onClick={() => confirmRejection(request.id)}
-                          className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                        >
-                          {t.confirm}
-                        </button>
-                      </div>
-                    )}
-
-                    {/* ケース1: 最初の管理者カウンターオファー（顧客未返答） */}
-                    {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
-                      <div className="mb-2 p-3 bg-blue-50 rounded">
-                        <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-base mb-2">
-                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                            className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                          >
-                            {t.accept}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedRequestForCounter(request);
-                              setShowCounterModal(true);
-                            }}
-                            className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                          >
-                            {t.counterOfferAction}
-                          </button>
-                          <button
-                            onClick={() => handleCounterOfferResponse(request.id, 'reject')}
-                            className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                          >
-                            {t.reject}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ケース2: 顧客がカウンターオファー送信済み（管理者返答待ち） */}
-                    {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
-                      <div className="mb-2 p-3 bg-blue-50 rounded">
-                        <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-base">
-                          ${Math.round(request.counterOffer).toLocaleString('en-US')}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* ケース3A: 管理者が顧客のカウンターオファーを承認 (Fabio) */}
-                    {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                      <>
-                        <div className="mb-2 p-3 bg-blue-50 rounded">
-                          <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base">
-                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
-                          </p>
-                        </div>
-                        <div className="mb-2 p-3 bg-purple-50 rounded">
-                          <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                          <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                          <p className="text-xs text-red-600 mb-1">
-                            {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
-                          </p>
-                        </div>
-                      </>
-                    )}
-
-                    {/* ケース3B: 顧客が管理者のカウンターオファーを承認 (Carlos系: 顧客カウンターあり) */}
-                    {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                      <>
-                        <div className="mb-2 p-3 bg-blue-50 rounded">
-                          <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
-                          <p className="text-xs text-red-600 mb-1">
-                            {lang === 'es' ? 'Tú aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
-                          </p>
-                        </div>
-                        <div className="mb-2 p-3 bg-purple-50 rounded">
-                          <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                          <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                          <p className="text-xs text-red-600">
-                            {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
-                          </p>
-                        </div>
-                      </>
-                    )}
-
-                    {/* ケース3C: 顧客が管理者のカウンターオファーを直接承認 (顧客カウンターなし) */}
-                    {!request.customerCounterOffer && request.counterOffer && request.status === 'approved' && !request.finalStatus && (
-                      <div className="mb-2 p-3 bg-blue-50 rounded">
-                        <p className="text-sm text-gray-600">Contraoferta:</p>
-                        <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
-                        <p className="text-xs text-red-600 mb-1">
-                          {lang === 'es' ? 'Tú aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* ステータスが承認（approved）かつ最終結果（finalStatus）が未設定の場合の汎用メッセージ */}
-                    {request.status === 'approved' && !request.finalStatus && !request.customerCounterOffer && !request.counterOffer && (
-                      <div className="mb-2 p-3 bg-green-50 rounded">
-                        <p className="text-xs text-gray-600">
-                          {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando o resultado do leilão.'}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 削除確認待ち */}
-                    {request.adminNeedsConfirm && !request.customerCounterOffer && (
-                      <div className="mb-2">
-                        <div className="p-3 bg-blue-50 rounded mb-3">
-                          <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base">
-                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => confirmRejection(request.id)}
-                          className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                        >
-                          {t.confirm}
-                        </button>
-                      </div>
-                    )}
-
-                    {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
-                    {request.status === 'rejected' && request.customerCounterOffer && (
-                      <div className="mb-2">
-                        <button
-                          onClick={() => confirmRejection(request.id)}
-                          className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 mb-3"
-                        >
-                          {t.confirm}
-                        </button>
-
-                        <div className="p-3 bg-blue-50 rounded mb-2">
-                          <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base mb-2">
-                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
-                          </p>
-                          <button
-                            onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                            className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                          >
-                            {t.accept}
-                          </button>
-                        </div>
-
-                        <div className="p-3 bg-purple-50 rounded">
-                          <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                          <p className="font-semibold text-purple-700 text-base">
-                            ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
-                          </p>
-                          <p className="text-xs text-red-600">
-                            {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
-                      <div className="mb-2 p-3 bg-purple-50 rounded">
-                        <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                        <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
-                      </div>
-                    )}
-                    {/* (以前重複していたブロックを削除しました) */}
-
-                    {request.finalStatus === 'won' && !request.customerConfirmed && (
-                      <div className="mb-2 p-3 bg-green-50 rounded">
-                        <p className="text-sm text-gray-600">{t.finalPrice}:</p>
-                        <p className="text-base font-semibold text-green-600">
-                          ${Math.round(
-                            request.finalPrice ||
-                            (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid))
-                          ).toLocaleString('en-US')}
-                        </p>
-                        <button
-                          onClick={() => handleFinalStatusConfirm(request.id)}
-                          className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                        >
-                          {t.confirm}
-                        </button>
-                      </div>
-                    )}
-
-                    {request.finalStatus === 'lost' && (
-                      <div className="mb-2 p-3 bg-red-50 rounded">
-                        <p className="font-semibold text-red-700">{t.lost}</p>
-                        <button
-                          onClick={() => handleFinalStatusConfirm(request.id)}
-                          className="mt-3 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                        >
-                          {t.confirm}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'purchased' ? (
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4">{t.purchasedItems}</h2>
-
-          <div className="flex flex-col gap-3 mb-6">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 whitespace-nowrap w-28">{t.filterByCustomer}:</span>
-              <select
-                value={selectedCustomer}
-                onChange={(e) => setSelectedCustomer(e.target.value)}
-                className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
-              >
-                <option value="all">{t.allCustomers}</option>
-                {getCustomerList().map(customerName => (
-                  <option key={customerName} value={customerName}>
-                    {customerName} - ${Math.round(getCustomerTotal(customerName)).toLocaleString('en-US')}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 whitespace-nowrap w-28">{lang === 'es' ? 'Período:' : 'Período:'}</span>
-              <select
-                value={purchasedPeriod}
-                onChange={(e) => setPurchasedPeriod(e.target.value as 'all' | '7days' | '30days' | '90days')}
-                className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
-              >
-                <option value="all">{lang === 'es' ? 'Todos' : 'Todos'}</option>
-                <option value="7days">{lang === 'es' ? 'Últimos 7 días' : 'Últimos 7 dias'}</option>
-                <option value="30days">{lang === 'es' ? 'Últimos 30 días' : 'Últimos 30 dias'}</option>
-                <option value="90days">{lang === 'es' ? 'Últimos 90 días' : 'Últimos 90 dias'}</option>
-              </select>
-            </div>
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => { setShowSignUp(!showSignUp); setShowResetPassword(false); }}
+              className="text-sm text-indigo-600 hover:underline"
+            >
+              {showSignUp
+                ? (lang === 'es' ? '¿Ya tienes cuenta? Inicia sesión' : 'Já tem conta? Faça login')
+                : (lang === 'es' ? '¿No tienes cuenta? Regístrate' : 'Não tem conta? Cadastre-se')
+              }
+            </button>
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          {/* WhatsApp 支払い証明書送信ボタン */}
-          <div className="mb-6">
+  // 共通のカード描画関数
+  const renderProductCard = (product: any, index: number, isFavoriteTab: boolean = false) => {
+    const isFav = favorites.some(f => f.id === product.id);
+
+    return (
+      <div key={`product-${isFavoriteTab ? 'fav' : 'search'}-${index}-${product.id}`} className="bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col h-full group">
+
+
+
+        <div className="relative aspect-square w-full">
+          <img
+            src={product.imageUrl}
+            alt={product.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+
+
+          {/* お気に入り（★）ボタン（画像上・右下） */}
+          <button
+            onClick={(e) => toggleFavorite(product, e)}
+            disabled={isTogglingFavorite === product.id}
+            className="absolute bottom-2 right-2 z-10 p-2 sm:p-2.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center group-hover:shadow-md"
+          >
+            {isTogglingFavorite === product.id ? (
+              <svg className="animate-spin h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <span className={`text-xl sm:text-2xl leading-none ${isFav ? 'text-yellow-400 drop-shadow-sm' : 'text-gray-300'} transition-colors`}>
+                {isFav ? '★' : '☆'}
+              </span>
+            )}
+          </button>
+        </div>
+        <div className="p-3 sm:p-4 flex flex-col flex-1">
+          <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 leading-[1.25rem] h-[2.5rem] overflow-hidden w-full mb-2">{product.title}</h3>
+
+          <div className="mt-auto space-y-1.5 sm:space-y-2">
             <a
-              href="https://wa.me/817013476721"
+              href={product.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+              className="text-center text-[10px] sm:text-xs text-indigo-600 hover:underline font-bold py-1 sm:py-1.5 bg-indigo-50 rounded block w-full mb-1"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-6 h-6"
-              >
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-              </svg>
-              <span className={lang === 'pt' ? 'text-sm' : ''}>
-                {lang === 'es' ? 'Enviar comprobante de pago' : 'Enviar comprovante de pagamento'}
-              </span>
+              {t.viewOnYahoo}
             </a>
+            <div className="flex justify-between items-center bg-gray-50 p-1.5 sm:p-2 rounded mt-1 sm:mt-2">
+              <span className="text-[10px] sm:text-xs text-gray-500 font-medium">{t.bidsLabel}:</span>
+              <span className="text-[10px] sm:text-xs font-bold text-gray-700 bg-white px-1.5 sm:px-2 py-0.5 rounded shadow-sm">{product.bids || 0}</span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] sm:text-xs bg-red-50 p-1.5 sm:p-2 rounded text-red-700 font-medium">
+              <span>{t.timeLeft}:</span>
+              <span className="text-right line-clamp-2 max-w-[60%] font-semibold">{getTimeRemaining(product.endTime || '', product.timeLeft)}</span>
+            </div>
+
+            <div className="my-2 sm:my-3">
+              <div className="flex items-center justify-between bg-green-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
+                <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">USD</span>
+                <div className="flex items-center">
+                  <span className="font-extrabold text-green-700 text-lg sm:text-xl leading-none tabular-nums tracking-tight">
+                    <span className="text-sm font-semibold mr-0.5">$</span>
+                    {calculateUSDPrice(product.currentPrice, product.shippingCost)}
+                  </span>
+                  <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                if (product.url) {
+                  fetchProductDetailForOffer(product.url);
+                } else {
+                  setSelectedProduct(product);
+                  setBidForm({ name: '', maxBid: '' });
+                }
+              }}
+              className="w-full bg-indigo-600 text-white font-bold py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg hover:bg-indigo-700 transition shadow-sm hover:shadow active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-2 mt-auto text-xs sm:text-sm"
+              style={{ minHeight: '40px' }}
+            >
+              <span>{t.makeOffer}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen-safe bg-gray-100 relative">
+      {/* Pull to Refresh インジケーター表示 */}
+      {isRefreshing && (
+        <div className="fixed top-0 left-0 right-0 flex justify-center pt-safe z-[9999] pointer-events-none animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-white rounded-full p-2 shadow-xl border border-indigo-100 ring-4 ring-indigo-50 mt-4">
+
+            <svg className="animate-spin h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        </div>
+      )}
+      <header className="bg-white shadow sticky top-0 z-50 pt-safe">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
+          {/* 1行目: ロゴ & 言語選択 & ログアウト */}
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-black leading-none">{t.title}</h1>
+              <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-6 h-6 sm:w-8 sm:h-8 rounded" />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+                className="bg-gray-50 border border-gray-200 text-gray-700 py-1 px-2 rounded-lg text-[10px] sm:text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
+              >
+                <option value="es">ES</option>
+                <option value="pt">PT</option>
+              </select>
+
+              <button
+                onClick={handleLogout}
+                className="px-2 py-1 text-[10px] sm:text-xs text-red-600 hover:text-red-800 font-extrabold transition-colors hover:bg-red-50 rounded-lg"
+              >
+                {t.logout}
+              </button>
+            </div>
           </div>
 
-          {purchasedItems.length === 0 ? (
-            <div className="text-center text-gray-500 py-12">
-              <p>No hay productos comprados</p>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-4 mb-6">
-                {getFilteredPurchasedItems()
-                  .sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime())
-                  .map((item, index) => (
-                    <div key={`purchased-${index}-${item.id}`} className="border rounded-lg p-4">
+          {/* 2行目: サブタイトル & お知らせボタン */}
+          <div className="flex justify-between items-center">
+            <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t.subtitle}</p>
+
+            <button
+              onClick={() => {
+                setShowNotifications(true);
+                fetchNotifications();
+              }}
+              className="relative flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors"
+            >
+              <span>{lang === 'es' ? 'Avisos' : 'Avisos'}</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
+              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
+        {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
+        <div className="flex gap-2">
+          <button
+            onClick={sendWhatsAppNotification}
+            disabled={isSendingNotification}
+            className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base disabled:bg-gray-400"
+          >
+            {isSendingNotification ? '...' : '📱 WhatsApp'}
+          </button>
+          <button
+            onClick={async () => {
+              if (!currentUser) return;
+              const permission = getNotificationPermission();
+              if (permission === 'unsupported') {
+                alert(lang === 'es' ? 'Tu navegador no soporta notificaciones push.' : 'Seu navegador não suporta notificações push.');
+                return;
+              }
+              if (permission === 'granted') {
+                try {
+                  const res = await fetch(`/api/push-subscribe?userId=${currentUser.id}`);
+                  if (res.ok) {
+                    await fetch('/api/push-subscribe', {
+                      method: 'DELETE',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: currentUser.id }),
+                    });
+                    setNotificationStatus('disabled');
+                    alert(lang === 'es' ? 'Notificaciones desactivadas' : 'Notificações desativadas');
+                    return;
+                  }
+                } catch { }
+              }
+              try {
+                const subscription = await requestNotificationPermission();
+                if (subscription) {
+                  await fetch('/api/push-subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUser.id, subscription }),
+                  });
+                  setNotificationStatus('enabled');
+                  alert(lang === 'es' ? '¡Notificaciones activadas!' : 'Notificações ativadas!');
+                }
+              } catch (err) {
+                console.error('Push error:', err);
+              }
+            }}
+            className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
+              ? 'bg-gray-500 text-white hover:bg-gray-600'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+          >
+            {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
+          </button>
+        </div>
+
+        {/* 更新ボタン（全幅） */}
+        <button
+          onClick={() => {
+            if (activeTab === 'requests') fetchMyRequests();
+            else if (activeTab === 'purchased') fetchPurchasedItems();
+            else { fetchExchangeRate(); }
+          }}
+          className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
+        >
+          🔁 {t.refresh}
+        </button>
+
+        <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 flex justify-center items-center">
+          <div className="text-sm font-bold text-gray-600">
+            {t.exchangeRate}: <span className="text-indigo-600">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ボトムナビゲーション */}
+      <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t z-50 pb-safe">
+        <div className="max-w-7xl mx-auto px-1 sm:px-4">
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            {[
+              { key: 'search' as const, label: t.searchBottomTab, icon: '🔍' },
+              { key: 'favorites' as const, label: t.favoritesTab, icon: '⭐' },
+              { key: 'requests' as const, label: t.myRequests, icon: '📋' },
+              { key: 'purchased' as const, label: t.purchasedItems, icon: '🛒' },
+              { key: 'mypage' as const, label: t.myPage, icon: '👤' },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  if (tab.key === 'requests') fetchMyRequests();
+                  if (tab.key === 'purchased') fetchPurchasedItems();
+                  if (tab.key === 'mypage' && currentUser) {
+                    // タブを開くたびに最新データを取得して確実に入力欄を埋める
+                    fetchUserProfile();
+                    // 通知状態をチェック
+                    const permission = getNotificationPermission();
+                    if (permission === 'unsupported') {
+                      setNotificationStatus('unsupported');
+                    } else if (permission === 'granted') {
+                      // サブスクリプションがDBにあるか確認
+                      fetch(`/api/push-subscribe?userId=${currentUser.id}`)
+                        .then(r => r.ok ? setNotificationStatus('enabled') : setNotificationStatus('disabled'))
+                        .catch(() => setNotificationStatus('disabled'));
+                    } else {
+                      setNotificationStatus('disabled');
+                    }
+                  }
+                }}
+                className={`flex-1 flex flex-col items-center justify-center h-full transition-colors relative min-w-0 ${activeTab === tab.key
+                  ? 'text-indigo-600'
+                  : 'text-gray-400 hover:text-gray-600'
+                  }`}
+              >
+                {/* 選択時のインジケーター */}
+                {activeTab === tab.key && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-indigo-600 rounded-b-full"></div>
+                )}
+                <span className={`text-xl sm:text-2xl mb-1 ${activeTab === tab.key ? 'scale-110' : ''} transition-transform`}>{tab.icon}</span>
+                <span className="text-[10px] sm:text-xs font-bold tracking-tight truncate w-full text-center px-1">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* ボトムナビゲーション用に下部の余白を追加 */}
+      <main className="max-w-7xl mx-auto px-4 pt-0 sm:pt-0 pb-24 sm:pb-32 sm:px-6 lg:px-8">
+        {activeTab === 'favorites' ? (
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-8">
+            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.favoritesTab}</h2>
+            {favorites.length === 0 ? (
+              <div className="text-center text-gray-500 py-12">
+                <p>{lang === 'es' ? 'No tienes productos en favoritos' : 'Você não tem produtos nos favoritos'}</p>
+                <button
+                  onClick={() => setActiveTab('search')}
+                  className="mt-4 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-full font-bold text-sm hover:bg-indigo-100 transition"
+                >
+                  {t.searchAction}
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mt-4">
+                {favorites.map((product, index) => renderProductCard(product, index, true))}
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'requests' ? (
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myRequests}</h2>
+
+            {myRequests.length === 0 ? (
+              <div className="text-center text-gray-500 py-12">
+                <p>No hay solicitudes</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {myRequests
+                  .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                  .map((request) => (
+                    <div key={request.id} className="border rounded-lg p-4">
                       <div className="flex gap-4 mb-3">
-                        {item.productImage && (
+                        {request.productImage && (
                           <img
-                            src={item.productImage}
-                            alt={item.productTitle}
+                            src={request.productImage}
+                            alt={request.productTitle}
                             className="w-32 h-32 object-cover rounded"
                           />
                         )}
-                        <div className="flex-1 min-w-0 flex flex-col justify-between items-start">
-                          <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
-                          <div className="text-xs text-gray-600 mb-2 mt-1 space-y-0.5 w-full">
-                            <p><span className="font-semibold text-gray-800">{lang === 'es' ? 'Cliente:' : 'Cliente:'} {item.customerName}</span></p>
-                            <p>{t.confirmedDate}: {formatDateTime(item.confirmedAt)}</p>
+                        <div className="flex-1 min-h-[128px] flex flex-col py-0.5 min-w-0">
+                          <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{request.productTitle}</h3>
+                          <div className="flex flex-col gap-0.5">
+                            <div className="text-xs">
+                              <span className="text-gray-600">{lang === 'es' ? 'Cliente: ' : 'Cliente: '}</span>
+                              <span className="font-semibold">{request.customerName}</span>
+                            </div>
+                            <p className="text-xs text-gray-600">
+                              {t.maxBid}: <span className="font-bold text-blue-600">${Math.round(request.maxBid).toLocaleString('en-US')}</span>
+                            </p>
+                            {request.productEndTime && (
+                              <p className="text-[10px] text-gray-500">
+                                {t.endsIn}: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
+                              </p>
+                            )}
                           </div>
-                          <div className="flex flex-col gap-2 w-full mt-auto">
+                          <div className="flex flex-row flex-wrap gap-1 mt-1">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center ${getStatusColor(request.status)}`}>
+                              {t[request.status as keyof typeof t] || request.status}
+                            </span>
+                            {request.finalStatus && (
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center ${getFinalStatusColor(request.finalStatus)}`}>
+                                {t[request.finalStatus as keyof typeof t]}
+                              </span>
+                            )}
+                            {request.adminNeedsConfirm && (
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center bg-red-100 text-red-800`}>
+                                {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-2 w-full mt-auto pt-2">
                             <a
-                              href={item.productUrl}
+                              href={request.productUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
@@ -2232,614 +1907,935 @@ return (
                         </div>
                       </div>
 
-                      <div className="text-right pt-3 border-t">
-                        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
-                          {item.paid && (
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {item.paidAt && (
-                                <span className="text-[11px] font-bold text-gray-600 whitespace-nowrap">
-                                  {formatDateTime(item.paidAt)}
-                                </span>
-                              )}
-                              <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full whitespace-nowrap shrink-0">
-                                ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
-                              </span>
-                            </div>
+                      {request.status === 'rejected' && !request.customerCounterOffer && (
+                        <div className="mb-2 p-3 bg-red-50 rounded">
+                          {request.rejectReason && (
+                            <>
+                              <p className="text-sm text-gray-600">{t.rejectReason}:</p>
+                              <p className="text-red-700 mb-2">{request.rejectReason}</p>
+                            </>
                           )}
-                          <p className={`text-lg sm:text-xl font-bold whitespace-nowrap shrink-0 ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                            ${Math.round(
-                              item.finalPrice ||
-                              (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
-                            ).toLocaleString('en-US')}
+                          <button
+                            onClick={() => confirmRejection(request.id)}
+                            className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                          >
+                            {t.confirm}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* ケース1: 最初の管理者カウンターオファー（顧客未返答） */}
+                      {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
+                        <div className="mb-2 p-3 bg-blue-50 rounded">
+                          <p className="text-sm text-gray-600">Contraoferta:</p>
+                          <p className="font-semibold text-blue-700 text-base mb-2">
+                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleCounterOfferResponse(request.id, 'accept')}
+                              className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                            >
+                              {t.accept}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedRequestForCounter(request);
+                                setShowCounterModal(true);
+                              }}
+                              className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                            >
+                              {t.counterOfferAction}
+                            </button>
+                            <button
+                              onClick={() => handleCounterOfferResponse(request.id, 'reject')}
+                              className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                            >
+                              {t.reject}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ケース2: 顧客がカウンターオファー送信済み（管理者返答待ち） */}
+                      {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
+                        <div className="mb-2 p-3 bg-blue-50 rounded">
+                          <p className="text-sm text-gray-600">Contraoferta:</p>
+                          <p className="font-semibold text-blue-700 text-base">
+                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
                           </p>
                         </div>
-                      </div>
+                      )}
+
+                      {/* ケース3A: 管理者が顧客のカウンターオファーを承認 (Fabio) */}
+                      {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
+                        <>
+                          <div className="mb-2 p-3 bg-blue-50 rounded">
+                            <p className="text-sm text-gray-600">Contraoferta:</p>
+                            <p className="font-semibold text-blue-700 text-base">
+                              ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                            </p>
+                          </div>
+                          <div className="mb-2 p-3 bg-purple-50 rounded">
+                            <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                            <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                            <p className="text-xs text-red-600 mb-1">
+                              {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
+                            </p>
+                          </div>
+                        </>
+                      )}
+
+                      {/* ケース3B: 顧客が管理者のカウンターオファーを承認 (Carlos系: 顧客カウンターあり) */}
+                      {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
+                        <>
+                          <div className="mb-2 p-3 bg-blue-50 rounded">
+                            <p className="text-sm text-gray-600">Contraoferta:</p>
+                            <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                            <p className="text-xs text-red-600 mb-1">
+                              {lang === 'es' ? 'Tú aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
+                            </p>
+                          </div>
+                          <div className="mb-2 p-3 bg-purple-50 rounded">
+                            <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                            <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                            <p className="text-xs text-red-600">
+                              {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
+                            </p>
+                          </div>
+                        </>
+                      )}
+
+                      {/* ケース3C: 顧客が管理者のカウンターオファーを直接承認 (顧客カウンターなし) */}
+                      {!request.customerCounterOffer && request.counterOffer && request.status === 'approved' && !request.finalStatus && (
+                        <div className="mb-2 p-3 bg-blue-50 rounded">
+                          <p className="text-sm text-gray-600">Contraoferta:</p>
+                          <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                          <p className="text-xs text-red-600 mb-1">
+                            {lang === 'es' ? 'Tú aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* ステータスが承認（approved）かつ最終結果（finalStatus）が未設定の場合の汎用メッセージ */}
+                      {request.status === 'approved' && !request.finalStatus && !request.customerCounterOffer && !request.counterOffer && (
+                        <div className="mb-2 p-3 bg-green-50 rounded">
+                          <p className="text-xs text-gray-600">
+                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando o resultado do leilão.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 削除確認待ち */}
+                      {request.adminNeedsConfirm && !request.customerCounterOffer && (
+                        <div className="mb-2">
+                          <div className="p-3 bg-blue-50 rounded mb-3">
+                            <p className="text-sm text-gray-600">Contraoferta:</p>
+                            <p className="font-semibold text-blue-700 text-base">
+                              ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => confirmRejection(request.id)}
+                            className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                          >
+                            {t.confirm}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
+                      {request.status === 'rejected' && request.customerCounterOffer && (
+                        <div className="mb-2">
+                          <button
+                            onClick={() => confirmRejection(request.id)}
+                            className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 mb-3"
+                          >
+                            {t.confirm}
+                          </button>
+
+                          <div className="p-3 bg-blue-50 rounded mb-2">
+                            <p className="text-sm text-gray-600">Contraoferta:</p>
+                            <p className="font-semibold text-blue-700 text-base mb-2">
+                              ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                            </p>
+                            <button
+                              onClick={() => handleCounterOfferResponse(request.id, 'accept')}
+                              className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                            >
+                              {t.accept}
+                            </button>
+                          </div>
+
+                          <div className="p-3 bg-purple-50 rounded">
+                            <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                            <p className="font-semibold text-purple-700 text-base">
+                              ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
+                            </p>
+                            <p className="text-xs text-red-600">
+                              {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
+                        <div className="mb-2 p-3 bg-purple-50 rounded">
+                          <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
+                          <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                        </div>
+                      )}
+                      {/* (以前重複していたブロックを削除しました) */}
+
+                      {request.finalStatus === 'won' && !request.customerConfirmed && (
+                        <div className="mb-2 p-3 bg-green-50 rounded">
+                          <p className="text-sm text-gray-600">{t.finalPrice}:</p>
+                          <p className="text-base font-semibold text-green-600">
+                            ${Math.round(
+                              request.finalPrice ||
+                              (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid))
+                            ).toLocaleString('en-US')}
+                          </p>
+                          <button
+                            onClick={() => handleFinalStatusConfirm(request.id)}
+                            className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                          >
+                            {t.confirm}
+                          </button>
+                        </div>
+                      )}
+
+                      {request.finalStatus === 'lost' && (
+                        <div className="mb-2 p-3 bg-red-50 rounded">
+                          <p className="font-semibold text-red-700">{t.lost}</p>
+                          <button
+                            onClick={() => handleFinalStatusConfirm(request.id)}
+                            className="mt-3 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                          >
+                            {t.confirm}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
               </div>
+            )}
+          </div>
+        ) : activeTab === 'purchased' ? (
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4">{t.purchasedItems}</h2>
 
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-xl font-semibold">
-                    {t.total}{selectedCustomer !== 'all' && ' del cliente'}:
-                  </span>
-                  <span className="text-3xl font-bold text-indigo-600">
-                    ${Math.round(
-                      getFilteredPurchasedItems()
-                        .filter(item => !item.paid)  // ← 支払済を除外
-                        .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
-                    ).toLocaleString('en-US')}
-                  </span>
+            <div className="flex flex-col gap-3 mb-6">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 whitespace-nowrap w-28">{t.filterByCustomer}:</span>
+                <select
+                  value={selectedCustomer}
+                  onChange={(e) => setSelectedCustomer(e.target.value)}
+                  className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                >
+                  <option value="all">{t.allCustomers}</option>
+                  {getCustomerList().map(customerName => (
+                    <option key={customerName} value={customerName}>
+                      {customerName} - ${Math.round(getCustomerTotal(customerName)).toLocaleString('en-US')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 whitespace-nowrap w-28">{lang === 'es' ? 'Período:' : 'Período:'}</span>
+                <select
+                  value={purchasedPeriod}
+                  onChange={(e) => setPurchasedPeriod(e.target.value as 'all' | '7days' | '30days' | '90days')}
+                  className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                >
+                  <option value="all">{lang === 'es' ? 'Todos' : 'Todos'}</option>
+                  <option value="7days">{lang === 'es' ? 'Últimos 7 días' : 'Últimos 7 dias'}</option>
+                  <option value="30days">{lang === 'es' ? 'Últimos 30 días' : 'Últimos 30 dias'}</option>
+                  <option value="90days">{lang === 'es' ? 'Últimos 90 días' : 'Últimos 90 dias'}</option>
+                </select>
+              </div>
+            </div>
+
+            {/* WhatsApp 支払い証明書送信ボタン */}
+            <div className="mb-6">
+              <a
+                href="https://wa.me/817013476721"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                </svg>
+                <span className={lang === 'pt' ? 'text-sm' : ''}>
+                  {lang === 'es' ? 'Enviar comprobante de pago' : 'Enviar comprovante de pagamento'}
+                </span>
+              </a>
+            </div>
+
+            {purchasedItems.length === 0 ? (
+              <div className="text-center text-gray-500 py-12">
+                <p>No hay productos comprados</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4 mb-6">
+                  {getFilteredPurchasedItems()
+                    .sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime())
+                    .map((item, index) => (
+                      <div key={`purchased-${index}-${item.id}`} className="border rounded-lg p-4">
+                        <div className="flex gap-4 mb-3">
+                          {item.productImage && (
+                            <img
+                              src={item.productImage}
+                              alt={item.productTitle}
+                              className="w-32 h-32 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0 flex flex-col justify-between items-start">
+                            <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
+                            <div className="text-xs text-gray-600 mb-2 mt-1 space-y-0.5 w-full">
+                              <p><span className="font-semibold text-gray-800">{lang === 'es' ? 'Cliente:' : 'Cliente:'} {item.customerName}</span></p>
+                              <p>{t.confirmedDate}: {formatDateTime(item.confirmedAt)}</p>
+                            </div>
+                            <div className="flex flex-col gap-2 w-full mt-auto">
+                              <a
+                                href={item.productUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
+                              >
+                                {t.viewOnYahoo}
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right pt-3 border-t">
+                          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                            {item.paid && (
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {item.paidAt && (
+                                  <span className="text-[11px] font-bold text-gray-600 whitespace-nowrap">
+                                    {formatDateTime(item.paidAt)}
+                                  </span>
+                                )}
+                                <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full whitespace-nowrap shrink-0">
+                                  ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
+                                </span>
+                              </div>
+                            )}
+                            <p className={`text-lg sm:text-xl font-bold whitespace-nowrap shrink-0 ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                              ${Math.round(
+                                item.finalPrice ||
+                                (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
+                              ).toLocaleString('en-US')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                 </div>
-                <p className="text-sm text-gray-500 text-right mt-1">
-                  {lang === 'es' ? 'Solo productos sin pagar' : 'Apenas produtos não pagos'} /
-                  {lang === 'es' ? ' Pagados: ' : ' Pagos: '}{getFilteredPurchasedItems().filter(item => item.paid).length}
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-      ) : activeTab === 'mypage' ? (
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myPage}</h2>
 
-          {/* プロフィール編集 */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-4">{t.profile}</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">{t.email}</label>
-                <input
-                  type="email"
-                  value={currentUser?.email || ''}
-                  disabled
-                  className="w-full border border-gray-200 rounded-lg px-4 py-3 bg-gray-50 text-gray-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t.fullName}</label>
-                <input
-                  type="text"
-                  value={profileForm.fullName}
-                  onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t.whatsapp}</label>
-                <input
-                  type="tel"
-                  value={profileForm.whatsapp}
-                  onChange={(e) => setProfileForm({ ...profileForm, whatsapp: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3"
-                  placeholder="+55 11 98765-4321"
-                />
-              </div>
-              <button
-                onClick={async () => {
-                  if (profileSaving) return;
-                  setProfileSaving(true);
-                  try {
-                    await updateProfile(profileForm.fullName, profileForm.whatsapp);
-                    const user = await getCurrentUser();
-                    setCurrentUser(user);
-                    alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
-                  } catch (error: any) {
-                    console.error('Profile update error:', error);
-                    alert(lang === 'es' ? 'Error al actualizar perfil.' : 'Erro ao atualizar perfil.');
-                  } finally {
-                    setProfileSaving(false);
-                  }
-                }}
-                disabled={profileSaving}
-                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400"
-              >
-                {profileSaving ? '...' : t.saveProfile}
-              </button>
-            </div>
+                <div className="border-t pt-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xl font-semibold">
+                      {t.total}{selectedCustomer !== 'all' && ' del cliente'}:
+                    </span>
+                    <span className="text-3xl font-bold text-indigo-600">
+                      ${Math.round(
+                        getFilteredPurchasedItems()
+                          .filter(item => !item.paid)  // ← 支払済を除外
+                          .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
+                      ).toLocaleString('en-US')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 text-right mt-1">
+                    {lang === 'es' ? 'Solo productos sin pagar' : 'Apenas produtos não pagos'} /
+                    {lang === 'es' ? ' Pagados: ' : ' Pagos: '}{getFilteredPurchasedItems().filter(item => item.paid).length}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
+        ) : activeTab === 'mypage' ? (
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myPage}</h2>
 
-          {/* パスワード変更 */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4">{t.changePassword}</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">{t.newPassword}</label>
-                <input
-                  type="password"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3"
-                  minLength={6}
-                  placeholder={lang === 'es' ? 'Mínimo 6 caracteres' : 'Mínimo 6 caracteres'}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t.confirmNewPassword}</label>
-                <input
-                  type="password"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3"
-                  minLength={6}
-                />
-              </div>
-              <button
-                onClick={async () => {
-                  if (passwordForm.newPassword.length < 6) {
-                    alert(lang === 'es' ? 'La contraseña debe tener al menos 6 caracteres.' : 'A senha deve ter pelo menos 6 caracteres.');
-                    return;
-                  }
-                  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-                    alert(lang === 'es' ? 'Las contraseñas no coinciden.' : 'As senhas não coincidem.');
-                    return;
-                  }
-                  setPasswordSaving(true);
-                  try {
-                    await updatePassword(passwordForm.newPassword);
-                    setPasswordForm({ newPassword: '', confirmPassword: '' });
-                    alert(lang === 'es' ? '¡Contraseña actualizada!' : 'Senha atualizada!');
-                  } catch (error) {
-                    console.error('Password update error:', error);
-                    alert(lang === 'es' ? 'Error al cambiar contraseña.' : 'Erro ao alterar senha.');
-                  } finally {
-                    setPasswordSaving(false);
-                  }
-                }}
-                disabled={passwordSaving}
-                className="w-full bg-yellow-500 text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition disabled:bg-gray-400"
-              >
-                {passwordSaving ? '...' : t.changePassword}
-              </button>
-            </div>
-          </div>
-
-          {/* ログアウト */}
-          <div className="border-t pt-6 mt-6">
-            <button
-              onClick={handleLogout}
-              className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition"
-            >
-              {t.logout}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-            {/* 検索タイプ切り替え (3タブ化) */}
-            <div className="flex border-b mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
-              <button
-                onClick={() => {
-                  setSearchType('categories');
-                  setProducts([]);
-                  setCurrentCategory(null);
-                  setActiveCategoryUrl(null);
-                  setKeyword('');
-                  setSearchUrl('');
-                }}
-                className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
-              >
-                {t.categoriesTab}
-              </button>
-              <button
-                onClick={() => {
-                  setSearchType('keyword');
-                  setProducts([]);
-                  setCurrentCategory(null);
-                  setActiveCategoryUrl(null);
-                  setSearchUrl('');
-                }}
-                className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
-              >
-                {t.searchTab}
-              </button>
-              <button
-                onClick={() => {
-                  setSearchType('url');
-                  setProducts([]);
-                  setCurrentCategory(null);
-                  setActiveCategoryUrl(null);
-                  setKeyword('');
-                }}
-                className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
-              >
-                {t.urlTab}
-              </button>
-            </div>
-
-            {searchType === 'url' && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="flex gap-3">
+            {/* プロフィール編集 */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-4">{t.profile}</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t.email}</label>
+                  <input
+                    type="email"
+                    value={currentUser?.email || ''}
+                    disabled
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 bg-gray-50 text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t.fullName}</label>
                   <input
                     type="text"
-                    placeholder={t.searchPlaceholder}
-                    value={searchUrl}
-                    onChange={(e) => setSearchUrl(e.target.value)}
-                    className="flex-1 p-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                    value={profileForm.fullName}
+                    onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
                   />
-                  <button
-                    onClick={handleImport}
-                    disabled={loading}
-                    className="bg-indigo-600 text-white min-w-[120px] px-6 py-3.5 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 whitespace-nowrap text-sm shadow-sm"
-                  >
-                    {loading ? '...' : t.import}
-                  </button>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t.whatsapp}</label>
+                  <input
+                    type="tel"
+                    value={profileForm.whatsapp}
+                    onChange={(e) => setProfileForm({ ...profileForm, whatsapp: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    placeholder="+55 11 98765-4321"
+                  />
+                </div>
+                <button
+                  onClick={async () => {
+                    if (profileSaving) return;
+                    setProfileSaving(true);
+                    try {
+                      await updateProfile(profileForm.fullName, profileForm.whatsapp);
+                      const user = await getCurrentUser();
+                      setCurrentUser(user);
+                      alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
+                    } catch (error: any) {
+                      console.error('Profile update error:', error);
+                      alert(lang === 'es' ? 'Error al actualizar perfil.' : 'Erro ao atualizar perfil.');
+                    } finally {
+                      setProfileSaving(false);
+                    }
+                  }}
+                  disabled={profileSaving}
+                  className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400"
+                >
+                  {profileSaving ? '...' : t.saveProfile}
+                </button>
               </div>
-            )}
+            </div>
 
-            {searchType === 'categories' && (
-              <div className="animate-in fade-in duration-300">
-                {/* 商品リスト表示中の「戻る」ボタン */}
-                {activeCategoryUrl && (
-                  <div className="mb-4">
+            {/* パスワード変更 */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4">{t.changePassword}</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t.newPassword}</label>
+                  <input
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    minLength={6}
+                    placeholder={lang === 'es' ? 'Mínimo 6 caracteres' : 'Mínimo 6 caracteres'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">{t.confirmNewPassword}</label>
+                  <input
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    minLength={6}
+                  />
+                </div>
+                <button
+                  onClick={async () => {
+                    if (passwordForm.newPassword.length < 6) {
+                      alert(lang === 'es' ? 'La contraseña debe tener al menos 6 caracteres.' : 'A senha deve ter pelo menos 6 caracteres.');
+                      return;
+                    }
+                    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+                      alert(lang === 'es' ? 'Las contraseñas no coinciden.' : 'As senhas não coincidem.');
+                      return;
+                    }
+                    setPasswordSaving(true);
+                    try {
+                      await updatePassword(passwordForm.newPassword);
+                      setPasswordForm({ newPassword: '', confirmPassword: '' });
+                      alert(lang === 'es' ? '¡Contraseña actualizada!' : 'Senha atualizada!');
+                    } catch (error) {
+                      console.error('Password update error:', error);
+                      alert(lang === 'es' ? 'Error al cambiar contraseña.' : 'Erro ao alterar senha.');
+                    } finally {
+                      setPasswordSaving(false);
+                    }
+                  }}
+                  disabled={passwordSaving}
+                  className="w-full bg-yellow-500 text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition disabled:bg-gray-400"
+                >
+                  {passwordSaving ? '...' : t.changePassword}
+                </button>
+              </div>
+            </div>
+
+            {/* ログアウト */}
+            <div className="border-t pt-6 mt-6">
+              <button
+                onClick={handleLogout}
+                className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition"
+              >
+                {t.logout}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+              {/* 検索タイプ切り替え (3タブ化) */}
+              <div className="flex border-b mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                <button
+                  onClick={() => {
+                    setSearchType('categories');
+                    setProducts([]);
+                    setCurrentCategory(null);
+                    setActiveCategoryUrl(null);
+                    setKeyword('');
+                    setSearchUrl('');
+                  }}
+                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
+                >
+                  {t.categoriesTab}
+                </button>
+                <button
+                  onClick={() => {
+                    setSearchType('keyword');
+                    setProducts([]);
+                    setCurrentCategory(null);
+                    setActiveCategoryUrl(null);
+                    setSearchUrl('');
+                  }}
+                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
+                >
+                  {t.searchTab}
+                </button>
+                <button
+                  onClick={() => {
+                    setSearchType('url');
+                    setProducts([]);
+                    setCurrentCategory(null);
+                    setActiveCategoryUrl(null);
+                    setKeyword('');
+                  }}
+                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
+                >
+                  {t.urlTab}
+                </button>
+              </div>
+
+              {searchType === 'url' && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      placeholder={t.searchPlaceholder}
+                      value={searchUrl}
+                      onChange={(e) => setSearchUrl(e.target.value)}
+                      className="flex-1 p-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                    />
                     <button
-                      onClick={() => {
-                        setActiveCategoryUrl(null);
-                        setProducts([]);
-                        setSearchPage(1);
-                        setNextPageExists(false);
-                        // 単独カテゴリ（Moto等）の場合はリセットし、サブカテゴリありの場合は currentCategory を維持して1つ前に戻る
-                      }}
-                      className="w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold py-2 bg-indigo-50 rounded px-6 block shadow-sm border border-indigo-100 transition-colors"
+                      onClick={handleImport}
+                      disabled={loading}
+                      className="bg-indigo-600 text-white min-w-[120px] px-6 py-3.5 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 whitespace-nowrap text-sm shadow-sm"
                     >
-                      {(() => {
-                        let catName = '';
-                        if (currentCategory) {
-                          catName = lang === 'es' ? currentCategory.es : currentCategory.pt;
-                        } else {
-                          // 単独カテゴリ（Moto等）の名称をURLから推測するか、メインカテゴリ一覧から探す
-                          const found = CATEGORIES.find(c => c.url && activeCategoryUrl.includes(c.url.split('?')[0]));
-                          if (found) {
-                            catName = lang === 'es' ? found.es : found.pt;
-                          }
-                        }
-                        return catName ? `${t.back} (${catName})` : t.back;
-                      })()}
+                      {loading ? '...' : t.import}
                     </button>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* カテゴリ選択中の「戻る」ボタン (サブカテゴリ内からトップへ戻る) */}
-                {!activeCategoryUrl && currentCategory && (
-                  <button
-                    onClick={() => setCurrentCategory(null)}
-                    className="mb-4 w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold py-2 bg-indigo-50 rounded px-6 block shadow-sm border border-indigo-100 transition-colors"
-                  >
-                    {t.back} ({lang === 'es' ? 'Categorías principales' : 'Categorias principais'})
-                  </button>
-                )}
-
-                {/* カテゴリグリッド（商品リスト表示中は非表示にする） */}
-                {!activeCategoryUrl && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {(currentCategory ? currentCategory.sub : CATEGORIES).map((cat: any) => (
+              {searchType === 'categories' && (
+                <div className="animate-in fade-in duration-300">
+                  {/* 商品リスト表示中の「戻る」ボタン */}
+                  {activeCategoryUrl && (
+                    <div className="mb-4">
                       <button
-                        key={cat.id}
-                        onClick={async () => {
-                          if (cat.sub) {
-                            setCurrentCategory(cat);
-                          } else if (cat.url) {
-                            fetchCategoryItems(cat.url, 1);
-                          }
+                        onClick={() => {
+                          setActiveCategoryUrl(null);
+                          setProducts([]);
+                          setSearchPage(1);
+                          setNextPageExists(false);
+                          // 単独カテゴリ（Moto等）の場合はリセットし、サブカテゴリありの場合は currentCategory を維持して1つ前に戻る
                         }}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-white"
+                        className="w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold py-2 bg-indigo-50 rounded px-6 block shadow-sm border border-indigo-100 transition-colors"
                       >
-                        <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600">
-                          {lang === 'es' ? cat.es : cat.pt}
-                        </span>
-                        <span className="text-gray-400 group-hover:text-indigo-600 font-bold">
-                          {cat.sub ? '→' : '↓'}
-                        </span>
+                        {(() => {
+                          let catName = '';
+                          if (currentCategory) {
+                            catName = lang === 'es' ? currentCategory.es : currentCategory.pt;
+                          } else {
+                            // 単独カテゴリ（Moto等）の名称をURLから推測するか、メインカテゴリ一覧から探す
+                            const found = CATEGORIES.find(c => c.url && activeCategoryUrl.includes(c.url.split('?')[0]));
+                            if (found) {
+                              catName = lang === 'es' ? found.es : found.pt;
+                            }
+                          }
+                          return catName ? `${t.back} (${catName})` : t.back;
+                        })()}
                       </button>
-                    ))}
+                    </div>
+                  )}
+
+                  {/* カテゴリ選択中の「戻る」ボタン (サブカテゴリ内からトップへ戻る) */}
+                  {!activeCategoryUrl && currentCategory && (
+                    <button
+                      onClick={() => setCurrentCategory(null)}
+                      className="mb-4 w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold py-2 bg-indigo-50 rounded px-6 block shadow-sm border border-indigo-100 transition-colors"
+                    >
+                      {t.back} ({lang === 'es' ? 'Categorías principales' : 'Categorias principais'})
+                    </button>
+                  )}
+
+                  {/* カテゴリグリッド（商品リスト表示中は非表示にする） */}
+                  {!activeCategoryUrl && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {(currentCategory ? currentCategory.sub : CATEGORIES).map((cat: any) => (
+                        <button
+                          key={cat.id}
+                          onClick={async () => {
+                            if (cat.sub) {
+                              setCurrentCategory(cat);
+                            } else if (cat.url) {
+                              fetchCategoryItems(cat.url, 1);
+                            }
+                          }}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-white"
+                        >
+                          <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600">
+                            {lang === 'es' ? cat.es : cat.pt}
+                          </span>
+                          <span className="text-gray-400 group-hover:text-indigo-600 font-bold">
+                            {cat.sub ? '→' : '↓'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {searchType === 'keyword' && (
+                <div className="flex flex-col gap-4 animate-in fade-in duration-300">
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      placeholder={t.keywordPlaceholder}
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleKeywordSearch()}
+                      className="flex-1 p-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                    />
+                    <button
+                      onClick={handleKeywordSearch}
+                      disabled={loading || isSearching}
+                      className="bg-indigo-600 text-white min-w-[120px] px-6 py-3.5 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm shadow-sm"
+                    >
+                      {isSearching ? '...' : t.search}
+                    </button>
                   </div>
-                )}
+                </div>
+              )}
+            </div>
+
+            <div ref={resultsRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mt-4">
+              {products.map((product, index) => renderProductCard(product, index, false))}
+            </div>
+
+            {/* ページネーション */}
+            {(products.length > 0) && (
+              <div className="mt-8 flex justify-center items-center gap-4">
+                <button
+                  disabled={searchPage === 1 || loading}
+                  onClick={() => {
+                    const nextP = searchPage - 1;
+                    if (searchType === 'keyword') handleKeywordSearch(undefined, nextP);
+                    else if (activeCategoryUrl) fetchCategoryItems(activeCategoryUrl, nextP);
+                  }}
+                  className="px-4 py-2 border rounded-lg text-sm font-bold disabled:opacity-30"
+                >
+                  ← {t.previous}
+                </button>
+                <span className="text-sm font-bold text-gray-500">Page {searchPage}</span>
+                <button
+                  disabled={!nextPageExists || loading}
+                  onClick={() => {
+                    const nextP = searchPage + 1;
+                    if (searchType === 'keyword') handleKeywordSearch(undefined, nextP);
+                    else if (activeCategoryUrl) fetchCategoryItems(activeCategoryUrl, nextP);
+                  }}
+                  className="px-4 py-2 border rounded-lg text-sm font-bold disabled:opacity-30"
+                >
+                  {t.next} →
+                </button>
               </div>
             )}
+          </>
+        )}
+      </main>
 
-            {searchType === 'keyword' && (
-              <div className="flex flex-col gap-4 animate-in fade-in duration-300">
-                <div className="flex gap-3">
+
+      {
+        selectedProduct && (
+          <div className="fixed inset-0 bg-gray-900 bg-opacity-30 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full p-6">
+              <h2 className="text-2xl font-bold mb-4">{t.makeOffer}</h2>
+
+              <div className="flex gap-3 mb-4">
+                <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 relative group/modal-gallery">
+                  {selectedProduct.images && selectedProduct.images.length > 1 ? (
+                    <>
+                      <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full">
+                        {selectedProduct.images.map((imgUrl: string, idx: number) => (
+                          <div key={idx} className="flex-shrink-0 w-full h-full snap-center">
+                            <img
+                              src={imgUrl}
+                              alt={`${selectedProduct.title} - ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5 z-10">
+                        {selectedProduct.images.slice(0, 3).map((_: any, i: number) => (
+                          <div key={i} className="w-1 h-1 rounded-full bg-white/60 shadow-sm"></div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <img
+                      src={selectedProduct.imageUrl}
+                      alt={selectedProduct.title}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+                <div className="flex-1 flex flex-col py-0.5 overflow-hidden">
+                  <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{selectedProduct.title}</h3>
+                  <div className="flex flex-col gap-0.5 mt-auto mb-2">
+                    <p className="text-xs text-gray-600">
+                      {t.currentPrice}: ¥{selectedProduct.currentPrice.toLocaleString()}
+                    </p>
+                    <p className="text-sm font-bold text-indigo-700">
+                      USD: ${calculateUSDPrice(selectedProduct.currentPrice, selectedProduct.shippingCost || 0)}
+                    </p>
+                  </div>
+                  <a
+                    href={selectedProduct.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-1 block w-full"
+                  >
+                    {t.viewOnYahoo}
+                  </a>
+                </div>
+              </div>
+
+              {/* 商品説明の追加 */}
+              {selectedProduct.translatedDescription && (
+                <div className="mt-4 mb-4 p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto border border-gray-100">
+                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t.description}</h4>
+                  <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                    {selectedProduct.translatedDescription}
+                  </p>
+                </div>
+              )}
+
+              <form onSubmit={handleBidRequest} className="space-y-3">
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    {t.yourName}
+                  </label>
                   <input
                     type="text"
-                    placeholder={t.keywordPlaceholder}
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleKeywordSearch()}
-                    className="flex-1 p-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                    value={bidForm.name}
+                    onChange={(e) => setBidForm({ ...bidForm, name: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base shadow-sm focus:ring-2 focus:ring-indigo-500 font-bold placeholder:text-gray-300 placeholder:font-normal"
+                    required
+                    placeholder={lang === 'es' ? 'Nombre y Apellido del Cliente' : 'Nome e Sobrenome do Cliente'}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">
+                    {t.maxBid}
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                    <input
+                      type="number"
+                      value={bidForm.maxBid}
+                      onChange={(e) => setBidForm({ ...bidForm, maxBid: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg pl-8 pr-4 py-3 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300 placeholder:font-normal"
+                      required
+                      min="1"
+                      placeholder="USD"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-4">
                   <button
-                    onClick={handleKeywordSearch}
-                    disabled={loading || isSearching}
-                    className="bg-indigo-600 text-white min-w-[120px] px-6 py-3.5 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm shadow-sm"
+                    type="button"
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      setBidForm({ name: '', maxBid: '' });
+                    }}
+                    className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
                   >
-                    {isSearching ? '...' : t.search}
+                    {t.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                  >
+                    {t.submit}
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
-
-          <div ref={resultsRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mt-4">
-            {products.map((product, index) => renderProductCard(product, index, false))}
-          </div>
-
-          {/* ページネーション */}
-          {(products.length > 0) && (
-            <div className="mt-8 flex justify-center items-center gap-4">
-              <button
-                disabled={searchPage === 1 || loading}
-                onClick={() => {
-                  const nextP = searchPage - 1;
-                  if (searchType === 'keyword') handleKeywordSearch(undefined, nextP);
-                  else if (activeCategoryUrl) fetchCategoryItems(activeCategoryUrl, nextP);
-                }}
-                className="px-4 py-2 border rounded-lg text-sm font-bold disabled:opacity-30"
-              >
-                ← {t.previous}
-              </button>
-              <span className="text-sm font-bold text-gray-500">Page {searchPage}</span>
-              <button
-                disabled={!nextPageExists || loading}
-                onClick={() => {
-                  const nextP = searchPage + 1;
-                  if (searchType === 'keyword') handleKeywordSearch(undefined, nextP);
-                  else if (activeCategoryUrl) fetchCategoryItems(activeCategoryUrl, nextP);
-                }}
-                className="px-4 py-2 border rounded-lg text-sm font-bold disabled:opacity-30"
-              >
-                {t.next} →
-              </button>
+              </form>
             </div>
-          )}
-        </>
-      )}
-    </main>
+          </div>
+        )
+      }
 
+      {
+        showCounterModal && selectedRequestForCounter && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <h2 className="text-xl font-bold mb-4">{t.counterOfferAction}</h2>
+              <p className="text-sm text-gray-600 mb-2">
+                {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer).toLocaleString('en-US')}
+              </p>
 
-    {
-      selectedProduct && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-30 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">{t.makeOffer}</h2>
-
-            <div className="flex gap-3 mb-4">
-              <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 relative group/modal-gallery">
-                {selectedProduct.images && selectedProduct.images.length > 1 ? (
-                  <>
-                    <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full">
-                      {selectedProduct.images.map((imgUrl: string, idx: number) => (
-                        <div key={idx} className="flex-shrink-0 w-full h-full snap-center">
-                          <img
-                            src={imgUrl}
-                            alt={`${selectedProduct.title} - ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5 z-10">
-                      {selectedProduct.images.slice(0, 3).map((_: any, i: number) => (
-                        <div key={i} className="w-1 h-1 rounded-full bg-white/60 shadow-sm"></div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <img
-                    src={selectedProduct.imageUrl}
-                    alt={selectedProduct.title}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-              </div>
-              <div className="flex-1 flex flex-col py-0.5 overflow-hidden">
-                <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{selectedProduct.title}</h3>
-                <div className="flex flex-col gap-0.5 mt-auto mb-2">
-                  <p className="text-xs text-gray-600">
-                    {t.currentPrice}: ¥{selectedProduct.currentPrice.toLocaleString()}
-                  </p>
-                  <p className="text-sm font-bold text-indigo-700">
-                    USD: ${calculateUSDPrice(selectedProduct.currentPrice, selectedProduct.shippingCost || 0)}
-                  </p>
-                </div>
-                <a
-                  href={selectedProduct.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-1 block w-full"
-                >
-                  {t.viewOnYahoo}
-                </a>
-              </div>
-            </div>
-
-            {/* 商品説明の追加 */}
-            {selectedProduct.translatedDescription && (
-              <div className="mt-4 mb-4 p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto border border-gray-100">
-                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t.description}</h4>
-                <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
-                  {selectedProduct.translatedDescription}
-                </p>
-              </div>
-            )}
-
-            <form onSubmit={handleBidRequest} className="space-y-3">
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  {t.yourName}
-                </label>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">{t.yourCounterOffer}</label>
                 <input
-                  type="text"
-                  value={bidForm.name}
-                  onChange={(e) => setBidForm({ ...bidForm, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base shadow-sm focus:ring-2 focus:ring-indigo-500 font-bold placeholder:text-gray-300 placeholder:font-normal"
-                  required
-                  placeholder={lang === 'es' ? 'Nombre y Apellido del Cliente' : 'Nome e Sobrenome do Cliente'}
+                  type="number"
+                  value={customerCounterAmount}
+                  onChange={(e) => setCustomerCounterAmount(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                  placeholder="USD"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  {t.maxBid}
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
-                  <input
-                    type="number"
-                    value={bidForm.maxBid}
-                    onChange={(e) => setBidForm({ ...bidForm, maxBid: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg pl-8 pr-4 py-3 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300 placeholder:font-normal"
-                    required
-                    min="1"
-                    placeholder="USD"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 pt-4">
+
+              <div className="flex gap-3">
                 <button
-                  type="button"
                   onClick={() => {
-                    setSelectedProduct(null);
-                    setBidForm({ name: '', maxBid: '' });
+                    setShowCounterModal(false);
+                    setSelectedRequestForCounter(null);
+                    setCustomerCounterAmount('');
                   }}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
                 >
                   {t.cancel}
                 </button>
                 <button
-                  type="submit"
-                  className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                  onClick={() => {
+                    if (customerCounterAmount && !isNaN(parseFloat(customerCounterAmount))) {
+                      handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', parseFloat(customerCounterAmount));
+                      setShowCounterModal(false);
+                      setSelectedRequestForCounter(null);
+                      setCustomerCounterAmount('');
+                    }
+                  }}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
                 >
-                  {t.submit}
+                  {lang === 'es' ? 'Enviar' : 'Enviar'}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )
-    }
-
-    {
-      showCounterModal && selectedRequestForCounter && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4">{t.counterOfferAction}</h2>
-            <p className="text-sm text-gray-600 mb-2">
-              {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer).toLocaleString('en-US')}
-            </p>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">{t.yourCounterOffer}</label>
-              <input
-                type="number"
-                value={customerCounterAmount}
-                onChange={(e) => setCustomerCounterAmount(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                placeholder="USD"
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowCounterModal(false);
-                  setSelectedRequestForCounter(null);
-                  setCustomerCounterAmount('');
-                }}
-                className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
-              >
-                {t.cancel}
-              </button>
-              <button
-                onClick={() => {
-                  if (customerCounterAmount && !isNaN(parseFloat(customerCounterAmount))) {
-                    handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', parseFloat(customerCounterAmount));
-                    setShowCounterModal(false);
-                    setSelectedRequestForCounter(null);
-                    setCustomerCounterAmount('');
-                  }
-                }}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
-              >
-                {lang === 'es' ? 'Enviar' : 'Enviar'}
-              </button>
             </div>
           </div>
-        </div>
-      )
-    }
-    {/* お知らせモーダル */}
-    {showNotifications && (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-        <div className="bg-white w-full sm:max-w-md sm:rounded-2xl shadow-xl flex flex-col max-h-[90vh] sm:max-h-[80vh] overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-          <div className="p-4 border-b flex justify-between items-center bg-white sticky top-0 z-10">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              {lang === 'es' ? 'Avisos' : 'Avisos'}
-            </h2>
-            <button
-              onClick={() => setShowNotifications(false)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-gray-50">
-            {notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                <svg className="w-12 h-12 mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        )
+      }
+      {/* お知らせモーダル */}
+      {showNotifications && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl shadow-xl flex flex-col max-h-[90vh] sm:max-h-[80vh] overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+            <div className="p-4 border-b flex justify-between items-center bg-white sticky top-0 z-10">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <p className="text-sm font-medium">{lang === 'es' ? 'No hay avisos nuevos' : 'Não há avisos novos'}</p>
-              </div>
-            ) : (
-              <div className="space-y-2 sm:space-y-3">
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className={`p-3 sm:p-4 rounded-xl border transition-all ${!n.is_read ? 'bg-white border-indigo-100 shadow-sm ring-1 ring-indigo-50' : 'bg-gray-50/50 border-gray-100 opacity-80'
-                      }`}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${!n.is_read ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'
-                        }`}>
-                        {n.title}
-                      </span>
-                      <span className="text-[9px] text-gray-400 font-medium">
-                        {new Date(n.created_at).toLocaleString(lang === 'es' ? 'es-ES' : 'pt-BR', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-700 font-semibold leading-relaxed line-clamp-3">
-                      {n.body}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                {lang === 'es' ? 'Avisos' : 'Avisos'}
+              </h2>
+              <button
+                onClick={() => setShowNotifications(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-          <div className="p-4 border-t bg-white safe-area-bottom">
-            <button
-              onClick={() => setShowNotifications(false)}
-              className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors shadow-sm"
-            >
-              {lang === 'es' ? 'Cerrar' : 'Fechar'}
-            </button>
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-gray-50">
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                  <svg className="w-12 h-12 mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p className="text-sm font-medium">{lang === 'es' ? 'No hay avisos nuevos' : 'Não há avisos novos'}</p>
+                </div>
+              ) : (
+                <div className="space-y-2 sm:space-y-3">
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`p-3 sm:p-4 rounded-xl border transition-all ${!n.is_read ? 'bg-white border-indigo-100 shadow-sm ring-1 ring-indigo-50' : 'bg-gray-50/50 border-gray-100 opacity-80'
+                        }`}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${!n.is_read ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'
+                          }`}>
+                          {n.title}
+                        </span>
+                        <span className="text-[9px] text-gray-400 font-medium">
+                          {new Date(n.created_at).toLocaleString(lang === 'es' ? 'es-ES' : 'pt-BR', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-700 font-semibold leading-relaxed line-clamp-3">
+                        {n.body}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t bg-white safe-area-bottom">
+              <button
+                onClick={() => setShowNotifications(false)}
+                className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors shadow-sm"
+              >
+                {lang === 'es' ? 'Cerrar' : 'Fechar'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 }
