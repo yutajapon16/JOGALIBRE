@@ -61,7 +61,7 @@ export async function GET(request: Request) {
                 beforeError: dbErrorBefore ? dbErrorBefore.message : null,
                 afterError: dbErrorAfter ? dbErrorAfter.message : null,
             },
-            authMetadata: authUser ? authUser.user.user_metadata : null
+            authMetadata: authUser?.user?.user_metadata || null
         });
 
     } catch (error: any) {
