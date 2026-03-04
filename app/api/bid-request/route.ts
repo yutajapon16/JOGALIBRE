@@ -350,7 +350,13 @@ export async function PATCH(request: Request) {
     }
 
     // 両方または顧客が更新可能なフィールド
-    if (customerConfirmed !== undefined) updateData.customer_confirmed = customerConfirmed;
+    if (customerConfirmed !== undefined) {
+      updateData.customer_confirmed = customerConfirmed;
+      // 顧客が確認ボタンを押した日時を記録
+      if (customerConfirmed === true && !currentRequest.customer_confirmed_at) {
+        updateData.customer_confirmed_at = new Date().toISOString();
+      }
+    }
     if (customerMessage !== undefined) updateData.customer_message = customerMessage;
     if (customerCounterOffer !== undefined) updateData.customer_counter_offer = customerCounterOffer;
 

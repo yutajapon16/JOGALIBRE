@@ -641,7 +641,7 @@ export default function Home() {
         customerFullName: item.customer_full_name,
         customerWhatsapp: item.customer_whatsapp,
         language: item.language,
-        confirmedAt: item.created_at,  // confirmed_at の代わりに created_at を使用
+        confirmedAt: item.customer_confirmed_at || item.created_at,  // 顧客が確認ボタンを押した日時
         paidAt: item.paid_at,
         customerCounterOffer: item.customer_counter_offer,
         customerCounterOfferUsed: item.customer_counter_offer_used,
