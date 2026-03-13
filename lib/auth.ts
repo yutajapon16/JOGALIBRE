@@ -18,18 +18,35 @@ export async function signUp(
   fullName?: string,
   whatsapp?: string
 ) {
-  const res = await fetch('/api/signup', {
+  // 1. フロントエンドで標準のsignUpを実行（これでSupabaseから確実に確認メールが飛ぶ）
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (error) throw error;
+  if (!data.user) throw new Error('User creation failed');
+
+  // 2. サーバーサイドAPIを叩いて、管理者権限(Service Role)でuser_rolesに安全にINSERTする
+  // (クライアントサイドから直接INSERTすると、メール未確認状態のためRLSに弾かれてしまう)
+  const res = await fetch('/api/save-user-role', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, role, fullName, whatsapp })
+    body: JSON.stringify({ 
+      id: data.user.id,
+      email, 
+      role, 
+      fullName, 
+      whatsapp 
+    })
   });
   
-  const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.error || 'User creation failed');
+    const errorData = await res.json();
+    throw new Error(errorData.error || 'Role saving failed');
   }
 
-  return { user: data.user, session: null };
+  return data;
 }
 
 export async function signIn(email: string, password: string) {
