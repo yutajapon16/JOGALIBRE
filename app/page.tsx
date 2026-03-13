@@ -1683,6 +1683,11 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-2">
+              {currentUser && (
+                <span className="text-[10px] sm:text-xs text-gray-700 font-bold truncate max-w-[120px] sm:max-w-[200px]">
+                  {currentUser.fullName}
+                </span>
+              )}
               <button
                 onClick={handleLogout}
                 className="px-2 py-1 text-[10px] sm:text-xs text-red-600 hover:text-red-800 font-extrabold transition-colors hover:bg-red-50 rounded-lg"
