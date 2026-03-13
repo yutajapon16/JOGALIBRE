@@ -1683,15 +1683,6 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-2">
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                className="bg-gray-50 border border-gray-200 text-gray-700 py-1 px-2 rounded-lg text-[10px] sm:text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
-              >
-                <option value="es">ES</option>
-                <option value="pt">PT</option>
-              </select>
-
               <button
                 onClick={handleLogout}
                 className="px-2 py-1 text-[10px] sm:text-xs text-red-600 hover:text-red-800 font-extrabold transition-colors hover:bg-red-50 rounded-lg"
@@ -1705,23 +1696,34 @@ export default function Home() {
           <div className="flex justify-between items-center">
             <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t.subtitle}</p>
 
-            <button
-              onClick={() => {
-                setShowNotifications(true);
-                fetchNotifications();
-              }}
-              className="relative flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors"
-            >
-              <span>{lang === 'es' ? 'Avisos' : 'Avisos'}</span>
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white animate-pulse">
-                  {unreadCount}
-                </span>
-              )}
-              <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={lang}
+                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+                className="bg-gray-50 border border-gray-200 text-gray-700 py-1 px-2 rounded-lg text-[10px] sm:text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
+              >
+                <option value="es">ES</option>
+                <option value="pt">PT</option>
+              </select>
+
+              <button
+                onClick={() => {
+                  setShowNotifications(true);
+                  fetchNotifications();
+                }}
+                className="relative flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors"
+              >
+                <span>{lang === 'es' ? 'Avisos' : 'Avisos'}</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </header>
