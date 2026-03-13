@@ -56,15 +56,15 @@ export default function AgentRegister() {
             ¡Cuenta de agente creada! / Conta de agente criada!
           </h2>
           <p className="text-gray-600 mb-6">
-            Por favor, revisa tu correo electrónico para confirmar tu cuenta.
+            Ya puedes iniciar sesión con tu cuenta.
             <br />
-            Por favor, verifique seu e-mail para confirmar sua conta.
+            Você já pode fazer login com sua conta.
           </p>
           <a
             href="/"
             className="inline-block bg-indigo-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition"
           >
-            Ir a iniciar sesión / Ir para o login
+            Iniciar sesión / Fazer login
           </a>
         </div>
       </div>

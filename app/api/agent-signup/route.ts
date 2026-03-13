@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // エージェント登録用API
-// inviteUserByEmail で「ユーザー作成 + 確認メール送信」を一括実行し、
-// その後 updateUserById でパスワードを設定、user_roles にロールを挿入する
+// admin.createUser で確実にユーザーを作成し、email_confirm: true で即ログイン可能にする
+// /agent ページからのみアクセスされるため、URLがアクセス制御として機能する
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -17,53 +17,45 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. inviteUserByEmail でユーザー作成 + 確認メール送信を一括実行
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      data: {
+    // 1. admin.createUser でユーザーを作成
+    // email_confirm: true → メール確認済みとして作成（確認メール不要、即ログイン可能）
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
         full_name: fullName || null,
         whatsapp: whatsapp || null,
         role: 'agent'
       }
     });
 
-    if (inviteError) {
-      console.error('Invite user error:', inviteError);
-      if (inviteError.message?.includes('already') || inviteError.message?.includes('exists')) {
+    if (authError) {
+      console.error('Auth user creation error:', authError);
+      if (authError.message?.includes('already') || authError.message?.includes('exists')) {
         return NextResponse.json(
           { error: 'このメールアドレスは既に使用されています' },
           { status: 409 }
         );
       }
       return NextResponse.json(
-        { error: 'ユーザー招待に失敗しました: ' + inviteError.message },
+        { error: 'ユーザー作成に失敗しました: ' + authError.message },
         { status: 500 }
       );
     }
 
-    if (!inviteData.user) {
+    if (!authData.user) {
       return NextResponse.json(
         { error: 'ユーザー作成に失敗しました' },
         { status: 500 }
       );
     }
 
-    const userId = inviteData.user.id;
-
-    // 2. パスワードを設定（招待リンク確認後にログインで使えるように）
-    const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-      password: password
-    });
-
-    if (passwordError) {
-      console.error('Password set error:', passwordError);
-      // パスワード設定失敗は致命的ではない（招待リンクから再設定可能）
-    }
-
-    // 3. user_roles にエージェントとして登録（service role でRLSを回避）
+    // 2. user_roles にエージェントとして登録（service role でRLSを回避）
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
       .insert([{
-        id: userId,
+        id: authData.user.id,
         email: email,
         role: 'agent',
         full_name: fullName || null,
@@ -73,7 +65,7 @@ export async function POST(request: Request) {
     if (roleError) {
       console.error('user_roles insert error:', roleError);
       // ロールバック：auth ユーザーを削除
-      await supabaseAdmin.auth.admin.deleteUser(userId);
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json(
         { error: 'ロール設定に失敗しました: ' + roleError.message },
         { status: 500 }
@@ -82,7 +74,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'エージェントアカウントが作成されました。確認メールを確認してください。'
+      message: 'エージェントアカウントが作成されました。すぐにログインできます。'
     });
 
   } catch (error) {
