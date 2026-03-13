@@ -1684,7 +1684,9 @@ export default function Home() {
 
             <div className="flex items-center gap-2">
               {currentUser && (
-                <span className="text-[10px] sm:text-xs text-gray-700 font-bold truncate max-w-[120px] sm:max-w-[200px]">
+                <span className="text-[10px] sm:text-xs text-gray-700 font-bold truncate max-w-[150px] sm:max-w-[250px]">
+                  {currentUser.customerId && <span className="text-indigo-600">{currentUser.customerId}</span>}
+                  {currentUser.customerId && currentUser.fullName && ' '}
                   {currentUser.fullName}
                 </span>
               )}
