@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // エージェント登録用API
-// supabaseAdmin (service role) を使用してRLSを回避し、
-// user_rolesへのinsertを確実に行う
+// 通常のsignUp（確認メール自動送信）+ supabaseAdmin（RLSをバイパスしてuser_rolesに確実にinsert）
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -17,27 +17,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Supabase Auth でユーザーを作成（管理者権限で）
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    // 1. 通常のSupabaseクライアントでsignUp（確認メールが自動送信される）
+    const supabaseAnon = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: authData, error: authError } = await supabaseAnon.auth.signUp({
       email,
       password,
-      email_confirm: false, // メール確認を要求
-      user_metadata: {
-        full_name: fullName || null,
-        whatsapp: whatsapp || null,
-        role: 'agent'
+      options: {
+        data: {
+          full_name: fullName || null,
+          whatsapp: whatsapp || null,
+          role: 'agent'
+        }
       }
     });
 
     if (authError) {
-      console.error('Auth user creation error:', authError);
-      // メールアドレス重複の場合
-      if (authError.message?.includes('already') || authError.message?.includes('exists')) {
-        return NextResponse.json(
-          { error: 'このメールアドレスは既に使用されています' },
-          { status: 409 }
-        );
-      }
+      console.error('Auth signUp error:', authError);
       return NextResponse.json(
         { error: 'ユーザー作成に失敗しました: ' + authError.message },
         { status: 500 }
@@ -51,7 +50,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. user_roles にエージェントとして登録（service role でRLSを回避）
+    // 2. supabaseAdmin でuser_rolesにエージェントとして登録（RLSバイパス）
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
       .insert([{
@@ -64,7 +63,7 @@ export async function POST(request: Request) {
 
     if (roleError) {
       console.error('user_roles insert error:', roleError);
-      // ロールバック：auth ユーザーを削除
+      // ロールバック：authユーザーを削除
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json(
         { error: 'ロール設定に失敗しました: ' + roleError.message },
@@ -72,23 +71,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. 確認メールを送信
-    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      data: {
-        full_name: fullName || null,
-        whatsapp: whatsapp || null,
-        role: 'agent'
-      }
-    });
-
-    if (inviteError) {
-      // ユーザーは既に作成済みなので、招待エラーは警告のみ
-      console.warn('招待メール送信エラー（ユーザーは作成済み）:', inviteError);
-    }
-
     return NextResponse.json({
       success: true,
-      message: 'エージェントアカウントが作成されました。メールを確認してください。'
+      message: 'エージェントアカウントが作成されました。確認メールを確認してください。'
     });
 
   } catch (error) {

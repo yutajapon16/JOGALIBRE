@@ -274,7 +274,7 @@ export default function AdminDashboard() {
 
     // 顧客名でフィルタリング
     if (selectedCustomer !== 'all') {
-      filtered = filtered.filter(item => item.customerName === selectedCustomer);
+      filtered = filtered.filter(item => (item.customerFullName || item.customerName) === selectedCustomer);
     }
 
     // 期間でフィルタリング
@@ -384,8 +384,9 @@ export default function AdminDashboard() {
   const getCustomerList = () => {
     const uniqueCustomers = new Map<string, string>();
     purchasedItems.forEach(item => {
-      if (!uniqueCustomers.has(item.customerName)) {
-        uniqueCustomers.set(item.customerName, item.customerName);
+      const displayName = item.customerFullName || item.customerName;
+      if (!uniqueCustomers.has(displayName)) {
+        uniqueCustomers.set(displayName, displayName);
       }
     });
     const customerList = Array.from(uniqueCustomers.values()).sort((a, b) => a.localeCompare(b));
@@ -396,12 +397,12 @@ export default function AdminDashboard() {
     if (selectedCustomer === 'all') {
       return purchasedItems;
     }
-    return purchasedItems.filter(item => item.customerName === selectedCustomer);
+    return purchasedItems.filter(item => (item.customerFullName || item.customerName) === selectedCustomer);
   };
 
   const getCustomerTotal = (customerName: string) => {
     return purchasedItems
-      .filter(item => item.customerName === customerName)
+      .filter(item => (item.customerFullName || item.customerName) === customerName)
       .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
   };
 
@@ -1060,7 +1061,7 @@ export default function AdminDashboard() {
                     <span className="text-3xl font-bold text-indigo-600">
                       ${Math.round(
                         getFilteredPurchasedItems()
-                          .filter(item => selectedCustomer === 'all' || item.customerName === selectedCustomer)
+                          .filter(item => selectedCustomer === 'all' || (item.customerFullName || item.customerName) === selectedCustomer)
                           .filter(item => !item.paid)  // ← 支払済を除外
                           .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
                       ).toLocaleString('en-US')}
