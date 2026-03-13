@@ -72,15 +72,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. メール確認メールを送信（signUp経由で招待）
-    const { error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'signup',
-      email,
-      password,
+    // 3. 確認メールを送信
+    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      data: {
+        full_name: fullName || null,
+        whatsapp: whatsapp || null,
+        role: 'agent'
+      }
     });
 
     if (inviteError) {
-      console.warn('メール送信エラー（ユーザーは作成済み）:', inviteError);
+      // ユーザーは既に作成済みなので、招待エラーは警告のみ
+      console.warn('招待メール送信エラー（ユーザーは作成済み）:', inviteError);
     }
 
     return NextResponse.json({

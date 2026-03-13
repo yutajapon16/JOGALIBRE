@@ -1066,7 +1066,9 @@ export default function Home() {
   const calculateUSDPrice = (jpyPrice: number, shippingCost: number = 0) => {
     const FOB_COST = 1350;
     const totalJpyPrice = jpyPrice + shippingCost + FOB_COST;
-    const priceWithProfit = totalJpyPrice / 0.8;
+    // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
+    const profitDivisor = currentUser?.customerId?.startsWith('A') ? 0.8 : 0.6;
+    const priceWithProfit = totalJpyPrice / profitDivisor;
     const usdPrice = priceWithProfit / exchangeRate;
     const roundedUp = Math.ceil(usdPrice / 10) * 10;
     return roundedUp.toLocaleString('en-US');
