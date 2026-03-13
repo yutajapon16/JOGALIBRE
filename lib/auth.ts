@@ -18,27 +18,18 @@ export async function signUp(
   fullName?: string,
   whatsapp?: string
 ) {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
+  const res = await fetch('/api/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, role, fullName, whatsapp })
   });
+  
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'User creation failed');
+  }
 
-  if (error) throw error;
-  if (!data.user) throw new Error('User creation failed');
-
-  const { error: roleError } = await supabase
-    .from('user_roles')
-    .insert([{
-      id: data.user.id,
-      email: email,
-      role,
-      full_name: fullName || null,
-      whatsapp: whatsapp || null
-    }]);
-
-  if (roleError) throw roleError;
-
-  return data;
+  return { user: data.user, session: null };
 }
 
 export async function signIn(email: string, password: string) {
