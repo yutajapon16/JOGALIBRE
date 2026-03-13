@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { signUp } from '@/lib/auth';
 
 // エージェント登録専用ページ
-// ここから登録すると role='agent'、customer_id は A001〜 が自動付与される
+// サーバーサイドAPI経由でrole='agent'として登録し、customer_idはA001〜が自動付与される
 export default function AgentRegister() {
   const [form, setForm] = useState({
     email: '',
@@ -20,8 +19,23 @@ export default function AgentRegister() {
     setLoading(true);
 
     try {
-      // role = 'agent' として登録
-      await signUp(form.email, form.password, 'agent', form.fullName, form.whatsapp);
+      // サーバーサイドAPIを呼び出してエージェント登録（RLSを回避）
+      const res = await fetch('/api/agent-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName,
+          whatsapp: form.whatsapp
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
 
       setSuccess(true);
       setForm({ email: '', password: '', fullName: '', whatsapp: '' });

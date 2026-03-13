@@ -30,6 +30,7 @@ export async function signUp(
     .from('user_roles')
     .insert([{
       id: data.user.id,
+      email: email,
       role,
       full_name: fullName || null,
       whatsapp: whatsapp || null
