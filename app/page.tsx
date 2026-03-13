@@ -327,7 +327,7 @@ export default function Home() {
   useEffect(() => {
     // 初回セッション復元
     getCurrentUser().then(user => {
-      if (user?.role === 'customer') {
+      if (user?.role === 'customer' || user?.role === 'agent') {
         setCurrentUser(user);
         // 通知の自動再登録（ブラウザ許可がgrantedの場合）
         if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -367,7 +367,7 @@ export default function Home() {
       } else if (session?.user) {
         // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
         const user = await getCurrentUser(session.user);
-        if (user?.role === 'customer') {
+        if (user?.role === 'customer' || user?.role === 'agent') {
           setCurrentUser(user);
         }
       }

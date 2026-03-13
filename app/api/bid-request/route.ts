@@ -147,7 +147,9 @@ export async function GET(request: Request) {
           return {
             ...item,
             customer_full_name: userInfo?.full_name,
-            customer_whatsapp: userInfo?.whatsapp
+            customer_whatsapp: userInfo?.whatsapp,
+            customer_id: userInfo?.customer_id,
+            customer_role: userInfo?.role,
           };
         })
       );
@@ -191,7 +193,9 @@ export async function GET(request: Request) {
         return {
           ...item,
           customer_full_name: userInfo?.full_name,
-          customer_whatsapp: userInfo?.whatsapp
+          customer_whatsapp: userInfo?.whatsapp,
+          customer_id: userInfo?.customer_id,
+          customer_role: userInfo?.role,
         };
       })
     );
@@ -225,7 +229,7 @@ async function getUserInfo(email: string) {
     // user_rolesから氏名とWhatsAppを取得
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
-      .select('full_name, whatsapp')
+      .select('full_name, whatsapp, customer_id, role')
       .eq('id', user.id)
       .single();
 

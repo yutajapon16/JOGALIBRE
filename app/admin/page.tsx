@@ -332,7 +332,9 @@ export default function AdminDashboard() {
         finalPrice: req.final_price,
         customerConfirmed: req.customer_confirmed,
         customerMessage: req.customer_message,
-        adminNeedsConfirm: req.admin_needs_confirm
+        adminNeedsConfirm: req.admin_needs_confirm,
+        customerId: req.customer_id,
+        customerRole: req.customer_role
       }));
 
       setBidRequests(convertedRequests);
@@ -570,7 +572,9 @@ export default function AdminDashboard() {
       const shipping = shippingCostJpy.trim() ? parseFloat(shippingCostJpy) : 0;
 
       const totalJpy = (selectedRequest.productPrice || 0) + shipping + FOB_COST;
-      const priceWithProfit = totalJpy / 0.8;
+      // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
+      const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
+      const priceWithProfit = totalJpy / profitDivisor;
       const usdPrice = priceWithProfit / exchangeRate;
       const roundedUsd = Math.ceil(usdPrice / 10) * 10;
 
@@ -1398,7 +1402,9 @@ export default function AdminDashboard() {
                   ${(() => {
                     const FOB_COST = 1350;
                     const totalJpy = (selectedRequest.productPrice || 0) + parseFloat(shippingCostJpy || '0') + FOB_COST;
-                    const priceWithProfit = totalJpy / 0.8;
+                    // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
+                    const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
+                    const priceWithProfit = totalJpy / profitDivisor;
                     const usdPrice = priceWithProfit / exchangeRate;
                     const roundedUsd = Math.ceil(usdPrice / 10) * 10;
                     return roundedUsd.toLocaleString('en-US');

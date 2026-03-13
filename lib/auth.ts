@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export type UserRole = 'customer' | 'admin';
+export type UserRole = 'customer' | 'admin' | 'agent';
 
 export interface User {
   id: string;
@@ -175,7 +175,7 @@ export async function getCurrentUser(alreadyFetchedUser?: any): Promise<User | n
       try {
         const { data, error } = await supabase
           .from('user_roles')
-          .select('role, full_name, whatsapp')
+          .select('role, full_name, whatsapp, customer_id')
           .eq('id', user.id)
           .abortSignal(controller.signal)
           .single();
@@ -200,6 +200,7 @@ export async function getCurrentUser(alreadyFetchedUser?: any): Promise<User | n
         role: isExportAdmin ? 'admin' : (roleData?.role || metadata.role || 'customer'),
         fullName: roleData?.full_name || metadata.full_name || undefined,
         whatsapp: roleData?.whatsapp || metadata.whatsapp || undefined,
+        customerId: roleData?.customer_id || undefined,
       };
     } catch (error) {
       console.error('Error inside fetchUserLogic:', error);
