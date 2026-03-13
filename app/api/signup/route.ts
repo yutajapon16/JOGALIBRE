@@ -19,44 +19,53 @@ export async function POST(request: Request) {
 
     const userRole = role || 'customer';
 
-    // 1. 通常のSupabaseクライアントでsignUp（確認メールが自動送信される）
-    const supabaseAnon = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const { data: authData, error: authError } = await supabaseAnon.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName || null,
-          whatsapp: whatsapp || null,
-          role: userRole
-        }
+    // 1. inviteUserByEmail で「ユーザー作成 + 確認メール送信」を一括実行
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      data: {
+        full_name: fullName || null,
+        whatsapp: whatsapp || null,
+        role: userRole
       }
     });
 
-    if (authError) {
-      console.error('Auth signUp error:', authError);
+    if (inviteError) {
+      console.error('Invite user error:', inviteError);
+      if (inviteError.message?.includes('already') || inviteError.message?.includes('exists')) {
+        return NextResponse.json(
+          { error: 'このメールアドレスは既に使用されています' },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
-        { error: 'ユーザー作成に失敗しました: ' + authError.message },
+        { error: 'ユーザー作成に失敗しました: ' + inviteError.message },
         { status: 500 }
       );
     }
 
-    if (!authData.user) {
+    if (!inviteData.user) {
       return NextResponse.json(
         { error: 'ユーザー作成に失敗しました' },
         { status: 500 }
       );
     }
 
-    // 2. supabaseAdmin で user_roles に登録（RLSバイパス）
+    const userId = inviteData.user.id;
+
+    // 2. パスワードを設定（招待リンク確認後にログインで使えるように）
+    const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      password: password
+    });
+
+    if (passwordError) {
+      console.error('Password set error:', passwordError);
+      // パスワード設定失敗は致命的ではない（招待からの再設定可能）
+    }
+
+    // 3. supabaseAdmin で user_roles に登録（RLSバイパス）
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
       .insert([{
-        id: authData.user.id,
+        id: userId,
         email: email,
         role: userRole,
         full_name: fullName || null,
@@ -66,7 +75,7 @@ export async function POST(request: Request) {
     if (roleError) {
       console.error('user_roles insert error:', roleError);
       // ロールバック：authユーザーを削除
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      await supabaseAdmin.auth.admin.deleteUser(userId);
       return NextResponse.json(
         { error: 'ロール設定に失敗しました: ' + roleError.message },
         { status: 500 }
@@ -75,7 +84,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      user: authData.user
+      user: inviteData.user
     });
 
   } catch (error: any) {
