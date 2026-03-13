@@ -329,12 +329,26 @@ export default function Home() {
     getCurrentUser().then(user => {
       if (user?.role === 'customer') {
         setCurrentUser(user);
-        // 通知状態を初期化
+        // 通知の自動再登録（ブラウザ許可がgrantedの場合）
         if (typeof window !== 'undefined' && 'Notification' in window) {
           if (Notification.permission === 'granted') {
-            fetch(`/api/push-subscribe?userId=${user.id}`)
-              .then(r => r.ok ? setNotificationStatus('enabled') : setNotificationStatus('disabled'))
-              .catch(() => setNotificationStatus('disabled'));
+            (async () => {
+              try {
+                const sub = await requestNotificationPermission();
+                if (sub) {
+                  await fetch('/api/push-subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, subscription: sub }),
+                  });
+                  setNotificationStatus('enabled');
+                } else {
+                  setNotificationStatus('disabled');
+                }
+              } catch {
+                setNotificationStatus('disabled');
+              }
+            })();
           } else {
             setNotificationStatus('disabled');
           }
@@ -909,6 +923,18 @@ export default function Home() {
   };
 
   const handleLogout = async () => {
+    // ログアウト前にPushサブスクリプションを削除
+    if (currentUser) {
+      try {
+        await fetch('/api/push-subscribe', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id }),
+        });
+      } catch (err) {
+        console.error('Push subscription cleanup error:', err);
+      }
+    }
     await signOut();
     // cookieベースセッションのため、ページリロードで確実にクリア
     window.location.href = '/';

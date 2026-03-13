@@ -38,13 +38,29 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // サブスクリプションからendpointを抽出
+        let endpoint = '';
+        try {
+            const subObj = typeof subscription === 'string' ? JSON.parse(subscription) : subscription;
+            endpoint = subObj.endpoint || '';
+        } catch { }
+
+        // 同一endpointを持つ他のユーザーのレコードを削除（同一デバイスで別ユーザーがログインした場合の対策）
+        if (endpoint) {
+            await supabase
+                .from('push_subscriptions')
+                .delete()
+                .neq('user_id', userId)
+                .like('subscription', `%${endpoint}%`);
+        }
+
         // 既存のサブスクリプションを更新、なければ挿入
         const { error } = await supabase
             .from('push_subscriptions')
             .upsert(
                 {
                     user_id: userId,
-                    subscription: subscription,
+                    subscription: typeof subscription === 'string' ? subscription : JSON.stringify(subscription),
                     updated_at: new Date().toISOString(),
                 },
                 { onConflict: 'user_id' }

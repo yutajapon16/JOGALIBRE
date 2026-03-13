@@ -154,19 +154,30 @@ export default function AdminDashboard() {
     };
   }, [showPurchased, currentUser]);
 
-  // 通知状態チェック
+  // 通知状態チェック＆自動再登録
   useEffect(() => {
     if (currentUser) {
       // ブラウザの許可状態を確認
       if (typeof window !== 'undefined' && 'Notification' in window) {
         if (Notification.permission === 'granted') {
-          // サーバー側の登録状況を確認
-          fetch(`/api/push-subscribe?userId=${currentUser.id}`)
-            .then(res => {
-              if (res.ok) setNotificationStatus('enabled');
-              else setNotificationStatus('disabled');
-            })
-            .catch(() => setNotificationStatus('disabled'));
+          // サーバー側の登録状況を確認し、自動再登録
+          (async () => {
+            try {
+              const subscription = await requestNotificationPermission();
+              if (subscription) {
+                await fetch('/api/push-subscribe', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: currentUser.id, subscription }),
+                });
+                setNotificationStatus('enabled');
+              } else {
+                setNotificationStatus('disabled');
+              }
+            } catch {
+              setNotificationStatus('disabled');
+            }
+          })();
         } else if (Notification.permission === 'denied') {
           setNotificationStatus('disabled');
         } else {
@@ -192,6 +203,18 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = async () => {
+    // ログアウト前にPushサブスクリプションを削除
+    if (currentUser) {
+      try {
+        await fetch('/api/push-subscribe', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id }),
+        });
+      } catch (err) {
+        console.error('Push subscription cleanup error:', err);
+      }
+    }
     await signOut();
     window.location.href = '/admin';
   };
