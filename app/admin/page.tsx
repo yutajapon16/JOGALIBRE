@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
+import { formatDateTime, getTimeRemaining } from '@/lib/utils';
 
 // 管理者画面用のPWA manifest差し替え
 function useAdminManifest() {
@@ -660,74 +661,6 @@ export default function AdminDashboard() {
     return statusMap[finalStatus] || '';
   };
 
-  const formatDateTime = (dateString: string) => {
-    if (!dateString) return '-';
-
-    // タイムゾーン情報がない場合、日本標準時 (JST) として扱う
-    let date: Date;
-    if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-      date = new Date(dateString + '+09:00');
-    } else {
-      date = new Date(dateString);
-    }
-
-    if (isNaN(date.getTime())) return dateString;
-
-    // ローカルタイムゾーンの取得
-    const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-    // 略称の取得
-    let localLabel = new Intl.DateTimeFormat('en-US', {
-      timeZone: localTimeZone,
-      timeZoneName: 'short'
-    }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || '';
-
-    // GMT-3 などのオフセット表示を BRT 等の略称にマッピング
-    if (localTimeZone === 'America/Sao_Paulo' || localLabel.includes('GMT-3')) {
-      localLabel = 'BRT';
-    } else if (localTimeZone === 'Asia/Tokyo' || localLabel.includes('GMT+9')) {
-      localLabel = 'JST';
-    }
-
-    const formatter = new Intl.DateTimeFormat('ja-JP', {
-      timeZone: localTimeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-
-    return `${formatter.format(date)} ${localLabel}`;
-  };
-
-  const getTimeRemaining = (endTime: string) => {
-    if (!endTime) return '-';
-
-    // タイムゾーン情報がない場合、日本標準時 (JST) として扱う
-    let endDate: Date;
-    if (!endTime.includes('Z') && !endTime.includes('+') && !endTime.includes('-', 10)) {
-      endDate = new Date(endTime + '+09:00');
-    } else {
-      endDate = new Date(endTime);
-    }
-
-    const now = new Date().getTime();
-    const end = endDate.getTime();
-    const diff = end - now;
-
-    if (diff <= 0) return '終了';
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (days > 0) return `${days}日 ${hours}時間`;
-    if (hours > 0) return `${hours}時間 ${minutes}分`;
-    return `${minutes}分`;
-  };
-
 
   if (!currentUser) {
     return (
@@ -1098,7 +1031,7 @@ export default function AdminDashboard() {
                         <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{request.productTitle}</h3>
                         {request.productEndTime && (
                           <p className="text-[10px] text-gray-500 mb-1">
-                            終了まで: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
+                            終了まで: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, 'ja')}</span>
                           </p>
                         )}
                         <div className="flex flex-wrap items-center gap-1 mt-1">
@@ -1163,7 +1096,7 @@ export default function AdminDashboard() {
                       <span className="font-semibold">{formatDateTime(request.createdAt)}</span>
                       {request.status === 'approved' && request.productEndTime && (
                         <span className="text-[10px] text-red-500">
-                          (終了: {getTimeRemaining(request.productEndTime)})
+                          (終了: {getTimeRemaining(request.productEndTime, 'ja')})
                         </span>
                       )}
                     </div>

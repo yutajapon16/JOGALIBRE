@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
+import { formatDateTime, getTimeRemaining } from '@/lib/utils';
 
 const translations = {
   es: {
@@ -844,48 +845,6 @@ export default function Home() {
       .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
   };
 
-  const formatDateTime = (dateString: string) => {
-    if (!dateString) return '-';
-
-    // タイムゾーン情報がない場合、UTC として扱う
-    let date: Date;
-    if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-      date = new Date(dateString + 'Z');
-    } else {
-      date = new Date(dateString);
-    }
-
-    if (isNaN(date.getTime())) return dateString;
-
-    // ローカルタイムゾーンの取得
-    const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-    // 略称の取得
-    let localLabel = new Intl.DateTimeFormat('en-US', {
-      timeZone: localTimeZone,
-      timeZoneName: 'short'
-    }).formatToParts(date).find(part => part.type === 'timeZoneName')?.value || '';
-
-    // GMT-3 などのオフセット表示を BRT 等の略称にマッピング
-    if (localTimeZone === 'America/Sao_Paulo' || localLabel.includes('GMT-3')) {
-      localLabel = 'BRT';
-    } else if (localTimeZone === 'Asia/Tokyo' || localLabel.includes('GMT+9')) {
-      localLabel = 'JST';
-    }
-
-    const formatter = new Intl.DateTimeFormat('ja-JP', {
-      timeZone: localTimeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-
-    return `${formatter.format(date)} ${localLabel}`;
-  };
-
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -1039,36 +998,6 @@ export default function Home() {
       console.error('Error submitting bid request:', error);
       alert(t.offerError);
     }
-  };
-
-  // 時間計算ロジックを管理者画面と統一 (JST考慮)
-  const getTimeRemaining = (endTime: string, timeLeftStr?: string) => {
-    if (!endTime) return timeLeftStr || '-';
-
-    // タイムゾーン情報がない場合、日本標準時 (JST) として扱う
-    let endDate: Date;
-    if (!endTime.includes('Z') && !endTime.includes('+') && !endTime.includes('-', 10)) {
-      endDate = new Date(endTime + '+09:00');
-    } else {
-      endDate = new Date(endTime);
-    }
-
-    const now = new Date().getTime();
-    const end = endDate.getTime();
-    const diff = end - now;
-
-    if (diff <= 0) return (lang === 'es' ? 'Finalizado' : 'Finalizado');
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    const parts = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
-
-    return parts.join(' ') || (lang === 'es' ? 'Menos de 1m' : 'Menos de 1m');
   };
 
   const calculateUSDPrice = (jpyPrice: number, shippingCost: number = 0) => {
@@ -1633,7 +1562,7 @@ export default function Home() {
             </div>
             <div className="flex justify-between items-center text-[10px] sm:text-xs bg-red-50 p-1.5 sm:p-2 rounded text-red-700 font-medium">
               <span>{t.timeLeft}:</span>
-              <span className="text-right line-clamp-2 max-w-[60%] font-semibold">{getTimeRemaining(product.endTime || '', product.timeLeft)}</span>
+              <span className="text-right line-clamp-2 max-w-[60%] font-semibold">{getTimeRemaining(product.endTime || '', lang, product.timeLeft)}</span>
             </div>
 
             <div className="my-2 sm:my-3">
@@ -1927,7 +1856,7 @@ export default function Home() {
                             </p>
                             {request.productEndTime && (
                               <p className="text-[10px] text-gray-500">
-                                {t.endsIn}: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime)}</span>
+                                {t.endsIn}: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, lang)}</span>
                               </p>
                             )}
                           </div>
