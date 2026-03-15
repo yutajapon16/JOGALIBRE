@@ -37,21 +37,35 @@ export async function GET(request: Request) {
         searchUrl = searchUrl.replace(/b=\d+/, `b=${start}`);
       }
     } else if (q) {
-      const translateRes = await fetch(
-        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${lang}&tl=ja&dt=t&q=${encodeURIComponent(q)}`
-      );
-      const translateData = await translateRes.json();
-      translatedKeyword = translateData?.[0]?.[0]?.[0] || q;
+      const controllerTranslate = new AbortController();
+      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 8000);
+      try {
+        const translateRes = await fetch(
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${lang}&tl=ja&dt=t&q=${encodeURIComponent(q)}`,
+          { signal: controllerTranslate.signal }
+        );
+        const translateData = await translateRes.json();
+        translatedKeyword = translateData?.[0]?.[0]?.[0] || q;
+      } catch (e) {
+        console.warn('Translation API timeout/error:', e);
+        translatedKeyword = q;
+      } finally {
+        clearTimeout(timeoutTranslate);
+      }
 
       const start = (page - 1) * itemsPerPage + 1;
       searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(translatedKeyword)}&va=${encodeURIComponent(translatedKeyword)}&exflg=1&b=${start}&n=${itemsPerPage}&s1=score&o1=d`;
     }
 
+    const controllerSearch = new AbortController();
+    const timeoutSearch = setTimeout(() => controllerSearch.abort(), 8000);
     const response = await fetch(searchUrl, {
+      signal: controllerSearch.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       }
     });
+    clearTimeout(timeoutSearch);
 
     const html = await response.text();
     const $ = cheerio.load(html);

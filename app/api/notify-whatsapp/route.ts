@@ -55,17 +55,27 @@ export async function POST(request: Request) {
 
         const lang = requests[0].language || 'es';
         const count = requests.length;
-
         const message = `🔔 JOGALIBRE: Tienes ${count} solicitud(es) con actualizaciones. / Você tem ${count} solicitação(ões) com atualizações.\nRevisa tu panel / Confira seu painel: https://jogalibre.vercel.app/`;
 
-        const result = await sendWhatsAppMessage(userInfo.whatsapp, message);
-        results.push({
-          email: customerEmail,
-          whatsapp: userInfo.whatsapp,
-          success: result.success,
-          error: result.error,
-          outsideWindow: result.outsideWindow || false
-        });
+        try {
+          const result = await sendWhatsAppMessage(userInfo.whatsapp, message);
+          results.push({
+            email: customerEmail,
+            whatsapp: userInfo.whatsapp,
+            success: result.success,
+            error: result.error,
+            outsideWindow: result.outsideWindow || false
+          });
+        } catch (e: any) {
+          console.error(`Error sending to ${customerEmail}:`, e);
+          results.push({
+            email: customerEmail,
+            whatsapp: userInfo.whatsapp,
+            success: false,
+            error: e.message || 'Unknown error',
+            outsideWindow: false
+          });
+        }
       }
 
       const outsideWindowCount = results.filter(r => r.outsideWindow).length;
