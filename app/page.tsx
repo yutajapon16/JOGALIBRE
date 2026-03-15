@@ -329,32 +329,6 @@ export default function Home() {
     getCurrentUser().then(user => {
       if (user?.role === 'customer' || user?.role === 'agent') {
         setCurrentUser(user);
-        // 通知の自動再登録（ブラウザ許可がgrantedの場合）
-        if (typeof window !== 'undefined' && 'Notification' in window) {
-          if (Notification.permission === 'granted') {
-            (async () => {
-              try {
-                const sub = await requestNotificationPermission();
-                if (sub) {
-                  await fetch('/api/push-subscribe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: user.id, subscription: sub }),
-                  });
-                  setNotificationStatus('enabled');
-                } else {
-                  setNotificationStatus('disabled');
-                }
-              } catch {
-                setNotificationStatus('disabled');
-              }
-            })();
-          } else {
-            setNotificationStatus('disabled');
-          }
-        } else {
-          setNotificationStatus('unsupported');
-        }
       }
     }).catch(err => {
       console.error('Fast failure in initial getCurrentUser:', err);
@@ -374,6 +348,40 @@ export default function Home() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // 通知状態チェック＆自動再登録（セッション復元時にも確実に実行されるようcurrentUserを監視）
+  useEffect(() => {
+    if (currentUser) {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          // サーバー側の登録状況を確認し、自動再登録
+          (async () => {
+            try {
+              const sub = await requestNotificationPermission();
+              if (sub) {
+                await fetch('/api/push-subscribe', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: currentUser.id, subscription: sub }),
+                });
+                setNotificationStatus('enabled');
+              } else {
+                setNotificationStatus('disabled');
+              }
+            } catch {
+              setNotificationStatus('disabled');
+            }
+          })();
+        } else if (Notification.permission === 'denied') {
+          setNotificationStatus('disabled');
+        } else {
+          setNotificationStatus('disabled');
+        }
+      } else {
+        setNotificationStatus('unsupported');
+      }
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (currentUser) {
