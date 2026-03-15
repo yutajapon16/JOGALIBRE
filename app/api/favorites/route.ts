@@ -1,16 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-
-// Bearerトークンからユーザーを取得するヘルパー
-async function getUserFromRequest(request: Request) {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-    const token = authHeader.split(' ')[1];
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-    if (error || !user) return null;
-    return user;
-}
+import { getUserFromRequest } from '@/lib/auth-helpers';
 
 // GET: お気に入り一覧取得
 export async function GET(request: Request) {

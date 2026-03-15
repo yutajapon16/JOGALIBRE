@@ -2,17 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-
-// Bearerトークンからユーザーを取得
-async function getUserFromBearerToken(request: Request) {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-    const token = authHeader.split(' ')[1];
-    if (!token) return null;
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-    if (error || !user) return null;
-    return user;
-}
+import { getUserFromRequest } from '@/lib/auth-helpers';
 
 // リクエストのcookieヘッダーから直接ユーザーを取得
 // next/headersの cookies() ではなくリクエストから直接パースする
@@ -61,7 +51,7 @@ async function getUserFromRequestCookies(request: Request) {
 export async function GET(request: Request) {
     try {
         // Bearerトークンを優先、無ければcookieから認証
-        const user = await getUserFromBearerToken(request) || await getUserFromRequestCookies(request);
+        const user = await getUserFromRequest(request) || await getUserFromRequestCookies(request);
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
@@ -93,7 +83,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         // 認証
-        const user = await getUserFromBearerToken(request) || await getUserFromRequestCookies(request);
+        const user = await getUserFromRequest(request) || await getUserFromRequestCookies(request);
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }

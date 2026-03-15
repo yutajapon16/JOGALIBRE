@@ -400,6 +400,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ items, translatedKeyword, nextPage });
   } catch (error) {
     console.error('Search error:', error);
-    return NextResponse.json({ error: 'Failed to search', message: String(error), stack: error instanceof Error ? error.stack : undefined }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to search' }, { status: 500 });
   }
 }

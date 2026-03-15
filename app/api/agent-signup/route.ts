@@ -2,13 +2,24 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
+// エージェント登録用アクセスパスワード
+const AGENT_SIGNUP_PASSWORD = 'joga&agent';
+
 // エージェント登録用API
 // admin.createUser で確実にユーザーを作成し、email_confirm: true で即ログイン可能にする
-// /agent ページからのみアクセスされるため、URLがアクセス制御として機能する
+// アクセスパスワードで保護されており、パスワードを知らないと登録できない
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, fullName, whatsapp } = body;
+    const { email, password, fullName, whatsapp, accessPassword } = body;
+
+    // アクセスパスワードの検証
+    if (!accessPassword || accessPassword !== AGENT_SIGNUP_PASSWORD) {
+      return NextResponse.json(
+        { error: '登録パスワードが正しくありません' },
+        { status: 403 }
+      );
+    }
 
     if (!email || !password) {
       return NextResponse.json(

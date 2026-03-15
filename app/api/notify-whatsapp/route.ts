@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendWhatsAppMessage } from '@/lib/whatsapp';
+import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 
 export async function POST(request: Request) {
   try {
+    // 認証チェック
+    const authUser = await getUserFromRequest(request);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { userType, email } = body;
-
 
     if (userType === 'admin') {
       // 管理者が送信：未確認の顧客に通知
@@ -15,7 +21,6 @@ export async function POST(request: Request) {
         .select('customer_email, customer_name, product_title, language, status, final_status')
         .eq('customer_confirmed', false)
         .order('created_at', { ascending: false });
-
 
       if (!pendingRequests || pendingRequests.length === 0) {
         return NextResponse.json({
@@ -33,11 +38,10 @@ export async function POST(request: Request) {
         customerGroups.get(req.customer_email)!.push(req);
       }
 
-
       // 各顧客にWhatsApp送信
       const results = [];
       for (const [customerEmail, requests] of customerGroups.entries()) {
-        const userInfo = await getUserInfo(customerEmail);
+        const userInfo = await getUserInfoByEmail(customerEmail);
 
         if (!userInfo?.whatsapp) {
           results.push({
@@ -64,7 +68,6 @@ export async function POST(request: Request) {
         });
       }
 
-
       const outsideWindowCount = results.filter(r => r.outsideWindow).length;
 
       return NextResponse.json({
@@ -84,7 +87,6 @@ export async function POST(request: Request) {
         .eq('customer_email', email)
         .eq('customer_confirmed', false)
         .order('created_at', { ascending: false });
-
 
       if (!myRequests || myRequests.length === 0) {
         return NextResponse.json({
@@ -106,8 +108,8 @@ export async function POST(request: Request) {
       const customerName = myRequests[0].customer_name;
       const count = myRequests.length;
 
-      // user_roles テーブルから氏名を取得
-      const userInfo = await getUserInfo(email);
+      // 共通ヘルパーで氏名を取得
+      const userInfo = await getUserInfoByEmail(email);
       const displayName = userInfo?.full_name || customerName;
 
       const message = `🔔 JOGALIBRE: ${displayName} 様から ${count} 件の確認待ちリクエストがあります。\n管理画面: https://jogalibre.vercel.app/admin`;
@@ -130,28 +132,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('WhatsApp notification error:', error);
     return NextResponse.json(
-      { error: 'Failed to send notifications', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to send notifications' },
       { status: 500 }
     );
-  }
-}
-
-// ヘルパー関数
-async function getUserInfo(email: string) {
-  try {
-    const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
-    const user = authData.users.find(u => u.email === email);
-    if (!user) return null;
-
-    const { data: roleData } = await supabaseAdmin
-      .from('user_roles')
-      .select('whatsapp, full_name')
-      .eq('id', user.id)
-      .single();
-
-    return roleData;
-  } catch (error) {
-    console.error('Error in getUserInfo:', error);
-    return null;
   }
 }

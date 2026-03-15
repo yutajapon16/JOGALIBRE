@@ -9,7 +9,8 @@ export default function AgentRegister() {
     email: '',
     password: '',
     fullName: '',
-    whatsapp: ''
+    whatsapp: '',
+    accessPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -27,7 +28,8 @@ export default function AgentRegister() {
           email: form.email,
           password: form.password,
           fullName: form.fullName,
-          whatsapp: form.whatsapp
+          whatsapp: form.whatsapp,
+          accessPassword: form.accessPassword
         })
       });
 
@@ -38,7 +40,7 @@ export default function AgentRegister() {
       }
 
       setSuccess(true);
-      setForm({ email: '', password: '', fullName: '', whatsapp: '' });
+      setForm({ email: '', password: '', fullName: '', whatsapp: '', accessPassword: '' });
     } catch (error: any) {
       console.error('Agent sign up error:', error);
       alert('Error al crear cuenta de agente. El email puede estar en uso.\n\nErro ao criar conta de agente. O email pode já estar em uso.');
@@ -133,6 +135,20 @@ export default function AgentRegister() {
               onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-4 py-2"
               placeholder="+55..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Contraseña de registro / Senha de registro *
+            </label>
+            <input
+              type="password"
+              value={form.accessPassword}
+              onChange={(e) => setForm({ ...form, accessPassword: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              placeholder="Contraseña de acceso / Senha de acesso"
+              required
             />
           </div>
 

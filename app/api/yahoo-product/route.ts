@@ -89,20 +89,9 @@ export async function POST(request: Request) {
               }
             }
 
-            console.log('End time data:', {
-              rawEndTime: itemData.endTime,
-              formattedEndTime: itemData.formattedEndTime,
-              leftTime: itemData.leftTime,
-              parsedEndTime: endTime
-            });
+
 
             // 送料を取得 - HTMLから直接抽出
-
-            // 送料セクションを探す
-            const shippingSection = html.match(/送料[\s\S]{0,500}?円/);
-            if (shippingSection) {
-            } else {
-            }
 
             // HTMLから送料を抽出（複数のパターンを試す）
             const shippingPatterns = [
@@ -139,30 +128,12 @@ export async function POST(request: Request) {
               shippingUnknown = false;
             }
 
-            // 送料が見つからない場合は不明フラグ
-            if (shippingCost === 0 && itemData.chargeForShipping === 'winner') {
+            // 送料が見つからない場合で、送料無料でもない場合は不明フラグ
+            if (shippingCost === 0 && itemData.chargeForShipping !== 'free') {
               shippingUnknown = true;
             }
 
-            // 送料が0の場合、送料不明フラグを立てる
-            if (shippingCost === 0) {
-              shippingUnknown = true;
-            }
 
-            console.log('Shipping data:', {
-              shippingCost,
-              shippingUnknown,
-              chargeForShipping: itemData.chargeForShipping,
-              itemDataKeys: Object.keys(itemData).filter(key => key.toLowerCase().includes('ship') || key.toLowerCase().includes('delivery'))
-            });
-
-            console.log('Extracted from item.detail.item:', {
-              title: title ? title.substring(0, 50) : '',
-              currentPrice,
-              bids,
-              imageUrl: imageUrl.substring(0, 50),
-              endTime
-            });
           }
 
         }

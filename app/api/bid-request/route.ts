@@ -1,15 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-
-// Bearerトークンからユーザーを取得するヘルパー
-async function getUserFromRequest(request: Request) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  const token = authHeader.split(' ')[1];
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-  if (error || !user) return null;
-  return user;
-}
+import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 
 export async function POST(request: Request) {
   try {
@@ -143,7 +134,7 @@ export async function GET(request: Request) {
       // ユーザー情報を取得してマージ
       const itemsWithUserInfo = await Promise.all(
         (data || []).map(async (item) => {
-          const userInfo = await getUserInfo(item.customer_email);
+          const userInfo = await getUserInfoByEmail(item.customer_email);
           return {
             ...item,
             customer_full_name: userInfo?.full_name,
@@ -189,7 +180,7 @@ export async function GET(request: Request) {
     // ユーザー情報を取得してマージ
     const requestsWithUserInfo = await Promise.all(
       (data || []).map(async (item) => {
-        const userInfo = await getUserInfo(item.customer_email);
+        const userInfo = await getUserInfoByEmail(item.customer_email);
         return {
           ...item,
           customer_full_name: userInfo?.full_name,
@@ -212,38 +203,7 @@ export async function GET(request: Request) {
   }
 }
 
-// ヘルパー関数：メールアドレスからユーザー情報を取得
-async function getUserInfo(email: string) {
-  try {
-    // auth.usersからユーザーIDを取得
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-
-    if (authError) {
-      console.error('Error fetching auth users:', authError);
-      return null;
-    }
-
-    const user = authData.users.find(u => u.email === email);
-    if (!user) return null;
-
-    // user_rolesから氏名とWhatsAppを取得
-    const { data: roleData, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('full_name, whatsapp, customer_id, role')
-      .eq('id', user.id)
-      .single();
-
-    if (roleError) {
-      console.error('Error fetching user roles:', roleError);
-      return null;
-    }
-
-    return roleData;
-  } catch (error) {
-    console.error('Error in getUserInfo:', error);
-    return null;
-  }
-}
+// getUserInfo は lib/auth-helpers.ts の getUserInfoByEmail に統合済み
 
 export async function DELETE(request: Request) {
   try {
