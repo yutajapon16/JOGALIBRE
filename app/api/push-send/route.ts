@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // Web Push設定
 const VAPID_PUBLIC_KEY = 'BMgO11arVCaq8epmUOq7YtLPY8F2x2dyPl4bUvkx0c-T-6su72j0FR4Nd2CV8qgeEpDlCTCyvi9pfuFnguHkHUs';
-const VAPID_PRIVATE_KEY = '4cb0XpnJ0b4H1-ZXVocTAqgavZR7s4_w1Vidgy-rN5g';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
 
 webpush.setVapidDetails(
     'mailto:export@joga.ltd',
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
-);
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function POST(request: NextRequest) {
@@ -25,7 +20,7 @@ export async function POST(request: NextRequest) {
 
         if (sendToAdmins) {
             // 管理者全員のIDを取得
-            const { data: adminUsers, error: adminError } = await supabase
+            const { data: adminUsers, error: adminError } = await supabaseAdmin
                 .from('user_roles')
                 .select('id')
                 .eq('role', 'admin');
@@ -41,12 +36,15 @@ export async function POST(request: NextRequest) {
             // 個別ユーザー指定
             let targetUserId = userId;
 
-            // emailが指定された場合、user_idを検索
+            // emailが指定された場合、user_rolesからuser_idを検索
             if (!targetUserId && email) {
-                const { data: users } = await supabase.auth.admin.listUsers();
-                const user = users?.users?.find(u => u.email === email);
-                if (user) {
-                    targetUserId = user.id;
+                const { data: userData } = await supabaseAdmin
+                    .from('user_roles')
+                    .select('id')
+                    .eq('email', email)
+                    .single();
+                if (userData) {
+                    targetUserId = userData.id;
                 }
             }
 
@@ -63,7 +61,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 対象ユーザーのプッシュサブスクリプションを一括取得
-        const { data: subscriptions, error: fetchError } = await supabase
+        const { data: subscriptions, error: fetchError } = await supabaseAdmin
             .from('push_subscriptions')
             .select('user_id, subscription')
             .in('user_id', targetUserIds);
@@ -98,7 +96,7 @@ export async function POST(request: NextRequest) {
                 } catch (err: any) {
                     // 無効なサブスクリプションを削除 (410 Gone / 404 Not Found)
                     if (err.statusCode === 410 || err.statusCode === 404) {
-                        await supabase
+                        await supabaseAdmin
                             .from('push_subscriptions')
                             .delete()
                             .eq('user_id', sub.user_id);
@@ -123,7 +121,7 @@ export async function POST(request: NextRequest) {
             }));
 
             if (logs.length > 0) {
-                const { error: logError } = await supabase
+                const { error: logError } = await supabaseAdmin
                     .from('app_notifications')
                     .insert(logs);
 

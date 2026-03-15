@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// プッシュ通知サブスクリプションの保存
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // サブスクリプションの存在確認
 export async function GET(request: NextRequest) {
@@ -14,7 +8,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'userId は必須です' }, { status: 400 });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
         .from('push_subscriptions')
         .select('id')
         .eq('user_id', userId)
@@ -47,7 +41,7 @@ export async function POST(request: NextRequest) {
 
         // 同一endpointを持つ他のユーザーのレコードを削除（同一デバイスで別ユーザーがログインした場合の対策）
         if (endpoint) {
-            await supabase
+            await supabaseAdmin
                 .from('push_subscriptions')
                 .delete()
                 .neq('user_id', userId)
@@ -55,7 +49,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 既存のサブスクリプションを更新、なければ挿入
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
             .from('push_subscriptions')
             .upsert(
                 {
@@ -93,7 +87,7 @@ export async function DELETE(request: NextRequest) {
             );
         }
 
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
             .from('push_subscriptions')
             .delete()
             .eq('user_id', userId);

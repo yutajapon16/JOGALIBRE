@@ -8,7 +8,7 @@ export async function GET(request: Request) {
         // Vercel Cron Secretの検証（オプション）
         const authHeader = request.headers.get('authorization');
         if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-            // return new Response('Unauthorized', { status: 401 });
+            return new Response('Unauthorized', { status: 401 });
         }
 
         // チェック対象：保留中または承認済みの依頼
