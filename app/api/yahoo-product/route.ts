@@ -72,9 +72,9 @@ export async function POST(request: Request) {
               '';
 
             // 全画像URLを取得
-            allImages = itemData.images?.map((img: any) => img.url) ||
-              itemData.imageDetail?.map((img: any) => img.url) ||
-              itemData.gallery?.map((img: any) => img.url) ||
+            allImages = itemData.images?.map((img: { url: string }) => img.url) ||
+              itemData.imageDetail?.map((img: { url: string }) => img.url) ||
+              itemData.gallery?.map((img: { url: string }) => img.url) ||
               [];
 
             imageUrl = allImages[0] ||
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
           }
 
         }
-      } catch (e) {
+      } catch {
       }
     }
 
@@ -203,7 +203,7 @@ export async function POST(request: Request) {
           `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(cleanDesc)}`
         );
         const transData = await transRes.json();
-        translatedDescription = transData?.[0]?.map((x: any) => x[0]).join('') || '';
+        translatedDescription = transData?.[0]?.map((x: string[]) => x[0]).join('') || '';
       } catch (e) {
         console.error('Description translation error:', e);
       }

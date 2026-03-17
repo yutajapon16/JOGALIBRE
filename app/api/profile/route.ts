@@ -17,7 +17,7 @@ async function getUserFromRequestCookies(request: Request) {
             let value = rest.join('=');
             try {
                 value = decodeURIComponent(value);
-            } catch (e) {
+            } catch {
                 // デコード失敗時はそのままの値を使う
             }
             return { name, value };

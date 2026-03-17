@@ -69,7 +69,7 @@ export async function GET(request: Request) {
 
     const html = await response.text();
     const $ = cheerio.load(html);
-    const items: any[] = [];
+    const items: Record<string, unknown>[] = [];
 
     // 時間パース用のヘルパー関数 (より詳細に抽出するように改善)
     const parseTimeLeft = (raw: string) => {
@@ -368,7 +368,7 @@ export async function GET(request: Request) {
     }
 
     // itemsが0件なら絶対に次は無い
-    let nextPage = items.length > 0 ? (hasNextPageDom || hasNextPageByCount) : false;
+    const nextPage = items.length > 0 ? (hasNextPageDom || hasNextPageByCount) : false;
 
     // --- タイトル一括自動翻訳 (無料Google Translate API) ---
     if (items.length > 0 && lang !== 'ja') {

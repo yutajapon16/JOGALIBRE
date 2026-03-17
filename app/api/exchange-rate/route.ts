@@ -16,7 +16,7 @@ export async function GET() {
       ttbAdjustment: -4,
       lastUpdated: new Date().toISOString()
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch exchange rate' },
       { status: 500 }

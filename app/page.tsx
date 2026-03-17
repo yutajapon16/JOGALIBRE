@@ -6,6 +6,17 @@ import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword,
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
 import { formatDateTime, getTimeRemaining } from '@/lib/utils';
+import { BidRequest, SearchItem } from '@/lib/types';
+
+interface AppNotification {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  is_read: boolean;
+  created_at: string;
+  type?: string;
+}
 
 const translations = {
   es: {
@@ -206,7 +217,15 @@ const translations = {
   }
 };
 
-const CATEGORIES = [
+interface Category {
+  id: string;
+  es: string;
+  pt: string;
+  url?: string;
+  sub?: Category[];
+}
+
+const CATEGORIES: Category[] = [
   {
     id: 'jdm',
     es: 'Carros JDM',
@@ -249,9 +268,9 @@ const CATEGORIES = [
 export default function Home() {
   const [lang, setLang] = useState<'es' | 'pt'>('es');
   const [searchUrl, setSearchUrl] = useState('');
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<SearchItem | null>(null);
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showSignUp, setShowSignUp] = useState(false);
@@ -264,18 +283,18 @@ export default function Home() {
     whatsapp: ''
   });
   const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage'>('search');
-  const [favorites, setFavorites] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<SearchItem[]>([]);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState<string | null>(null);
   const [searchType, setSearchType] = useState<'url' | 'keyword' | 'categories'>('categories');
   const resultsRef = useRef<HTMLDivElement>(null);
   const [keyword, setKeyword] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState<any | null>(null);
+  const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [searchPage, setSearchPage] = useState(1);
   const [nextPageExists, setNextPageExists] = useState(false);
   const [activeCategoryUrl, setActiveCategoryUrl] = useState<string | null>(null);
-  const [myRequests, setMyRequests] = useState<any[]>([]);
-  const [purchasedItems, setPurchasedItems] = useState<any[]>([]);
+  const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
+  const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   // マイページ用state
   const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '' });
 
@@ -294,16 +313,15 @@ export default function Home() {
   const [profileSaving, setProfileSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<'loading' | 'enabled' | 'disabled' | 'unsupported'>('loading');
-  const [purchasedTotal, setPurchasedTotal] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
   const [exchangeRate, setExchangeRate] = useState(150);
   const [showCounterModal, setShowCounterModal] = useState(false);  // ← 追加
-  const [selectedRequestForCounter, setSelectedRequestForCounter] = useState<any>(null);  // ← 追加
+  const [selectedRequestForCounter, setSelectedRequestForCounter] = useState<BidRequest | null>(null);  // ← 追加
   const [customerCounterAmount, setCustomerCounterAmount] = useState('');  // ← 追加
   const [isSendingNotification, setIsSendingNotification] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -530,7 +548,7 @@ export default function Home() {
         }
       );
       const data = await res.json();
-      const translated = data?.[0]?.map((x: any) => x[0]).join('') || joined;
+      const translated = data?.[0]?.map((x: string[]) => x[0]).join('') || joined;
       return translated.split(DELIMITER).map((t: string) => t.trim());
     } catch (e) {
       console.error('Title translation error:', e);
@@ -591,7 +609,7 @@ export default function Home() {
         const errText = await res.text();
         console.error('Profile API HTTP status NOT OK:', res.status, errText);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching user profile:', error);
     }
   };
@@ -651,15 +669,14 @@ export default function Home() {
         }
       });
       const data = await res.json();
-
       // スネークケースからキャメルケースに変換
-      const convertedItems = (data.purchasedItems || []).map((item: any) => ({
-        id: item.id,
-        productTitle: item.product_title,
-        productImage: item.product_image,
-        productUrl: item.product_url,
-        finalPrice: item.final_price,
-        customerEmail: item.customer_email,
+      const convertedItems = (data.purchasedItems || []).map((item: Record<string, unknown>) => ({
+        id: item.id as string,
+        productTitle: item.product_title as string,
+        productImage: item.product_image as string,
+        productUrl: item.product_url as string,
+        finalPrice: item.final_price as number,
+        customerEmail: item.customer_email as string,
         customerName: item.customer_name,
         customerFullName: item.customer_full_name,
         customerWhatsapp: item.customer_whatsapp,
@@ -673,15 +690,14 @@ export default function Home() {
       }));
 
       // 商品タイトルを選択言語に翻訳
-      const titles = convertedItems.map((item: any) => item.productTitle || '');
+      const titles = convertedItems.map((item: BidRequest) => item.productTitle || '');
       const translatedTitles = await translateTitles(titles, lang);
-      const itemsWithTranslation = convertedItems.map((item: any, i: number) => ({
+      const itemsWithTranslation = convertedItems.map((item: BidRequest, i: number) => ({
         ...item,
         productTitle: translatedTitles[i] || item.productTitle
       }));
 
       setPurchasedItems(itemsWithTranslation);
-      setPurchasedTotal(data.total || 0);
     } catch (error) {
       console.error('Error fetching purchased items:', error);
     }
@@ -708,16 +724,16 @@ export default function Home() {
         const { favorites: data } = await res.json();
 
         // format to match product structure
-        const formattedFavorites = (data || []).map((f: any) => ({
-          id: f.product_id,
-          title: f.product_title,
-          url: f.product_url,
-          imageUrl: f.product_image,
-          currentPrice: f.product_price,
-          bids: f.bids,
-          timeLeft: f.time_left,
+        const formattedFavorites = (data || []).map((f: Record<string, string | number | boolean>) => ({
+          id: f.product_id as string,
+          title: f.product_title as string,
+          url: f.product_url as string,
+          imageUrl: f.product_image as string,
+          currentPrice: f.product_price as number,
+          bids: f.bids as number,
+          timeLeft: f.time_left as string,
           isFavorite: true,
-          dbId: f.id
+          dbId: f.id as string
         }));
 
         setFavorites(formattedFavorites);
@@ -727,7 +743,7 @@ export default function Home() {
     }
   };
 
-  const toggleFavorite = async (product: any, e?: React.MouseEvent) => {
+  const toggleFavorite = async (product: SearchItem, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
       e.preventDefault();
@@ -811,13 +827,14 @@ export default function Home() {
           bids: data.bids,
           timeLeft: data.time_left,
           isFavorite: true,
-          dbId: data.id
+          dbId: data.id,
+          source: product.source
         }, ...prev]);
       }
-    } catch (error: any) {
+    } catch (error) {
       clearTimeout(timeoutId);
       console.error('Error toggling favorite:', error);
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         alert(lang === 'es' ? 'La solicitud tardó demasiado. Por favor, inténtelo de nuevo.' : 'A solicitação demorou muito. Por favor, tente novamente.');
       } else {
         alert(lang === 'es' ? 'Error al actualizar favoritos' : 'Erro ao atualizar favoritos');
@@ -920,11 +937,11 @@ export default function Home() {
     if (purchasedPeriod !== 'all') {
       const now = new Date();
       const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
-      const days = (daysMap as any)[purchasedPeriod];
+      const days = daysMap[purchasedPeriod as keyof typeof daysMap];
       const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
       filtered = filtered.filter(item =>
-        new Date(item.confirmedAt).getTime() >= cutoffDate.getTime()
+        new Date(item.confirmedAt || '').getTime() >= cutoffDate.getTime()
       );
     }
 
@@ -1022,14 +1039,13 @@ export default function Home() {
         }
       });
       const data = await res.json();
-
       // スネークケースからキャメルケースに変換
-      const convertedRequests = (data.bidRequests || []).map((req: any) => ({
-        id: req.id,
-        productId: req.product_id,
-        productTitle: req.product_title,
-        productUrl: req.product_url,
-        productImage: req.product_image,
+      const convertedRequests = (data.bidRequests || []).map((req: Record<string, unknown>) => ({
+        id: req.id as string,
+        productId: req.product_id as string,
+        productTitle: req.product_title as string,
+        productUrl: req.product_url as string,
+        productImage: req.product_image as string,
         productPrice: req.product_price,
         productEndTime: req.product_end_time,
         maxBid: req.max_bid,
@@ -1052,9 +1068,9 @@ export default function Home() {
       }));
 
       // 商品タイトルを選択言語に翻訳
-      const titles = convertedRequests.map((req: any) => req.productTitle || '');
+      const titles = convertedRequests.map((req: BidRequest) => req.productTitle || '');
       const translatedTitles = await translateTitles(titles, lang);
-      const requestsWithTranslation = convertedRequests.map((req: any, i: number) => ({
+      const requestsWithTranslation = convertedRequests.map((req: BidRequest, i: number) => ({
         ...req,
         productTitle: translatedTitles[i] || req.productTitle
       }));
@@ -1354,7 +1370,7 @@ export default function Home() {
 
           <div className="flex items-center gap-3 mb-2 mt-4">
             <h1 className="text-3xl font-bold text-black">{t.title}</h1>
-            <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-10 h-10 rounded" />
+            <Image src="/icons/customer-icon.png" alt="JOGALIBRE" width={40} height={40} className="rounded" />
           </div>
           <p className="text-gray-600 mb-6">{t.subtitle}</p>
 
@@ -1509,7 +1525,7 @@ export default function Home() {
   }
 
   // 共通のカード描画関数
-  const renderProductCard = (product: any, index: number, isFavoriteTab: boolean = false) => {
+  const renderProductCard = (product: SearchItem, index: number, isFavoriteTab: boolean = false) => {
     const isFav = favorites.some(f => f.id === product.id);
 
     return (
@@ -1518,11 +1534,12 @@ export default function Home() {
 
 
         <div className="relative aspect-square w-full">
-          <img
+          <Image
             src={product.imageUrl}
             alt={product.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 50vw, 33vw"
           />
 
 
@@ -1571,7 +1588,7 @@ export default function Home() {
                 <div className="flex items-center">
                   <span className="font-extrabold text-green-700 text-lg sm:text-xl leading-none tabular-nums tracking-tight">
                     <span className="text-sm font-semibold mr-0.5">$</span>
-                    {calculateUSDPrice(product.currentPrice, product.shippingCost)}
+                    {calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
                   </span>
                   <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
                 </div>
@@ -1618,7 +1635,7 @@ export default function Home() {
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-bold text-black leading-none">{t.title}</h1>
-              <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-6 h-6 sm:w-8 sm:h-8 rounded" />
+              <Image src="/icons/customer-icon.png" alt="JOGALIBRE" width={32} height={32} className="w-6 h-6 sm:w-8 sm:h-8 rounded" />
             </div>
 
             <div className="flex items-center gap-2">
@@ -1833,16 +1850,20 @@ export default function Home() {
             ) : (
               <div className="space-y-4">
                 {myRequests
-                  .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                  .sort((a, b) => new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime())
                   .map((request) => (
                     <div key={request.id} className="border rounded-lg p-4">
                       <div className="flex gap-4 mb-3">
                         {request.productImage && (
-                          <img
-                            src={request.productImage}
-                            alt={request.productTitle}
-                            className="w-32 h-32 object-cover rounded"
-                          />
+                          <div className="relative w-32 h-32 flex-shrink-0">
+                            <Image
+                              src={request.productImage}
+                              alt={request.productTitle}
+                              fill
+                              className="object-cover rounded"
+                              sizes="128px"
+                            />
+                          </div>
                         )}
                         <div className="flex-1 min-h-[128px] flex flex-col py-0.5 min-w-0">
                           <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{request.productTitle}</h3>
@@ -1852,7 +1873,7 @@ export default function Home() {
                               <span className="font-semibold">{request.customerName}</span>
                             </div>
                             <p className="text-xs text-gray-600">
-                              {t.maxBid}: <span className="font-bold text-blue-600">${Math.round(request.maxBid).toLocaleString('en-US')}</span>
+                              {t.maxBid}: <span className="font-bold text-blue-600">${Math.round(request.maxBid || 0).toLocaleString('en-US')}</span>
                             </p>
                             {request.productEndTime && (
                               <p className="text-[10px] text-gray-500">
@@ -1911,7 +1932,7 @@ export default function Home() {
                         <div className="mb-2 p-3 bg-blue-50 rounded">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
                           <p className="font-semibold text-blue-700 text-base mb-2">
-                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                            ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                           </p>
                           <div className="flex gap-2">
                             <button
@@ -1944,7 +1965,7 @@ export default function Home() {
                         <div className="mb-2 p-3 bg-blue-50 rounded">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
                           <p className="font-semibold text-blue-700 text-base">
-                            ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                            ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                           </p>
                         </div>
                       )}
@@ -1955,12 +1976,12 @@ export default function Home() {
                           <div className="mb-2 p-3 bg-blue-50 rounded">
                             <p className="text-sm text-gray-600">Contraoferta:</p>
                             <p className="font-semibold text-blue-700 text-base">
-                              ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                             </p>
                           </div>
                           <div className="mb-2 p-3 bg-purple-50 rounded">
                             <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                            <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                            <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}</p>
                             <p className="text-xs text-red-600 mb-1">
                               {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
                             </p>
@@ -1976,7 +1997,7 @@ export default function Home() {
                         <>
                           <div className="mb-2 p-3 bg-blue-50 rounded">
                             <p className="text-sm text-gray-600">Contraoferta:</p>
-                            <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                            <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</p>
                             <p className="text-xs text-red-600 mb-1">
                               {lang === 'es' ? 'Tú aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
                             </p>
@@ -1986,7 +2007,7 @@ export default function Home() {
                           </div>
                           <div className="mb-2 p-3 bg-purple-50 rounded">
                             <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                            <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                            <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}</p>
                             <p className="text-xs text-red-600">
                               {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
                             </p>
@@ -1998,7 +2019,7 @@ export default function Home() {
                       {!request.customerCounterOffer && request.counterOffer && request.status === 'approved' && !request.finalStatus && (
                         <div className="mb-2 p-3 bg-blue-50 rounded">
                           <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
+                          <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</p>
                           <p className="text-xs text-red-600 mb-1">
                             {lang === 'es' ? 'Tú aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
                           </p>
@@ -2023,7 +2044,7 @@ export default function Home() {
                           <div className="p-3 bg-blue-50 rounded mb-3">
                             <p className="text-sm text-gray-600">Contraoferta:</p>
                             <p className="font-semibold text-blue-700 text-base">
-                              ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                             </p>
                           </div>
                           <button
@@ -2048,7 +2069,7 @@ export default function Home() {
                           <div className="p-3 bg-blue-50 rounded mb-2">
                             <p className="text-sm text-gray-600">Contraoferta:</p>
                             <p className="font-semibold text-blue-700 text-base mb-2">
-                              ${Math.round(request.counterOffer).toLocaleString('en-US')}
+                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                             </p>
                             <button
                               onClick={() => handleCounterOfferResponse(request.id, 'accept')}
@@ -2061,7 +2082,7 @@ export default function Home() {
                           <div className="p-3 bg-purple-50 rounded">
                             <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
                             <p className="font-semibold text-purple-700 text-base">
-                              ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
+                              ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
                             </p>
                             <p className="text-xs text-red-600">
                               {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
@@ -2073,7 +2094,7 @@ export default function Home() {
                       {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
                         <div className="mb-2 p-3 bg-purple-50 rounded">
                           <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                          <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                          <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}</p>
                         </div>
                       )}
                       {/* (以前重複していたブロックを削除しました) */}
@@ -2084,7 +2105,7 @@ export default function Home() {
                           <p className="text-base font-semibold text-green-600">
                             ${Math.round(
                               request.finalPrice ||
-                              (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid))
+                              (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
                             ).toLocaleString('en-US')}
                           </p>
                           <button
@@ -2180,22 +2201,26 @@ export default function Home() {
               <>
                 <div className="space-y-4 mb-6">
                   {getFilteredPurchasedItems()
-                    .sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime())
+                    .sort((a, b) => new Date(b.confirmedAt || '').getTime() - new Date(a.confirmedAt || '').getTime())
                     .map((item, index) => (
                       <div key={`purchased-${index}-${item.id}`} className="border rounded-lg p-4">
                         <div className="flex gap-4 mb-3">
                           {item.productImage && (
-                            <img
-                              src={item.productImage}
-                              alt={item.productTitle}
-                              className="w-32 h-32 object-cover rounded"
-                            />
+                            <div className="relative w-32 h-32 flex-shrink-0">
+                              <Image
+                                src={item.productImage}
+                                alt={item.productTitle}
+                                fill
+                                className="object-cover rounded"
+                                sizes="128px"
+                              />
+                            </div>
                           )}
                           <div className="flex-1 min-w-0 flex flex-col justify-between items-start">
                             <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
                             <div className="text-xs text-gray-600 mb-2 mt-1 space-y-0.5 w-full">
                               <p><span className="font-semibold text-gray-800">{lang === 'es' ? 'Cliente:' : 'Cliente:'} {item.customerName}</span></p>
-                              <p>{t.confirmedDate}: {formatDateTime(item.confirmedAt)}</p>
+                              <p>{t.confirmedDate}: {formatDateTime(item.confirmedAt || '')}</p>
                             </div>
                             <div className="flex flex-col gap-2 w-full mt-auto">
                               <a
@@ -2302,7 +2327,7 @@ export default function Home() {
                       const user = await getCurrentUser();
                       setCurrentUser(user);
                       alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
-                    } catch (error: any) {
+                    } catch (error) {
                       console.error('Profile update error:', error);
                       alert(lang === 'es' ? 'Error al actualizar perfil.' : 'Erro ao atualizar perfil.');
                     } finally {
@@ -2492,7 +2517,7 @@ export default function Home() {
                   {/* カテゴリグリッド（商品リスト表示中は非表示にする） */}
                   {!activeCategoryUrl && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {(currentCategory ? currentCategory.sub : CATEGORIES).map((cat: any) => (
+                      {(currentCategory?.sub || CATEGORIES).map((cat) => (
                         <button
                           key={cat.id}
                           onClick={async () => {
@@ -2590,25 +2615,29 @@ export default function Home() {
                       <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full">
                         {selectedProduct.images.map((imgUrl: string, idx: number) => (
                           <div key={idx} className="flex-shrink-0 w-full h-full snap-center">
-                            <img
-                              src={imgUrl}
-                              alt={`${selectedProduct.title} - ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                            />
+                             <Image
+                               src={imgUrl}
+                               alt={`${selectedProduct.title} - ${idx + 1}`}
+                               fill
+                               className="object-cover"
+                               sizes="128px"
+                             />
                           </div>
                         ))}
                       </div>
                       <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5 z-10">
-                        {selectedProduct.images.slice(0, 3).map((_: any, i: number) => (
+                        {selectedProduct.images.slice(0, 3).map((_, i: number) => (
                           <div key={i} className="w-1 h-1 rounded-full bg-white/60 shadow-sm"></div>
                         ))}
                       </div>
                     </>
                   ) : (
-                    <img
+                    <Image
                       src={selectedProduct.imageUrl}
                       alt={selectedProduct.title}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="128px"
                     />
                   )}
                 </div>
@@ -2704,7 +2733,7 @@ export default function Home() {
             <div className="bg-white rounded-lg max-w-md w-full p-6">
               <h2 className="text-xl font-bold mb-4">{t.counterOfferAction}</h2>
               <p className="text-sm text-gray-600 mb-2">
-                {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer).toLocaleString('en-US')}
+                {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer || 0).toLocaleString('en-US')}
               </p>
 
               <div className="mb-4">
@@ -2790,7 +2819,7 @@ export default function Home() {
                           {n.title}
                         </span>
                         <span className="text-[9px] text-gray-400 font-medium">
-                          {new Date(n.created_at).toLocaleString(lang === 'es' ? 'es-ES' : 'pt-BR', {
+                          {new Date(n.created_at || '').toLocaleString(lang === 'es' ? 'es-ES' : 'pt-BR', {
                             month: 'short',
                             day: 'numeric',
                             hour: '2-digit',

@@ -2,7 +2,7 @@
 const CACHE_NAME = 'jogalibre-v2';
 
 // インストール時
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
     self.skipWaiting();
 });
 
@@ -61,7 +61,7 @@ self.addEventListener('push', (event) => {
         if (event.data) {
             data = { ...defaultData, ...event.data.json() };
         }
-    } catch (e) {
+    } catch {
         if (event.data) {
             data.body = event.data.text();
         }

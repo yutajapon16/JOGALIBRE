@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { updatePassword } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
@@ -48,7 +49,7 @@ export default function ResetPasswordPage() {
         try {
             await updatePassword(newPassword);
             setSuccess(true);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Password update error:', err);
             setError('Error al actualizar la contraseña. / Erro ao atualizar a senha.');
         } finally {
@@ -77,12 +78,12 @@ export default function ResetPasswordPage() {
                             <br />
                             Agora você pode fazer login com sua nova senha.
                         </p>
-                        <a
+                        <Link
                             href="/"
                             className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
                         >
                             Ir al Login / Ir para Login
-                        </a>
+                        </Link>
                     </div>
                 ) : !sessionReady ? (
                     <div className="text-center">
@@ -95,12 +96,12 @@ export default function ResetPasswordPage() {
                             <br />
                             Se esta mensagem persistir, o link pode ter expirado.
                         </p>
-                        <a
+                        <Link
                             href="/"
                             className="inline-block mt-4 text-sm text-indigo-600 hover:underline"
                         >
                             Volver al inicio / Voltar ao início
-                        </a>
+                        </Link>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-4">

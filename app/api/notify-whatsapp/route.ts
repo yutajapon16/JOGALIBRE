@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     if (userType === 'admin') {
       // 管理者が送信：未確認の顧客に通知
-      const { data: pendingRequests, error } = await supabaseAdmin
+      const { data: pendingRequests } = await supabaseAdmin
         .from('bid_requests')
         .select('customer_email, customer_name, product_title, language, status, final_status')
         .eq('customer_confirmed', false)
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       }
 
       // 顧客ごとにグループ化
-      const customerGroups = new Map<string, any[]>();
+      const customerGroups = new Map<string, Record<string, unknown>[]>();
       for (const req of pendingRequests) {
         if (!customerGroups.has(req.customer_email)) {
           customerGroups.set(req.customer_email, []);
@@ -38,44 +38,61 @@ export async function POST(request: Request) {
         customerGroups.get(req.customer_email)!.push(req);
       }
 
-      // 各顧客にWhatsApp送信
-      const results = [];
-      for (const [customerEmail, requests] of customerGroups.entries()) {
-        const userInfo = await getUserInfoByEmail(customerEmail);
+      // 各顧客にWhatsApp送信（並列処理によりVercelタイムアウトを回避）
+      // ※TwilioのAPI制限に配慮し、10件ずつのチャンク（束）で並列実行する
+      const results: {
+        email: string;
+        whatsapp: string | null;
+        success: boolean;
+        error?: string;
+        outsideWindow?: boolean;
+        reason?: string;
+      }[] = [];
+      const entries = Array.from(customerGroups.entries());
+      const CHUNK_SIZE = 10;
 
-        if (!userInfo?.whatsapp) {
-          results.push({
-            email: customerEmail,
-            whatsapp: null,
-            success: false,
-            reason: 'WhatsApp番号未登録'
-          });
-          continue;
-        }
+      for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
+        const chunk = entries.slice(i, i + CHUNK_SIZE);
+        
+        const chunkPromises = chunk.map(async ([customerEmail, requests]) => {
+          const userInfo = await getUserInfoByEmail(customerEmail);
 
-        const lang = requests[0].language || 'es';
-        const count = requests.length;
-        const message = `🔔 JOGALIBRE: Tienes ${count} solicitud(es) con actualizaciones. / Você tem ${count} solicitação(ões) com atualizações.\nRevisa tu panel / Confira seu painel: https://jogalibre.vercel.app/`;
+          if (!userInfo?.whatsapp) {
+            return {
+              email: customerEmail,
+              whatsapp: null,
+              success: false,
+              reason: 'WhatsApp番号未登録'
+            };
+          }
 
-        try {
-          const result = await sendWhatsAppMessage(userInfo.whatsapp, message);
-          results.push({
-            email: customerEmail,
-            whatsapp: userInfo.whatsapp,
-            success: result.success,
-            error: result.error,
-            outsideWindow: result.outsideWindow || false
-          });
-        } catch (e: any) {
-          console.error(`Error sending to ${customerEmail}:`, e);
-          results.push({
-            email: customerEmail,
-            whatsapp: userInfo.whatsapp,
-            success: false,
-            error: e.message || 'Unknown error',
-            outsideWindow: false
-          });
-        }
+          const count = requests.length;
+          const message = `🔔 JOGALIBRE: Tienes ${count} solicitud(es) con actualizaciones. / Você tem ${count} solicitação(ões) com atualizações.\nRevisa tu panel / Confira seu painel: https://jogalibre.vercel.app/`;
+
+          try {
+            const result = await sendWhatsAppMessage(userInfo.whatsapp, message);
+            return {
+              email: customerEmail,
+              whatsapp: userInfo.whatsapp,
+              success: result.success,
+              error: result.error,
+              outsideWindow: result.outsideWindow || false
+            };
+          } catch (e: unknown) {
+            console.error(`Error sending to ${customerEmail}:`, e);
+            const error = e as Error;
+            return {
+              email: customerEmail,
+              whatsapp: userInfo.whatsapp,
+              success: false,
+              error: error.message || 'Unknown error',
+              outsideWindow: false
+            };
+          }
+        });
+
+        const chunkResults = await Promise.all(chunkPromises);
+        results.push(...chunkResults);
       }
 
       const outsideWindowCount = results.filter(r => r.outsideWindow).length;

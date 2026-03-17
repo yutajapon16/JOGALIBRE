@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
 import { formatDateTime, getTimeRemaining } from '@/lib/utils';
+import { BidRequest } from '@/lib/types';
 
 // 管理者画面用のPWA manifest差し替え
 function useAdminManifest() {
@@ -30,17 +32,15 @@ export default function AdminDashboard() {
   useAdminManifest();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [bidRequests, setBidRequests] = useState<any[]>([]);
+  const [bidRequests, setBidRequests] = useState<BidRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [rejectReason, setRejectReason] = useState('');
-  const [counterOffer, setCounterOffer] = useState('');
   const [shippingCostJpy, setShippingCostJpy] = useState('');
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
   const [actionType, setActionType] = useState<'reject' | 'counter' | null>(null);
   const [exchangeRate, setExchangeRate] = useState(150);
   const [showPurchased, setShowPurchased] = useState(false);
-  const [purchasedItems, setPurchasedItems] = useState<any[]>([]);
-  const [purchasedTotal, setPurchasedTotal] = useState(0);
+  const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
   const [isSendingNotification, setIsSendingNotification] = useState(false);
@@ -282,11 +282,11 @@ export default function AdminDashboard() {
     if (purchasedPeriod !== 'all') {
       const now = new Date();
       const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
-      const days = (daysMap as any)[purchasedPeriod];
+      const days = daysMap[purchasedPeriod as keyof typeof daysMap];
       const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
       filtered = filtered.filter(item =>
-        new Date(item.confirmedAt).getTime() >= cutoffDate.getTime()
+        new Date(item.confirmedAt || '').getTime() >= cutoffDate.getTime()
       );
     }
 
@@ -307,12 +307,12 @@ export default function AdminDashboard() {
 
 
       // スネークケースからキャメルケースに変換
-      const convertedRequests = (data.bidRequests || []).map((req: any) => ({
-        id: req.id,
-        productId: req.product_id,
-        productTitle: req.product_title,
-        productUrl: req.product_url,
-        productImage: req.product_image,
+      const convertedRequests = (data.bidRequests || []).map((req: Record<string, unknown>) => ({
+        id: req.id as string,
+        productId: req.product_id as string,
+        productTitle: req.product_title as string,
+        productUrl: req.product_url as string,
+        productImage: req.product_image as string,
         productPrice: req.product_price,
         productEndTime: req.product_end_time,
         maxBid: req.max_bid,
@@ -359,13 +359,13 @@ export default function AdminDashboard() {
       const data = await res.json();
 
       // スネークケースからキャメルケースに変換
-      const convertedItems = (data.purchasedItems || []).map((item: any) => ({
-        id: item.id,
-        productTitle: item.product_title,
-        productImage: item.product_image,
-        productUrl: item.product_url,
-        finalPrice: item.final_price,
-        customerEmail: item.customer_email,
+      const convertedItems = (data.purchasedItems || []).map((item: Record<string, unknown>) => ({
+        id: item.id as string,
+        productTitle: item.product_title as string,
+        productImage: item.product_image as string,
+        productUrl: item.product_url as string,
+        finalPrice: item.final_price as number,
+        customerEmail: item.customer_email as string,
         customerName: item.customer_name,
         customerFullName: item.customer_full_name,
         customerWhatsapp: item.customer_whatsapp,
@@ -376,7 +376,6 @@ export default function AdminDashboard() {
       }));
 
       setPurchasedItems(convertedItems);
-      setPurchasedTotal(data.total || 0);
     } catch (error) {
       console.error('Error fetching purchased items:', error);
     }
@@ -392,13 +391,6 @@ export default function AdminDashboard() {
     });
     const customerList = Array.from(uniqueCustomers.values()).sort((a, b) => a.localeCompare(b));
     return customerList;
-  };
-
-  const getFilteredItems = () => {
-    if (selectedCustomer === 'all') {
-      return purchasedItems;
-    }
-    return purchasedItems.filter(item => (item.customerFullName || item.customerName) === selectedCustomer);
   };
 
   const getCustomerTotal = (customerName: string) => {
@@ -432,7 +424,6 @@ export default function AdminDashboard() {
         setSelectedRequest(null);
         setActionType(null);
         setRejectReason('');
-        setCounterOffer('');
         setShippingCostJpy('');
 
         // プッシュ通知を送信（対象顧客のリクエストを特定）
@@ -587,7 +578,7 @@ export default function AdminDashboard() {
   // CSVエクスポート機能
   const exportPurchasedItemsCSV = () => {
     const items = getFilteredPurchasedItems()
-      .sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime());
+      .sort((a, b) => new Date(b.confirmedAt || '').getTime() - new Date(a.confirmedAt || '').getTime());
 
     if (items.length === 0) {
       alert('エクスポートするデータがありません。');
@@ -599,7 +590,7 @@ export default function AdminDashboard() {
 
     // CSVデータ行
     const rows = items.map(item => [
-      formatDateTime(item.confirmedAt),
+      formatDateTime(item.confirmedAt || ''),
       item.customerName,
       item.customerFullName || '',
       item.customerEmail,
@@ -668,7 +659,7 @@ export default function AdminDashboard() {
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-bold text-black">管理者ログイン</h1>
-            <img src="/icons/admin-icon.png" alt="管理画面" className="w-10 h-10 rounded" />
+            <Image src="/icons/admin-icon.png" alt="管理画面" width={40} height={40} className="rounded" />
           </div>
           <p className="text-gray-600 mb-6">JOGALIBRE 管理画面</p>
 
@@ -727,7 +718,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">管理画面</h1>
-              <img src="/icons/admin-icon.png" alt="管理画面" className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
+              <Image src="/icons/admin-icon.png" alt="管理画面" width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
             </div>
             <div className="flex flex-col items-end gap-1">
               <button
@@ -902,16 +893,20 @@ export default function AdminDashboard() {
               <>
                 <div className="space-y-4 mb-6">
                   {getFilteredPurchasedItems()
-                    .sort((a, b) => new Date(b.confirmedAt).getTime() - new Date(a.confirmedAt).getTime())
+                    .sort((a, b) => new Date(b.confirmedAt || '').getTime() - new Date(a.confirmedAt || '').getTime())
                     .map((item) => (
                       <div key={item.id} className="border rounded-lg p-4">
                         <div className="flex gap-4 mb-3">
                           {item.productImage && (
-                            <img
-                              src={item.productImage}
-                              alt={item.productTitle}
-                              className="w-32 h-32 object-cover rounded flex-shrink-0"
-                            />
+                            <div className="relative w-32 h-32 flex-shrink-0">
+                              <Image
+                                src={item.productImage}
+                                alt={item.productTitle}
+                                fill
+                                className="object-cover rounded"
+                                sizes="128px"
+                              />
+                            </div>
                           )}
                           <div className="flex-1 flex flex-col justify-between min-h-[128px] py-0.5 overflow-hidden">
                             <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{item.productTitle}</h3>
@@ -919,7 +914,7 @@ export default function AdminDashboard() {
                               <p><span className="font-semibold text-gray-800">顧客名: {item.customerName}</span></p>
                               <p className="flex flex-col">
                                 <span>確認日時:</span>
-                                <span>{formatDateTime(item.confirmedAt)}</span>
+                                <span>{formatDateTime(item.confirmedAt || '')}</span>
                               </p>
                             </div>
                             <div className="flex flex-col gap-2 w-full mt-auto">
@@ -1019,11 +1014,15 @@ export default function AdminDashboard() {
                 <div key={request.id} className="bg-white rounded-lg shadow-md p-3 sm:p-4">
                   <div className="flex gap-4 mb-3">
                     {request.productImage && (
-                      <img
-                        src={request.productImage}
-                        alt={request.productTitle}
-                        className="w-32 h-32 object-cover rounded flex-shrink-0"
-                      />
+                      <div className="relative w-32 h-32 flex-shrink-0">
+                        <Image
+                          src={request.productImage}
+                          alt={request.productTitle}
+                          fill
+                          className="object-cover rounded"
+                          sizes="128px"
+                        />
+                      </div>
                     )}
 
                     <div className="flex-1 flex flex-col justify-between min-h-[128px] py-0.5 overflow-hidden">
@@ -1055,7 +1054,7 @@ export default function AdminDashboard() {
                         <div className="text-left flex items-baseline gap-1 mb-1">
                           <span className="text-xs text-gray-500">希望入札額:</span>
                           <span className="text-lg font-bold text-indigo-600 leading-none">
-                            ${Math.round(request.maxBid).toLocaleString('en-US')}
+                            ${Math.round(request.maxBid || 0).toLocaleString('en-US')}
                           </span>
                         </div>
                         <a
@@ -1096,7 +1095,7 @@ export default function AdminDashboard() {
                       <span className="font-semibold">{formatDateTime(request.createdAt)}</span>
                       {request.status === 'approved' && request.productEndTime && (
                         <span className="text-[10px] text-red-500">
-                          (終了: {getTimeRemaining(request.productEndTime, 'ja')})
+                          (終了: {getTimeRemaining(request.productEndTime || '', 'ja')})
                         </span>
                       )}
                     </div>
@@ -1124,9 +1123,9 @@ export default function AdminDashboard() {
                   {request.counterOffer && (
                     <div className="mb-2 p-3 bg-blue-50 rounded-lg">
                       <p className="text-sm text-gray-600">カウンターオファー:</p>
-                      <p className="font-semibold text-blue-700 text-base">${Math.round(request.counterOffer).toLocaleString('en-US')}</p>
-                      {request.shippingCostJpy > 0 && (
-                        <p className="text-xs text-gray-600">送料: ¥{request.shippingCostJpy.toLocaleString()}</p>
+                      <p className="font-semibold text-blue-700 text-base">${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</p>
+                      {(request.shippingCostJpy || 0) > 0 && (
+                        <p className="text-xs text-gray-600">送料: ¥{(request.shippingCostJpy || 0).toLocaleString()}</p>
                       )}
                       {/* ✓承認済みをここに移動 */}
                       {request.customerCounterOffer && request.customerCounterOfferUsed && (
@@ -1299,7 +1298,7 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold mb-4">カウンターオファー</h2>
             <p className="text-gray-600 mb-2">{selectedRequest.productTitle}</p>
             <p className="text-sm text-gray-500 mb-4">
-              顧客のオファー: ${Math.round(selectedRequest.customerCounterOffer || selectedRequest.maxBid).toLocaleString('en-US')}
+              顧客のオファー: ${Math.round(selectedRequest.customerCounterOffer || selectedRequest.maxBid || 0).toLocaleString('en-US')}
             </p>
 
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
@@ -1352,7 +1351,6 @@ export default function AdminDashboard() {
                 onClick={() => {
                   setSelectedRequest(null);
                   setActionType(null);
-                  setCounterOffer('');
                   setShippingCostJpy('');
                 }}
                 className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"

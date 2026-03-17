@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 
 // エージェント登録専用ページ
 // サーバーサイドAPI経由でrole='agent'として登録し、customer_idはA001〜が自動付与される
@@ -41,7 +43,7 @@ export default function AgentRegister() {
 
       setSuccess(true);
       setForm({ email: '', password: '', fullName: '', whatsapp: '', accessPassword: '' });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Agent sign up error:', error);
       alert('Error al crear cuenta de agente. El email puede estar en uso.\n\nErro ao criar conta de agente. O email pode já estar em uso.');
     } finally {
@@ -62,12 +64,12 @@ export default function AgentRegister() {
             <br />
             Você já pode fazer login com sua conta.
           </p>
-          <a
+          <Link
             href="/"
             className="inline-block bg-indigo-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition"
           >
             Iniciar sesión / Fazer login
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -78,7 +80,7 @@ export default function AgentRegister() {
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-2xl font-bold text-gray-800">Registro de Agente</h1>
-          <img src="/icons/customer-icon.png" alt="JOGALIBRE" className="w-8 h-8 rounded" />
+          <Image src="/icons/customer-icon.png" alt="JOGALIBRE" width={32} height={32} className="rounded" />
         </div>
         <p className="text-gray-500 text-sm mb-6">
           Registro exclusivo para agentes / Registro exclusivo para agentes
@@ -162,9 +164,9 @@ export default function AgentRegister() {
         </form>
 
         <div className="mt-4 text-center">
-          <a href="/" className="text-indigo-600 text-sm hover:underline">
+          <Link href="/" className="text-indigo-600 text-sm hover:underline">
             ← Volver al inicio / Voltar ao início
-          </a>
+          </Link>
         </div>
       </div>
     </div>

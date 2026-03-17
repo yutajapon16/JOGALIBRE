@@ -17,7 +17,7 @@ export async function requestNotificationPermission(): Promise<string | null> {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
             VAPID_PUBLIC_KEY
-        ) as any,
+        ) as unknown as BufferSource,
     });
 
     return JSON.stringify(subscription);

@@ -93,16 +93,18 @@ export async function POST(request: NextRequest) {
                     const pushSubscription = JSON.parse(sub.subscription);
                     await webpush.sendNotification(pushSubscription, payload);
                     return { success: true };
-                } catch (err: any) {
-                    // 無効なサブスクリプションを削除 (410 Gone / 404 Not Found)
-                    if (err.statusCode === 410 || err.statusCode === 404) {
-                        await supabaseAdmin
-                            .from('push_subscriptions')
-                            .delete()
-                            .eq('user_id', sub.user_id);
+                } catch (err: unknown) {
+                    if (err && typeof err === 'object' && 'statusCode' in err) {
+                        const statusCode = (err as { statusCode: number }).statusCode;
+                        if (statusCode === 410 || statusCode === 404) {
+                            await supabaseAdmin
+                                .from('push_subscriptions')
+                                .delete()
+                                .eq('user_id', sub.user_id);
+                        }
                     }
                     console.error('プッシュ送信エラー:', err);
-                    return { success: false, error: err.message };
+                    return { success: false, error: (err as Error).message };
                 }
             })
         );

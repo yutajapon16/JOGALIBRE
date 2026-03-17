@@ -1,15 +1,8 @@
 import { supabase } from './supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { User, UserRole } from './types';
 
-export type UserRole = 'customer' | 'admin' | 'agent';
-
-export interface User {
-  id: string;
-  email: string;
-  role: UserRole;
-  fullName?: string;
-  whatsapp?: string;
-  customerId?: string;
-}
+export type { User, UserRole };
 
 export async function signUp(
   email: string,
@@ -145,17 +138,17 @@ export async function updateProfile(fullName: string, whatsapp: string) {
     }
 
     return true;
-  } catch (error: any) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
     console.error('Error updating profile:', error);
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('API Request Timeout');
     }
     throw error;
   }
 }
 
-export async function getCurrentUser(alreadyFetchedUser?: any): Promise<User | null> {
+export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): Promise<User | null> {
   // 関数全体（getUser + user_roles取得）が3秒を超えたら強制的にタイムアウトさせる
   const timeoutPromise = new Promise<null>((_, reject) => {
     setTimeout(() => reject(new Error('getCurrentUser overall timeout')), 3000);
@@ -191,13 +184,14 @@ export async function getCurrentUser(alreadyFetchedUser?: any): Promise<User | n
 
         roleData = data;
         fetchError = error;
-      } catch (e: any) {
-        fetchError = e;
+      } catch (e: unknown) {
+        fetchError = e as { code?: string };
       } finally {
         clearTimeout(dbTimeoutId);
       }
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
+      const errObj = fetchError as { code?: string } | null;
+      if (errObj && errObj.code !== 'PGRST116') {
         console.warn('Could not fetch user_roles from DB, falling back to metadata:', fetchError);
       }
 

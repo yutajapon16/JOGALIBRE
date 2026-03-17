@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
+import { getUserFromRequest } from '@/lib/auth-helpers';
 
 export async function POST(request: Request) {
   try {
@@ -131,19 +131,34 @@ export async function GET(request: Request) {
 
       if (error) throw error;
 
-      // ユーザー情報を取得してマージ
-      const itemsWithUserInfo = await Promise.all(
-        (data || []).map(async (item) => {
-          const userInfo = await getUserInfoByEmail(item.customer_email);
-          return {
-            ...item,
-            customer_full_name: userInfo?.full_name,
-            customer_whatsapp: userInfo?.whatsapp,
-            customer_id: userInfo?.customer_id,
-            customer_role: userInfo?.role,
-          };
-        })
-      );
+      // ユーザー情報を一括取得してマージ（N+1問題の解消）
+      const uniqueEmails = Array.from(new Set((data || []).map(item => item.customer_email).filter(Boolean)));
+      
+      let userRolesMap: Record<string, Record<string, unknown>> = {};
+      if (uniqueEmails.length > 0) {
+        const { data: usersData, error: usersError } = await supabaseAdmin
+          .from('user_roles')
+          .select('email, full_name, whatsapp, customer_id, role')
+          .in('email', uniqueEmails);
+          
+        if (!usersError && usersData) {
+          userRolesMap = usersData.reduce((acc: Record<string, Record<string, unknown>>, user: Record<string, unknown>) => {
+            acc[user.email as string] = user;
+            return acc;
+          }, {});
+        }
+      }
+
+      const itemsWithUserInfo = (data || []).map(item => {
+        const userInfo = userRolesMap[item.customer_email];
+        return {
+          ...item,
+          customer_full_name: userInfo?.full_name,
+          customer_whatsapp: userInfo?.whatsapp,
+          customer_id: userInfo?.customer_id,
+          customer_role: userInfo?.role,
+        };
+      });
 
 
       const total = itemsWithUserInfo.reduce((sum, item) => sum + (item.final_price || 0), 0);
@@ -177,19 +192,34 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
-    // ユーザー情報を取得してマージ
-    const requestsWithUserInfo = await Promise.all(
-      (data || []).map(async (item) => {
-        const userInfo = await getUserInfoByEmail(item.customer_email);
-        return {
-          ...item,
-          customer_full_name: userInfo?.full_name,
-          customer_whatsapp: userInfo?.whatsapp,
-          customer_id: userInfo?.customer_id,
-          customer_role: userInfo?.role,
-        };
-      })
-    );
+    // ユーザー情報を一括取得してマージ（N+1問題の解消）
+    const uniqueEmails = Array.from(new Set((data || []).map(item => item.customer_email).filter(Boolean)));
+    
+    let userRolesMap: Record<string, Record<string, unknown>> = {};
+    if (uniqueEmails.length > 0) {
+      const { data: usersData, error: usersError } = await supabaseAdmin
+        .from('user_roles')
+        .select('email, full_name, whatsapp, customer_id, role')
+        .in('email', uniqueEmails);
+        
+      if (!usersError && usersData) {
+        userRolesMap = usersData.reduce((acc: Record<string, Record<string, unknown>>, user: Record<string, unknown>) => {
+          acc[user.email as string] = user;
+          return acc;
+        }, {});
+      }
+    }
+
+    const requestsWithUserInfo = (data || []).map(item => {
+      const userInfo = userRolesMap[item.customer_email];
+      return {
+        ...item,
+        customer_full_name: userInfo?.full_name,
+        customer_whatsapp: userInfo?.whatsapp,
+        customer_id: userInfo?.customer_id,
+        customer_role: userInfo?.role,
+      };
+    });
 
     return NextResponse.json({
       bidRequests: requestsWithUserInfo
@@ -294,7 +324,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     // 管理者のみが更新可能なフィールド
     if (isAdmin) {
