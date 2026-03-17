@@ -31,10 +31,10 @@ export async function sendWhatsAppMessage(
       };
     }
 
-    // 電話番号の正規化: 数字のみを抽出
-    let normalizedTo = to.replace(/\D/g, '');
+    // 電話番号の正規化: 数字と+以外を削除
+    let normalizedTo = to.replace(/[^\d+]/g, '');
 
-    // 国番号の調整（先頭に + が必要）
+    // 先頭に + がなければ付加 (E.164規格)
     if (!normalizedTo.startsWith('+')) {
       normalizedTo = '+' + normalizedTo;
     }

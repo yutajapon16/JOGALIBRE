@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
+import { parseYahooTimeRaw } from '@/lib/utils';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -71,43 +72,6 @@ export async function GET(request: Request) {
     const $ = cheerio.load(html);
     const items: Record<string, unknown>[] = [];
 
-    // 時間パース用のヘルパー関数 (より詳細に抽出するように改善)
-    const parseTimeLeft = (raw: string) => {
-      if (!raw) return '';
-      // 全角半角、空白を許容
-      const cleanRaw = raw.replace(/\s+/g, '');
-      const daysMatch = cleanRaw.match(/(\d+)日/);
-      const hoursMatch = cleanRaw.match(/(\d+)時間/);
-      const minutesMatch = cleanRaw.match(/(\d+)分/);
-
-      const parts = [];
-      if (daysMatch) parts.push(`${daysMatch[1]}d`);
-      if (hoursMatch) parts.push(`${hoursMatch[1]}h`);
-      if (minutesMatch) parts.push(`${minutesMatch[1]}m`);
-
-      // "あと11時間" や "11h" などの形式にも対応
-      if (parts.length === 0) {
-        const hMatch = cleanRaw.match(/(\d+)h/i) || cleanRaw.match(/あと(\d+)時間/);
-        const mMatch = cleanRaw.match(/(\d+)m/i) || cleanRaw.match(/あと(\d+)分/);
-        if (hMatch) parts.push(`${hMatch[1]}h`);
-        if (mMatch) parts.push(`${mMatch[1]}m`);
-      }
-
-      // 「d h m」表記を強制する (例: 1d 0h 0m)
-      const partsStr = parts.join(' ');
-      let d = '0d', h = '0h', m = '0m';
-      if (partsStr.includes('d')) d = partsStr.match(/(\d+)d/)?.[0] || '0d';
-      if (partsStr.includes('h')) h = partsStr.match(/(\d+)h/)?.[0] || '0h';
-      if (partsStr.includes('m')) m = partsStr.match(/(\d+)m/)?.[0] || '0m';
-
-      let formattedTime = '';
-      if (parts.length > 0) {
-        formattedTime = `${d} ${h} ${m}`;
-      }
-
-      return formattedTime || raw.replace(/残り|あと|残り時間|まで/g, '').trim();
-    };
-
     // パターン1: 検索結果ページ (.Product)
     $('.Product, .Product__item').each((i, el) => {
       const $el = $(el);
@@ -131,7 +95,7 @@ export async function GET(request: Request) {
       const price = parseInt(priceText) || 0;
       const bids = parseInt($el.find('.Product__bid, .item__bid').text()) || 0;
       const timeLeftRaw = $el.find('.Product__time, .item__time, .time, .date').text().trim();
-      let timeLeft = parseTimeLeft(timeLeftRaw);
+      let timeLeft = parseYahooTimeRaw(timeLeftRaw);
 
       let endTimeISO = '';
       // UnixTimeからの正確な時間計算 (data-cl-params内 end:1772115843; 等)
@@ -187,7 +151,7 @@ export async function GET(request: Request) {
 
         // 残り時間の抽出
         const timeLeftRaw = $el.find('.Product__time, .item__time, .sdc-time, .time, .date, .lb-item__time').text().trim();
-        let timeLeft = parseTimeLeft(timeLeftRaw);
+        let timeLeft = parseYahooTimeRaw(timeLeftRaw);
 
         let endTimeISO = '';
         // UnixTimeからの正確な時間計算 (data-cl-params内 end:1772115843; 等)
@@ -288,7 +252,7 @@ export async function GET(request: Request) {
           if (!timeText) {
             timeText = $el.find('span, dd, dt, p, div').filter((idx, ele) => $(ele).text().includes('日') || $(ele).text().includes('時間') || $(ele).text().includes('分')).first().text().trim();
           }
-          if (timeText) item.timeLeft = parseTimeLeft(timeText) || '-';
+          if (timeText) item.timeLeft = parseYahooTimeRaw(timeText) || '-';
         }
       };
 

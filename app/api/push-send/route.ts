@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
+import { VAPID_PUBLIC_KEY } from '@/lib/constants';
+
 // Web Push設定
-const VAPID_PUBLIC_KEY = 'BMgO11arVCaq8epmUOq7YtLPY8F2x2dyPl4bUvkx0c-T-6su72j0FR4Nd2CV8qgeEpDlCTCyvi9pfuFnguHkHUs';
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
 
 webpush.setVapidDetails(

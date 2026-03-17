@@ -4,46 +4,32 @@ import { createServerClient } from '@supabase/ssr';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
 
-// リクエストのcookieヘッダーから直接ユーザーを取得
-// next/headersの cookies() ではなくリクエストから直接パースする
-async function getUserFromRequestCookies(request: Request) {
-    try {
-        const cookieHeader = request.headers.get('cookie');
-        if (!cookieHeader) return null;
+import { cookies } from 'next/headers';
 
-        // cookieヘッダーをパースして配列形式に変換 (安全なデコード)
-        const parsedCookies = cookieHeader.split(';').map(c => {
-            const [name, ...rest] = c.trim().split('=');
-            let value = rest.join('=');
-            try {
-                value = decodeURIComponent(value);
-            } catch {
-                // デコード失敗時はそのままの値を使う
-            }
-            return { name, value };
-        });
-
-        const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            {
-                cookies: {
-                    getAll() {
-                        return parsedCookies;
-                    },
-                    setAll() {
-                        // Route Handlerではcookieの書き込みは不要
-                    },
+// Supabaseクライアントを作成する内部ヘルパー
+async function getSupabaseServer() {
+    return createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                async getAll() {
+                    const cookieStore = await cookies();
+                    return cookieStore.getAll();
                 },
-            }
-        );
-
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error || !user) return null;
-        return user;
-    } catch {
-        return null;
-    }
+                async setAll(cookiesToSet) {
+                    try {
+                        const cookieStore = await cookies();
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        );
+                    } catch {
+                        // setAll will error if called from a Server Component
+                    }
+                },
+            },
+        }
+    );
 }
 
 // GET: 自分のプロフィールを取得
@@ -51,7 +37,13 @@ async function getUserFromRequestCookies(request: Request) {
 export async function GET(request: Request) {
     try {
         // Bearerトークンを優先、無ければcookieから認証
-        const user = await getUserFromRequest(request) || await getUserFromRequestCookies(request);
+        let user = await getUserFromRequest(request);
+        
+        if (!user) {
+            const supabase = await getSupabaseServer();
+            const { data: { user: cookieUser } } = await supabase.auth.getUser();
+            user = cookieUser;
+        }
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
@@ -83,7 +75,13 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         // 認証
-        const user = await getUserFromRequest(request) || await getUserFromRequestCookies(request);
+        let user = await getUserFromRequest(request);
+
+        if (!user) {
+            const supabase = await getSupabaseServer();
+            const { data: { user: cookieUser } } = await supabase.auth.getUser();
+            user = cookieUser;
+        }
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }

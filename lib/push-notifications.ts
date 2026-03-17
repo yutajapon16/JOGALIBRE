@@ -1,5 +1,6 @@
+import { VAPID_PUBLIC_KEY } from './constants';
+
 // プッシュ通知ユーティリティ（クライアント側）
-const VAPID_PUBLIC_KEY = 'BMgO11arVCaq8epmUOq7YtLPY8F2x2dyPl4bUvkx0c-T-6su72j0FR4Nd2CV8qgeEpDlCTCyvi9pfuFnguHkHUs';
 export async function requestNotificationPermission(): Promise<string | null> {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
         console.warn('プッシュ通知はこのブラウザでサポートされていません');

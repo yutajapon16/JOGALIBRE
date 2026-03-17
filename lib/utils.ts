@@ -43,6 +43,42 @@ export const formatDateTime = (dateString: string) => {
   return `${formatter.format(date)} ${localLabel}`;
 };
 
+export const parseYahooTimeRaw = (raw: string) => {
+  if (!raw) return '';
+  // 全角半角、空白を許容
+  const cleanRaw = raw.replace(/\s+/g, '');
+  const daysMatch = cleanRaw.match(/(\d+)日/);
+  const hoursMatch = cleanRaw.match(/(\d+)時間/);
+  const minutesMatch = cleanRaw.match(/(\d+)分/);
+
+  const parts = [];
+  if (daysMatch) parts.push(`${daysMatch[1]}d`);
+  if (hoursMatch) parts.push(`${hoursMatch[1]}h`);
+  if (minutesMatch) parts.push(`${minutesMatch[1]}m`);
+
+  // "あと11時間" や "11h" などの形式にも対応
+  if (parts.length === 0) {
+    const hMatch = cleanRaw.match(/(\d+)h/i) || cleanRaw.match(/あと(\d+)時間/);
+    const mMatch = cleanRaw.match(/(\d+)m/i) || cleanRaw.match(/あと(\d+)分/);
+    if (hMatch) parts.push(`${hMatch[1]}h`);
+    if (mMatch) parts.push(`${mMatch[1]}m`);
+  }
+
+  // 「d h m」表記を強制する (例: 1d 0h 0m)
+  const partsStr = parts.join(' ');
+  let d = '0d', h = '0h', m = '0m';
+  if (partsStr.includes('d')) d = partsStr.match(/(\d+)d/)?.[0] || '0d';
+  if (partsStr.includes('h')) h = partsStr.match(/(\d+)h/)?.[0] || '0h';
+  if (partsStr.includes('m')) m = partsStr.match(/(\d+)m/)?.[0] || '0m';
+
+  let formattedTime = '';
+  if (parts.length > 0) {
+    formattedTime = `${d} ${h} ${m}`;
+  }
+
+  return formattedTime || raw.replace(/残り|あと|残り時間|まで/g, '').trim();
+};
+
 export const getTimeRemaining = (endTime: string, lang: 'ja' | 'es' | 'pt', timeLeftStr?: string) => {
   if (!endTime) return timeLeftStr || '-';
 
