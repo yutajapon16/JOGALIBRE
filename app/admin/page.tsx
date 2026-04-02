@@ -1427,7 +1427,7 @@ export default function AdminDashboard() {
                     updateFinalStatus(selectedRequest.id, 'won', price);
                   }
                 }}
-                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
               >
                 落札を確定
               </button>
