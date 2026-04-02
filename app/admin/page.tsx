@@ -37,7 +37,8 @@ export default function AdminDashboard() {
   const [rejectReason, setRejectReason] = useState('');
   const [shippingCostJpy, setShippingCostJpy] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
-  const [actionType, setActionType] = useState<'reject' | 'counter' | null>(null);
+  const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
+  const [finalPriceInput, setFinalPriceInput] = useState('');
   const [exchangeRate, setExchangeRate] = useState(150);
   const [showPurchased, setShowPurchased] = useState(false);
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
@@ -455,7 +456,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateFinalStatus = async (id: string, finalStatus: string) => {
+  const updateFinalStatus = async (id: string, finalStatus: string, finalPrice?: number) => {
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -466,11 +467,14 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         },
-        body: JSON.stringify({ id, finalStatus })
+        body: JSON.stringify({ id, finalStatus, finalPrice })
       });
 
       if (res.ok) {
         fetchBidRequests();
+        setSelectedRequest(null);
+        setActionType(null);
+        setFinalPriceInput('');
 
         // プッシュ通知を送信（対象顧客のリクエストを特定）
         const targetRequest = bidRequests.find(r => r.id === id);
@@ -1212,7 +1216,15 @@ export default function AdminDashboard() {
                   {request.status === 'approved' && !request.finalStatus && (
                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                       <button
-                        onClick={() => updateFinalStatus(request.id, 'won')}
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          // 推奨金額を初期値としてセット（カウンターオファー優先、なければ最大入札額）
+                          const suggestedPrice = request.customerCounterOfferUsed 
+                            ? (request.counterOffer || request.maxBid || 0)
+                            : (request.customerCounterOffer || request.counterOffer || request.maxBid || 0);
+                          setFinalPriceInput(Math.round(suggestedPrice).toString());
+                          setActionType('won');
+                        }}
                         className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base"
                       >
                         落札
@@ -1362,6 +1374,62 @@ export default function AdminDashboard() {
                 className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
               >
                 送信
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedRequest && actionType === 'won' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-4 text-green-700">落札金額の確定</h2>
+            <p className="text-gray-600 mb-2 font-semibold">{selectedRequest.productTitle}</p>
+            
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-sm text-gray-600">確定落札金額 (USD):</span>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                  <input
+                    type="number"
+                    value={finalPriceInput}
+                    onChange={(e) => setFinalPriceInput(e.target.value)}
+                    className="w-32 border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-lg font-bold text-green-700 text-right focus:ring-2 focus:ring-green-500 outline-none"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-500 text-right italic">
+                ※この金額が顧客の支払い金額として確定されます
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setSelectedRequest(null);
+                  setActionType(null);
+                  setFinalPriceInput('');
+                }}
+                className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={() => {
+                  if (selectedRequest) {
+                    const price = parseFloat(finalPriceInput);
+                    if (isNaN(price)) {
+                      alert('有効な金額を入力してください');
+                      return;
+                    }
+                    updateFinalStatus(selectedRequest.id, 'won', price);
+                  }
+                }}
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
+              >
+                落札を確定
               </button>
             </div>
           </div>

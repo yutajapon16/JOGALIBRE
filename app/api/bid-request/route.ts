@@ -303,7 +303,7 @@ export async function PATCH(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid } = body;
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -356,8 +356,11 @@ export async function PATCH(request: Request) {
 
     // 落札の場合の金額設定（管理者がfinalStatusを設定した時のみ）
     if (isAdmin && finalStatus === 'won') {
-      // 修正: 顧客が管理者の提案を承諾した（customer_counter_offer_used === true）場合は、管理者のカウンターオファーを優先
-      if (currentRequest.customer_counter_offer_used) {
+      if (finalPrice !== undefined && finalPrice !== null) {
+        // 手動入力された価格があればそれを使用
+        updateData.final_price = finalPrice;
+      } else if (currentRequest.customer_counter_offer_used) {
+        // 修正: 顧客が管理者の提案を承諾した（customer_counter_offer_used === true）場合は、管理者のカウンターオファーを優先
         updateData.final_price = currentRequest.counter_offer || currentRequest.max_bid;
       } else {
         // それ以外（管理者が顧客のカウンターオファーを承認した等）は、顧客の提案を優先
