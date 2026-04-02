@@ -1383,7 +1383,7 @@ export default function AdminDashboard() {
       {selectedRequest && actionType === 'won' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-2xl font-bold mb-4 text-green-700">落札金額の確定</h2>
+            <h2 className="text-2xl font-bold mb-4 text-indigo-600">落札金額の確定</h2>
             <p className="text-gray-600 mb-2 font-semibold">{selectedRequest.productTitle}</p>
             
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
@@ -1395,7 +1395,7 @@ export default function AdminDashboard() {
                     type="number"
                     value={finalPriceInput}
                     onChange={(e) => setFinalPriceInput(e.target.value)}
-                    className="w-32 border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-lg font-bold text-green-700 text-right focus:ring-2 focus:ring-green-500 outline-none"
+                    className="w-32 border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-lg font-bold text-indigo-600 text-right focus:ring-2 focus:ring-indigo-500 outline-none"
                     autoFocus
                   />
                 </div>
@@ -1427,7 +1427,7 @@ export default function AdminDashboard() {
                     updateFinalStatus(selectedRequest.id, 'won', price);
                   }
                 }}
-                className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
+                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
               >
                 落札を確定
               </button>
