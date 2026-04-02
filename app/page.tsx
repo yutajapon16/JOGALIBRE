@@ -357,11 +357,24 @@ export default function Home() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
+        if (typeof localStorage !== 'undefined') localStorage.removeItem('joga_user_cache');
       } else if (session?.user) {
         // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
         const user = await getCurrentUser(session.user);
         if (user?.role === 'customer' || user?.role === 'agent') {
-          setCurrentUser(user);
+          setCurrentUser(prev => {
+             // すでにIDを持っている場合、新しく取得したデータが古い場合（タイムアウト等）は既存のIDを維持する
+             if (prev && prev.id === user.id) {
+               return {
+                 ...prev,
+                 ...user,
+                 customerId: user.customerId || prev.customerId,
+                 fullName: user.fullName || prev.fullName,
+                 whatsapp: user.whatsapp || prev.whatsapp
+               };
+             }
+             return user;
+          });
         }
       }
     });
@@ -403,6 +416,18 @@ export default function Home() {
   }, [currentUser]);
 
   useEffect(() => {
+    // 早期キャッシュ復元 (getCurrentUser完了までのちらつき防止)
+    if (typeof localStorage !== 'undefined') {
+      const cached = localStorage.getItem('joga_user_cache');
+      if (cached && !currentUser) {
+        try {
+          const cacheData = JSON.parse(cached);
+          // 仮のユーザー情報としてセット（後でgetCurrentUserによって上書きされる）
+          setCurrentUser(prev => prev ? prev : { ...cacheData, email: '' } as any);
+        } catch {}
+      }
+    }
+
     if (currentUser) {
       fetchUnreadCount();
       // セッション確立後にプロフィールを取得
@@ -1017,9 +1042,10 @@ export default function Home() {
     }
   };
 
-  const calculateUSDPrice = (jpyPrice: number, shippingCost: number = 0) => {
+  const calculateUSDPrice = (jpyPrice: number) => {
     const FOB_COST = 1350;
-    const totalJpyPrice = jpyPrice + shippingCost + FOB_COST;
+    // 送料は常に0として計算
+    const totalJpyPrice = jpyPrice + FOB_COST;
     // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
     const profitDivisor = currentUser?.customerId?.startsWith('A') ? 0.8 : 0.6;
     const priceWithProfit = totalJpyPrice / profitDivisor;
@@ -1588,7 +1614,7 @@ export default function Home() {
                 <div className="flex items-center">
                   <span className="font-extrabold text-green-700 text-lg sm:text-xl leading-none tabular-nums tracking-tight">
                     <span className="text-sm font-semibold mr-0.5">$</span>
-                    {calculateUSDPrice(product.currentPrice, product.shippingCost || 0)}
+                    {calculateUSDPrice(product.currentPrice)}
                   </span>
                   <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
                 </div>
@@ -2648,7 +2674,7 @@ export default function Home() {
                       {t.currentPrice}: ¥{selectedProduct.currentPrice.toLocaleString()}
                     </p>
                     <p className="text-sm font-bold text-indigo-700">
-                      USD: ${calculateUSDPrice(selectedProduct.currentPrice, selectedProduct.shippingCost || 0)}
+                      USD: ${calculateUSDPrice(selectedProduct.currentPrice)}
                     </p>
                   </div>
                   <a

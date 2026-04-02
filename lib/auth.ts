@@ -65,6 +65,10 @@ export async function signOut() {
   } catch (error) {
     console.warn('signOut error (continuing with cleanup):', error);
   }
+  // キャッシュクリア
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('joga_user_cache');
+  }
   // cookieベースセッションの場合、Supabase関連cookieを手動クリア
   if (typeof document !== 'undefined') {
     const cookies = document.cookie.split(';');
@@ -149,9 +153,9 @@ export async function updateProfile(fullName: string, whatsapp: string) {
 }
 
 export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): Promise<User | null> {
-  // 関数全体（getUser + user_roles取得）が3秒を超えたら強制的にタイムアウトさせる
+  // 関数全体（getUser + user_roles取得）が10秒を超えたら強制的にタイムアウトさせる
   const timeoutPromise = new Promise<null>((_, reject) => {
-    setTimeout(() => reject(new Error('getCurrentUser overall timeout')), 3000);
+    setTimeout(() => reject(new Error('getCurrentUser overall timeout')), 10000);
   });
 
   const fetchUserLogic = async () => {
@@ -169,7 +173,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
 
       // キャッシュの不整合を防ぐためDB(user_roles)から最新情報を取得する
       const controller = new AbortController();
-      const dbTimeoutId = setTimeout(() => controller.abort(), 2000);
+      const dbTimeoutId = setTimeout(() => controller.abort(), 5000);
 
       let roleData = null;
       let fetchError = null;
@@ -197,7 +201,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
 
       const metadata = user.user_metadata || {};
 
-      return {
+      const userData: User = {
         id: user.id,
         email: user.email!,
         role: isExportAdmin ? 'admin' : (roleData?.role || metadata.role || 'customer'),
@@ -205,6 +209,18 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
         whatsapp: roleData?.whatsapp || metadata.whatsapp || undefined,
         customerId: roleData?.customer_id || undefined,
       };
+
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('joga_user_cache', JSON.stringify({
+          id: userData.id,
+          role: userData.role,
+          fullName: userData.fullName,
+          whatsapp: userData.whatsapp,
+          customerId: userData.customerId,
+        }));
+      }
+
+      return userData;
     } catch (error) {
       console.error('Error inside fetchUserLogic:', error);
       return null;
@@ -213,10 +229,53 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
 
   try {
     const result = await Promise.race([fetchUserLogic(), timeoutPromise]);
+    
+    // 正常に取得できた場合はそれを返す
+    if (result) return result as User;
+
+    // 未ログイン（result=null）でも、既にセッションがあるならキャッシュを試す
+    if (alreadyFetchedUser && typeof localStorage !== 'undefined') {
+      const cached = localStorage.getItem('joga_user_cache');
+      if (cached) {
+        try {
+          const cacheData = JSON.parse(cached);
+          if (cacheData.id === alreadyFetchedUser.id) {
+             return {
+               id: alreadyFetchedUser.id,
+               email: alreadyFetchedUser.email!,
+               ...cacheData
+             };
+          }
+        } catch (e) {
+          console.warn('Failed to parse user cache:', e);
+        }
+      }
+    }
+    
     return result as User | null;
   } catch (error) {
     console.error('getCurrentUser timed out or crashed completely:', error);
-    // タイムアウトした場合は、既に取得済みの`alreadyFetchedUser`があれば、最低限の情報を返す
+    
+    // タイムアウトや例外時、キャッシュからの復旧を試みる
+    if (alreadyFetchedUser && typeof localStorage !== 'undefined') {
+      const cached = localStorage.getItem('joga_user_cache');
+      if (cached) {
+        try {
+          const cacheData = JSON.parse(cached);
+          if (cacheData.id === alreadyFetchedUser.id) {
+            return {
+              id: alreadyFetchedUser.id,
+              email: alreadyFetchedUser.email!,
+              ...cacheData
+            };
+          }
+        } catch (e) {
+          console.warn('Failed to parse user cache in error handler:', e);
+        }
+      }
+    }
+
+    // 最終手段として最低限の情報を返す
     if (alreadyFetchedUser) {
       const metadata = alreadyFetchedUser.user_metadata || {};
       return {

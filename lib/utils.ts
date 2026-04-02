@@ -104,9 +104,11 @@ export const getTimeRemaining = (endTime: string, lang: 'ja' | 'es' | 'pt', time
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
   if (lang === 'ja') {
-    if (days > 0) return `${days}日 ${hours}時間`;
-    if (hours > 0) return `${hours}時間 ${minutes}分`;
-    return `${minutes}分`;
+    const parts = [];
+    if (days > 0) parts.push(`${days}日`);
+    if (hours > 0) parts.push(`${hours}時間`);
+    if (minutes > 0 || (days === 0 && hours === 0)) parts.push(`${minutes}分`);
+    return parts.join(' ');
   } else {
     const parts = [];
     if (days > 0) parts.push(`${days}d`);

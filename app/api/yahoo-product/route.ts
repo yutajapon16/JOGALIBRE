@@ -53,7 +53,9 @@ export async function POST(request: Request) {
 
             // paymentとoptionの中身を確認
 
-            currentPrice = itemData.price ||
+            currentPrice = itemData.taxinPrice ||
+              itemData.taxinStartPrice ||
+              itemData.price ||
               itemData.currentPrice ||
               itemData.currentBidPrice ||
               itemData.startPrice ||
