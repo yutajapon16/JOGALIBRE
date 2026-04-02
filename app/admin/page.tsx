@@ -1381,8 +1381,8 @@ export default function AdminDashboard() {
       )}
 
       {selectedRequest && actionType === 'won' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center p-4 pt-24 sm:pt-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 mt-32 sm:mt-0" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold mb-4 text-indigo-600">落札金額の確定</h2>
             <p className="text-gray-600 mb-2 font-semibold">{selectedRequest.productTitle}</p>
             
