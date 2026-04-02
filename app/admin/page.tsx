@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -39,7 +39,6 @@ export default function AdminDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
   const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
   const [finalPriceInput, setFinalPriceInput] = useState('');
-  const finalPriceInputRef = useRef<HTMLInputElement>(null);
   const [exchangeRate, setExchangeRate] = useState(150);
   const [showPurchased, setShowPurchased] = useState(false);
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
@@ -1382,16 +1381,8 @@ export default function AdminDashboard() {
       )}
 
       {selectedRequest && actionType === 'won' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-2 z-50 overflow-y-auto"
-          ref={(el) => {
-            if (el) {
-              setTimeout(() => {
-                finalPriceInputRef.current?.focus({ preventScroll: true });
-              }, 300);
-            }
-          }}
-        >
-          <div className="bg-white rounded-lg max-w-md w-full p-6 mt-0" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 mt-4 sm:mt-12" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-2xl font-bold mb-4 text-indigo-600">落札金額の確定</h2>
             <p className="text-gray-600 mb-2 font-semibold">{selectedRequest.productTitle}</p>
             
@@ -1401,11 +1392,11 @@ export default function AdminDashboard() {
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
                   <input
-                    ref={finalPriceInputRef}
                     type="number"
                     value={finalPriceInput}
                     onChange={(e) => setFinalPriceInput(e.target.value)}
                     className="w-32 border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-lg font-bold text-indigo-600 text-right focus:ring-2 focus:ring-indigo-500 outline-none"
+                    autoFocus
                   />
                 </div>
               </div>
