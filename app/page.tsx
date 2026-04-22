@@ -1043,7 +1043,7 @@ export default function Home() {
   };
 
   const calculateUSDPrice = (jpyPrice: number) => {
-    const FOB_COST = 1350;
+    const FOB_COST = 1500;
     // 送料は常に0として計算
     const totalJpyPrice = jpyPrice + FOB_COST;
     // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%

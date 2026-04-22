@@ -565,7 +565,7 @@ export default function AdminDashboard() {
 
   const handleCounterOffer = () => {
     if (selectedRequest) {
-      const FOB_COST = 1350;
+      const FOB_COST = 1500;
       const shipping = shippingCostJpy.trim() ? parseFloat(shippingCostJpy) : 0;
 
       const totalJpy = (selectedRequest.productPrice || 0) + shipping + FOB_COST;
@@ -1338,14 +1338,14 @@ export default function AdminDashboard() {
               <div className="flex justify-between text-sm mb-2 pt-2 border-t">
                 <span className="text-gray-600 font-semibold">合計（JPY）:</span>
                 <span className="font-bold">
-                  ¥{((selectedRequest.productPrice || 0) + parseFloat(shippingCostJpy || '0') + 1350).toLocaleString()}
+                  ¥{((selectedRequest.productPrice || 0) + parseFloat(shippingCostJpy || '0') + 1500).toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between pt-2 border-t">
                 <span className="text-gray-600 font-semibold">USD価格（利益込み）:</span>
                 <span className="text-xl font-bold text-blue-600">
                   ${(() => {
-                    const FOB_COST = 1350;
+                    const FOB_COST = 1500;
                     const totalJpy = (selectedRequest.productPrice || 0) + parseFloat(shippingCostJpy || '0') + FOB_COST;
                     // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
                     const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
