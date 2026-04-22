@@ -1876,7 +1876,26 @@ export default function Home() {
             ) : (
               <div className="space-y-4">
                 {myRequests
-                  .sort((a, b) => new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime())
+                  .sort((a, b) => {
+                    const now = new Date().getTime();
+                    const timeA = a.productEndTime ? new Date(a.productEndTime).getTime() : Infinity;
+                    const timeB = b.productEndTime ? new Date(b.productEndTime).getTime() : Infinity;
+
+                    const isEndedA = timeA <= now;
+                    const isEndedB = timeB <= now;
+
+                    // 1. 終了済みを優先的に上に表示
+                    if (isEndedA && !isEndedB) return -1;
+                    if (!isEndedA && isEndedB) return 1;
+
+                    // 2. 両方が「終了済み」または「未終了」の場合、終了時間が早い順に並べる
+                    if (timeA !== timeB) {
+                      return timeA - timeB;
+                    }
+                    
+                    // 3. 終了時間が同じ（または両方なし）場合は作成日時順
+                    return new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime();
+                  })
                   .map((request) => (
                     <div key={request.id} className="border rounded-lg p-4">
                       <div className="flex gap-4 mb-3">
