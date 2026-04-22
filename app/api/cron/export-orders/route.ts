@@ -65,7 +65,7 @@ export async function GET(request: Request) {
       const profitRate = customerId.startsWith('A') ? 0.2 : 0.4;
       
       const rowIdx = index + 2;
-      const formula = `=(I${rowIdx}*J${rowIdx}*(1-K${rowIdx}))-L${rowIdx}-H${rowIdx}`;
+      const formula = `=ROUNDUP((I${rowIdx}*J${rowIdx}*(1-K${rowIdx}))-L${rowIdx}-H${rowIdx},-2)`;
 
       // 初回送信日の表示ロジック
       const sentDate = order.sent_to_joga_at 
