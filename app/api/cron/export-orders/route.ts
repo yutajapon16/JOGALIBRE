@@ -58,6 +58,11 @@ export async function GET(request: Request) {
       'Sent Date' // 13列目：初回送信日
     ];
 
+    const escapeCSV = (val: any) => {
+      const str = String(val ?? '');
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
     const csvRows = orders.map((order, index) => {
       const userInfo = userMap.get(order.customer_email);
       const customerId = userInfo?.customer_id || 'Unknown';
@@ -65,27 +70,27 @@ export async function GET(request: Request) {
       const profitRate = customerId.startsWith('A') ? 0.2 : 0.4;
       
       const rowIdx = index + 2;
+      // ユーザー指定の正確な数式形式
       const formula = `=ROUNDUP((I${rowIdx}*J${rowIdx}*(1-K${rowIdx}))-L${rowIdx}-H${rowIdx},-2)`;
 
-      // 初回送信日の表示ロジック
       const sentDate = order.sent_to_joga_at 
         ? new Date(order.sent_to_joga_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })
         : 'New';
 
       return [
-        order.id,
-        order.product_end_time || '',
-        customerId,
-        `"${customerName.replace(/"/g, '""')}"`,
-        `"${order.product_title.replace(/"/g, '""')}"`,
-        order.product_url,
-        formula,
-        '',
+        escapeCSV(order.id),
+        escapeCSV(order.product_end_time),
+        escapeCSV(customerId),
+        escapeCSV(customerName),
+        escapeCSV(order.product_title),
+        escapeCSV(order.product_url),
+        formula, // 数式はクォートなしで出力
+        '',      // Shipping (JPY) は空
         order.max_bid,
         exchangeRate,
         profitRate,
         FOB_JPY,
-        sentDate
+        escapeCSV(sentDate)
       ].join(',');
     });
 
