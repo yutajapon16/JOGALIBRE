@@ -20,6 +20,8 @@ export async function GET(request: Request) {
       .from('bid_requests')
       .select('*')
       .eq('status', 'approved')
+      .is('final_status', null)
+      .eq('customer_confirmed', false)
       .order('product_end_time', { ascending: true });
 
     if (ordersError) throw ordersError;

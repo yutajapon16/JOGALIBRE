@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendOrderCsvEmail(to: string, csvContent: string, dateStr: string) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'JOGALIBRE Orders <orders@jogalibre.com>',
+      from: 'JOGALIBRE Orders <order@jogalibre.com>',
       to: [to],
       subject: `[JOGALIBRE] Order Report - ${dateStr}`,
       html: `<p>Attached is the daily order report for ${dateStr}.</p>`,
