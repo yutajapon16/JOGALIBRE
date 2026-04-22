@@ -70,8 +70,8 @@ export async function GET(request: Request) {
       const profitRate = customerId.startsWith('A') ? 0.2 : 0.4;
       
       const rowIdx = index + 2;
-      // ユーザー指定の正確な数式形式
-      const formula = `=ROUNDUP((I${rowIdx}*J${rowIdx}*(1-K${rowIdx}))-L${rowIdx}-H${rowIdx},-2)`;
+      // ユーザー指定の正確な数式形式（カンマを含まない形式に変更）
+      const formula = `=(I${rowIdx}*J${rowIdx}*(1-K${rowIdx}))-L${rowIdx}-H${rowIdx}`;
 
       const sentDate = order.sent_to_joga_at 
         ? new Date(order.sent_to_joga_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })
