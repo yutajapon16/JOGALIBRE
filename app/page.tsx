@@ -2218,6 +2218,33 @@ export default function Home() {
                 </span>
               </a>
             </div>
+            
+            {/* 未払い合計金額サマリー (移動) */}
+            {purchasedItems.length > 0 && (
+              <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100 shadow-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-base sm:text-lg font-bold text-gray-700">
+                    {t.total}{selectedCustomer !== 'all' && ' del cliente'}:
+                  </span>
+                  <span className="text-2xl sm:text-3xl font-black text-indigo-600">
+                    ${Math.round(
+                      getFilteredPurchasedItems()
+                        .filter(item => !item.paid)
+                        .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
+                    ).toLocaleString('en-US')}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mt-1 border-t border-indigo-100 pt-2">
+                  <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
+                    {lang === 'es' ? 'Solo productos sin pagar' : 'Apenas produtos não pagos'}
+                  </p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
+                    {lang === 'es' ? 'Pagados: ' : 'Pagos: '}{getFilteredPurchasedItems().filter(item => item.paid).length}
+                  </p>
+                </div>
+              </div>
+            )}
+
 
             {purchasedItems.length === 0 ? (
               <div className="text-center text-gray-500 py-12">
@@ -2287,24 +2314,7 @@ export default function Home() {
                     ))}
                 </div>
 
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xl font-semibold">
-                      {t.total}{selectedCustomer !== 'all' && ' del cliente'}:
-                    </span>
-                    <span className="text-3xl font-bold text-indigo-600">
-                      ${Math.round(
-                        getFilteredPurchasedItems()
-                          .filter(item => !item.paid)  // ← 支払済を除外
-                          .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
-                      ).toLocaleString('en-US')}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 text-right mt-1">
-                    {lang === 'es' ? 'Solo productos sin pagar' : 'Apenas produtos não pagos'} /
-                    {lang === 'es' ? ' Pagados: ' : ' Pagos: '}{getFilteredPurchasedItems().filter(item => item.paid).length}
-                  </p>
-                </div>
+
               </>
             )}
           </div>
