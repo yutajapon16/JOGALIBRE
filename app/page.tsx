@@ -320,6 +320,7 @@ export default function Home() {
   const [selectedRequestForCounter, setSelectedRequestForCounter] = useState<BidRequest | null>(null);  // ← 追加
   const [customerCounterAmount, setCustomerCounterAmount] = useState('');  // ← 追加
   const [isSendingNotification, setIsSendingNotification] = useState(false);
+  const [isSubmittingBid, setIsSubmittingBid] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -976,6 +977,8 @@ export default function Home() {
   const handleBidRequest = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isSubmittingBid) return;
+
     if (!selectedProduct || !bidForm.name || !bidForm.maxBid) return;
 
     // 20件制限チェック
@@ -985,6 +988,8 @@ export default function Home() {
         : 'Você atingiu o limite máximo de 20 solicitações. Aguarde o processamento das atuais.');
       return;
     }
+
+    setIsSubmittingBid(true);
 
     try {
       // 念のためセッションから最新のトークンを取得
@@ -1039,6 +1044,8 @@ export default function Home() {
     } catch (error) {
       console.error('Error submitting bid request:', error);
       alert(t.offerError);
+    } finally {
+      setIsSubmittingBid(false);
     }
   };
 
@@ -2771,9 +2778,12 @@ export default function Home() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                    disabled={isSubmittingBid}
+                    className={`flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold transition ${
+                      isSubmittingBid ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'
+                    }`}
                   >
-                    {t.submit}
+                    {isSubmittingBid ? (lang === 'es' ? 'Enviando...' : 'Enviando...') : t.submit}
                   </button>
                 </div>
               </form>
