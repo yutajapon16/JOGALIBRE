@@ -978,11 +978,11 @@ export default function Home() {
 
     if (!selectedProduct || !bidForm.name || !bidForm.maxBid) return;
 
-    // 10件制限チェック
-    if (myRequests.length >= 10) {
+    // 20件制限チェック
+    if (myRequests.length >= 20) {
       alert(lang === 'es'
-        ? 'Has alcanzado el límite máximo de 10 solicitudes. Por favor, espera a que se procesen las actuales.'
-        : 'Você atingiu o limite máximo de 10 solicitações. Aguarde o processamento das atuais.');
+        ? 'Has alcanzado el límite máximo de 20 solicitudes. Por favor, espera a que se procesen las actuales.'
+        : 'Você atingiu o limite máximo de 20 solicitações. Aguarde o processamento das atuais.');
       return;
     }
 
