@@ -1,25 +1,26 @@
 import { NextResponse } from 'next/server';
+import { getResilientExchangeRate } from '@/lib/exchange';
 
 export async function GET() {
   try {
-    // 市場レート取得
-    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-    const data = await response.json();
-
-    // TTBレート相当の計算: 市場レート - 4円
-    const marketRate = data.rates.JPY;
-    const ttbRate = marketRate - 4;
+    const rateData = await getResilientExchangeRate();
 
     return NextResponse.json({
-      usdToJpy: ttbRate,
-      marketRate: marketRate,
+      usdToJpy: rateData.usdToJpy,
+      marketRate: rateData.usdToJpy + 4,
       ttbAdjustment: -4,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: rateData.lastUpdated,
+      isCached: rateData.isCached
     });
-  } catch {
-    return NextResponse.json(
-      { error: 'Failed to fetch exchange rate' },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error('Exchange rate route error:', error);
+    return NextResponse.json({
+      usdToJpy: 150,
+      marketRate: 154,
+      ttbAdjustment: -4,
+      lastUpdated: new Date().toISOString(),
+      isCached: true,
+      fallback: true
+    });
   }
 }

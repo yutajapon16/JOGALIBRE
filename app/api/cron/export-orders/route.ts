@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendOrderCsvEmail } from '@/lib/resend';
+import { getResilientExchangeRate } from '@/lib/exchange';
 
 export async function GET(request: Request) {
   // Vercel Cron からの認証チェック（必要に応じて）
@@ -10,10 +11,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. 最新の為替レートを取得
-    const rateRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-    const rateData = await rateRes.json();
-    const exchangeRate = rateData.rates.JPY - 4; // TTBレート相当
+    // 1. 最新の為替レートを取得（タイムアウト＆メモリキャッシュ保護）
+    let exchangeRate = 150;
+    try {
+      const rateData = await getResilientExchangeRate();
+      exchangeRate = rateData.usdToJpy;
+    } catch (err) {
+      console.error('Error fetching exchange rate in cron, using fallback:', err);
+    }
 
     // 2. 「承認済」ステータスの全注文を取得（送信済み・未送信を問わず、現在の全タスクリスト）
     const { data: orders, error: ordersError } = await supabaseAdmin

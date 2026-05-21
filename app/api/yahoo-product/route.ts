@@ -87,12 +87,20 @@ export async function POST(request: Request) {
               imageUrl;
 
             // 終了時刻を取得（UNIXタイムスタンプまたはISO文字列）
-            if (itemData.endTime) {  // ← let を削除
+            if (itemData.endTime) {
               // UNIXタイムスタンプの場合（秒単位）
               if (typeof itemData.endTime === 'number') {
-                endTime = new Date(itemData.endTime * 1000).toISOString();
+                const parsedDate = new Date(itemData.endTime * 1000);
+                if (!isNaN(parsedDate.getTime())) {
+                  endTime = parsedDate.toISOString();
+                }
               } else if (typeof itemData.endTime === 'string') {
-                endTime = itemData.endTime;
+                const parsedDate = new Date(itemData.endTime);
+                if (!isNaN(parsedDate.getTime())) {
+                  endTime = parsedDate.toISOString();
+                } else {
+                  endTime = itemData.endTime; // パースできない場合は文字列のまま保持（フォールバック）
+                }
               }
             }
 
@@ -198,41 +206,54 @@ export async function POST(request: Request) {
     // ここで lang を再宣言しない
 
     if (description && lang !== 'ja') {
+      const controllerTranslate = new AbortController();
+      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
       try {
         // 長文の場合は分割が必要だが、まずはシンプルに試行
         const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2000); // 2000文字制限
         const transRes = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(cleanDesc)}`
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(cleanDesc)}`,
+          { signal: controllerTranslate.signal }
         );
         const transData = await transRes.json();
         translatedDescription = transData?.[0]?.map((x: string[]) => x[0]).join('') || '';
       } catch (e) {
         console.error('Description translation error:', e);
+      } finally {
+        clearTimeout(timeoutTranslate);
       }
     }
 
     // タイトルの翻訳
     let translatedTitle = title;
     if (title && lang !== 'ja') {
+      const controllerTranslate = new AbortController();
+      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
       try {
         const transRes = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(title)}`
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(title)}`,
+          { signal: controllerTranslate.signal }
         );
         const transData = await transRes.json();
         translatedTitle = transData?.[0]?.[0]?.[0] || title;
       } catch (e) {
         console.error('Title translation error:', e);
+      } finally {
+        clearTimeout(timeoutTranslate);
       }
     }
 
     // 残り時間の計算 (詳細取得用)
     let timeLeft = '-';
     if (endTime) {
-      const diff = Math.max(0, new Date(endTime).getTime() - Date.now());
-      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const m = Math.floor((diff / 1000 / 60) % 60);
-      timeLeft = `${d}d ${h}h ${m}m`;
+      const parsedEndTime = new Date(endTime);
+      if (!isNaN(parsedEndTime.getTime())) {
+        const diff = Math.max(0, parsedEndTime.getTime() - Date.now());
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / 1000 / 60) % 60);
+        timeLeft = `${d}d ${h}h ${m}m`;
+      }
     }
 
     const product = {

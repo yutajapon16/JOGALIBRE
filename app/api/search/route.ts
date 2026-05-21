@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       }
     } else if (q) {
       const controllerTranslate = new AbortController();
-      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 8000);
+      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
       try {
         const translateRes = await fetch(
           `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${lang}&tl=ja&dt=t&q=${encodeURIComponent(q)}`,
@@ -380,6 +380,8 @@ export async function GET(request: Request) {
       // 中古車カテゴリ等(パターン3)で、1ページに限界数(50枠近く)が返ってきている場合、
       // 次のページが本当に存在するかどうかはヤフオクの仕様上「実際に取得してみないと分からない」ため、裏で先読みする
       if (!hasNextPageDom && hasNextPageByCount && typeof rawContainerCount !== 'undefined') {
+        const controllerNext = new AbortController();
+        const timeoutNext = setTimeout(() => controllerNext.abort(), 5000);
         try {
           const nextBValue = (page * itemsPerPage) + 1; // 次ページの先頭インデックス
           const connector = searchUrl.includes('?') ? '&' : '?';
@@ -387,7 +389,8 @@ export async function GET(request: Request) {
           const nextRes = await fetch(nextTargetUrl, {
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
+            },
+            signal: controllerNext.signal
           });
           const nextHtml = await nextRes.text();
           const $next = cheerio.load(nextHtml);
@@ -414,6 +417,8 @@ export async function GET(request: Request) {
         } catch (e) {
           console.error('Prefetch error:', e);
           // エラー時はフェールセーフで元の判定（true）を残す
+        } finally {
+          clearTimeout(timeoutNext);
         }
       }
 
@@ -424,6 +429,8 @@ export async function GET(request: Request) {
 
     // --- タイトル一括自動翻訳 (無料Google Translate API) ---
     if (items.length > 0 && lang !== 'ja') {
+      const controllerTranslate = new AbortController();
+      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
       try {
         // 全タイトルをユニークな文字列 " ||| " で結合して1リクエストで送信
         const DELIMITER = ' ||| ';
@@ -435,7 +442,8 @@ export async function GET(request: Request) {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ q: titlesToTranslate }).toString()
+            body: new URLSearchParams({ q: titlesToTranslate }).toString(),
+            signal: controllerTranslate.signal
           }
         );
         const translateData = await translateRes.json();
@@ -460,6 +468,8 @@ export async function GET(request: Request) {
       } catch (translateError) {
         console.error('Batch title translation error:', translateError);
         // 翻訳に失敗した場合はそのまま日本語のタイトルで続行する（フェールセーフ）
+      } finally {
+        clearTimeout(timeoutTranslate);
       }
     }
 

@@ -39,11 +39,18 @@ export async function sendWhatsAppMessage(
       normalizedTo = '+' + normalizedTo;
     }
 
-    const response = await client.messages.create({
+    // タイムアウト付きでTwilio APIを実行（最大8秒）
+    const sendPromise = client.messages.create({
       from: whatsappNumber,
       to: `whatsapp:${normalizedTo}`,
       body: message
     });
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Twilio API request timeout (8 seconds)')), 8000);
+    });
+
+    const response = await Promise.race([sendPromise, timeoutPromise]);
 
     return { success: true, messageSid: response.sid };
   } catch (error: unknown) {
