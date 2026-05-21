@@ -179,9 +179,10 @@ export async function POST(request: Request) {
       imageUrl = 'https://auctions.yahoo.co.jp' + imageUrl;
     }
 
-    const match1 = url.match(/\/([a-z0-9]+)$/);
-    const match2 = url.match(/\/item\/([a-z0-9]+)/);
-    const match3 = url.match(/auction\/([a-z0-9]+)/);
+    const cleanUrl = url.split('?')[0];
+    const match1 = cleanUrl.match(/\/([a-zA-Z0-9]+)$/);
+    const match2 = cleanUrl.match(/\/item\/([a-zA-Z0-9]+)/);
+    const match3 = cleanUrl.match(/auction\/([a-zA-Z0-9]+)/);
     const productId = (match1 && match1[1]) ||
       (match2 && match2[1]) ||
       (match3 && match3[1]) ||

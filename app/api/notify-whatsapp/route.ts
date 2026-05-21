@@ -38,6 +38,25 @@ export async function POST(request: Request) {
         customerGroups.get(req.customer_email)!.push(req);
       }
 
+      // ユーザー情報を一括取得してN+1問題を回避する
+      const uniqueEmails = Array.from(new Set(pendingRequests.map(req => req.customer_email).filter(Boolean)));
+      const userRolesMap = new Map<string, { email: string; full_name: string | null; whatsapp: string | null; customer_id: string | null; role: string | null }>();
+
+      if (uniqueEmails.length > 0) {
+        const { data: usersData, error: usersError } = await supabaseAdmin
+          .from('user_roles')
+          .select('email, full_name, whatsapp, customer_id, role')
+          .in('email', uniqueEmails);
+
+        if (!usersError && usersData) {
+          usersData.forEach(user => {
+            userRolesMap.set(user.email, user);
+          });
+        } else if (usersError) {
+          console.error('Failed to pre-fetch user roles for whatsapp notifications:', usersError);
+        }
+      }
+
       // 各顧客にWhatsApp送信（並列処理によりVercelタイムアウトを回避）
       // ※TwilioのAPI制限に配慮し、10件ずつのチャンク（束）で並列実行する
       const results: {
@@ -55,7 +74,7 @@ export async function POST(request: Request) {
         const chunk = entries.slice(i, i + CHUNK_SIZE);
         
         const chunkPromises = chunk.map(async ([customerEmail, requests]) => {
-          const userInfo = await getUserInfoByEmail(customerEmail);
+          const userInfo = userRolesMap.get(customerEmail);
 
           if (!userInfo?.whatsapp) {
             return {

@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const finalEmail = isAdmin ? customerEmail : effectiveUser.email;
 
     const bidRequest = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.floor(1000 + Math.random() * 9000).toString(),
       product_id: productId,
       product_title: productTitle,
       product_url: productUrl,

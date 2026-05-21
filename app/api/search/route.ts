@@ -458,12 +458,16 @@ export async function GET(request: Request) {
           // Google翻訳がパイプ周りのスペースを勝手に詰める/開けることがあるため、正規表現で柔軟にスプリットする
           const translatedTitles = fullTranslatedText.split(/\s*\|\|\|\s*/);
 
-          // 元の items 配列に翻訳後のタイトルを適用
-          items.forEach((item, index) => {
-            if (translatedTitles[index] && translatedTitles[index].trim()) {
-              item.title = translatedTitles[index].trim();
-            }
-          });
+          // 配列長が一致する場合のみ適用し、翻訳ズレを完全に防ぐ（長さが異なる場合は安全のため日本語の元のタイトルをそのまま使用する）
+          if (translatedTitles.length === items.length) {
+            items.forEach((item, index) => {
+              if (translatedTitles[index] && translatedTitles[index].trim()) {
+                item.title = translatedTitles[index].trim();
+              }
+            });
+          } else {
+            console.warn(`Translation split count mismatch: items=${items.length}, translated=${translatedTitles.length}. Falling back to Japanese titles to prevent mismatch.`);
+          }
         }
       } catch (translateError) {
         console.error('Batch title translation error:', translateError);
