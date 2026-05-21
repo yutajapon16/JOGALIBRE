@@ -9,7 +9,10 @@ export async function signUp(
   password: string,
   role: UserRole = 'customer',
   fullName?: string,
-  whatsapp?: string
+  whatsapp?: string,
+  address?: string,
+  zipCode?: string,
+  country?: string
 ) {
   // 1. フロントエンドで標準のsignUpを実行（これでSupabaseから確実に確認メールが飛ぶ）
   const { data, error } = await supabase.auth.signUp({
@@ -30,7 +33,10 @@ export async function signUp(
       email, 
       role, 
       fullName, 
-      whatsapp 
+      whatsapp,
+      address,
+      zipCode,
+      country
     })
   });
   
@@ -98,7 +104,7 @@ export async function updatePassword(newPassword: string) {
 }
 
 // プロフィール更新（氏名・WhatsApp）
-export async function updateProfile(fullName: string, whatsapp: string) {
+export async function updateProfile(fullName: string, whatsapp: string, address?: string, zipCode?: string) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
 
@@ -118,7 +124,7 @@ export async function updateProfile(fullName: string, whatsapp: string) {
       headers,
       credentials: 'include', // cookieベースでも認証させる
       signal: controller.signal,
-      body: JSON.stringify({ fullName, whatsapp }),
+      body: JSON.stringify({ fullName, whatsapp, address, zipCode }),
     });
 
     clearTimeout(timeoutId);
@@ -132,7 +138,7 @@ export async function updateProfile(fullName: string, whatsapp: string) {
     // Auth Metadata のローカルキャッシュ更新（エラーが起きても全体処理は止めない）
     try {
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { full_name: fullName, whatsapp: whatsapp }
+        data: { full_name: fullName, whatsapp: whatsapp, address: address, zip_code: zipCode }
       });
       if (updateError) {
         console.warn('Non-fatal error updating local auth metadata:', updateError);
@@ -181,7 +187,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       try {
         const { data, error } = await supabase
           .from('user_roles')
-          .select('role, full_name, whatsapp, customer_id')
+          .select('role, full_name, whatsapp, customer_id, address, zip_code, country')
           .eq('id', user.id)
           .abortSignal(controller.signal)
           .single();
@@ -208,6 +214,9 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
         fullName: roleData?.full_name || metadata.full_name || undefined,
         whatsapp: roleData?.whatsapp || metadata.whatsapp || undefined,
         customerId: roleData?.customer_id || undefined,
+        address: roleData?.address || metadata.address || undefined,
+        zipCode: roleData?.zip_code || metadata.zip_code || undefined,
+        country: roleData?.country || metadata.country || undefined,
       };
 
       if (typeof localStorage !== 'undefined') {
@@ -217,6 +226,9 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
           fullName: userData.fullName,
           whatsapp: userData.whatsapp,
           customerId: userData.customerId,
+          address: userData.address,
+          zipCode: userData.zipCode,
+          country: userData.country,
         }));
       }
 
@@ -283,7 +295,10 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
         email: alreadyFetchedUser.email!,
         role: alreadyFetchedUser.email?.toLowerCase() === 'export@joga.ltd' ? 'admin' : (metadata.role || 'customer'),
         fullName: metadata.full_name,
-        whatsapp: metadata.whatsapp
+        whatsapp: metadata.whatsapp,
+        address: metadata.address,
+        zipCode: metadata.zip_code,
+        country: metadata.country
       };
     }
     return null;

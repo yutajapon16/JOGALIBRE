@@ -70,7 +70,71 @@ export async function GET(request: Request) {
 
     const html = await response.text();
     const $ = cheerio.load(html);
+    let nextPage = false;
+    let hasParsedNextData = false;
     const items: Record<string, unknown>[] = [];
+
+    // パターン0: Next.js製のページ（車体カテゴリ等）で __NEXT_DATA__ がある場合
+    const nextDataHtml = $('#__NEXT_DATA__').html();
+    if (nextDataHtml) {
+      try {
+        const nextData = JSON.parse(nextDataHtml);
+        const pageProps = nextData.props?.pageProps || {};
+        const initialState = pageProps.initialState || nextData.props?.initialState || {};
+        const searchState = initialState.search || {};
+        const listing = searchState.items?.listing || {};
+        const listingItems = listing.items || [];
+
+        if (Array.isArray(listingItems) && listingItems.length > 0) {
+          listingItems.forEach((item: any) => {
+            const id = item.auctionId || '';
+            const title = item.title || '';
+            const imageUrl = item.imageUrl || '';
+            const price = item.price || 0;
+            const bids = item.bidCount || 0;
+            const endTimeStr = item.endTime || '';
+            
+            let timeLeft = '-';
+            let endTimeISO = '';
+            if (endTimeStr) {
+              const endTimeUnix = new Date(endTimeStr).getTime();
+              if (!isNaN(endTimeUnix)) {
+                endTimeISO = new Date(endTimeUnix).toISOString();
+                const diff = Math.max(0, endTimeUnix - Date.now());
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const m = Math.floor((diff / 1000 / 60) % 60);
+                timeLeft = `${d}d ${h}h ${m}m`;
+              }
+            }
+
+            if (title && id) {
+              items.push({
+                id,
+                title,
+                titleJa: title,
+                url: `https://page.auctions.yahoo.co.jp/auction/${id}`,
+                imageUrl,
+                images: [imageUrl],
+                currentPrice: price,
+                bids,
+                timeLeft,
+                endTime: endTimeISO,
+                source: 'yahoo_car_next_data'
+              });
+            }
+          });
+
+          // nextPageの判定
+          const total = listing.totalResultsAvailable || 0;
+          nextPage = (page * itemsPerPage) < total;
+          hasParsedNextData = true;
+        }
+      } catch (err) {
+        console.error('Failed to parse __NEXT_DATA__:', err);
+      }
+    }
+
 
     // パターン1: 検索結果ページ (.Product)
     $('.Product, .Product__item').each((i, el) => {
@@ -307,53 +371,56 @@ export async function GET(request: Request) {
     }
 
     // 次のページがあるか判定 (DOMでの確実な判定 + ベースの取得件数による確実な足切り + 先読み判定)
-    // パターン1/2の場合、ページャーの次へリンクがあれば確実
-    const hasNextPageDom = $('.Pager__list--next, .Pager__next, li.next a, a:contains("次のページ"), a:contains("次へ")').length > 0;
+    // パターン0 (NEXT_DATA) で既に解析済みの場合はスキップ
+    if (!hasParsedNextData) {
+      const hasNextPageDom = $('.Pager__list--next, .Pager__next, li.next a, a:contains("次のページ"), a:contains("次へ")').length > 0;
 
-    let hasNextPageByCount = typeof rawContainerCount !== 'undefined' ? rawContainerCount >= 50 : items.length >= (Math.min(itemsPerPage, 50) * 0.7);
+      let hasNextPageByCount = typeof rawContainerCount !== 'undefined' ? rawContainerCount >= 50 : items.length >= (Math.min(itemsPerPage, 50) * 0.7);
 
-    // 中古車カテゴリ等(パターン3)で、1ページに限界数(50枠近く)が返ってきている場合、
-    // 次のページが本当に存在するかどうかはヤフオクの仕様上「実際に取得してみないと分からない」ため、裏で先読みする
-    if (!hasNextPageDom && hasNextPageByCount && typeof rawContainerCount !== 'undefined') {
-      try {
-        const nextBValue = (page * itemsPerPage) + 1; // 次ページの先頭インデックス
-        const connector = searchUrl.includes('?') ? '&' : '?';
-        const nextTargetUrl = searchUrl.replace(/&b=\d+/, '') + `${connector}b=${nextBValue}`;
-        const nextRes = await fetch(nextTargetUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-          }
-        });
-        const nextHtml = await nextRes.text();
-        const $next = cheerio.load(nextHtml);
+      // 中古車カテゴリ等(パターン3)で、1ページに限界数(50枠近く)が返ってきている場合、
+      // 次のページが本当に存在するかどうかはヤフオクの仕様上「実際に取得してみないと分からない」ため、裏で先読みする
+      if (!hasNextPageDom && hasNextPageByCount && typeof rawContainerCount !== 'undefined') {
+        try {
+          const nextBValue = (page * itemsPerPage) + 1; // 次ページの先頭インデックス
+          const connector = searchUrl.includes('?') ? '&' : '?';
+          const nextTargetUrl = searchUrl.replace(/&b=\d+/, '') + `${connector}b=${nextBValue}`;
+          const nextRes = await fetch(nextTargetUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+          });
+          const nextHtml = await nextRes.text();
+          const $next = cheerio.load(nextHtml);
 
-        let validNextItems = 0;
-        $next('.bd').each((i, el) => {
-          const rawH = $next(el).html() || '';
-          if (!rawH.includes('ストアPR') && $next(el).find('[class*="--pr"]').length === 0) {
-            validNextItems++;
-          }
-        });
-
-        // フォールバック
-        if (validNextItems === 0 && $next('.bd').length === 0) {
-          $next('tr, li, div.i').each((i, el) => {
+          let validNextItems = 0;
+          $next('.bd').each((i, el) => {
             const rawH = $next(el).html() || '';
             if (!rawH.includes('ストアPR') && $next(el).find('[class*="--pr"]').length === 0) {
               validNextItems++;
             }
           });
-        }
 
-        hasNextPageByCount = validNextItems > 0;
-      } catch (e) {
-        console.error('Prefetch error:', e);
-        // エラー時はフェールセーフで元の判定（true）を残す
+          // フォールバック
+          if (validNextItems === 0 && $next('.bd').length === 0) {
+            $next('tr, li, div.i').each((i, el) => {
+              const rawH = $next(el).html() || '';
+              if (!rawH.includes('ストアPR') && $next(el).find('[class*="--pr"]').length === 0) {
+                validNextItems++;
+              }
+            });
+          }
+
+          hasNextPageByCount = validNextItems > 0;
+        } catch (e) {
+          console.error('Prefetch error:', e);
+          // エラー時はフェールセーフで元の判定（true）を残す
+        }
       }
+
+      // itemsが0件なら絶対に次は無い
+      nextPage = items.length > 0 ? (hasNextPageDom || hasNextPageByCount) : false;
     }
 
-    // itemsが0件なら絶対に次は無い
-    const nextPage = items.length > 0 ? (hasNextPageDom || hasNextPageByCount) : false;
 
     // --- タイトル一括自動翻訳 (無料Google Translate API) ---
     if (items.length > 0 && lang !== 'ja') {

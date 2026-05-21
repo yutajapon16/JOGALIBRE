@@ -7,6 +7,9 @@ export interface User {
   fullName?: string;
   whatsapp?: string;
   customerId?: string;
+  address?: string;
+  zipCode?: string;
+  country?: string;
 }
 
 export type BidStatus = 'pending' | 'approved' | 'rejected' | 'counter_offer';

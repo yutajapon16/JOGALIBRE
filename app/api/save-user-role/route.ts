@@ -6,7 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 // signUp後の未認証状態でもRLSをバイパスしてuser_rolesに書き込むための専用API
 export async function POST(request: Request) {
   try {
-    const { id, email, role, fullName, whatsapp } = await request.json();
+    const { id, email, role, fullName, whatsapp, address, zipCode, country } = await request.json();
 
     if (!id || !email) {
       return NextResponse.json(
@@ -25,7 +25,10 @@ export async function POST(request: Request) {
         email: email,
         role: userRole,
         full_name: fullName || null,
-        whatsapp: whatsapp || null
+        whatsapp: whatsapp || null,
+        address: address || null,
+        zip_code: zipCode || null,
+        country: country || null
       }]);
 
     if (roleError) {

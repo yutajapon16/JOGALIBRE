@@ -87,16 +87,17 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { fullName, whatsapp } = body;
+        const { fullName, whatsapp, address, zipCode } = body;
 
-        // 既存のロールを取得
+        // 既存のロールと国名を取得（国名は更新しないため、引き継ぐ）
         const { data: existingData } = await supabaseAdmin
             .from('user_roles')
-            .select('role')
+            .select('role, country')
             .eq('id', user.id)
             .single();
 
         const currentRole = existingData?.role || 'customer';
+        const currentCountry = existingData?.country || null;
 
         // supabaseAdmin（service role key）でRLSを完全に回避してUPSERT
         const { data: roleData, error: roleError } = await supabaseAdmin
@@ -106,6 +107,9 @@ export async function POST(request: Request) {
                 email: user.email,
                 full_name: fullName,
                 whatsapp: whatsapp,
+                address: address,
+                zip_code: zipCode,
+                country: currentCountry, // 国名は変更不可なので引き継ぐ
                 role: currentRole // 既存のロールを引き継ぐ、無い場合はcustomer
             }, {
                 onConflict: 'id'
@@ -121,7 +125,7 @@ export async function POST(request: Request) {
         // ついでに User Metadata の方も更新しておく (supabaseAdminなら可能)
         const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(
             user.id,
-            { user_metadata: { full_name: fullName, whatsapp: whatsapp } }
+            { user_metadata: { full_name: fullName, whatsapp: whatsapp, address: address, zip_code: zipCode } }
         );
 
         if (updateAuthError) {

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
 import { formatDateTime, getTimeRemaining } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
+import { COUNTRIES } from '@/lib/constants';
 
 interface AppNotification {
   id: string;
@@ -280,7 +281,10 @@ export default function Home() {
     email: '',
     password: '',
     fullName: '',
-    whatsapp: ''
+    whatsapp: '',
+    address: '',
+    zipCode: '',
+    country: ''
   });
   const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage'>('search');
   const [favorites, setFavorites] = useState<SearchItem[]>([]);
@@ -296,7 +300,7 @@ export default function Home() {
   const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   // マイページ用state
-  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '' });
+  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '' });
 
   // キャッシュ済みのメタデータから確実に入力欄を初期復元する
   useEffect(() => {
@@ -304,6 +308,8 @@ export default function Home() {
       setProfileForm(prev => {
         if (!prev.fullName && currentUser.fullName) prev.fullName = currentUser.fullName;
         if (!prev.whatsapp && currentUser.whatsapp) prev.whatsapp = currentUser.whatsapp;
+        if (!prev.address && currentUser.address) prev.address = currentUser.address;
+        if (!prev.zipCode && currentUser.zipCode) prev.zipCode = currentUser.zipCode;
         return { ...prev };
       });
     }
@@ -619,13 +625,18 @@ export default function Home() {
               fullName: profile.full_name || undefined,
               whatsapp: profile.whatsapp || undefined,
               customerId: profile.customer_id || undefined,
+              address: profile.address || undefined,
+              zipCode: profile.zip_code || undefined,
+              country: profile.country || undefined,
             } : prev;
             return nextUser;
           });
 
           const newForm = {
             fullName: profile.full_name || '',
-            whatsapp: profile.whatsapp || ''
+            whatsapp: profile.whatsapp || '',
+            address: profile.address || '',
+            zipCode: profile.zip_code || ''
           };
           setProfileForm(newForm);
         } else {
@@ -897,7 +908,7 @@ export default function Home() {
     try {
       await signIn(email, password);
       // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '' });
     } catch (error) {
       console.error('Login error:', error);
       alert(lang === 'es'
@@ -913,16 +924,19 @@ export default function Home() {
     const password = (formData.get('password') as string) || loginForm.password;
     const fullName = (formData.get('fullName') as string) || loginForm.fullName;
     const whatsapp = (formData.get('whatsapp') as string) || loginForm.whatsapp;
+    const address = (formData.get('address') as string) || loginForm.address;
+    const zipCode = (formData.get('zipCode') as string) || loginForm.zipCode;
+    const country = (formData.get('country') as string) || loginForm.country;
 
     try {
-      await signUp(email, password, 'customer', fullName, whatsapp);
+      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country);
 
       // メール確認が必要な場合は成功メッセージを表示
       alert(lang === 'es'
         ? '¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta.'
         : 'Conta criada! Por favor, verifique seu e-mail para confirmar sua conta.');
 
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '' });
       setShowSignUp(false);
     } catch (error) {
       console.error('Sign up error:', error);
@@ -1401,27 +1415,25 @@ export default function Home() {
       <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full relative z-10 pt-safe">
 
-          <div className="flex items-center gap-3 mb-2 mt-4">
-            <h1 className="text-3xl font-bold text-black">{t.title}</h1>
-            <Image src="/icons/customer-icon.png" alt="JOGALIBRE" width={40} height={40} className="rounded" />
+          <div className="flex items-center mb-2 mt-4 max-w-full">
+            <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={220} height={37} className="h-auto w-auto object-contain" priority />
           </div>
           <p className="text-gray-600 mb-6">{t.subtitle}</p>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">{t.language}</label>
-            <select
-              value={lang}
-              onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            >
-              <option value="es">Español</option>
-              <option value="pt">Português</option>
-            </select>
-          </div>
 
           <form onSubmit={showSignUp ? handleSignUp : handleLogin} className="space-y-4">
             {showSignUp && (
               <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">{t.language}</label>
+                  <select
+                    value={lang}
+                    onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white mb-2"
+                  >
+                    <option value="es">Español</option>
+                    <option value="pt">Português</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     {lang === 'es' ? 'Nombre completo' : 'Nome completo'}
@@ -1449,7 +1461,69 @@ export default function Home() {
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {lang === 'es' ? 'País' : 'País'}
+                  </label>
+                  <select
+                    name="country"
+                    value={loginForm.country}
+                    onChange={(e) => setLoginForm({ ...loginForm, country: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+                    required
+                  >
+                    <option value="" disabled>
+                      {lang === 'es' ? 'Seleccionar país' : 'Selecionar país'}
+                    </option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={lang === 'es' ? c.es : c.pt}>
+                        {lang === 'es' ? c.es : c.pt}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {lang === 'es' ? 'Código Postal' : 'Código Postal'}
+                  </label>
+                  <input
+                    type="text"
+                    name="zipCode"
+                    value={loginForm.zipCode}
+                    onChange={(e) => setLoginForm({ ...loginForm, zipCode: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    placeholder="12345-678"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {lang === 'es' ? 'Dirección' : 'Endereço'}
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={loginForm.address}
+                    onChange={(e) => setLoginForm({ ...loginForm, address: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    placeholder={lang === 'es' ? 'Calle, Número, Ciudad' : 'Rua, Número, Cidade'}
+                    required
+                  />
+                </div>
               </>
+            )}
+            {!showSignUp && (
+              <div>
+                <label className="block text-sm font-medium mb-2">{t.language}</label>
+                <select
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white mb-2"
+                >
+                  <option value="es">Español</option>
+                  <option value="pt">Português</option>
+                </select>
+              </div>
             )}
             <div>
               <label className="block text-sm font-medium mb-2">{t.email}</label>
@@ -1666,9 +1740,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ & 言語選択 & ログアウト */}
           <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-black leading-none">{t.title}</h1>
-              <Image src="/icons/customer-icon.png" alt="JOGALIBRE" width={32} height={32} className="w-6 h-6 sm:w-8 sm:h-8 rounded" />
+            <div className="flex items-center">
+              <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={110} height={18} className="h-5 sm:h-6 w-auto object-contain" priority />
             </div>
 
             <div className="flex items-center gap-2">
@@ -2380,12 +2453,45 @@ export default function Home() {
                     placeholder="+55 11 98765-4321"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    {lang === 'es' ? 'País' : 'País'}
+                  </label>
+                  <input
+                    type="text"
+                    value={currentUser?.country || ''}
+                    disabled
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 bg-gray-50 text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    {lang === 'es' ? 'Código Postal' : 'Código Postal'}
+                  </label>
+                  <input
+                    type="text"
+                    value={profileForm.zipCode}
+                    onChange={(e) => setProfileForm({ ...profileForm, zipCode: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    {lang === 'es' ? 'Dirección' : 'Endereço'}
+                  </label>
+                  <input
+                    type="text"
+                    value={profileForm.address}
+                    onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  />
+                </div>
                 <button
                   onClick={async () => {
                     if (profileSaving) return;
                     setProfileSaving(true);
                     try {
-                      await updateProfile(profileForm.fullName, profileForm.whatsapp);
+                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode);
                       const user = await getCurrentUser();
                       setCurrentUser(user);
                       alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
