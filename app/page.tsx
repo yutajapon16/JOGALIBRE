@@ -693,6 +693,9 @@ export default function Home() {
               country: profile.country || undefined,
               agentCustomerId: profile.agent_customer_id || undefined,
               agentFullName: profile.agent_full_name || undefined,
+              depositAmount: profile.deposit_amount !== undefined && profile.deposit_amount !== null ? Number(profile.deposit_amount) : prev.depositAmount,
+              depositConfirmedAt: profile.deposit_confirmed_at || prev.depositConfirmedAt,
+              termsAcceptedAt: profile.terms_accepted_at || prev.termsAcceptedAt,
             } : prev;
             return nextUser;
           });

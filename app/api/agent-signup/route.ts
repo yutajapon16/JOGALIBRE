@@ -38,6 +38,7 @@ export async function POST(request: Request) {
         full_name: fullName || null,
         whatsapp: whatsapp || null,
         role: 'agent',
+        user_role: 'agent',
         address: address || null,
         zip_code: zipCode || null,
         country: country || null

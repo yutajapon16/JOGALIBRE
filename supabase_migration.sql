@@ -66,3 +66,15 @@ INSERT INTO system_settings (key, value) VALUES
     "fee_multiplier": 1.08
   }
 }') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+
+-- 9. user_roles テーブルの RLS（Row Level Security）ポリシー設定
+-- ログイン済みのユーザー自身が、規約同意前であっても自身のロール情報をSELECTできるようにします。
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow select for own user_roles" ON user_roles;
+CREATE POLICY "Allow select for own user_roles"
+ON user_roles
+FOR SELECT
+TO authenticated
+USING (auth.uid() = id);
+

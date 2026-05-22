@@ -230,7 +230,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       const userData: User = {
         id: user.id,
         email: user.email!,
-        role: isExportAdmin ? 'admin' : (roleData?.role || metadata.role || 'customer'),
+        role: isExportAdmin ? 'admin' : (roleData?.role || metadata.user_role || metadata.role || 'customer'),
         fullName: roleData?.full_name || metadata.full_name || undefined,
         whatsapp: roleData?.whatsapp || metadata.whatsapp || undefined,
         customerId: roleData?.customer_id || undefined,
@@ -323,7 +323,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       return {
         id: alreadyFetchedUser.id,
         email: alreadyFetchedUser.email!,
-        role: alreadyFetchedUser.email?.toLowerCase() === 'export@joga.ltd' ? 'admin' : (metadata.role || 'customer'),
+        role: alreadyFetchedUser.email?.toLowerCase() === 'export@joga.ltd' ? 'admin' : (metadata.user_role || metadata.role || 'customer'),
         fullName: metadata.full_name,
         whatsapp: metadata.whatsapp,
         address: metadata.address,
