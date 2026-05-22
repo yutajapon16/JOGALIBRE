@@ -1,4 +1,4 @@
-export const formatDateTime = (dateString: string) => {
+export const formatDateTime = (dateString: string, mode: 'admin' | 'customer' = 'admin') => {
   if (!dateString) return '-';
 
   // タイムゾーン情報がない場合、UTC として扱う(page側) / JSTとして扱う(admin側)の差があったため、
@@ -30,7 +30,10 @@ export const formatDateTime = (dateString: string) => {
     localLabel = 'JST';
   }
 
-  const formatter = new Intl.DateTimeFormat('ja-JP', {
+  const pad = (num: number) => String(num).padStart(2, '0');
+
+  // Intl.DateTimeFormat を使って個別に値を取得
+  const formatterParts = new Intl.DateTimeFormat('en-US', {
     timeZone: localTimeZone,
     year: 'numeric',
     month: '2-digit',
@@ -38,9 +41,53 @@ export const formatDateTime = (dateString: string) => {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false
-  });
+  }).formatToParts(date);
 
-  return `${formatter.format(date)} ${localLabel}`;
+  const year = formatterParts.find(p => p.type === 'year')?.value || String(date.getFullYear());
+  const month = formatterParts.find(p => p.type === 'month')?.value || pad(date.getMonth() + 1);
+  const day = formatterParts.find(p => p.type === 'day')?.value || pad(date.getDate());
+  const hour = formatterParts.find(p => p.type === 'hour')?.value || pad(date.getHours());
+  const minute = formatterParts.find(p => p.type === 'minute')?.value || pad(date.getMinutes());
+
+  const formattedTime = `${hour}:${minute}`;
+
+  if (mode === 'customer') {
+    return `${day}/${month}/${year} ${formattedTime} ${localLabel}`;
+  } else {
+    return `${year}/${month}/${day} ${formattedTime} ${localLabel}`;
+  }
+};
+
+export const formatDateOnly = (dateString: string, mode: 'admin' | 'customer' = 'admin') => {
+  if (!dateString) return '-';
+  let date: Date;
+  if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
+    date = new Date(dateString + 'Z');
+  } else {
+    date = new Date(dateString);
+  }
+
+  if (isNaN(date.getTime())) return dateString;
+
+  const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const pad = (num: number) => String(num).padStart(2, '0');
+
+  const formatterParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: localTimeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+
+  const year = formatterParts.find(p => p.type === 'year')?.value || String(date.getFullYear());
+  const month = formatterParts.find(p => p.type === 'month')?.value || pad(date.getMonth() + 1);
+  const day = formatterParts.find(p => p.type === 'day')?.value || pad(date.getDate());
+
+  if (mode === 'customer') {
+    return `${day}/${month}/${year}`;
+  } else {
+    return `${year}/${month}/${day}`;
+  }
 };
 
 export const parseYahooTimeRaw = (raw: string) => {

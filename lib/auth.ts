@@ -12,7 +12,8 @@ export async function signUp(
   whatsapp?: string,
   address?: string,
   zipCode?: string,
-  country?: string
+  country?: string,
+  agentCustomerId?: string
 ) {
   // 1. フロントエンドで標準のsignUpを実行（これでSupabaseから確実に確認メールが飛ぶ）
   const { data, error } = await supabase.auth.signUp({
@@ -36,7 +37,8 @@ export async function signUp(
       whatsapp,
       address,
       zipCode,
-      country
+      country,
+      agentCustomerId
     })
   });
   
@@ -103,8 +105,8 @@ export async function updatePassword(newPassword: string) {
   if (error) throw error;
 }
 
-// プロフィール更新（氏名・WhatsApp）
-export async function updateProfile(fullName: string, whatsapp: string, address?: string, zipCode?: string) {
+// プロフィール更新（氏名・WhatsApp・エージェントID）
+export async function updateProfile(fullName: string, whatsapp: string, address?: string, zipCode?: string, agentCustomerId?: string) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
 
@@ -124,7 +126,7 @@ export async function updateProfile(fullName: string, whatsapp: string, address?
       headers,
       credentials: 'include', // cookieベースでも認証させる
       signal: controller.signal,
-      body: JSON.stringify({ fullName, whatsapp, address, zipCode }),
+      body: JSON.stringify({ fullName, whatsapp, address, zipCode, agentCustomerId }),
     });
 
     clearTimeout(timeoutId);
@@ -138,7 +140,7 @@ export async function updateProfile(fullName: string, whatsapp: string, address?
     // Auth Metadata のローカルキャッシュ更新（エラーが起きても全体処理は止めない）
     try {
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { full_name: fullName, whatsapp: whatsapp, address: address, zip_code: zipCode }
+        data: { full_name: fullName, whatsapp: whatsapp, address: address, zip_code: zipCode, agent_customer_id: agentCustomerId || null }
       });
       if (updateError) {
         console.warn('Non-fatal error updating local auth metadata:', updateError);
@@ -187,7 +189,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       try {
         const { data, error } = await supabase
           .from('user_roles')
-          .select('role, full_name, whatsapp, customer_id, address, zip_code, country')
+          .select('role, full_name, whatsapp, customer_id, address, zip_code, country, agent_customer_id, deposit_amount, deposit_confirmed_at, terms_accepted_at')
           .eq('id', user.id)
           .abortSignal(controller.signal)
           .single();
@@ -205,6 +207,24 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
         console.warn('Could not fetch user_roles from DB, falling back to metadata:', fetchError);
       }
 
+      // エージェントIDが設定されている場合は、エージェント氏名の取得も試みる
+      let agentFullName = undefined;
+      if (roleData?.agent_customer_id) {
+        try {
+          const { data: agentData } = await supabase
+            .from('user_roles')
+            .select('full_name')
+            .eq('customer_id', roleData.agent_customer_id)
+            .eq('role', 'agent')
+            .maybeSingle();
+          if (agentData) {
+            agentFullName = agentData.full_name;
+          }
+        } catch (e) {
+          console.warn('Could not fetch agent full name due to RLS or other error:', e);
+        }
+      }
+
       const metadata = user.user_metadata || {};
 
       const userData: User = {
@@ -217,6 +237,11 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
         address: roleData?.address || metadata.address || undefined,
         zipCode: roleData?.zip_code || metadata.zip_code || undefined,
         country: roleData?.country || metadata.country || undefined,
+        agentCustomerId: roleData?.agent_customer_id || metadata.agent_customer_id || undefined,
+        agentFullName: agentFullName || metadata.agent_full_name || undefined,
+        depositAmount: roleData?.deposit_amount !== undefined ? Number(roleData.deposit_amount) : (metadata.deposit_amount !== undefined ? Number(metadata.deposit_amount) : undefined),
+        depositConfirmedAt: roleData?.deposit_confirmed_at || metadata.deposit_confirmed_at || undefined,
+        termsAcceptedAt: roleData?.terms_accepted_at || metadata.terms_accepted_at || undefined,
       };
 
       if (typeof localStorage !== 'undefined') {
@@ -229,6 +254,11 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
           address: userData.address,
           zipCode: userData.zipCode,
           country: userData.country,
+          agentCustomerId: userData.agentCustomerId,
+          agentFullName: userData.agentFullName,
+          depositAmount: userData.depositAmount,
+          depositConfirmedAt: userData.depositConfirmedAt,
+          termsAcceptedAt: userData.termsAcceptedAt,
         }));
       }
 
@@ -298,7 +328,12 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
         whatsapp: metadata.whatsapp,
         address: metadata.address,
         zipCode: metadata.zip_code,
-        country: metadata.country
+        country: metadata.country,
+        agentCustomerId: metadata.agent_customer_id,
+        agentFullName: metadata.agent_full_name,
+        depositAmount: metadata.deposit_amount !== undefined ? Number(metadata.deposit_amount) : undefined,
+        depositConfirmedAt: metadata.deposit_confirmed_at,
+        termsAcceptedAt: metadata.terms_accepted_at,
       };
     }
     return null;

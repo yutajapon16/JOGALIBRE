@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, getTimeRemaining } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES } from '@/lib/constants';
 
@@ -284,9 +284,51 @@ export default function Home() {
     whatsapp: '',
     address: '',
     zipCode: '',
-    country: ''
+    country: '',
+    agentCustomerId: ''
   });
   const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage'>('search');
+
+  // 支払い方法選択モーダル用
+  const [selectedPaymentItem, setSelectedPaymentItem] = useState<BidRequest | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentSettings, setPaymentSettings] = useState<any>(null);
+  const [isLoadingPaymentSettings, setIsLoadingPaymentSettings] = useState(false);
+  const [activePaymentMethod, setActivePaymentMethod] = useState<'bank' | 'paypal' | 'usdt'>('bank');
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  // 支払い設定をAPIからフェッチする関数
+  const fetchPaymentSettings = async () => {
+    if (paymentSettings) return;
+    setIsLoadingPaymentSettings(true);
+    try {
+      const res = await fetch('/api/payment-settings');
+      if (res.ok) {
+        const data = await res.json();
+        setPaymentSettings(data);
+      } else {
+        console.error('Failed to fetch payment settings:', res.statusText);
+      }
+    } catch (err) {
+      console.error('Error fetching payment settings:', err);
+    } finally {
+      setIsLoadingPaymentSettings(false);
+    }
+  };
+
+  // 支払いモーダルを開く関数
+  const openPaymentModal = (item: BidRequest) => {
+    setSelectedPaymentItem(item);
+    setShowPaymentModal(true);
+    fetchPaymentSettings();
+  };
+
+  // テキストをクリップボードにコピーする関数
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedText(label);
+    setTimeout(() => setCopiedText(null), 2000);
+  };
   const [favorites, setFavorites] = useState<SearchItem[]>([]);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState<string | null>(null);
   const [searchType, setSearchType] = useState<'url' | 'keyword' | 'categories'>('categories');
@@ -300,7 +342,7 @@ export default function Home() {
   const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   // マイページ用state
-  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '' });
+  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '' });
 
   // キャッシュ済みのメタデータから確実に入力欄を初期復元する
   useEffect(() => {
@@ -310,6 +352,7 @@ export default function Home() {
         if (!prev.whatsapp && currentUser.whatsapp) prev.whatsapp = currentUser.whatsapp;
         if (!prev.address && currentUser.address) prev.address = currentUser.address;
         if (!prev.zipCode && currentUser.zipCode) prev.zipCode = currentUser.zipCode;
+        if (!prev.agentCustomerId && currentUser.agentCustomerId) prev.agentCustomerId = currentUser.agentCustomerId;
         return { ...prev };
       });
     }
@@ -331,6 +374,14 @@ export default function Home() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsChecked, setTermsChecked] = useState({
+    item1: false,
+    item2: false,
+    item3: false,
+    item4: false,
+    item5: false
+  });
 
   const t = translations[lang];
 
@@ -443,6 +494,18 @@ export default function Home() {
       return () => clearInterval(interval);
     }
   }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.termsAcceptedAt === null || currentUser.termsAcceptedAt === undefined) {
+        setShowTermsModal(true);
+      } else {
+        setShowTermsModal(false);
+      }
+    } else {
+      setShowTermsModal(false);
+    }
+  }, [currentUser?.termsAcceptedAt, currentUser?.id]);
 
   const fetchNotifications = async () => {
     if (!currentUser) return;
@@ -628,6 +691,8 @@ export default function Home() {
               address: profile.address || undefined,
               zipCode: profile.zip_code || undefined,
               country: profile.country || undefined,
+              agentCustomerId: profile.agent_customer_id || undefined,
+              agentFullName: profile.agent_full_name || undefined,
             } : prev;
             return nextUser;
           });
@@ -636,7 +701,8 @@ export default function Home() {
             fullName: profile.full_name || '',
             whatsapp: profile.whatsapp || '',
             address: profile.address || '',
-            zipCode: profile.zip_code || ''
+            zipCode: profile.zip_code || '',
+            agentCustomerId: profile.agent_customer_id || ''
           };
           setProfileForm(newForm);
         } else {
@@ -648,6 +714,48 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const handleAcceptTerms = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!termsChecked.item1 || !termsChecked.item2 || !termsChecked.item3 || !termsChecked.item4 || !termsChecked.item5) {
+      return;
+    }
+
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/accept-terms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+
+      if (res.ok) {
+        // ローカルステートとキャッシュを更新
+        setCurrentUser(prev => {
+          if (!prev) return null;
+          const updated = {
+            ...prev,
+            termsAcceptedAt: new Date().toISOString(),
+            depositAmount: prev.role === 'agent' ? 500 : 100
+          };
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('joga_user_cache', JSON.stringify(updated));
+          }
+          return updated;
+        });
+        setShowTermsModal(false);
+      } else {
+        alert(lang === 'es' ? 'Error al aceptar los términos' : 'Erro ao aceitar os termos');
+      }
+    } catch (error) {
+      console.error('Error accepting terms:', error);
+      alert(lang === 'es' ? 'Error de comunicação' : 'Erro de comunicação');
     }
   };
 
@@ -724,6 +832,7 @@ export default function Home() {
         customerCounterOfferUsed: item.customer_counter_offer_used,
         paid: item.paid || false,
         shippingCostJpy: item.shipping_cost_jpy,
+        stockNumber: item.stock_number as string,
       }));
 
       // 商品タイトルを選択言語に翻訳
@@ -908,7 +1017,7 @@ export default function Home() {
     try {
       await signIn(email, password);
       // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '' });
     } catch (error) {
       console.error('Login error:', error);
       alert(lang === 'es'
@@ -927,16 +1036,17 @@ export default function Home() {
     const address = (formData.get('address') as string) || loginForm.address;
     const zipCode = (formData.get('zipCode') as string) || loginForm.zipCode;
     const country = (formData.get('country') as string) || loginForm.country;
+    const agentCustomerId = (formData.get('agentCustomerId') as string) || loginForm.agentCustomerId;
 
     try {
-      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country);
+      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country, agentCustomerId);
 
       // メール確認が必要な場合は成功メッセージを表示
       alert(lang === 'es'
         ? '¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta.'
         : 'Conta criada! Por favor, verifique seu e-mail para confirmar sua conta.');
 
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '' });
       setShowSignUp(false);
     } catch (error) {
       console.error('Sign up error:', error);
@@ -993,7 +1103,11 @@ export default function Home() {
 
     if (isSubmittingBid) return;
 
-    if (!selectedProduct || !bidForm.name || !bidForm.maxBid) return;
+    const finalCustomerName = (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
+      ? (currentUser?.agentFullName || '')
+      : bidForm.name;
+
+    if (!selectedProduct || !finalCustomerName || !bidForm.maxBid) return;
 
     // 20件制限チェック
     if (myRequests.length >= 20) {
@@ -1025,7 +1139,7 @@ export default function Home() {
           productPrice: selectedProduct.currentPrice,
           productEndTime: selectedProduct.endTime,
           maxBid: parseFloat(bidForm.maxBid),
-          customerName: bidForm.name,
+          customerName: finalCustomerName,
           customerEmail: currentUser?.email,
           language: lang
         })
@@ -1040,7 +1154,7 @@ export default function Home() {
             body: JSON.stringify({
               sendToAdmins: true,
               title: 'JOGALIBRE',
-              body: `更新通知： ${currentUser.fullName || bidForm.name}`,
+              body: `更新通知： ${currentUser.fullName || finalCustomerName}`,
               url: '/admin'
             })
           }).catch(e => console.error('Admin push error', e));
@@ -1146,7 +1260,12 @@ export default function Home() {
       if (data.product) {
         const detail = data.product;
         setSelectedProduct(detail);
-        setBidForm({ name: '', maxBid: '' });
+        setBidForm({ 
+          name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
+            ? (currentUser?.agentFullName || '')
+            : (currentUser?.fullName || ''),
+          maxBid: '' 
+        });
 
         // 商品リスト(products)を同期更新
         setProducts(prev => prev.map(p =>
@@ -1510,6 +1629,19 @@ export default function Home() {
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {lang === 'es' ? 'ID de Agente (Opcional)' : 'ID do Agente (Opcional)'}
+                  </label>
+                  <input
+                    type="text"
+                    name="agentCustomerId"
+                    value={loginForm.agentCustomerId || ''}
+                    onChange={(e) => setLoginForm({ ...loginForm, agentCustomerId: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    placeholder="A001"
+                  />
+                </div>
               </>
             )}
             {!showSignUp && (
@@ -1708,7 +1840,12 @@ export default function Home() {
                   fetchProductDetailForOffer(product.url);
                 } else {
                   setSelectedProduct(product);
-                  setBidForm({ name: '', maxBid: '' });
+                  setBidForm({ 
+                    name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
+                      ? (currentUser?.agentFullName || '')
+                      : (currentUser?.fullName || ''),
+                    maxBid: '' 
+                  });
                 }
               }}
               className="w-full bg-indigo-600 text-white font-bold py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg hover:bg-indigo-700 transition shadow-sm hover:shadow active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-2 mt-auto text-xs sm:text-sm"
@@ -2372,7 +2509,12 @@ export default function Home() {
                             <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
                             <div className="text-xs text-gray-600 mb-2 mt-1 space-y-0.5 w-full">
                               <p><span className="font-semibold text-gray-800">{lang === 'es' ? 'Cliente:' : 'Cliente:'} {item.customerName}</span></p>
-                              <p>{t.confirmedDate}: {formatDateTime(item.confirmedAt || '')}</p>
+                              <p>{t.confirmedDate}: {formatDateTime(item.confirmedAt || '', 'customer')}</p>
+                              {item.stockNumber && (
+                                <p className="mt-1 font-bold text-gray-900 bg-gray-50 px-2 py-0.5 rounded border inline-block text-[11px]">
+                                  Stock No: {item.stockNumber}
+                                </p>
+                              )}
                             </div>
                             <div className="flex flex-col gap-2 w-full mt-auto">
                               <a
@@ -2383,6 +2525,14 @@ export default function Home() {
                               >
                                 {t.viewOnYahoo}
                               </a>
+                              {!item.paid && (
+                                <button
+                                  onClick={() => openPaymentModal(item)}
+                                  className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-2 block w-full shadow-sm transition"
+                                >
+                                  {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2393,7 +2543,7 @@ export default function Home() {
                               <div className="flex items-center gap-1.5 shrink-0">
                                 {item.paidAt && (
                                   <span className="text-[11px] font-bold text-gray-600 whitespace-nowrap">
-                                    {formatDateTime(item.paidAt)}
+                                    {formatDateTime(item.paidAt, 'customer')}
                                   </span>
                                 )}
                                 <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full whitespace-nowrap shrink-0">
@@ -2420,6 +2570,35 @@ export default function Home() {
         ) : activeTab === 'mypage' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myPage}</h2>
+
+            {/* 保証金情報 (Deposit Info) */}
+            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/80 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1">
+                  {lang === 'es' ? 'Garantía de Depósito' : 'Garantia de Depósito'}
+                </p>
+                <p className="text-lg font-bold text-gray-800">
+                  ${currentUser?.depositAmount !== undefined ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 500 : 100)}
+                </p>
+              </div>
+              <div className="text-right">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                  currentUser?.depositConfirmedAt 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {currentUser?.depositConfirmedAt ? (
+                    <>
+                      ✓ {lang === 'es' ? 'Confirmado' : 'Confirmado'}: {formatDateOnly(currentUser.depositConfirmedAt, 'customer')}
+                    </>
+                  ) : (
+                    <>
+                      ⏳ {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                    </>
+                  )}
+                </span>
+              </div>
+            </div>
 
             {/* プロフィール編集 */}
             <div className="mb-8">
@@ -2486,12 +2665,26 @@ export default function Home() {
                     className="w-full border border-gray-300 rounded-lg px-4 py-3"
                   />
                 </div>
+                {currentUser?.role === 'customer' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      {lang === 'es' ? 'ID del Agente (Opcional)' : 'ID do Agente (Opcional)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={profileForm.agentCustomerId}
+                      onChange={(e) => setProfileForm({ ...profileForm, agentCustomerId: e.target.value })}
+                      placeholder="e.g. A001"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono"
+                    />
+                  </div>
+                )}
                 <button
                   onClick={async () => {
                     if (profileSaving) return;
                     setProfileSaving(true);
                     try {
-                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode);
+                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId);
                       const user = await getCurrentUser();
                       setCurrentUser(user);
                       alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
@@ -2849,7 +3042,12 @@ export default function Home() {
                     type="text"
                     value={bidForm.name}
                     onChange={(e) => setBidForm({ ...bidForm, name: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base shadow-sm focus:ring-2 focus:ring-indigo-500 font-bold placeholder:text-gray-300 placeholder:font-normal"
+                    readOnly={!!(currentUser?.role === 'customer' && currentUser?.agentCustomerId)}
+                    className={`w-full border border-gray-300 rounded-lg px-4 py-3 text-base shadow-sm focus:ring-2 focus:ring-indigo-500 font-bold placeholder:text-gray-300 placeholder:font-normal ${
+                      (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
+                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200'
+                        : ''
+                    }`}
                     required
                     placeholder={lang === 'es' ? 'Nombre y Apellido del Cliente' : 'Nome e Sobrenome do Cliente'}
                   />
@@ -3015,6 +3213,457 @@ export default function Home() {
                 {lang === 'es' ? 'Cerrar' : 'Fechar'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* 支払方法選択モーダル */}
+      {showPaymentModal && selectedPaymentItem && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[140] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col my-8 animate-in fade-in zoom-in duration-200 max-h-[90vh]">
+            {/* ヘッダー */}
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-2xl">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
+                </h2>
+                <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                  {selectedPaymentItem.productTitle}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 font-bold transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* コンテンツエリア */}
+            <div className="flex-1 overflow-y-auto p-5">
+              {/* 金額サマリー */}
+              <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-green-50 to-indigo-50 border border-green-100/50 flex justify-between items-center">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
+                    {lang === 'es' ? 'Monto a Pagar' : 'Valor a Pagar'}
+                  </p>
+                  <p className="text-2xl font-black text-indigo-600">
+                    ${Math.round(
+                      selectedPaymentItem.finalPrice ||
+                      (selectedPaymentItem.customerCounterOffer && !selectedPaymentItem.customerCounterOfferUsed ? selectedPaymentItem.customerCounterOffer : (selectedPaymentItem.counterOffer || selectedPaymentItem.maxBid || 0))
+                    ).toLocaleString('en-US')}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-semibold text-gray-600 bg-white px-2.5 py-1 rounded-full border shadow-sm">
+                    Stock No: {selectedPaymentItem.stockNumber || '-'}
+                  </span>
+                </div>
+              </div>
+
+              {/* タブ切り替え */}
+              <div className="grid grid-cols-3 gap-1 bg-gray-100 p-1 rounded-xl mb-5">
+                <button
+                  type="button"
+                  onClick={() => setActivePaymentMethod('bank')}
+                  className={`py-2 px-1 text-center rounded-lg font-bold text-xs sm:text-sm transition ${
+                    activePaymentMethod === 'bank'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  🏦 {lang === 'es' ? 'Banco' : 'Banco'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePaymentMethod('paypal')}
+                  className={`py-2 px-1 text-center rounded-lg font-bold text-xs sm:text-sm transition ${
+                    activePaymentMethod === 'paypal'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  💳 PayPal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePaymentMethod('usdt')}
+                  className={`py-2 px-1 text-center rounded-lg font-bold text-xs sm:text-sm transition ${
+                    activePaymentMethod === 'usdt'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  🪙 USDT
+                </button>
+              </div>
+
+              {/* メソッドごとの詳細 */}
+              {isLoadingPaymentSettings ? (
+                <div className="py-8 flex flex-col items-center justify-center gap-2">
+                  <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-xs text-gray-500">{lang === 'es' ? 'Cargando...' : 'Carregando...'}</p>
+                </div>
+              ) : (
+                <div>
+                  {/* 1. 銀行振込 */}
+                  {activePaymentMethod === 'bank' && (
+                    <div className="space-y-4">
+                      <p className="text-xs text-amber-600 font-semibold bg-amber-50 p-2.5 rounded-lg border border-amber-100/50 leading-relaxed">
+                        ⚠️ {lang === 'es' 
+                          ? 'Realice la transferencia internacional a la siguiente cuenta. Todos los cargos de transferencia corren por su cuenta.' 
+                          : 'Realize a transferência internacional para a seguinte conta. Todas as taxas de transferência são por sua conta.'}
+                      </p>
+                      
+                      {(() => {
+                        const bankData = paymentSettings?.bank?.[lang] || (lang === 'es' ? {
+                          name: "RAKUTEN BANK, LTD.",
+                          sucursal: "HEAD OFFICE",
+                          swift: "RAKTJPJT",
+                          address_bank: "2-16-5 KONAN, MINATO-KU, TOKYO, JAPAN",
+                          account_number: "252-7951120",
+                          account_name: "JOGA INC.",
+                          address_joga: "NINOMIYA CUBE 2A, 2-17-4 NINOMIYA, TSUKUBA, IBARAKI, JAPAN",
+                          telefono: "+81-298286721",
+                          intermediary_bank: "SUMITOMO MITSUI BANKING CORPORATION, TOKYO, JAPAN",
+                          intermediary_swift: "SMBCJPJT"
+                        } : {
+                          name: "RAKUTEN BANK, LTD.",
+                          sucursal: "HEAD OFFICE",
+                          swift: "RAKTJPJT",
+                          address_bank: "2-16-5 KONAN, MINATO-KU, TOKYO, JAPAN",
+                          account_number: "252-7951120",
+                          account_name: "JOGA INC.",
+                          address_joga: "NINOMIYA CUBE 2A, 2-17-4 NINOMIYA, TSUKUBA, IBARAKI, JAPAN",
+                          telefono: "+81-298286721",
+                          intermediary_bank: "SUMITOMO MITSUI BANKING CORPORATION, TOKYO, JAPAN",
+                          intermediary_swift: "SMBCJPJT"
+                        });
+
+                        return (
+                          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-xs space-y-2.5">
+                            {[
+                              { label: 'NOMBRE DE BANCO', value: bankData.name },
+                              { label: 'SUCURSAL', value: bankData.sucursal },
+                              { label: 'CODIGO SWIFT', value: bankData.swift },
+                              { label: 'DIRECCION DE BANCO', value: bankData.address_bank },
+                              { label: 'NUMERO DE CUENTA', value: bankData.account_number },
+                              { label: 'NOMBRE DE CUENTA', value: bankData.account_name },
+                              { label: 'DIRECCION', value: bankData.address_joga },
+                              { label: 'TELEFONO', value: bankData.telefono },
+                              { label: 'BANCO INTERMEDIARIO', value: bankData.intermediary_bank },
+                              { label: 'SWIFT INTERMEDIARIO', value: bankData.intermediary_swift }
+                            ].map((row, idx) => {
+                              if (!row.value) return null;
+                              return (
+                                <div key={idx} className="flex justify-between items-start gap-4 border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                                  <span className="font-bold text-gray-500 select-none">{row.label}:</span>
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="text-gray-900 font-mono text-right break-all">{row.value}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => copyToClipboard(row.value, row.label)}
+                                      className="text-indigo-600 hover:text-indigo-800 shrink-0 p-0.5"
+                                      title="Copy"
+                                    >
+                                      {copiedText === row.label ? '✓' : '📋'}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* 2. PayPal */}
+                  {activePaymentMethod === 'paypal' && (
+                    <div className="space-y-4">
+                      {(() => {
+                        const paypalData = paymentSettings?.paypal || {
+                          account_email: "export@joga.ltd",
+                          link: "https://paypal.me/joga1225",
+                          fee_multiplier: 1.08
+                        };
+                        const basePrice = Math.round(
+                          selectedPaymentItem.finalPrice ||
+                          (selectedPaymentItem.customerCounterOffer && !selectedPaymentItem.customerCounterOfferUsed ? selectedPaymentItem.customerCounterOffer : (selectedPaymentItem.counterOffer || selectedPaymentItem.maxBid || 0))
+                        );
+                        const finalPaypalPrice = Math.round(basePrice * (paypalData.fee_multiplier || 1.08));
+
+                        return (
+                          <>
+                            <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg text-xs leading-relaxed text-indigo-800 space-y-1">
+                              <p className="font-bold">
+                                {lang === 'es'
+                                  ? 'Para pagos vía PayPal se aplica una comision de intermediario.'
+                                  : 'Para pagamentos via PayPal é aplicada uma comissão de intermediário.'}
+                              </p>
+                              <p>
+                                {lang === 'es'
+                                  ? `Monto original ($${basePrice.toLocaleString()}) × Multiplicador (${paypalData.fee_multiplier})`
+                                  : `Valor original ($${basePrice.toLocaleString()}) × Multiplicador (${paypalData.fee_multiplier})`}
+                              </p>
+                            </div>
+
+                            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center">
+                              <p className="text-[10px] text-gray-500 uppercase font-bold">{lang === 'es' ? 'Total PayPal' : 'Total PayPal'}</p>
+                              <p className="text-3xl font-black text-gray-900 mt-1">${finalPaypalPrice.toLocaleString()}</p>
+                            </div>
+
+                            <a
+                              href={paypalData.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block text-center bg-[#0070ba] hover:bg-[#005ea6] text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
+                            >
+                              {lang === 'es' ? 'Pagar con PayPal.me' : 'Pagar com PayPal.me'}
+                            </a>
+                            <p className="text-[10px] text-gray-400 text-center leading-relaxed select-none">
+                              {lang === 'es'
+                                ? '* Asegúrese de enviar la cantidad exacta en USD.'
+                                : '* Certifique-se de enviar o valor exato em USD.'}
+                            </p>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* 3. USDT */}
+                  {activePaymentMethod === 'usdt' && (
+                    <div className="space-y-4">
+                      {(() => {
+                        const usdtData = paymentSettings?.usdt || {
+                          address: "TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc",
+                          qr_url: "/images/usdt_qr.png"
+                        };
+
+                        return (
+                          <>
+                            <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-xs leading-relaxed text-red-700 space-y-1">
+                              <p className="font-bold">
+                                ⚠️ Red: TRC-20 (TRON)
+                              </p>
+                              <p>
+                                {lang === 'es'
+                                  ? 'Envíe USDT únicamente a través de la red TRC-20. Transferencias por otras redes resultarán en pérdida permanente de fondos.'
+                                  : 'Envie USDT apenas através da rede TRC-20. Transferências por outras redes resultarão na perda permanente de fundos.'}
+                              </p>
+                            </div>
+
+                            <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-xs space-y-3">
+                              <div>
+                                <p className="font-bold text-gray-500 mb-1">{lang === 'es' ? 'Dirección USDT (TRC-20):' : 'Endereço USDT (TRC-20):'}</p>
+                                <div className="flex items-center gap-2 bg-white border rounded-lg p-2.5">
+                                  <span className="font-mono text-gray-900 break-all flex-1 text-xs select-all">{usdtData.address}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(usdtData.address, 'usdt_address')}
+                                    className="text-indigo-600 hover:text-indigo-800 shrink-0 px-2 py-1 bg-indigo-50 rounded font-bold text-xs"
+                                  >
+                                    {copiedText === 'usdt_address' ? '✓' : '📋'}
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col items-center justify-center py-2 border-t border-gray-200/50 mt-2">
+                                <p className="font-bold text-gray-500 mb-2">{lang === 'es' ? 'Código QR para Depósito:' : 'Código QR para Depósito:'}</p>
+                                <div className="relative w-40 h-40 bg-white p-2 rounded-xl border shadow-sm">
+                                  <Image
+                                    src={usdtData.qr_url}
+                                    alt="USDT TRC20 QR Code"
+                                    width={160}
+                                    height={160}
+                                    className="object-contain mx-auto"
+                                    unoptimized
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* フッター */}
+            <div className="p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+              <a
+                href="https://wa.me/817013476721"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-200 transform hover:scale-[1.02]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                </svg>
+                <span>
+                  {lang === 'es' ? 'Enviar comprobante por WhatsApp' : 'Enviar comprovante por WhatsApp'}
+                </span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 利用規約同意モーダル */}
+      {showTermsModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col my-8 animate-in fade-in zoom-in duration-300 max-h-[90vh]">
+            {/* ヘッダー */}
+            <div className="p-6 border-b border-gray-100 bg-indigo-50/50 rounded-t-2xl sticky top-0 z-10">
+              <h2 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-3">
+                <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-base">
+                  📋
+                </span>
+                {lang === 'es' ? 'Términos y Condiciones de Uso' : 'Termos e Condições de Uso'}
+              </h2>
+              <p className="text-sm text-gray-600 mt-2 font-medium">
+                {lang === 'es' 
+                  ? 'Para comenzar a utilizar JOGALIBRE, por favor lea y acepte las siguientes condiciones importantes:' 
+                  : 'Para começar a usar o JOGALIBRE, por favor leia e aceite as seguintes condições importantes:'}
+              </p>
+            </div>
+
+            {/* コンテンツエリア */}
+            <form onSubmit={handleAcceptTerms} className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* 項目1: 保証金 */}
+              <label className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={termsChecked.item1}
+                  onChange={(e) => setTermsChecked(prev => ({ ...prev, item1: e.target.checked }))}
+                  className="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                />
+                <div className="flex-1 text-sm text-gray-700">
+                  <div className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                    <span className="text-indigo-600">1.</span>
+                    {lang === 'es' ? 'Aceptación del Depósito' : 'Aceitação do Depósito'}
+                  </div>
+                  <div>
+                    {currentUser?.role === 'agent' ? (
+                      lang === 'es' 
+                        ? 'Para utilizar el sistema, se requiere un depósito de garantía (USD 500). Se reembolsará en su totalidad al cancelar la cuenta, siempre que no haya pagos pendientes.'
+                        : 'Para utilizar o sistema, é necessário um depósito de garantia (USD 500). O valor será reembolsado integralmente no cancelamento da conta, desde que não haja pagamentos pendentes.'
+                    ) : (
+                      lang === 'es'
+                        ? 'Para utilizar el sistema, se requiere un depósito de garantía (USD 100). Se reembolsará en su totalidad al cancelar la cuenta, siempre que no haya pagos pendientes.'
+                        : 'Para utilizar o sistema, é necessário um depósito de garantia (USD 100). O valor será reembolsado integralmente no cancelamento da conta, desde que não haja pagamentos pendentes.'
+                    )}
+                  </div>
+                </div>
+              </label>
+
+              {/* 項目2: キャンセル不可 */}
+              <label className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={termsChecked.item2}
+                  onChange={(e) => setTermsChecked(prev => ({ ...prev, item2: e.target.checked }))}
+                  className="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                />
+                <div className="flex-1 text-sm text-gray-700">
+                  <div className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                    <span className="text-indigo-600">2.</span>
+                    {lang === 'es' ? 'Ofertas No Cancelables' : 'Lances Não Canceláveis'}
+                  </div>
+                  <div>
+                    {lang === 'es'
+                      ? 'Debido a las especificaciones de Yahoo Auctions, una vez que el administrador ha realizado una oferta, no se puede cancelar, modificar ni realizar devoluciones bajo ninguna circunstancia.'
+                      : 'Devido às especificações do Yahoo Auctions, após o administrador efetuar o lance, não é possível cancelar, alterar ou realizar devoluções sob nenhuma circunstância.'}
+                  </div>
+                </div>
+              </label>
+
+              {/* 項目3: 支払い期限 */}
+              <label className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={termsChecked.item3}
+                  onChange={(e) => setTermsChecked(prev => ({ ...prev, item3: e.target.checked }))}
+                  className="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                />
+                <div className="flex-1 text-sm text-gray-700">
+                  <div className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                    <span className="text-indigo-600">3.</span>
+                    {lang === 'es' ? 'Plazo de Pago' : 'Prazo de Pagamento'}
+                  </div>
+                  <div>
+                    {lang === 'es'
+                      ? 'Debe completar el pago utilizando el método seleccionado y enviar el comprobante dentro de los 2 días posteriores a la adjudicación del producto (compra confirmada). Si se excede el plazo, la garantía se aplicará como multa y se suspenderá la cuenta.'
+                      : 'Você deve concluir o pagamento utilizando o método selecionado e enviar o comprovante dentro de 2 dias após a arrematação do produto (compra confirmada). Se o prazo for excedido, a garantia será aplicada como multa e a conta será suspensa.'}
+                  </div>
+                </div>
+              </label>
+
+              {/* 項目4: 諸経費・関税の自己負担 */}
+              <label className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={termsChecked.item4}
+                  onChange={(e) => setTermsChecked(prev => ({ ...prev, item4: e.target.checked }))}
+                  className="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                />
+                <div className="flex-1 text-sm text-gray-700">
+                  <div className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                    <span className="text-indigo-600">4.</span>
+                    {lang === 'es' ? 'Gastos y Aduanas' : 'Custos e Alfândega'}
+                  </div>
+                  <div>
+                    {lang === 'es'
+                      ? 'Además del precio del producto, el envío nacional en Japón, el envío internacional, la comisión FOB y los aranceles generados al importar son responsabilidad del cliente. El monto mostrado antes de la oferta no incluye el envío nacional en Japón, por lo que el monto puede aumentar con la contraoferta del administrador.'
+                      : 'Além do preço do produto, o frete nacional no Japão, o frete internacional, a comissão FOB e os impostos gerados na importação são de responsabilidade do cliente. O valor exibido antes da oferta não inclui o frete nacional no Japão, portanto o valor pode aumentar com a contraoferta do administrador.'}
+                  </div>
+                </div>
+              </label>
+
+              {/* 項目5: 現状渡しの同意 */}
+              <label className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={termsChecked.item5}
+                  onChange={(e) => setTermsChecked(prev => ({ ...prev, item5: e.target.checked }))}
+                  className="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                />
+                <div className="flex-1 text-sm text-gray-700">
+                  <div className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                    <span className="text-indigo-600">5.</span>
+                    {lang === 'es' ? 'Compra en Estado Actual' : 'Compra no Estado Atual'}
+                  </div>
+                  <div>
+                    {lang === 'es'
+                      ? 'Dado que se trata principalmente de artículos de segunda mano (productos de Yahoo Auctions), usted acepta que comprende los riesgos de mal funcionamiento, arañazos o suciedad, y no realizará reclamaciones ni devoluciones. Los accidentes de envío se regirán por las normas de la empresa de transporte.'
+                      : 'Dado que se trata principalmente de itens de segunda mão (produtos do Yahoo Auctions), você aceita que compreende os riscos de mau funcionamento, arranhões ou sujeira, e não realizará reclamações ou devoluções. Os acidentes de envio serão regidos pelas normas da transportadora.'}
+                  </div>
+                </div>
+              </label>
+
+              {/* フッター / 送信ボタン */}
+              <div className="pt-4 border-t border-gray-100 sticky bottom-0 bg-white">
+                <button
+                  type="submit"
+                  disabled={!termsChecked.item1 || !termsChecked.item2 || !termsChecked.item3 || !termsChecked.item4 || !termsChecked.item5}
+                  className={`w-full py-4 rounded-xl font-bold text-base transition duration-200 shadow-lg ${
+                    (termsChecked.item1 && termsChecked.item2 && termsChecked.item3 && termsChecked.item4 && termsChecked.item5)
+                      ? 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-indigo-200'
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                  }`}
+                >
+                  {lang === 'es' ? 'Aceptar y comenzar' : 'Aceitar e começar'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

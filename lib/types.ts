@@ -10,6 +10,11 @@ export interface User {
   address?: string;
   zipCode?: string;
   country?: string;
+  agentCustomerId?: string;
+  agentFullName?: string;
+  depositAmount?: number;
+  depositConfirmedAt?: string | null;
+  termsAcceptedAt?: string | null;
 }
 
 export type BidStatus = 'pending' | 'approved' | 'rejected' | 'counter_offer';
@@ -48,6 +53,7 @@ export interface BidRequest {
   customerRole?: string;
   paidAt?: string | null;
   paid?: boolean;
+  stockNumber?: string | null;
 }
 
 export interface SearchItem {

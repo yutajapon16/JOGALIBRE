@@ -349,6 +349,29 @@ export async function PATCH(request: Request) {
       // 顧客が確認ボタンを押した日時を記録
       if (customerConfirmed === true && !currentRequest.customer_confirmed_at) {
         updateData.customer_confirmed_at = new Date().toISOString();
+
+        // 在庫番号の自動採番 (ステップ6)
+        if (!currentRequest.stock_number) {
+          // 1. ユーザーロールから顧客ID (customer_id) を取得
+          const { data: userRole } = await supabaseAdmin
+            .from('user_roles')
+            .select('customer_id')
+            .eq('email', currentRequest.customer_email)
+            .single();
+
+          const customerId = userRole?.customer_id || 'C000';
+
+          // 2. すでに採番済みのレコード数をカウント
+          const { count } = await supabaseAdmin
+            .from('bid_requests')
+            .select('id', { count: 'exact', head: true })
+            .eq('customer_email', currentRequest.customer_email)
+            .not('stock_number', 'is', null);
+
+          // 3. 通し番号を生成（3桁ゼロ埋め）
+          const seq = String((count || 0) + 1).padStart(3, '0');
+          updateData.stock_number = `${customerId}S${seq}`;
+        }
       }
     }
     if (customerMessage !== undefined) updateData.customer_message = customerMessage;

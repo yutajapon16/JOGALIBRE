@@ -6,17 +6,17 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 // signUp後の未認証状態でもRLSをバイパスしてuser_rolesに書き込むための専用API
 export async function POST(request: Request) {
   try {
-    const { id, email, role, fullName, whatsapp, address, zipCode, country } = await request.json();
-
+    const { id, email, role, fullName, whatsapp, address, zipCode, country, agentCustomerId } = await request.json();
+ 
     if (!id || !email) {
       return NextResponse.json(
         { error: 'IDとメールアドレスは必須です' },
         { status: 400 }
       );
     }
-
+ 
     const userRole = role || 'customer';
-
+ 
     // supabaseAdmin で user_roles に登録（RLSバイパス）
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
@@ -28,7 +28,8 @@ export async function POST(request: Request) {
         whatsapp: whatsapp || null,
         address: address || null,
         zip_code: zipCode || null,
-        country: country || null
+        country: country || null,
+        agent_customer_id: agentCustomerId || null
       }]);
 
     if (roleError) {
