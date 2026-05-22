@@ -432,9 +432,9 @@ export async function GET(request: Request) {
       const controllerTranslate = new AbortController();
       const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
       try {
-        // 全タイトルをユニークな文字列 " ||| " で結合して1リクエストで送信
-        const DELIMITER = ' ||| ';
-        const titlesToTranslate = items.map(item => item.title).join(DELIMITER);
+        // 各アイテムのインデックス番号をセパレーターとして使用し、翻訳時のズレを完全に防止する
+        // 例: "=== 0 ===\nタイトル1\n=== 1 ===\nタイトル2"
+        const titlesToTranslate = items.map((item, idx) => `=== ${idx} ===\n${item.title}`).join('\n');
 
         // Google Translate API (gtx) を呼び出し (GETだとURL長制限に引っかかるためPOSTに変更)
         const translateRes = await fetch(
@@ -455,19 +455,22 @@ export async function GET(request: Request) {
             fullTranslatedText += translateData[0][i][0];
           }
 
-          // Google翻訳がパイプ周りのスペースを勝手に詰める/開けることがあるため、正規表現で柔軟にスプリットする
-          const translatedTitles = fullTranslatedText.split(/\s*\|\|\|\s*/);
-
-          // 配列長が一致する場合のみ適用し、翻訳ズレを完全に防ぐ（長さが異なる場合は安全のため日本語の元のタイトルをそのまま使用する）
-          if (translatedTitles.length === items.length) {
-            items.forEach((item, index) => {
-              if (translatedTitles[index] && translatedTitles[index].trim()) {
-                item.title = translatedTitles[index].trim();
+          // === 数字 === のパターンを検出して、各インデックスの商品タイトルに正しくマッピングする
+          const regex = /===\s*(\d+)\s*===([^=]+)/g;
+          let match;
+          let matchCount = 0;
+          
+          while ((match = regex.exec(fullTranslatedText)) !== null) {
+            const index = parseInt(match[1], 10);
+            const text = match[2].replace(/^[\s\n]+/, '').trim();
+            if (index >= 0 && index < items.length) {
+              if (text) {
+                items[index].title = text;
+                matchCount++;
               }
-            });
-          } else {
-            console.warn(`Translation split count mismatch: items=${items.length}, translated=${translatedTitles.length}. Falling back to Japanese titles to prevent mismatch.`);
+            }
           }
+          console.log(`Title translation matched ${matchCount} / ${items.length} items.`);
         }
       } catch (translateError) {
         console.error('Batch title translation error:', translateError);
