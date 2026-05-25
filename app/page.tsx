@@ -777,7 +777,7 @@ export default function Home() {
           const updated = {
             ...prev,
             termsAcceptedAt: new Date().toISOString(),
-            depositAmount: prev.role === 'agent' ? 500 : 100
+            depositAmount: prev.role === 'agent' ? 1000 : 300
           };
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('joga_user_cache', JSON.stringify(updated));
@@ -2633,7 +2633,7 @@ export default function Home() {
               </p>
               <div className="flex items-center gap-3">
                 <span className="text-2xl font-bold text-gray-800 leading-none">
-                  ${currentUser?.depositAmount !== undefined ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 500 : 100)}
+                  ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== 0) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 1000 : 300)}
                 </span>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ml-auto ${
                   currentUser?.depositConfirmedAt 
@@ -3617,12 +3617,12 @@ export default function Home() {
                   <div>
                     {currentUser?.role === 'agent' ? (
                       lang === 'es' 
-                        ? 'Para utilizar el sistema, se requiere un depósito de garantía (USD 500). Se reembolsará en su totalidad al cancelar la cuenta, siempre que no haya pagos pendientes.'
-                        : 'Para utilizar o sistema, é necessário um depósito de garantia (USD 500). O valor será reembolsado integralmente no cancelamento da conta, desde que não haja pagamentos pendentes.'
+                        ? 'Para utilizar el sistema, se requiere un depósito de garantía (USD 1,000). Se reembolsará en su totalidad al cancelar la cuenta, siempre que no haya pagos pendientes.'
+                        : 'Para utilizar o sistema, é necessário um depósito de garantia (USD 1,000). O valor será reembolsado integralmente no cancelamento da conta, desde que não haja pagamentos pendentes.'
                     ) : (
                       lang === 'es'
-                        ? 'Para utilizar el sistema, se requiere un depósito de garantía (USD 100). Se reembolsará en su totalidad al cancelar la cuenta, siempre que no haya pagos pendientes.'
-                        : 'Para utilizar o sistema, é necessário um depósito de garantia (USD 100). O valor será reembolsado integralmente no cancelamento da conta, desde que não haja pagamentos pendentes.'
+                        ? 'Para utilizar el sistema, se requiere un depósito de garantía (USD 300). Se reembolsará en su totalidad al cancelar la cuenta, siempre que no haya pagos pendientes.'
+                        : 'Para utilizar o sistema, é necessário um depósito de garantia (USD 300). O valor será reembolsado integralmente no cancelamento da conta, desde que não haja pagamentos pendentes.'
                     )}
                   </div>
                 </div>

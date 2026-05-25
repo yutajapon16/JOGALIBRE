@@ -52,8 +52,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: 'Already accepted' });
     }
 
-    // 保証金金額のデフォルト設定 (agent は 500、customer は 100)
-    const defaultDeposit = userRole.role === 'agent' ? 500 : 100;
+    // 保証金金額のデフォルト設定 (agent は 1000、customer は 300)
+    const defaultDeposit = userRole.role === 'agent' ? 1000 : 300;
     const currentDeposit = userRole.deposit_amount !== null && userRole.deposit_amount !== undefined
       ? Number(userRole.deposit_amount)
       : defaultDeposit;
