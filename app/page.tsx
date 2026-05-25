@@ -3430,8 +3430,8 @@ export default function Home() {
                               if (!row.value) return null;
                               return (
                                 <div key={idx} className="flex justify-between items-start gap-3 border-b border-gray-100 pb-2 last:border-0 last:pb-0">
-                                  <span className="font-bold text-gray-500 select-none w-[42%] shrink-0">{row.label}:</span>
-                                  <span className="text-gray-900 font-mono text-right w-[58%] break-words whitespace-pre-wrap">{row.value}</span>
+                                  <span className="font-bold text-gray-500 select-none w-[32%] shrink-0">{row.label}:</span>
+                                  <span className="text-gray-900 font-mono text-right w-[68%] break-words whitespace-pre-wrap">{row.value}</span>
                                 </div>
                               );
                             })}
