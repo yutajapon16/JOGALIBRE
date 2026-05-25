@@ -2635,21 +2635,28 @@ export default function Home() {
                 <span className="text-2xl font-bold text-gray-800 leading-none">
                   ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== 0) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 1000 : 300)}
                 </span>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ml-auto ${
-                  currentUser?.depositConfirmedAt 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {currentUser?.depositConfirmedAt ? (
-                    <>
-                      ✓ {lang === 'es' ? 'Confirmado' : 'Confirmado'}: {formatDateOnly(currentUser.depositConfirmedAt, 'customer')}
-                    </>
-                  ) : (
-                    <>
-                      ⏳ {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                    </>
-                  )}
-                </span>
+                {currentUser?.depositConfirmedAt ? (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ml-auto bg-green-100 text-green-800">
+                    ✓ {lang === 'es' ? 'Confirmado' : 'Confirmado'}: {formatDateOnly(currentUser.depositConfirmedAt, 'customer')}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const depositItem = {
+                        id: 'deposit',
+                        productTitle: lang === 'es' ? 'Depósito de garantía' : 'Depósito de garantia',
+                        finalPrice: (currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== 0)
+                          ? currentUser.depositAmount
+                          : (currentUser?.role === 'agent' ? 1000 : 300),
+                        stockNumber: 'deposit'
+                      };
+                      openPaymentModal(depositItem as any);
+                    }}
+                    className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 shadow-sm transition whitespace-nowrap ml-auto"
+                  >
+                    {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -3318,7 +3325,11 @@ export default function Home() {
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] font-semibold text-gray-600 bg-white px-2.5 py-1 rounded-full border shadow-sm">
-                    Stock No: {selectedPaymentItem.stockNumber || '-'}
+                    {selectedPaymentItem.stockNumber === 'deposit' ? (
+                      lang === 'es' ? 'Garantía' : 'Garantia'
+                    ) : (
+                      `Stock No: ${selectedPaymentItem.stockNumber || '-'}`
+                    )}
                   </span>
                 </div>
               </div>
