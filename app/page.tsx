@@ -2167,7 +2167,11 @@ export default function Home() {
                             <h3 className="text-xs font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{request.productTitle}</h3>
                             <div className="text-[11px] text-gray-600 space-y-0.5 w-full">
                               <p className="truncate">
-                                {lang === 'es' ? 'Cliente: ' : 'Cliente: '}
+                                {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
+                                  lang === 'es' ? 'Su AGT: ' : 'Seu AGT: '
+                                ) : (
+                                  'Cliente: '
+                                )}
                                 <span className="font-bold text-gray-900">{request.customerName}</span>
                               </p>
                               {request.productEndTime && (
@@ -2551,7 +2555,11 @@ export default function Home() {
                               <h3 className="text-xs font-semibold mb-1 line-clamp-2 leading-tight">{item.productTitle}</h3>
                               <div className="text-[11px] text-gray-600 space-y-0.5 w-full">
                                 <p className="truncate">
-                                  {lang === 'es' ? 'Cliente: ' : 'Cliente: '}
+                                  {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
+                                    lang === 'es' ? 'Su AGT: ' : 'Seu AGT: '
+                                  ) : (
+                                    'Cliente: '
+                                  )}
                                   <span className="font-bold text-gray-900">{item.customerName}</span>
                                 </p>
                                 <p className="whitespace-nowrap">{lang === 'es' ? 'Fecha:' : 'Data:'} {formatDateTime(item.confirmedAt || '', 'customer')}</p>
@@ -3081,7 +3089,9 @@ export default function Home() {
               <form onSubmit={handleBidRequest} className="space-y-3">
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-gray-700">
-                    {t.yourName}
+                    {(currentUser?.role === 'customer' && currentUser?.agentCustomerId)
+                      ? (lang === 'es' ? 'Su agente' : 'Seu agente')
+                      : t.yourName}
                   </label>
                   <input
                     type="text"

@@ -1072,7 +1072,9 @@ export default function AdminDashboard() {
                         <span className="font-semibold">{request.language === 'es' ? 'スペイン語' : 'ポルトガル語'}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-gray-500">顧客名:</span>
+                        <span className="text-gray-500">
+                          {request.customerId?.startsWith('C') ? 'エージェント名:' : '顧客名:'}
+                        </span>
                         <span className="font-semibold truncate">{request.customerName}</span>
                       </div>
                       <div className="flex flex-col">
