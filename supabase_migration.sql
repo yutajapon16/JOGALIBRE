@@ -78,3 +78,11 @@ FOR SELECT
 TO authenticated
 USING (auth.uid() = id);
 
+-- 10. エージェント情報の SELECT を全認証ユーザーに許可する RLS ポリシー
+-- 顧客が自分自身に紐づくエージェントの氏名（full_name）を安全に取得できるようにするためのポリシーです。
+DROP POLICY IF EXISTS "Allow select agent profiles for all authenticated users" ON user_roles;
+CREATE POLICY "Allow select agent profiles for all authenticated users"
+ON user_roles
+FOR SELECT
+TO authenticated
+USING (role = 'agent');

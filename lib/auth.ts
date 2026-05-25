@@ -211,10 +211,11 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       let agentFullName = undefined;
       if (roleData?.agent_customer_id) {
         try {
+          const cleanAgentId = roleData.agent_customer_id.trim().toUpperCase();
           const { data: agentData } = await supabase
             .from('user_roles')
             .select('full_name')
-            .eq('customer_id', roleData.agent_customer_id)
+            .eq('customer_id', cleanAgentId)
             .eq('role', 'agent')
             .maybeSingle();
           if (agentData) {

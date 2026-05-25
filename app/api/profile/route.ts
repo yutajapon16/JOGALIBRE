@@ -67,10 +67,11 @@ export async function GET(request: Request) {
         // エージェントIDが設定されている場合は、そのエージェントの氏名も取得する
         let agentFullName = null;
         if (roleData.agent_customer_id) {
+            const cleanAgentId = roleData.agent_customer_id.trim().toUpperCase();
             const { data: agentData } = await supabaseAdmin
                 .from('user_roles')
                 .select('full_name')
-                .eq('customer_id', roleData.agent_customer_id)
+                .eq('customer_id', cleanAgentId)
                 .eq('role', 'agent')
                 .maybeSingle();
             
@@ -108,6 +109,7 @@ export async function POST(request: Request) {
 
         const body = await request.json();
         const { fullName, whatsapp, address, zipCode, agentCustomerId } = body;
+        const cleanAgentCustomerId = agentCustomerId ? agentCustomerId.trim().toUpperCase() : null;
 
         // 既存のロールと国名を取得（国名は更新しないため、引き継ぐ）
         const { data: existingData } = await supabaseAdmin
@@ -131,7 +133,7 @@ export async function POST(request: Request) {
                 zip_code: zipCode,
                 country: currentCountry, // 国名は変更不可なので引き継ぐ
                 role: currentRole, // 既存のロールを引き継ぐ、無い場合はcustomer
-                agent_customer_id: agentCustomerId || null
+                agent_customer_id: cleanAgentCustomerId
             }, {
                 onConflict: 'id'
             })
@@ -146,7 +148,7 @@ export async function POST(request: Request) {
         // ついでに User Metadata の方も更新しておく (supabaseAdminなら可能)
         const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(
             user.id,
-            { user_metadata: { full_name: fullName, whatsapp: whatsapp, address: address, zip_code: zipCode, agent_customer_id: agentCustomerId || null } }
+            { user_metadata: { full_name: fullName, whatsapp: whatsapp, address: address, zip_code: zipCode, agent_customer_id: cleanAgentCustomerId } }
         );
 
         if (updateAuthError) {
@@ -156,10 +158,11 @@ export async function POST(request: Request) {
         // エージェントIDが設定されている場合は、そのエージェントの氏名も取得する
         let agentFullName = null;
         if (roleData && roleData.agent_customer_id) {
+            const cleanAgentId = roleData.agent_customer_id.trim().toUpperCase();
             const { data: agentData } = await supabaseAdmin
                 .from('user_roles')
                 .select('full_name')
-                .eq('customer_id', roleData.agent_customer_id)
+                .eq('customer_id', cleanAgentId)
                 .eq('role', 'agent')
                 .maybeSingle();
             

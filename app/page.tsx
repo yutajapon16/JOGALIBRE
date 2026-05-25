@@ -218,6 +218,33 @@ const translations = {
   }
 };
 
+const bankLabels = {
+  es: {
+    name: 'NOMBRE DE BANCO',
+    sucursal: 'SUCURSAL',
+    swift: 'CODIGO SWIFT',
+    address_bank: 'DIRECCION DE BANCO',
+    account_number: 'NUMERO DE CUENTA',
+    account_name: 'NOMBRE DE CUENTA',
+    address_joga: 'DIRECCION',
+    telefono: 'TELEFONO',
+    intermediary_bank: 'BANCO INTERMEDIARIO',
+    intermediary_swift: 'SWIFT INTERMEDIARIO'
+  },
+  pt: {
+    name: 'NOME DO BANCO',
+    sucursal: 'AGÊNCIA',
+    swift: 'CÓDIGO SWIFT',
+    address_bank: 'ENDEREÇO DO BANCO',
+    account_number: 'NÚMERO DA CONTA',
+    account_name: 'NOME DA CONTA',
+    address_joga: 'ENDEREÇO',
+    telefono: 'TELEFONE',
+    intermediary_bank: 'BANCO INTERMEDIÁRIO',
+    intermediary_swift: 'SWIFT INTERMEDIÁRIO'
+  }
+};
+
 interface Category {
   id: string;
   es: string;
@@ -375,6 +402,7 @@ export default function Home() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const [termsChecked, setTermsChecked] = useState({
     item1: false,
     item2: false,
@@ -492,11 +520,13 @@ export default function Home() {
       fetchUserProfile();
       const interval = setInterval(fetchUnreadCount, 60000);
       return () => clearInterval(interval);
+    } else {
+      setIsProfileLoaded(false);
     }
   }, [currentUser?.id]);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && isProfileLoaded) {
       if (currentUser.termsAcceptedAt === null || currentUser.termsAcceptedAt === undefined) {
         setShowTermsModal(true);
       } else {
@@ -505,7 +535,7 @@ export default function Home() {
     } else {
       setShowTermsModal(false);
     }
-  }, [currentUser?.termsAcceptedAt, currentUser?.id]);
+  }, [currentUser?.termsAcceptedAt, currentUser?.id, isProfileLoaded]);
 
   const fetchNotifications = async () => {
     if (!currentUser) return;
@@ -717,6 +747,8 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+    } finally {
+      setIsProfileLoaded(true);
     }
   };
 
@@ -2118,7 +2150,7 @@ export default function Home() {
                   })
                   .map((request) => (
                     <div key={request.id} className="border rounded-lg p-4">
-                      <div className="flex gap-4 mb-3">
+                      <div className="flex gap-4 mb-2">
                         {request.productImage && (
                           <div className="relative w-32 h-32 flex-shrink-0">
                             <Image
@@ -2130,49 +2162,55 @@ export default function Home() {
                             />
                           </div>
                         )}
-                        <div className="flex-1 min-h-[128px] flex flex-col py-0.5 min-w-0">
-                          <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{request.productTitle}</h3>
+                        <div className="flex-1 h-32 flex flex-col justify-between py-0.5 min-w-0 overflow-hidden">
                           <div className="flex flex-col gap-0.5">
-                            <div className="text-xs">
-                              <span className="text-gray-600">{lang === 'es' ? 'Cliente: ' : 'Cliente: '}</span>
-                              <span className="font-semibold">{request.customerName}</span>
-                            </div>
-                            <p className="text-xs text-gray-600">
-                              {t.maxBid}: <span className="font-bold text-blue-600">${Math.round(request.maxBid || 0).toLocaleString('en-US')}</span>
-                            </p>
-                            {request.productEndTime && (
-                              <p className="text-[10px] text-gray-500">
-                                {t.endsIn}: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, lang)}</span>
+                            <h3 className="text-xs font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{request.productTitle}</h3>
+                            <div className="text-[11px] text-gray-600 space-y-0.5 w-full">
+                              <p className="truncate">
+                                {lang === 'es' ? 'Cliente: ' : 'Cliente: '}
+                                <span className="font-bold text-gray-900">{request.customerName}</span>
                               </p>
-                            )}
-                          </div>
-                          <div className="flex flex-row flex-wrap gap-1 mt-1">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center ${getStatusColor(request.status)}`}>
-                              {t[request.status as keyof typeof t] || request.status}
-                            </span>
-                            {request.finalStatus && (
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center ${getFinalStatusColor(request.finalStatus)}`}>
-                                {t[request.finalStatus as keyof typeof t]}
-                              </span>
-                            )}
-                            {request.adminNeedsConfirm && (
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center bg-red-100 text-red-800`}>
-                                {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
-                              </span>
-                            )}
+                              {request.productEndTime && (
+                                <p className="whitespace-nowrap">
+                                  {t.endsIn}: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, lang)}</span>
+                                </p>
+                              )}
+                              <div className="flex flex-row gap-1 mt-1 flex-nowrap overflow-x-auto">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center whitespace-nowrap shrink-0 ${getStatusColor(request.status)}`}>
+                                  {t[request.status as keyof typeof t] || request.status}
+                                </span>
+                                {request.finalStatus && (
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center whitespace-nowrap shrink-0 ${getFinalStatusColor(request.finalStatus)}`}>
+                                    {t[request.finalStatus as keyof typeof t]}
+                                  </span>
+                                )}
+                                {request.adminNeedsConfirm && (
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center whitespace-nowrap shrink-0 bg-red-100 text-red-800`}>
+                                    {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
 
-                          <div className="flex flex-col gap-2 w-full mt-auto pt-2">
+                          <div className="w-full mt-auto pt-1">
                             <a
                               href={request.productUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
+                              className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-2 block w-full"
                             >
                               {t.viewOnYahoo}
                             </a>
                           </div>
                         </div>
+                      </div>
+
+                      <div className="mb-2 p-3 bg-gray-50 rounded-lg flex items-baseline gap-1">
+                        <span className="text-xs text-gray-500">{t.maxBid}:</span>
+                        <span className="text-lg font-bold text-indigo-600 leading-none">
+                          ${Math.round(request.maxBid || 0).toLocaleString('en-US')}
+                        </span>
                       </div>
 
                       {request.status === 'rejected' && !request.customerCounterOffer && (
@@ -2508,52 +2546,58 @@ export default function Home() {
                               />
                             </div>
                           )}
-                          <div className="flex-1 min-w-0 flex flex-col justify-between items-start">
-                            <h3 className="text-sm font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{item.productTitle}</h3>
-                            <div className="text-xs text-gray-600 mb-2 mt-1 space-y-0.5 w-full">
-                              <p><span className="font-semibold text-gray-800">{lang === 'es' ? 'Cliente:' : 'Cliente:'} {item.customerName}</span></p>
-                              <p>{t.confirmedDate}: {formatDateTime(item.confirmedAt || '', 'customer')}</p>
-                              {item.stockNumber && (
-                                <p className="mt-1 font-bold text-gray-900 bg-gray-50 px-2 py-0.5 rounded border inline-block text-[11px]">
-                                  Stock No: {item.stockNumber}
+                          <div className="flex-1 min-w-0 h-32 flex flex-col justify-between py-0.5 overflow-hidden">
+                            <div>
+                              <h3 className="text-xs font-semibold mb-1 line-clamp-2 leading-tight">{item.productTitle}</h3>
+                              <div className="text-[11px] text-gray-600 space-y-0.5 w-full">
+                                <p className="truncate">
+                                  {lang === 'es' ? 'Cliente: ' : 'Cliente: '}
+                                  <span className="font-bold text-gray-900">{item.customerName}</span>
                                 </p>
-                              )}
+                                <p className="whitespace-nowrap">{lang === 'es' ? 'Fecha:' : 'Data:'} {formatDateTime(item.confirmedAt || '', 'customer')}</p>
+                                {item.stockNumber && (
+                                  <p className="font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded border inline-block text-[10px] mt-0.5">
+                                    Stock No: {item.stockNumber}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex flex-col gap-2 w-full mt-auto">
+                            <div className="w-full">
                               <a
                                 href={item.productUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
+                                className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-2 block w-full"
                               >
                                 {t.viewOnYahoo}
                               </a>
-                              {!item.paid && (
-                                <button
-                                  onClick={() => openPaymentModal(item)}
-                                  className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-2 block w-full shadow-sm transition"
-                                >
-                                  {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
-                                </button>
-                              )}
                             </div>
                           </div>
                         </div>
 
-                        <div className="text-right pt-3 border-t">
-                          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
-                            {item.paid && (
+                        <div className="pt-3 border-t flex items-center justify-between gap-2">
+                          <div>
+                            {!item.paid ? (
+                              <button
+                                onClick={() => openPaymentModal(item)}
+                                className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 shadow-sm transition whitespace-nowrap"
+                              >
+                                {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
+                              </button>
+                            ) : (
                               <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full whitespace-nowrap shrink-0">
+                                  ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
+                                </span>
                                 {item.paidAt && (
                                   <span className="text-[11px] font-bold text-gray-600 whitespace-nowrap">
                                     {formatDateTime(item.paidAt, 'customer')}
                                   </span>
                                 )}
-                                <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full whitespace-nowrap shrink-0">
-                                  ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
-                                </span>
                               </div>
                             )}
+                          </div>
+                          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
                             <p className={`text-lg sm:text-xl font-bold whitespace-nowrap shrink-0 ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
                               ${Math.round(
                                 item.finalPrice ||
@@ -2575,17 +2619,15 @@ export default function Home() {
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myPage}</h2>
 
             {/* 保証金情報 (Deposit Info) */}
-            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/80 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1">
-                  {lang === 'es' ? 'Garantía de Depósito' : 'Garantia de Depósito'}
-                </p>
-                <p className="text-lg font-bold text-gray-800">
+            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/80 shadow-sm">
+              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-2">
+                {lang === 'es' ? 'Garantía' : 'Garantia'}
+              </p>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl font-bold text-gray-800 leading-none">
                   ${currentUser?.depositAmount !== undefined ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 500 : 100)}
-                </p>
-              </div>
-              <div className="text-right">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                </span>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ml-auto ${
                   currentUser?.depositConfirmedAt 
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-yellow-100 text-yellow-800'
@@ -3043,8 +3085,16 @@ export default function Home() {
                   </label>
                   <input
                     type="text"
-                    value={bidForm.name}
-                    onChange={(e) => setBidForm({ ...bidForm, name: e.target.value })}
+                    value={
+                      (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
+                        ? (currentUser?.agentFullName || '')
+                        : bidForm.name
+                    }
+                    onChange={(e) => {
+                      if (!(currentUser?.role === 'customer' && currentUser?.agentCustomerId)) {
+                        setBidForm({ ...bidForm, name: e.target.value });
+                      }
+                    }}
                     readOnly={!!(currentUser?.role === 'customer' && currentUser?.agentCustomerId)}
                     className={`w-full border border-gray-300 rounded-lg px-4 py-3 text-base shadow-sm focus:ring-2 focus:ring-indigo-500 font-bold placeholder:text-gray-300 placeholder:font-normal ${
                       (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
@@ -3345,16 +3395,16 @@ export default function Home() {
                         return (
                           <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-xs space-y-2.5">
                             {[
-                              { label: 'NOMBRE DE BANCO', value: bankData.name },
-                              { label: 'SUCURSAL', value: bankData.sucursal },
-                              { label: 'CODIGO SWIFT', value: bankData.swift },
-                              { label: 'DIRECCION DE BANCO', value: bankData.address_bank },
-                              { label: 'NUMERO DE CUENTA', value: bankData.account_number },
-                              { label: 'NOMBRE DE CUENTA', value: bankData.account_name },
-                              { label: 'DIRECCION', value: bankData.address_joga },
-                              { label: 'TELEFONO', value: bankData.telefono },
-                              { label: 'BANCO INTERMEDIARIO', value: bankData.intermediary_bank },
-                              { label: 'SWIFT INTERMEDIARIO', value: bankData.intermediary_swift }
+                              { label: bankLabels[lang].name, value: bankData.name },
+                              { label: bankLabels[lang].sucursal, value: bankData.sucursal },
+                              { label: bankLabels[lang].swift, value: bankData.swift },
+                              { label: bankLabels[lang].address_bank, value: bankData.address_bank },
+                              { label: bankLabels[lang].account_number, value: bankData.account_number },
+                              { label: bankLabels[lang].account_name, value: bankData.account_name },
+                              { label: bankLabels[lang].address_joga, value: bankData.address_joga },
+                              { label: bankLabels[lang].telefono, value: bankData.telefono },
+                              { label: bankLabels[lang].intermediary_bank, value: bankData.intermediary_bank },
+                              { label: bankLabels[lang].intermediary_swift, value: bankData.intermediary_swift }
                             ].map((row, idx) => {
                               if (!row.value) return null;
                               return (

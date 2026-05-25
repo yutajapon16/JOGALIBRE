@@ -80,20 +80,22 @@ export async function GET(request: Request) {
     }
 
     // 3. インメモリ集計の準備
-    // 顧客ID (customer_id / A001 等) からのリクエストマップを作成
+    // メールアドレス (customer_email) からのリクエストマップを作成
     const userRequestsMap = new Map<string, typeof requests>();
     requests.forEach(req => {
-      // customer_id がある場合は customer_id でマッピング、なければ id (uuid)
-      const key = req.customer_id || req.id; 
-      if (!userRequestsMap.has(key)) {
-        userRequestsMap.set(key, []);
+      const key = req.customer_email ? req.customer_email.trim().toLowerCase() : null; 
+      if (key) {
+        if (!userRequestsMap.has(key)) {
+          userRequestsMap.set(key, []);
+        }
+        userRequestsMap.get(key)!.push(req);
       }
-      userRequestsMap.get(key)!.push(req);
     });
 
     // 4. 各ユーザーの集計
     const compiledUsers = users.map(u => {
-      const userReqs = userRequestsMap.get(u.customer_id) || [];
+      const emailKey = u.email ? u.email.trim().toLowerCase() : '';
+      const userReqs = emailKey ? (userRequestsMap.get(emailKey) || []) : [];
       
       const unpaidCount = userReqs.filter(r => !r.paid).length;
       const unpaidAmount = userReqs.filter(r => !r.paid).reduce((sum, r) => sum + (r.final_price || 0), 0);
@@ -107,6 +109,7 @@ export async function GET(request: Request) {
         role: u.role,
         fullName: u.full_name,
         whatsapp: u.whatsapp,
+        country: u.country,
         customerId: u.customer_id,
         agentCustomerId: u.agent_customer_id,
         depositAmount: Number(u.deposit_amount || 0),
@@ -138,7 +141,11 @@ export async function GET(request: Request) {
         unpaidAmount,
         paidCount,
         paidAmount,
-        customersCount: subCustomers.length
+        customersCount: subCustomers.length,
+        selfUnpaidCount: agent.unpaidCount,
+        selfUnpaidAmount: agent.unpaidAmount,
+        selfPaidCount: agent.paidCount,
+        selfPaidAmount: agent.paidAmount
       };
     });
 

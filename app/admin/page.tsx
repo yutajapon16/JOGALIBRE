@@ -51,6 +51,7 @@ export default function AdminDashboard() {
     depositConfirmed: false,
     agentCustomerId: ''
   });
+  const [editingStockItem, setEditingStockItem] = useState<{ id: string; title: string; stockNumber: string } | null>(null);
 
   const fetchUsersData = async () => {
     setLoadingUsers(true);
@@ -456,7 +457,8 @@ export default function AdminDashboard() {
         confirmedAt: item.customer_confirmed_at || item.created_at,  // 顧客が確認ボタンを押した日時
         paidAt: item.paid_at,
         paid: item.paid || false,
-        stockNumber: item.stock_number as string
+        stockNumber: item.stock_number as string,
+        customerId: item.customer_id as string
       }));
 
       setPurchasedItems(convertedItems);
@@ -638,6 +640,36 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error updating paid status:', error);
     }
+  };
+
+  const updateStockNumber = async (id: string, stockNumber: string) => {
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/bid-request', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({ id, stockNumber: stockNumber.trim() || null })
+      });
+
+      if (res.ok) {
+        fetchPurchasedItems();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`在庫番号の更新に失敗しました: ${err.error || ''}`);
+      }
+    } catch (error) {
+      console.error('Error updating stock number:', error);
+      alert('通信エラーが発生しました。');
+    }
+  };
+
+  const handleUpdateStockNumber = (id: string, title: string, currentStockNumber: string) => {
+    setEditingStockItem({ id, title, stockNumber: currentStockNumber || '' });
   };
 
   const handleReject = () => {
@@ -964,7 +996,7 @@ export default function AdminDashboard() {
                 })
                 .map((request) => (
                   <div key={request.id} className="bg-white rounded-lg shadow-md p-3 sm:p-4">
-                    <div className="flex gap-4 mb-3">
+                    <div className="flex gap-4 mb-2">
                       {request.productImage && (
                         <div className="relative w-32 h-32 flex-shrink-0">
                           <Image
@@ -977,7 +1009,7 @@ export default function AdminDashboard() {
                         </div>
                       )}
 
-                      <div className="flex-1 flex flex-col justify-between min-h-[128px] py-0.5 overflow-hidden">
+                      <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
                         <div className="flex flex-col gap-0.5">
                           <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{request.productTitle}</h3>
                           {request.productEndTime && (
@@ -985,30 +1017,24 @@ export default function AdminDashboard() {
                               終了まで: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, 'ja')}</span>
                             </p>
                           )}
-                          <div className="flex flex-wrap items-center gap-1 mt-1">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getStatusColor(request.status)}`}>
+                          <div className="flex flex-row items-center gap-1 mt-1 flex-nowrap overflow-x-auto">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getStatusColor(request.status)}`}>
                               {getStatusText(request.status)}
                             </span>
                             {request.finalStatus && (
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getFinalStatusColor(request.finalStatus)}`}>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getFinalStatusColor(request.finalStatus)}`}>
                                 {getFinalStatusText(request.finalStatus)}
                               </span>
                             )}
                             {request.adminNeedsConfirm && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-800">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
                                 却下
                               </span>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex flex-col gap-2 w-full mt-auto pt-2">
-                          <div className="text-left flex items-baseline gap-1 mb-1">
-                            <span className="text-xs text-gray-500">希望入札額:</span>
-                            <span className="text-lg font-bold text-indigo-600 leading-none">
-                              ${Math.round(request.maxBid || 0).toLocaleString('en-US')}
-                            </span>
-                          </div>
+                        <div className="w-full mt-auto">
                           <a
                             href={request.productUrl}
                             target="_blank"
@@ -1021,18 +1047,25 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 p-3 bg-gray-50 rounded-lg text-xs">
+                    <div className="mb-2 p-3 bg-gray-50 rounded-lg flex items-baseline gap-1">
+                      <span className="text-xs text-gray-500">希望入札額:</span>
+                      <span className="text-lg font-bold text-indigo-600 leading-none">
+                        ${Math.round(request.maxBid || 0).toLocaleString('en-US')}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 p-3 bg-gray-50 rounded-lg text-xs mb-2">
                       <div className="flex flex-col">
-                        <span className="text-gray-500">氏名:</span>
-                        <span className="font-semibold truncate">{request.customerFullName || request.customerName}</span>
+                        <span className="text-gray-500">ID:</span>
+                        <span className="font-semibold truncate">{request.customerId}</span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-gray-500">WhatsApp:</span>
                         <span className="font-semibold truncate">{request.customerWhatsapp || '未登録'}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-gray-500">メール:</span>
-                        <span className="font-semibold break-all line-clamp-1">{request.customerEmail}</span>
+                        <span className="text-gray-500">氏名:</span>
+                        <span className="font-semibold truncate">{request.customerFullName || request.customerName}</span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-gray-500">言語:</span>
@@ -1273,26 +1306,36 @@ export default function AdminDashboard() {
                               />
                             </div>
                           )}
-                          <div className="flex-1 flex flex-col justify-between min-h-[128px] py-0.5 overflow-hidden">
-                            <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{item.productTitle}</h3>
-                            <div className="text-xs text-gray-600 mb-2 mt-1 space-y-0.5">
-                              <p><span className="font-semibold text-gray-800">顧客名: {item.customerName}</span></p>
-                              <p className="flex flex-col">
-                                <span>確認日時:</span>
+                          <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
+                            <h3 className="text-xs font-semibold mb-1 line-clamp-2 leading-tight">{item.productTitle}</h3>
+                            <div className="text-[10px] text-gray-600 mb-1 space-y-0.5">
+                              <p className="truncate"><span className="font-semibold text-gray-800">顧客名: {item.customerName}</span></p>
+                              <p className="whitespace-nowrap truncate">
+                                <span className="font-semibold text-gray-800">確認日時:</span>{' '}
                                 <span>{formatDateTime(item.confirmedAt || '')}</span>
                               </p>
-                              {item.stockNumber && (
-                                <p className="mt-1 font-bold text-gray-900 bg-gray-50 px-2 py-0.5 rounded border inline-block text-[11px] self-start">
-                                  Stock No: {item.stockNumber}
-                                </p>
-                              )}
+                              <div className="flex items-center gap-1.5 mt-1 whitespace-nowrap overflow-hidden">
+                                {item.stockNumber ? (
+                                  <span className="font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded border text-[9px] shrink-0">
+                                    Stock No: {item.stockNumber}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 text-[10px] shrink-0">在庫番号なし</span>
+                                )}
+                                <button
+                                  onClick={() => handleUpdateStockNumber(item.id, item.productTitle, item.stockNumber || '')}
+                                  className="text-[10px] text-indigo-600 hover:text-indigo-800 underline font-medium shrink-0"
+                                >
+                                  {item.stockNumber ? '編集' : '追加'}
+                                </button>
+                              </div>
                             </div>
-                            <div className="flex flex-col gap-2 w-full mt-auto">
+                            <div className="flex flex-col w-full mt-auto">
                               <a
                                 href={item.productUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
+                                className="text-center text-[10px] text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-2 block w-full"
                               >
                                 ヤフオクURL
                               </a>
@@ -1302,16 +1345,16 @@ export default function AdminDashboard() {
 
                         <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-gray-50 rounded text-xs sm:text-sm">
                           <div>
-                            <p className="text-gray-600">氏名</p>
-                            <p className="font-semibold">{item.customerFullName || item.customerName}</p>
+                            <p className="text-gray-600">ID</p>
+                            <p className="font-semibold">{item.customerId}</p>
                           </div>
                           <div>
                             <p className="text-gray-600">WhatsApp</p>
                             <p className="font-semibold">{item.customerWhatsapp || '未登録'}</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">メール</p>
-                            <p className="font-semibold break-all">{item.customerEmail}</p>
+                            <p className="text-gray-600">氏名</p>
+                            <p className="font-semibold">{item.customerFullName || item.customerName}</p>
                           </div>
                           <div>
                             <p className="text-gray-600">言語</p>
@@ -1319,8 +1362,8 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                        <div className="text-right pt-3 border-t">
-                          <div className="flex items-center justify-between mb-2">
+                        <div className="pt-3 border-t flex items-center justify-between">
+                          <div className="flex items-center gap-3">
                             <label className="flex items-center cursor-pointer">
                               <input
                                 type="checkbox"
@@ -1330,22 +1373,15 @@ export default function AdminDashboard() {
                               />
                               <span className="text-sm font-semibold text-gray-700">支払済</span>
                             </label>
-                            <p className={`text-xl sm:text-2xl font-bold ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                              ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
-                            </p>
-                          </div>
-                          {item.paid && (
-                            <div className="flex justify-end items-center gap-2 mt-1">
-                              {item.paidAt && (
-                                <span className="text-xs font-semibold text-gray-500">
-                                  {formatDateTime(item.paidAt)}
-                                </span>
-                              )}
-                              <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                                ✓ 支払済
+                            {item.paid && item.paidAt && (
+                              <span className="text-xs text-gray-500 whitespace-nowrap">
+                                {formatDateTime(item.paidAt)}
                               </span>
-                            </div>
-                          )}
+                            )}
+                          </div>
+                          <p className={`text-xl sm:text-2xl font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                            ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -1389,33 +1425,17 @@ export default function AdminDashboard() {
             </div>
 
             {/* サマリーカード */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6 font-sans">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 font-sans">
               <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">顧客総数</p>
-                <p className="text-2xl font-bold mt-1">{customersList.length} 名</p>
-              </div>
-              <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">未入金総額</p>
-                <p className="text-2xl font-bold mt-1">
-                  ${Math.round(customersList.reduce((sum, c) => sum + c.unpaidAmount, 0)).toLocaleString('en-US')}
-                </p>
-                <p className="text-[10px] opacity-80 mt-1">
-                  ({customersList.reduce((sum, c) => sum + c.unpaidCount, 0)} 件のリクエスト)
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">入金済総額</p>
-                <p className="text-2xl font-bold mt-1">
-                  ${Math.round(customersList.reduce((sum, c) => sum + c.paidAmount, 0)).toLocaleString('en-US')}
-                </p>
-                <p className="text-[10px] opacity-80 mt-1">
-                  ({customersList.reduce((sum, c) => sum + c.paidCount, 0)} 件のリクエスト)
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">保証金確認済</p>
+                <p className="text-xs opacity-80 font-medium">保証金確認済 / 登録顧客数</p>
                 <p className="text-2xl font-bold mt-1">
                   {customersList.filter(c => c.depositConfirmedAt).length} / {customersList.length} 名
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-4 rounded-xl text-white shadow-md">
+                <p className="text-xs opacity-80 font-medium">未入金総額 / 入金済総額</p>
+                <p className="text-2xl font-bold mt-1">
+                  ${Math.round(customersList.reduce((sum, c) => sum + c.unpaidAmount, 0)).toLocaleString('en-US')} / ${Math.round(customersList.reduce((sum, c) => sum + c.paidAmount, 0)).toLocaleString('en-US')}
                 </p>
               </div>
             </div>
@@ -1429,28 +1449,52 @@ export default function AdminDashboard() {
                 <table className="min-w-full divide-y divide-gray-200 text-sm font-sans">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">顧客ID / 氏名</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">連絡先 (WhatsApp/Email)</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">担当エージェント</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">利用規約同意日</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">保証金ステータス</th>
-                      <th className="px-4 py-3 text-right font-semibold text-gray-600">未入金 (件数)</th>
-                      <th className="px-4 py-3 text-right font-semibold text-gray-600">入金済 (件数)</th>
-                      <th className="px-4 py-3 text-center font-semibold text-gray-600">操作</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">ID / 氏名</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">国名</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">WhatsApp</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">担当AGT</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">規約同意</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">保証金</th>
+                      <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">未入金</th>
+                      <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">入金済</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {customersList.map((customer) => (
                       <tr key={customer.id} className="hover:bg-gray-50 transition">
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap text-left">
                           <div className="font-bold text-gray-900">{customer.customerId}</div>
                           <div className="text-xs text-gray-500">{customer.fullName}</div>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="text-gray-900 font-medium">{customer.whatsapp || 'WhatsApp未登録'}</div>
-                          <div className="text-xs text-gray-500 break-all">{customer.email}</div>
+                        <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
+                          {customer.country || '—'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-gray-700 font-medium">
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          {customer.whatsapp ? (
+                            <a
+                              href={`https://wa.me/${customer.whatsapp.replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center bg-[#25D366] hover:bg-[#128C7E] text-white w-8 h-8 rounded-full shadow-sm transition"
+                              title="WhatsApp"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                className="w-4 h-4"
+                              >
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                              </svg>
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-gray-700 font-medium text-center">
                           {customer.agentCustomerId ? (
                             <span className="inline-block px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-semibold">
                               👔 {customer.agentCustomerId}
@@ -1459,19 +1503,19 @@ export default function AdminDashboard() {
                             <span className="text-gray-400 text-xs">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
+                        <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600 text-center">
                           {customer.termsAcceptedAt ? (
                             <span>{formatDateOnly(customer.termsAcceptedAt)}</span>
                           ) : (
                             <span className="text-red-500 font-medium">未同意</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          <div className="flex items-center justify-center gap-2">
                             <span className="font-bold text-gray-900">${customer.depositAmount}</span>
                             {customer.depositConfirmedAt ? (
                               <span className="inline-block px-2 py-0.5 bg-green-100 text-green-800 rounded text-[10px] font-semibold">
-                                確認済 ({formatDateOnly(customer.depositConfirmedAt)})
+                                確認済
                               </span>
                             ) : (
                               <span className="inline-block px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-[10px] font-semibold">
@@ -1531,33 +1575,23 @@ export default function AdminDashboard() {
             </div>
 
             {/* サマリーカード */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6 font-sans">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 font-sans">
               <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">エージェント総数</p>
-                <p className="text-2xl font-bold mt-1">{agentsList.length} 名</p>
+                <p className="text-xs opacity-80 font-medium">保証金確認済 / 登録エージェント数</p>
+                <p className="text-2xl font-bold mt-1">
+                  {agentsList.filter(a => a.depositConfirmedAt).length} / {agentsList.length} 名
+                </p>
               </div>
               <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">傘下顧客の未入金総額</p>
+                <p className="text-xs opacity-80 font-medium">未入金総額 / 入金済総額（管理顧客分）</p>
                 <p className="text-2xl font-bold mt-1">
-                  ${Math.round(agentsList.reduce((sum, a) => sum + a.unpaidAmount, 0)).toLocaleString('en-US')}
-                </p>
-                <p className="text-[10px] opacity-80 mt-1">
-                  ({agentsList.reduce((sum, a) => sum + a.unpaidCount, 0)} 件のリクエスト)
+                  ${Math.round(agentsList.reduce((sum, a) => sum + a.unpaidAmount, 0)).toLocaleString('en-US')} / ${Math.round(agentsList.reduce((sum, a) => sum + a.paidAmount, 0)).toLocaleString('en-US')}
                 </p>
               </div>
               <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">傘下顧客の入金済総額</p>
+                <p className="text-xs opacity-80 font-medium">未入金総額 / 入金済総額（エージェント分）</p>
                 <p className="text-2xl font-bold mt-1">
-                  ${Math.round(agentsList.reduce((sum, a) => sum + a.paidAmount, 0)).toLocaleString('en-US')}
-                </p>
-                <p className="text-[10px] opacity-80 mt-1">
-                  ({agentsList.reduce((sum, a) => sum + a.paidCount, 0)} 件のリクエスト)
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">保証金確認済</p>
-                <p className="text-2xl font-bold mt-1">
-                  {agentsList.filter(a => a.depositConfirmedAt).length} / {agentsList.length} 名
+                  ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfUnpaidAmount || 0), 0)).toLocaleString('en-US')} / ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfPaidAmount || 0), 0)).toLocaleString('en-US')}
                 </p>
               </div>
             </div>
@@ -1571,40 +1605,67 @@ export default function AdminDashboard() {
                 <table className="min-w-full divide-y divide-gray-200 text-sm font-sans">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">エージェントID / 氏名</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">連絡先 (WhatsApp/Email)</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">利用規約同意日</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">保証金ステータス</th>
-                      <th className="px-4 py-3 text-center font-semibold text-gray-600">傘下顧客数</th>
-                      <th className="px-4 py-3 text-right font-semibold text-gray-600">傘下未入金 (件数)</th>
-                      <th className="px-4 py-3 text-right font-semibold text-gray-600">傘下入金済 (件数)</th>
-                      <th className="px-4 py-3 text-center font-semibold text-gray-600">操作</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">ID / 氏名</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">国名</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">WhatsApp</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">管理顧客</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">規約同意</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">保証金</th>
+                      <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">未入金</th>
+                      <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">入金済</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {agentsList.map((agent) => (
                       <tr key={agent.id} className="hover:bg-gray-50 transition">
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap text-left">
                           <div className="font-bold text-gray-900">{agent.customerId}</div>
                           <div className="text-xs text-gray-500">{agent.fullName}</div>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="text-gray-900 font-medium">{agent.whatsapp || 'WhatsApp未登録'}</div>
-                          <div className="text-xs text-gray-500 break-all">{agent.email}</div>
+                        <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
+                          {agent.country || '—'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          {agent.whatsapp ? (
+                            <a
+                              href={`https://wa.me/${agent.whatsapp.replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center bg-[#25D366] hover:bg-[#128C7E] text-white w-8 h-8 rounded-full shadow-sm transition"
+                              title="WhatsApp"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                className="w-4 h-4"
+                              >
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                              </svg>
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center font-semibold text-gray-700">
+                          {agent.customersCount} 名
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600 text-center">
                           {agent.termsAcceptedAt ? (
                             <span>{formatDateOnly(agent.termsAcceptedAt)}</span>
                           ) : (
                             <span className="text-red-500 font-medium">未同意</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          <div className="flex items-center justify-center gap-2">
                             <span className="font-bold text-gray-900">${agent.depositAmount}</span>
                             {agent.depositConfirmedAt ? (
                               <span className="inline-block px-2 py-0.5 bg-green-100 text-green-800 rounded text-[10px] font-semibold">
-                                確認済 ({formatDateOnly(agent.depositConfirmedAt)})
+                                確認済
                               </span>
                             ) : (
                               <span className="inline-block px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-[10px] font-semibold">
@@ -1613,20 +1674,17 @@ export default function AdminDashboard() {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-center font-semibold text-gray-700">
-                          {agent.customersCount} 名
-                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-right">
                           <div className="font-bold text-red-600">
-                            ${Math.round(agent.unpaidAmount).toLocaleString('en-US')}
+                            ${Math.round(agent.selfUnpaidAmount || 0).toLocaleString('en-US')}
                           </div>
-                          <div className="text-xs text-gray-500">({agent.unpaidCount} 件)</div>
+                          <div className="text-xs text-gray-500">({agent.selfUnpaidCount || 0} 件)</div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-right">
                           <div className="font-bold text-green-600">
-                            ${Math.round(agent.paidAmount).toLocaleString('en-US')}
+                            ${Math.round(agent.selfPaidAmount || 0).toLocaleString('en-US')}
                           </div>
-                          <div className="text-xs text-gray-500">({agent.paidCount} 件)</div>
+                          <div className="text-xs text-gray-500">({agent.selfPaidCount || 0} 件)</div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center">
                           <button
@@ -1887,6 +1945,53 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
+                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                >
+                  保存
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 在庫番号編集モーダル */}
+      {editingStockItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-gray-100 font-sans" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-4 text-indigo-600">在庫番号の編集</h2>
+            <p className="text-gray-600 mb-4 font-semibold">{editingStockItem.title}</p>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              await updateStockNumber(editingStockItem.id, editingStockItem.stockNumber);
+              setEditingStockItem(null);
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">在庫番号</label>
+                <input
+                  type="text"
+                  value={editingStockItem.stockNumber}
+                  onChange={(e) => setEditingStockItem({ ...editingStockItem, stockNumber: e.target.value })}
+                  placeholder="例: C001S001"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                  autoFocus
+                />
+                <p className="text-[10px] text-gray-500 mt-1">
+                  ※空にすると自動生成（落札時に自動付与される形式）に戻るか、クリアされます
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setEditingStockItem(null)}
                   className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
                 >
                   キャンセル
