@@ -3393,10 +3393,10 @@ export default function Home() {
                           name: "RAKUTEN BANK, LTD.",
                           sucursal: "HEAD OFFICE",
                           swift: "RAKTJPJT",
-                          address_bank: "2-16-5 KONAN, MINATO-KU, TOKYO, JAPAN",
+                          address_bank: "2-16-5 KONAN, MINATO-KU,\nTOKYO, JAPAN",
                           account_number: "252-7951120",
                           account_name: "JOGA INC.",
-                          address_joga: "NINOMIYA CUBE 2A, 2-17-4 NINOMIYA, TSUKUBA, IBARAKI, JAPAN",
+                          address_joga: "NINOMIYA CUBE 2-A,\n2-17-4 NINOMIYA, TSUKUBA,\nIBARAKI, JAPAN",
                           telefono: "+81-298286721",
                           intermediary_bank: "SUMITOMO MITSUI BANKING CORPORATION, TOKYO, JAPAN",
                           intermediary_swift: "SMBCJPJT"
@@ -3404,10 +3404,10 @@ export default function Home() {
                           name: "RAKUTEN BANK, LTD.",
                           sucursal: "HEAD OFFICE",
                           swift: "RAKTJPJT",
-                          address_bank: "2-16-5 KONAN, MINATO-KU, TOKYO, JAPAN",
+                          address_bank: "2-16-5 KONAN, MINATO-KU,\nTOKYO, JAPAN",
                           account_number: "252-7951120",
                           account_name: "JOGA INC.",
-                          address_joga: "NINOMIYA CUBE 2A, 2-17-4 NINOMIYA, TSUKUBA, IBARAKI, JAPAN",
+                          address_joga: "NINOMIYA CUBE 2-A,\n2-17-4 NINOMIYA, TSUKUBA,\nIBARAKI, JAPAN",
                           telefono: "+81-298286721",
                           intermediary_bank: "SUMITOMO MITSUI BANKING CORPORATION, TOKYO, JAPAN",
                           intermediary_swift: "SMBCJPJT"
@@ -3431,7 +3431,7 @@ export default function Home() {
                               return (
                                 <div key={idx} className="flex justify-between items-start gap-3 border-b border-gray-100 pb-2 last:border-0 last:pb-0">
                                   <span className="font-bold text-gray-500 select-none w-[42%] shrink-0">{row.label}:</span>
-                                  <span className="text-gray-900 font-mono text-right w-[58%] break-words">{row.value}</span>
+                                  <span className="text-gray-900 font-mono text-right w-[58%] break-words whitespace-pre-wrap">{row.value}</span>
                                 </div>
                               );
                             })}
@@ -3522,13 +3522,13 @@ export default function Home() {
                                 <p className="font-bold text-gray-500 mb-1">{lang === 'es' ? 'Dirección USDT (TRC-20):' : 'Endereço USDT (TRC-20):'}</p>
                                 <div 
                                   onClick={() => copyToClipboard(usdtData.address, 'usdt_address')}
-                                  className="flex items-center justify-between gap-3 bg-white border border-gray-200 hover:border-indigo-400 rounded-xl p-2.5 cursor-pointer transition group"
+                                  className="flex items-center justify-between gap-2 bg-white border border-gray-200 hover:border-indigo-400 rounded-xl p-2.5 cursor-pointer transition group w-full"
                                   title="Click to Copy"
                                 >
-                                  <span className="font-mono text-gray-900 text-xs tracking-tight select-all truncate max-w-[70%] sm:max-w-none">
+                                  <span className="font-mono text-gray-900 text-[10px] xs:text-[11px] sm:text-xs tracking-tighter select-all whitespace-nowrap overflow-visible flex-1">
                                     {usdtData.address}
                                   </span>
-                                  <span className="shrink-0 text-[10px] font-bold text-indigo-600 bg-indigo-50 group-hover:bg-indigo-100 px-2.5 py-1.5 rounded transition">
+                                  <span className="shrink-0 text-[10px] font-bold text-indigo-600 bg-indigo-50 group-hover:bg-indigo-100 px-2 py-1 rounded transition select-none">
                                     {copiedText === 'usdt_address' 
                                       ? (lang === 'es' ? '✓ Copiado' : '✓ Copiado') 
                                       : (lang === 'es' ? 'Copiar' : 'Copiar')}
