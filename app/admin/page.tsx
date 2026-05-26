@@ -1125,16 +1125,33 @@ export default function AdminDashboard() {
 
                     {request.counterOffer && (
                       <div className="mb-2 p-3 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-gray-600">カウンターオファー:</p>
-                        <p className="font-semibold text-blue-700 text-base">${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</p>
-                        {(request.shippingCostJpy || 0) > 0 && (
-                          <p className="text-xs text-gray-600">送料: ¥{(request.shippingCostJpy || 0).toLocaleString()}</p>
-                        )}
-                        {/* ✓承認済みをここに移動 */}
+                        <div className="flex items-center justify-between text-sm sm:text-base">
+                          <span className="text-gray-700 font-medium">カウンターオファー:</span>
+                          <span className="font-bold text-blue-700">
+                            ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                            {(request.shippingCostJpy || 0) > 0 && (
+                              <span className="text-xs text-gray-500 font-normal ml-1">
+                                (送料: ¥{(request.shippingCostJpy || 0).toLocaleString()})
+                              </span>
+                            )}
+                          </span>
+                        </div>
                         {request.customerCounterOffer && request.customerCounterOfferUsed && (
-                          <p className="text-xs text-green-600 mt-2">✓ 承認済</p>
+                          <p className="text-xs text-green-600 mt-1 text-right">✓ 承認済</p>
                         )}
                       </div>
+                    )}
+
+                    {request.status === 'counter_offer' && !request.customerCounterOffer && (
+                      <button
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setActionType('reject');
+                        }}
+                        className="w-full bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base mb-2"
+                      >
+                        却下 (オファー取り消し)
+                      </button>
                     )}
 
                     {request.customerCounterOffer && (
