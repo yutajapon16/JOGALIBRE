@@ -2487,7 +2487,7 @@ export default function Home() {
                     onChange={(e) => setPurchasedYear(e.target.value)}
                     className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
                   >
-                    <option value="all">{lang === 'es' ? 'Todos los años' : 'Todos os anos'}</option>
+                    <option value="all">{lang === 'es' ? 'Año' : 'Ano'}</option>
                     <option value="2026">2026</option>
                     <option value="2027">2027</option>
                     <option value="2028">2028</option>
@@ -2499,7 +2499,7 @@ export default function Home() {
                     onChange={(e) => setPurchasedMonth(e.target.value)}
                     className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
                   >
-                    <option value="all">{lang === 'es' ? 'Todos los meses' : 'Todos os meses'}</option>
+                    <option value="all">{lang === 'es' ? 'Mes' : 'Mês'}</option>
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                       <option key={m} value={m.toString()}>{m}</option>
                     ))}
