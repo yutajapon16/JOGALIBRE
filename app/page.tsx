@@ -118,6 +118,9 @@ const translations = {
     favoritesTab: 'Favoritos',
     addedToFavorites: 'Añadido a favoritos',
     removedFromFavorites: 'Eliminado de favoritos',
+    condAll: 'Todos',
+    condNew: 'Nuevo',
+    condUsed: 'Usado',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -215,6 +218,9 @@ const translations = {
     favoritesTab: 'Favoritos',
     addedToFavorites: 'Adicionado aos favoritos',
     removedFromFavorites: 'Removido dos favoritos',
+    condAll: 'Todos',
+    condNew: 'Novo',
+    condUsed: 'Usado',
   }
 };
 
@@ -361,6 +367,7 @@ export default function Home() {
   const [searchType, setSearchType] = useState<'url' | 'keyword' | 'categories'>('categories');
   const resultsRef = useRef<HTMLDivElement>(null);
   const [keyword, setKeyword] = useState('');
+  const [searchCondition, setSearchCondition] = useState<'all' | 'new' | 'used'>('all');
   const [isSearching, setIsSearching] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
   const [searchPage, setSearchPage] = useState(1);
@@ -1363,15 +1370,16 @@ export default function Home() {
     }
   };
 
-  const handleKeywordSearch = async (e?: React.FormEvent, page: number = 1) => {
+  const handleKeywordSearch = async (e?: React.FormEvent, page: number = 1, forceCond?: 'all' | 'new' | 'used') => {
     if (e) e.preventDefault();
     if (!keyword.trim()) return;
 
     setIsSearching(true);
     setLoading(true);
     setSearchPage(page);
+    const condToUse = forceCond || searchCondition;
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(keyword)}&lang=${lang}&page=${page}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(keyword)}&lang=${lang}&page=${page}&cond=${condToUse}`);
       const data = await res.json();
       if (data.items) {
         setProducts(data.items);
@@ -3017,6 +3025,48 @@ export default function Home() {
                       className="bg-indigo-600 text-white min-w-[120px] px-6 py-3.5 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm shadow-sm"
                     >
                       {isSearching ? '...' : t.search}
+                    </button>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setSearchCondition('all');
+                        handleKeywordSearch(undefined, 1, 'all');
+                      }}
+                      className={`px-6 py-2.5 rounded-full font-bold text-sm transition ${
+                        searchCondition === 'all'
+                          ? 'bg-indigo-900 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {t.condAll}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSearchCondition('new');
+                        handleKeywordSearch(undefined, 1, 'new');
+                      }}
+                      className={`px-6 py-2.5 rounded-full font-bold text-sm transition ${
+                        searchCondition === 'new'
+                          ? 'bg-indigo-900 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {t.condNew}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSearchCondition('used');
+                        handleKeywordSearch(undefined, 1, 'used');
+                      }}
+                      className={`px-6 py-2.5 rounded-full font-bold text-sm transition ${
+                        searchCondition === 'used'
+                          ? 'bg-indigo-900 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {t.condUsed}
                     </button>
                   </div>
                 </div>

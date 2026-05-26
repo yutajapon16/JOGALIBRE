@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   const lang = searchParams.get('lang') || 'es';
   const urlParam = searchParams.get('url');
   const page = parseInt(searchParams.get('page') || '1');
+  const cond = searchParams.get('cond') || 'all';
 
   // デフォルトは50件。URLパラメータに n= があればそれを優先する
   let itemsPerPage = 50;
@@ -55,7 +56,13 @@ export async function GET(request: Request) {
       }
 
       const start = (page - 1) * itemsPerPage + 1;
-      searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(translatedKeyword)}&va=${encodeURIComponent(translatedKeyword)}&exflg=1&b=${start}&n=${itemsPerPage}&s1=score&o1=d`;
+      let condParam = '';
+      if (cond === 'new') {
+        condParam = '&istatus=1';
+      } else if (cond === 'used') {
+        condParam = '&istatus=2';
+      }
+      searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(translatedKeyword)}&va=${encodeURIComponent(translatedKeyword)}&exflg=1&b=${start}&n=${itemsPerPage}&s1=score&o1=d${condParam}`;
     }
 
     const controllerSearch = new AbortController();
