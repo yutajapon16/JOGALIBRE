@@ -390,7 +390,8 @@ export default function Home() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<'loading' | 'enabled' | 'disabled' | 'unsupported'>('loading');
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
-  const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
+  const [purchasedYear, setPurchasedYear] = useState<string>('all');
+  const [purchasedMonth, setPurchasedMonth] = useState<string>('all');
   const [exchangeRate, setExchangeRate] = useState(150);
   const [showCounterModal, setShowCounterModal] = useState(false);  // ← 追加
   const [selectedRequestForCounter, setSelectedRequestForCounter] = useState<BidRequest | null>(null);  // ← 追加
@@ -1118,16 +1119,22 @@ export default function Home() {
       filtered = filtered.filter(item => item.customerName === selectedCustomer);
     }
 
-    // 期間でフィルタリング
-    if (purchasedPeriod !== 'all') {
-      const now = new Date();
-      const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
-      const days = daysMap[purchasedPeriod as keyof typeof daysMap];
-      const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    // 年でフィルタリング
+    if (purchasedYear !== 'all') {
+      filtered = filtered.filter(item => {
+        if (!item.confirmedAt) return false;
+        const date = new Date(item.confirmedAt);
+        return date.getFullYear().toString() === purchasedYear;
+      });
+    }
 
-      filtered = filtered.filter(item =>
-        new Date(item.confirmedAt || '').getTime() >= cutoffDate.getTime()
-      );
+    // 月でフィルタリング
+    if (purchasedMonth !== 'all') {
+      filtered = filtered.filter(item => {
+        if (!item.confirmedAt) return false;
+        const date = new Date(item.confirmedAt);
+        return (date.getMonth() + 1).toString() === purchasedMonth;
+      });
     }
 
     return filtered;
@@ -2466,7 +2473,7 @@ export default function Home() {
                   <option value="all">{t.allCustomers}</option>
                   {getCustomerList().map(customerName => (
                     <option key={customerName} value={customerName}>
-                      {customerName} - ${Math.round(getCustomerTotal(customerName)).toLocaleString('en-US')}
+                      {customerName}
                     </option>
                   ))}
                 </select>
@@ -2474,16 +2481,30 @@ export default function Home() {
 
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 whitespace-nowrap w-28">{lang === 'es' ? 'Período:' : 'Período:'}</span>
-                <select
-                  value={purchasedPeriod}
-                  onChange={(e) => setPurchasedPeriod(e.target.value as 'all' | '7days' | '30days' | '90days')}
-                  className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
-                >
-                  <option value="all">{lang === 'es' ? 'Todos' : 'Todos'}</option>
-                  <option value="7days">{lang === 'es' ? 'Últimos 7 días' : 'Últimos 7 dias'}</option>
-                  <option value="30days">{lang === 'es' ? 'Últimos 30 días' : 'Últimos 30 dias'}</option>
-                  <option value="90days">{lang === 'es' ? 'Últimos 90 días' : 'Últimos 90 dias'}</option>
-                </select>
+                <div className="flex gap-2 flex-1">
+                  <select
+                    value={purchasedYear}
+                    onChange={(e) => setPurchasedYear(e.target.value)}
+                    className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                  >
+                    <option value="all">{lang === 'es' ? 'Todos los años' : 'Todos os anos'}</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                    <option value="2030">2030</option>
+                  </select>
+                  <select
+                    value={purchasedMonth}
+                    onChange={(e) => setPurchasedMonth(e.target.value)}
+                    className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                  >
+                    <option value="all">{lang === 'es' ? 'Todos los meses' : 'Todos os meses'}</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                      <option key={m} value={m.toString()}>{m}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -2510,32 +2531,37 @@ export default function Home() {
                 </span>
               </a>
             </div>
-            
-            {/* 未払い合計金額サマリー (移動) */}
-            {purchasedItems.length > 0 && (
-              <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100 shadow-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-base sm:text-lg font-bold text-gray-700">
-                    {t.total}{selectedCustomer !== 'all' && ' del cliente'}:
-                  </span>
-                  <span className="text-2xl sm:text-3xl font-black text-indigo-600">
-                    ${Math.round(
-                      getFilteredPurchasedItems()
-                        .filter(item => !item.paid)
-                        .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
-                    ).toLocaleString('en-US')}
-                  </span>
+
+            {/* 未払い合計金額サマリー */}
+            {purchasedItems.length > 0 && (() => {
+              const filteredItemsForSummary = getFilteredPurchasedItems();
+              const unpaidSummaryTotal = filteredItemsForSummary
+                .filter(item => !item.paid)
+                .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+              const summaryTotal = filteredItemsForSummary
+                .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+
+              return (
+                <div className="grid grid-cols-2 gap-3 mb-6 bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
+                  <div className="bg-white border border-red-100 rounded-lg p-3">
+                    <p className="text-[10px] sm:text-xs font-bold text-red-500 uppercase tracking-wider mb-1">
+                      {lang === 'es' ? 'Monto Pendiente' : 'Valor Pendente'}
+                    </p>
+                    <p className="text-xl sm:text-2xl font-black text-red-600">
+                      ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
+                    </p>
+                  </div>
+                  <div className="bg-white border border-indigo-50 rounded-lg p-3">
+                    <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">
+                      {lang === 'es' ? 'Monto Total' : 'Valor Total'}
+                    </p>
+                    <p className="text-xl sm:text-2xl font-black text-indigo-600">
+                      ${Math.round(summaryTotal).toLocaleString('en-US')}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center mt-1 border-t border-indigo-100 pt-2">
-                  <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
-                    {lang === 'es' ? 'Solo productos sin pagar' : 'Apenas produtos não pagos'}
-                  </p>
-                  <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
-                    {lang === 'es' ? 'Pagados: ' : 'Pagos: '}{getFilteredPurchasedItems().filter(item => item.paid).length}
-                  </p>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
 
             {purchasedItems.length === 0 ? (
