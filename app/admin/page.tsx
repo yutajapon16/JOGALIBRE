@@ -110,7 +110,8 @@ export default function AdminDashboard() {
     }
   };
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
-  const [purchasedPeriod, setPurchasedPeriod] = useState<'all' | '7days' | '30days' | '90days'>('all');
+  const [purchasedYear, setPurchasedYear] = useState<string>('all');
+  const [purchasedMonth, setPurchasedMonth] = useState<string>('all');
   const [isSendingNotification, setIsSendingNotification] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<'loading' | 'enabled' | 'disabled' | 'unsupported'>('loading');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -357,21 +358,27 @@ export default function AdminDashboard() {
   const getFilteredPurchasedItems = () => {
     let filtered = purchasedItems;
 
-    // 顧客名でフィルタリング
+    // 顧客IDでフィルタリング
     if (selectedCustomer !== 'all') {
-      filtered = filtered.filter(item => (item.customerFullName || item.customerName) === selectedCustomer);
+      filtered = filtered.filter(item => item.customerId === selectedCustomer);
     }
 
-    // 期間でフィルタリング
-    if (purchasedPeriod !== 'all') {
-      const now = new Date();
-      const daysMap = { '7days': 7, '30days': 30, '90days': 90 };
-      const days = daysMap[purchasedPeriod as keyof typeof daysMap];
-      const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    // 年でフィルタリング
+    if (purchasedYear !== 'all') {
+      filtered = filtered.filter(item => {
+        if (!item.confirmedAt) return false;
+        const date = new Date(item.confirmedAt);
+        return date.getFullYear().toString() === purchasedYear;
+      });
+    }
 
-      filtered = filtered.filter(item =>
-        new Date(item.confirmedAt || '').getTime() >= cutoffDate.getTime()
-      );
+    // 月でフィルタリング
+    if (purchasedMonth !== 'all') {
+      filtered = filtered.filter(item => {
+        if (!item.confirmedAt) return false;
+        const date = new Date(item.confirmedAt);
+        return (date.getMonth() + 1).toString() === purchasedMonth;
+      });
     }
 
     return filtered;
@@ -467,21 +474,19 @@ export default function AdminDashboard() {
     }
   };
 
-  const getCustomerList = () => {
-    const uniqueCustomers = new Map<string, string>();
+  const getCustomerIdList = () => {
+    const uniqueIds = new Set<string>();
     purchasedItems.forEach(item => {
-      const displayName = item.customerFullName || item.customerName;
-      if (!uniqueCustomers.has(displayName)) {
-        uniqueCustomers.set(displayName, displayName);
+      if (item.customerId) {
+        uniqueIds.add(item.customerId);
       }
     });
-    const customerList = Array.from(uniqueCustomers.values()).sort((a, b) => a.localeCompare(b));
-    return customerList;
+    return Array.from(uniqueIds).sort((a, b) => a.localeCompare(b));
   };
 
-  const getCustomerTotal = (customerName: string) => {
+  const getCustomerTotalById = (customerId: string) => {
     return purchasedItems
-      .filter(item => (item.customerFullName || item.customerName) === customerName)
+      .filter(item => item.customerId === customerId)
       .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
   };
 
@@ -860,13 +865,24 @@ export default function AdminDashboard() {
 
             {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
             <div className="flex gap-2">
-              <button
-                onClick={sendWhatsAppNotification}
-                disabled={isSendingNotification}
-                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base disabled:bg-gray-400"
+              <a
+                href="https://web.whatsapp.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center gap-2"
               >
-                {isSendingNotification ? '送信中...' : '📱 WhatsApp'}
-              </button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                </svg>
+                <span>顧客対応</span>
+              </a>
               <button
                 onClick={async () => {
                   if (!currentUser) return;
@@ -1248,33 +1264,51 @@ export default function AdminDashboard() {
 
             <div className="flex flex-col gap-3 mb-6">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 whitespace-nowrap w-28">フィルター:</span>
+                <span className="text-sm text-gray-600 whitespace-nowrap w-28">IDフィルター:</span>
                 <select
                   value={selectedCustomer}
                   onChange={(e) => setSelectedCustomer(e.target.value)}
                   className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
                 >
-                  <option value="all">すべての顧客</option>
-                  {getCustomerList().map(customerName => (
-                    <option key={customerName} value={customerName}>
-                      {customerName} - ${Math.round(getCustomerTotal(customerName)).toLocaleString('en-US')}
-                    </option>
-                  ))}
+                  <option value="all">すべてのID</option>
+                  {getCustomerIdList().map(id => {
+                    const firstMatch = purchasedItems.find(item => item.customerId === id);
+                    const name = firstMatch ? (firstMatch.customerFullName || firstMatch.customerName) : '';
+                    return (
+                      <option key={id} value={id}>
+                        {id} {name ? `(${name})` : ''} - ${Math.round(getCustomerTotalById(id)).toLocaleString('en-US')}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 whitespace-nowrap w-28">期間:</span>
-                <select
-                  value={purchasedPeriod}
-                  onChange={(e) => setPurchasedPeriod(e.target.value as 'all' | '7days' | '30days' | '90days')}
-                  className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
-                >
-                  <option value="all">すべて</option>
-                  <option value="7days">過去7日間</option>
-                  <option value="30days">過去30日間</option>
-                  <option value="90days">過去90日間</option>
-                </select>
+                <span className="text-sm text-gray-600 whitespace-nowrap w-28">期間(年月):</span>
+                <div className="flex gap-2 flex-1">
+                  <select
+                    value={purchasedYear}
+                    onChange={(e) => setPurchasedYear(e.target.value)}
+                    className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                  >
+                    <option value="all">すべての年</option>
+                    <option value="2026">2026年</option>
+                    <option value="2027">2027年</option>
+                    <option value="2028">2028年</option>
+                    <option value="2029">2029年</option>
+                    <option value="2030">2030年</option>
+                  </select>
+                  <select
+                    value={purchasedMonth}
+                    onChange={(e) => setPurchasedMonth(e.target.value)}
+                    className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                  >
+                    <option value="all">すべての月</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                      <option key={m} value={m.toString()}>{m}月</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <button
@@ -1392,12 +1426,11 @@ export default function AdminDashboard() {
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xl font-semibold">
-                      合計{selectedCustomer !== 'all' && '（選択した顧客）'}:
+                      合計{selectedCustomer !== 'all' && '（選択したID）'}:
                     </span>
                     <span className="text-3xl font-bold text-indigo-600">
                       ${Math.round(
                         getFilteredPurchasedItems()
-                          .filter(item => selectedCustomer === 'all' || (item.customerFullName || item.customerName) === selectedCustomer)
                           .filter(item => !item.paid)  // ← 支払済を除外
                           .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
                       ).toLocaleString('en-US')}
