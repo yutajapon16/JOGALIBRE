@@ -1976,7 +1976,7 @@ export default function Home() {
             href="https://wa.me/817013476721"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center gap-2"
+            className="flex-1 bg-[#25D366] text-white px-4 py-3 rounded-lg hover:bg-[#128C7E] transition text-sm sm:text-base flex items-center justify-center gap-2"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

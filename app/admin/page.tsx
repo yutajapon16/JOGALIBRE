@@ -866,10 +866,10 @@ export default function AdminDashboard() {
             {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
             <div className="flex gap-2">
               <a
-                href="https://web.whatsapp.com/"
+                href="whatsapp://"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center gap-2"
+                className="flex-1 bg-[#25D366] text-white px-4 py-3 rounded-lg hover:bg-[#128C7E] transition text-sm sm:text-base flex items-center justify-center gap-2"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1274,9 +1274,10 @@ export default function AdminDashboard() {
                   {getCustomerIdList().map(id => {
                     const firstMatch = purchasedItems.find(item => item.customerId === id);
                     const name = firstMatch ? (firstMatch.customerFullName || firstMatch.customerName) : '';
+                    const truncatedName = name.length > 15 ? name.substring(0, 15) + '...' : name;
                     return (
                       <option key={id} value={id}>
-                        {id} {name ? `(${name})` : ''} - ${Math.round(getCustomerTotalById(id)).toLocaleString('en-US')}
+                        {id} {truncatedName}
                       </option>
                     );
                   })}
@@ -1318,6 +1319,37 @@ export default function AdminDashboard() {
                 📥 CSVダウンロード
               </button>
             </div>
+
+            {/* 期間集計カード */}
+            {purchasedItems.length > 0 && (() => {
+              const filteredItemsForSummary = getFilteredPurchasedItems();
+              const unpaidSummaryTotal = filteredItemsForSummary
+                .filter(item => !item.paid)
+                .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+              const summaryTotal = filteredItemsForSummary
+                .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+
+              return (
+                <div className="grid grid-cols-2 gap-3 mb-6 bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
+                  <div className="bg-white border border-red-100 rounded-lg p-3">
+                    <p className="text-[10px] sm:text-xs font-bold text-red-500 uppercase tracking-wider mb-1">
+                      未入金額
+                    </p>
+                    <p className="text-xl sm:text-2xl font-black text-red-600">
+                      ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
+                    </p>
+                  </div>
+                  <div className="bg-white border border-indigo-50 rounded-lg p-3">
+                    <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">
+                      合計金額
+                    </p>
+                    <p className="text-xl sm:text-2xl font-black text-indigo-600">
+                      ${Math.round(summaryTotal).toLocaleString('en-US')}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {purchasedItems.length === 0 ? (
               <div className="text-center text-gray-500 py-12">
