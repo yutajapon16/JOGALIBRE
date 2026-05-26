@@ -2670,7 +2670,7 @@ export default function Home() {
               </p>
               <div className="flex items-center gap-3">
                 <span className="text-2xl font-bold text-gray-800 leading-none">
-                  ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== 0) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 1000 : 300)}
+                  ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 1000 : 300)}
                 </span>
                 {currentUser?.depositConfirmedAt ? (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ml-auto bg-green-100 text-green-800">
@@ -2682,7 +2682,7 @@ export default function Home() {
                       const depositItem = {
                         id: 'deposit',
                         productTitle: lang === 'es' ? 'Depósito de garantía' : 'Depósito de garantia',
-                        finalPrice: (currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== 0)
+                        finalPrice: (currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null)
                           ? currentUser.depositAmount
                           : (currentUser?.role === 'agent' ? 1000 : 300),
                         stockNumber: 'deposit'

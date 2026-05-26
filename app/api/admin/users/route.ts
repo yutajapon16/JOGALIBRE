@@ -112,7 +112,7 @@ export async function GET(request: Request) {
         country: u.country,
         customerId: u.customer_id,
         agentCustomerId: u.agent_customer_id,
-        depositAmount: Number(u.deposit_amount || 0),
+        depositAmount: u.deposit_amount !== null && u.deposit_amount !== undefined ? Number(u.deposit_amount) : (u.role === 'agent' ? 1000 : 300),
         depositConfirmedAt: u.deposit_confirmed_at,
         termsAcceptedAt: u.terms_accepted_at,
         unpaidCount,

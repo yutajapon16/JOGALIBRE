@@ -77,7 +77,8 @@ export async function POST(request: Request) {
         whatsapp: whatsapp || null,
         address: address || null,
         zip_code: zipCode || null,
-        country: country || null
+        country: country || null,
+        deposit_amount: 1000 // エージェントのデフォルト保証金を設定
       }]);
 
     if (roleError) {
