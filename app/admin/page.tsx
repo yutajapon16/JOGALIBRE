@@ -1125,12 +1125,12 @@ export default function AdminDashboard() {
 
                     {request.counterOffer && (
                       <div className="mb-2 p-3 bg-blue-50 rounded-lg">
-                        <div className="flex items-center justify-between text-sm sm:text-base">
-                          <span className="text-gray-700 font-medium">カウンターオファー:</span>
-                          <span className="font-bold text-blue-700">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
+                          <span className="text-lg font-bold text-blue-700 leading-none">
                             ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                             {(request.shippingCostJpy || 0) > 0 && (
-                              <span className="text-xs text-gray-500 font-normal ml-1">
+                              <span className="text-xs text-gray-500 font-normal ml-1 whitespace-nowrap">
                                 (送料: ¥{(request.shippingCostJpy || 0).toLocaleString()})
                               </span>
                             )}
