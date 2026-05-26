@@ -52,6 +52,39 @@ export default function AdminDashboard() {
     agentCustomerId: ''
   });
   const [editingStockItem, setEditingStockItem] = useState<{ id: string; title: string; stockNumber: string } | null>(null);
+  const [isSyncing, setIsSyncing] = useState<string | null>(null); // ヤフオク同期中のリクエストID
+
+  // ヤフオク最新情報を同期・復旧する処理
+  const handleSyncYahooProduct = async (requestItem: BidRequest) => {
+    if (isSyncing) return;
+    setIsSyncing(requestItem.id);
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/admin/sync-product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({ requestId: requestItem.id })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(data.message);
+        await fetchBidRequests(); // データを再取得して表示を更新
+      } else {
+        alert(data.message || data.error || 'ヤフオク同期に失敗しました。');
+      }
+    } catch (err) {
+      console.error('Error syncing yahoo product:', err);
+      alert('通信エラーが発生しました。');
+    } finally {
+      setIsSyncing(null);
+    }
+  };
 
   const fetchUsersData = async () => {
     setLoadingUsers(true);
@@ -1063,11 +1096,26 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    <div className="mb-2 p-3 bg-gray-50 rounded-lg flex items-baseline gap-1">
-                      <span className="text-xs text-gray-500">希望入札額:</span>
-                      <span className="text-lg font-bold text-indigo-600 leading-none">
-                        ${Math.round(request.maxBid || 0).toLocaleString('en-US')}
-                      </span>
+                    <div className="mb-2 p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xs text-gray-500 font-medium">希望入札額:</span>
+                        <span className="text-lg font-bold text-indigo-600 leading-none">
+                          ${Math.round(request.maxBid || 0).toLocaleString('en-US')}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleSyncYahooProduct(request)}
+                        disabled={isSyncing === request.id}
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1 bg-white border border-indigo-200 rounded px-2 py-1 shadow-sm active:scale-95 disabled:opacity-50"
+                      >
+                        {isSyncing === request.id ? (
+                          <svg className="animate-spin h-3.5 w-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                        ) : '🔄'}
+                        <span>同期</span>
+                      </button>
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 p-3 bg-gray-50 rounded-lg text-xs mb-2">
