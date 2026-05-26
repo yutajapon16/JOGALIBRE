@@ -3017,24 +3017,24 @@ export default function Home() {
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleKeywordSearch()}
-                      className="flex-1 p-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                      className="flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
                     />
                     <button
                       onClick={handleKeywordSearch}
                       disabled={loading || isSearching}
-                      className="bg-indigo-600 text-white min-w-[120px] px-6 py-3.5 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm shadow-sm"
+                      className="bg-indigo-600 text-white min-w-[120px] px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm shadow-sm"
                     >
                       {isSearching ? '...' : t.search}
                     </button>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={() => {
                         setSearchCondition('all');
                         handleKeywordSearch(undefined, 1, 'all');
                       }}
-                      className={`px-6 py-2.5 rounded-full font-bold text-sm transition ${
+                      className={`py-3 rounded-full font-bold text-sm transition text-center ${
                         searchCondition === 'all'
                           ? 'bg-indigo-900 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -3047,7 +3047,7 @@ export default function Home() {
                         setSearchCondition('new');
                         handleKeywordSearch(undefined, 1, 'new');
                       }}
-                      className={`px-6 py-2.5 rounded-full font-bold text-sm transition ${
+                      className={`py-3 rounded-full font-bold text-sm transition text-center ${
                         searchCondition === 'new'
                           ? 'bg-indigo-900 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -3060,7 +3060,7 @@ export default function Home() {
                         setSearchCondition('used');
                         handleKeywordSearch(undefined, 1, 'used');
                       }}
-                      className={`px-6 py-2.5 rounded-full font-bold text-sm transition ${
+                      className={`py-3 rounded-full font-bold text-sm transition text-center ${
                         searchCondition === 'used'
                           ? 'bg-indigo-900 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
