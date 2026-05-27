@@ -1120,7 +1120,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <a
                 href="whatsapp://"
                 target="_blank"
@@ -1202,8 +1202,8 @@ export default function AdminDashboard() {
               🔁 更新
             </button>
 
-            <div className="text-xs sm:text-sm text-gray-600">
-              為替レート: <span className="font-semibold">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
+            <div className="w-full h-12 bg-white border border-gray-300 rounded-lg text-sm sm:text-base flex items-center justify-center font-medium shadow-sm text-gray-700">
+              為替レート: <span className="font-bold text-indigo-600 ml-1.5">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -1322,10 +1322,10 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    <div className="mb-2 p-3 bg-gray-50 rounded-lg flex items-center justify-between">
-                      <div className="flex items-baseline gap-1">
+                    <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                      <div className="flex items-center gap-1">
                         <span className="text-xs text-gray-500 font-medium">希望入札額:</span>
-                        <span className="text-lg font-bold text-indigo-600 leading-none">
+                        <span className="text-base font-bold text-indigo-600">
                           ${Math.round(request.maxBid || 0).toLocaleString('en-US')}
                         </span>
                       </div>
@@ -1398,10 +1398,10 @@ export default function AdminDashboard() {
                     )}
 
                     {request.counterOffer && (
-                      <div className="mb-2 p-3 bg-blue-50 rounded-lg">
-                        <div className="flex items-baseline gap-1.5">
+                      <div className="mb-2 h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center">
+                        <div className="flex items-center gap-1.5">
                           <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
-                          <span className="text-lg font-bold text-blue-700 leading-none">
+                          <span className="text-base font-bold text-blue-700">
                             ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                           </span>
                           {(request.shippingCostJpy || 0) > 0 && (
@@ -1410,9 +1410,6 @@ export default function AdminDashboard() {
                             </span>
                           )}
                         </div>
-                        {request.customerCounterOffer && request.customerCounterOfferUsed && (
-                          <p className="text-xs text-green-600 mt-1 text-right">✓ 承認済</p>
-                        )}
                       </div>
                     )}
 
@@ -1620,22 +1617,18 @@ export default function AdminDashboard() {
                 .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
 
               return (
-                <div className="grid grid-cols-2 gap-3 mb-6 bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
-                  <div className="bg-white border border-red-100 rounded-lg p-3">
-                    <p className="text-[10px] sm:text-xs font-bold text-red-500 uppercase tracking-wider mb-1">
-                      未入金額
-                    </p>
-                    <p className="text-xl sm:text-2xl font-black text-red-600">
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-red-500">未入金額</span>
+                    <span className="text-base font-black text-red-600">
                       ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
-                    </p>
+                    </span>
                   </div>
-                  <div className="bg-white border border-indigo-50 rounded-lg p-3">
-                    <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">
-                      合計金額
-                    </p>
-                    <p className="text-xl sm:text-2xl font-black text-indigo-600">
+                  <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-indigo-500">合計金額</span>
+                    <span className="text-base font-black text-indigo-600">
                       ${Math.round(summaryTotal).toLocaleString('en-US')}
-                    </p>
+                    </span>
                   </div>
                 </div>
               );
@@ -2218,15 +2211,11 @@ export default function AdminDashboard() {
               </div>
 
               {/* 抽出合計金額カード */}
-              <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm mb-6">
-                <div className="bg-white border border-indigo-50 rounded-lg p-3">
-                  <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">
-                    合計金額
-                  </p>
-                  <p className="text-xl sm:text-2xl font-black text-indigo-600">
-                    ${Math.round(getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
-                  </p>
-                </div>
+              <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-6">
+                <span className="text-xs font-bold text-indigo-500">合計金額</span>
+                <span className="text-base font-black text-indigo-600">
+                  ${Math.round(getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
+                </span>
               </div>
 
               {/* 入金履歴一覧リスト */}
