@@ -51,6 +51,7 @@ export interface BidRequest {
   adminNeedsConfirm?: boolean;
   customerId?: string;
   customerRole?: string;
+  agentCustomerId?: string | null;
   paidAt?: string | null;
   paid?: boolean;
   stockNumber?: string | null;

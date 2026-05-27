@@ -682,7 +682,8 @@ export default function AdminDashboard() {
         customerMessage: req.customer_message,
         adminNeedsConfirm: req.admin_needs_confirm,
         customerId: req.customer_id,
-        customerRole: req.customer_role
+        customerRole: req.customer_role,
+        agentCustomerId: req.agent_customer_id as string | null | undefined
       }));
 
       setBidRequests(convertedRequests);
@@ -1359,28 +1360,16 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex flex-col justify-center h-12">
                         <span className="text-gray-500 text-[10px] leading-tight">
-                          {request.customerId?.startsWith('C') ? 'エージェント名:' : '顧客名:'}
+                          {request.customerId?.startsWith('C') && request.agentCustomerId ? 'エージェント名:' : '顧客名:'}
                         </span>
                         <span className="font-semibold truncate text-black leading-tight">{request.customerName}</span>
                       </div>
                     </div>
 
-                    {request.status === 'rejected' && (
-                      <div className="mb-4 p-3 bg-red-50 rounded-lg">
-                        {request.rejectReason && (
-                          <>
-                            <p className="text-sm text-gray-600">却下理由:</p>
-                            <p className="font-semibold text-red-700 mb-3">{request.rejectReason}</p>
-                          </>
-                        )}
-                        {request.status === 'rejected' && (
-                          <button
-                            onClick={() => confirmCustomerRejection(request.id)}
-                            className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center"
-                          >
-                            削除を確認
-                          </button>
-                        )}
+                    {request.status === 'rejected' && request.rejectReason && (
+                      <div className="mb-2 p-3 bg-red-50 rounded-lg">
+                        <p className="text-sm text-gray-600">却下理由:</p>
+                        <p className="font-semibold text-red-700">{request.rejectReason}</p>
                       </div>
                     )}
 
@@ -1448,13 +1437,7 @@ export default function AdminDashboard() {
 
                     {request.adminNeedsConfirm && !request.customerCounterOffer && (
                       <div className="mb-2 p-3 bg-red-50 rounded-lg">
-                        <p className="text-sm text-red-800 mb-2">顧客がカウンターオファーを拒否しました</p>
-                        <button
-                          onClick={() => confirmCustomerRejection(request.id)}
-                          className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center"
-                        >
-                          削除を確認
-                        </button>
+                        <p className="text-sm text-red-800 font-semibold">顧客がカウンターオファーを拒否しました</p>
                       </div>
                     )}
 
@@ -1512,19 +1495,24 @@ export default function AdminDashboard() {
                       </div>
                     )}
 
-                    {request.finalStatus === 'lost' && (
-                      <button
-                        onClick={() => confirmCustomerRejection(request.id)}
-                        className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition mt-3 flex items-center justify-center"
-                      >
-                        削除を確認
-                      </button>
-                    )}
+
 
                     {request.approvedAt && (
                       <div className="mt-3 text-sm text-gray-600">
                         承認: {formatDateTime(request.approvedAt)}
                       </div>
+                    )}
+
+                    {/* 最下部の削除を確認ボタン */}
+                    {(request.status === 'rejected' || 
+                      (request.adminNeedsConfirm && !request.customerCounterOffer) || 
+                      request.finalStatus === 'lost') && (
+                      <button
+                        onClick={() => confirmCustomerRejection(request.id)}
+                        className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center mt-2"
+                      >
+                        削除を確認
+                      </button>
                     )}
                   </div>
                 ))}
