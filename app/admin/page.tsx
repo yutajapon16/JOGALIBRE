@@ -1344,37 +1344,24 @@ export default function AdminDashboard() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 p-3 bg-gray-50 rounded-lg text-xs mb-2">
-                      <div className="flex flex-col">
-                        <span className="text-gray-500">ID:</span>
-                        <span className="font-semibold truncate">{request.customerId}</span>
+                    <div className="h-24 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs mb-2 box-border grid grid-rows-2 grid-cols-2">
+                      <div className="flex flex-col justify-center h-12">
+                        <span className="text-gray-500 text-[10px] leading-tight">ID:</span>
+                        <span className="font-semibold truncate text-black leading-tight">{request.customerId}</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-gray-500">WhatsApp:</span>
-                        <span className="font-semibold truncate">{request.customerWhatsapp || '未登録'}</span>
+                      <div className="flex flex-col justify-center h-12">
+                        <span className="text-gray-500 text-[10px] leading-tight">リクエスト日時:</span>
+                        <span className="font-semibold truncate text-black leading-tight">{formatDateTime(request.createdAt)}</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-gray-500">氏名:</span>
-                        <span className="font-semibold truncate">{request.customerFullName || request.customerName}</span>
+                      <div className="flex flex-col justify-center h-12">
+                        <span className="text-gray-500 text-[10px] leading-tight">氏名:</span>
+                        <span className="font-semibold truncate text-black leading-tight">{request.customerFullName || request.customerName}</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-gray-500">言語:</span>
-                        <span className="font-semibold">{request.language === 'es' ? 'スペイン語' : 'ポルトガル語'}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-gray-500">
+                      <div className="flex flex-col justify-center h-12">
+                        <span className="text-gray-500 text-[10px] leading-tight">
                           {request.customerId?.startsWith('C') ? 'エージェント名:' : '顧客名:'}
                         </span>
-                        <span className="font-semibold truncate">{request.customerName}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-gray-500">リクエスト日時:</span>
-                        <span className="font-semibold">{formatDateTime(request.createdAt)}</span>
-                        {request.status === 'approved' && request.productEndTime && (
-                          <span className="text-[10px] text-red-500">
-                            (終了: {getTimeRemaining(request.productEndTime || '', 'ja')})
-                          </span>
-                        )}
+                        <span className="font-semibold truncate text-black leading-tight">{request.customerName}</span>
                       </div>
                     </div>
 
