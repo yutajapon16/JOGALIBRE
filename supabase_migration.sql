@@ -90,3 +90,18 @@ USING (role = 'agent');
 -- 11. 既存の保証金データが未設定（または0）のユーザーに対し、ロールに応じたデフォルト保証金を設定
 UPDATE user_roles SET deposit_amount = 1000 WHERE role = 'agent' AND (deposit_amount = 0 OR deposit_amount IS NULL);
 UPDATE user_roles SET deposit_amount = 300 WHERE role = 'customer' AND (deposit_amount = 0 OR deposit_amount IS NULL);
+
+-- 12. 入金履歴を管理するテーブルを追加
+CREATE TABLE IF NOT EXISTS deposits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id TEXT NOT NULL,                                       -- 顧客またはエージェントの customer_id (例: C001, A001)
+  deposit_date DATE NOT NULL,                                      -- 入金確認日 (カレンダーから選択)
+  amount NUMERIC NOT NULL,                                         -- 入金額 (USD)
+  payment_method TEXT NOT NULL,                                    -- 入金方法 ('bank', 'paypal', 'usdt')
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- パフォーマンス向上のためのインデックス作成
+CREATE INDEX IF NOT EXISTS idx_deposits_customer_id ON deposits(customer_id);
+CREATE INDEX IF NOT EXISTS idx_deposits_deposit_date ON deposits(deposit_date);

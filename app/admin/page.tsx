@@ -40,7 +40,7 @@ export default function AdminDashboard() {
   const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
   const [finalPriceInput, setFinalPriceInput] = useState('');
   const [exchangeRate, setExchangeRate] = useState(150);
-  const [activeTab, setActiveTab] = useState<'requests' | 'purchased' | 'customers' | 'agents'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'purchased' | 'deposits' | 'shipping' | 'customers' | 'agents'>('requests');
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   const [customersList, setCustomersList] = useState<any[]>([]);
   const [agentsList, setAgentsList] = useState<any[]>([]);
@@ -53,6 +53,25 @@ export default function AdminDashboard() {
   });
   const [editingStockItem, setEditingStockItem] = useState<{ id: string; title: string; stockNumber: string } | null>(null);
   const [isSyncing, setIsSyncing] = useState<string | null>(null); // ヤフオク同期中のリクエストID
+
+  // 入金管理用のステート
+  const [depositsList, setDepositsList] = useState<any[]>([]);
+  const [loadingDeposits, setLoadingDeposits] = useState(false);
+  const [depositForm, setDepositForm] = useState({
+    customerId: '',
+    depositDate: new Date().toISOString().split('T')[0],
+    amount: '',
+    paymentMethod: 'bank'
+  });
+  const [editingDeposit, setEditingDeposit] = useState<any | null>(null);
+  const [editDepositForm, setEditDepositForm] = useState({
+    depositDate: '',
+    amount: '',
+    paymentMethod: 'bank'
+  });
+  const [depositFilterCustomer, setDepositFilterCustomer] = useState<string>('all');
+  const [depositFilterYear, setDepositFilterYear] = useState<string>('all');
+  const [depositFilterMonth, setDepositFilterMonth] = useState<string>('all');
 
   // ヤフオク最新情報を同期・復旧する処理
   const handleSyncYahooProduct = async (requestItem: BidRequest) => {
@@ -142,6 +161,204 @@ export default function AdminDashboard() {
       alert('通信エラーが発生しました');
     }
   };
+  const fetchDeposits = async () => {
+    setLoadingDeposits(true);
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+      
+      const res = await fetch('/api/admin/deposits', {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+      const data = await res.json();
+      if (data.deposits) {
+        setDepositsList(data.deposits);
+      }
+    } catch (error) {
+      console.error('Error fetching deposits:', error);
+    } finally {
+      setLoadingDeposits(false);
+    }
+  };
+
+  const handleCreateDeposit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!depositForm.customerId || !depositForm.depositDate || !depositForm.amount || !depositForm.paymentMethod) {
+      alert('すべての項目を入力してください');
+      return;
+    }
+
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/admin/deposits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({
+          customerId: depositForm.customerId,
+          depositDate: depositForm.depositDate,
+          amount: parseFloat(depositForm.amount),
+          paymentMethod: depositForm.paymentMethod
+        })
+      });
+
+      if (res.ok) {
+        alert('入金情報を登録しました');
+        setDepositForm({
+          ...depositForm,
+          customerId: '',
+          amount: ''
+        });
+        fetchDeposits();
+      } else {
+        const err = await res.json();
+        alert(`登録に失敗しました: ${err.error || ''}`);
+      }
+    } catch (error) {
+      console.error('Error creating deposit:', error);
+      alert('通信エラーが発生しました');
+    }
+  };
+
+  const handleUpdateDeposit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDeposit) return;
+
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/admin/deposits', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({
+          id: editingDeposit.id,
+          depositDate: editDepositForm.depositDate,
+          amount: parseFloat(editDepositForm.amount),
+          paymentMethod: editDepositForm.paymentMethod
+        })
+      });
+
+      if (res.ok) {
+        alert('入金情報を更新しました');
+        setEditingDeposit(null);
+        fetchDeposits();
+      } else {
+        const err = await res.json();
+        alert(`更新に失敗しました: ${err.error || ''}`);
+      }
+    } catch (error) {
+      console.error('Error updating deposit:', error);
+      alert('通信エラーが発生しました');
+    }
+  };
+
+  const handleDeleteDeposit = async (id: string) => {
+    if (!confirm('この入金履歴を削除してもよろしいですか？')) return;
+
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/admin/deposits?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+
+      if (res.ok) {
+        alert('入金履歴を削除しました');
+        setEditingDeposit(null);
+        fetchDeposits();
+      } else {
+        const err = await res.json();
+        alert(`削除に失敗しました: ${err.error || ''}`);
+      }
+    } catch (error) {
+      console.error('Error deleting deposit:', error);
+      alert('通信エラーが発生しました');
+    }
+  };
+
+  const getFilteredDeposits = () => {
+    let filtered = depositsList;
+
+    if (depositFilterCustomer !== 'all') {
+      filtered = filtered.filter(item => item.customer_id === depositFilterCustomer);
+    }
+
+    if (depositFilterYear !== 'all') {
+      filtered = filtered.filter(item => {
+        if (!item.deposit_date) return false;
+        const date = new Date(item.deposit_date);
+        return date.getFullYear().toString() === depositFilterYear;
+      });
+    }
+
+    if (depositFilterMonth !== 'all') {
+      filtered = filtered.filter(item => {
+        if (!item.deposit_date) return false;
+        const date = new Date(item.deposit_date);
+        return (date.getMonth() + 1).toString() === depositFilterMonth;
+      });
+    }
+
+    return filtered;
+  };
+
+  const exportDepositsCSV = () => {
+    const items = getFilteredDeposits();
+
+    if (items.length === 0) {
+      alert('エクスポートするデータがありません。');
+      return;
+    }
+
+    const headers = ['入金確認日', '顧客ID', '氏名', '入金額(USD)', '支払方法'];
+
+    const customerMap = new Map<string, string>();
+    customersList.forEach(c => customerMap.set(c.customerId, c.fullName || c.customerName || ''));
+    agentsList.forEach(a => customerMap.set(a.customerId, a.fullName || a.customerName || ''));
+
+    const paymentMethodNames: Record<string, string> = {
+      bank: '銀行',
+      paypal: 'PayPal',
+      usdt: 'USDT'
+    };
+
+    const rows = items.map(item => {
+      const name = customerMap.get(item.customer_id) || '';
+      return [
+        item.deposit_date.replace(/-/g, '/'),
+        item.customer_id,
+        `"${name.replace(/"/g, '""')}"`,
+        item.amount,
+        paymentMethodNames[item.payment_method] || item.payment_method
+      ];
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `JOGALIBRE_入金履歴_${dateStr}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [purchasedYear, setPurchasedYear] = useState<string>('all');
   const [purchasedMonth, setPurchasedMonth] = useState<string>('all');
@@ -199,6 +416,9 @@ export default function AdminDashboard() {
         fetchBidRequests();
       } else if (activeTab === 'purchased') {
         fetchPurchasedItems();
+      } else if (activeTab === 'deposits') {
+        fetchDeposits();
+        fetchUsersData();
       } else {
         fetchUsersData();
       }
@@ -247,6 +467,9 @@ export default function AdminDashboard() {
               await fetchPurchasedItems();
             } else if (activeTab === 'requests') {
               await fetchBidRequests();
+            } else if (activeTab === 'deposits') {
+              await fetchDeposits();
+              await fetchUsersData();
             } else {
               await fetchUsersData();
             }
@@ -971,6 +1194,7 @@ export default function AdminDashboard() {
               onClick={() => {
                 if (activeTab === 'requests') fetchBidRequests();
                 else if (activeTab === 'purchased') fetchPurchasedItems();
+                else if (activeTab === 'deposits') { fetchDeposits(); fetchUsersData(); }
                 else fetchUsersData();
               }}
               className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
@@ -992,6 +1216,8 @@ export default function AdminDashboard() {
             {[
               { key: 'requests' as const, label: 'リクエスト', icon: '📋' },
               { key: 'purchased' as const, label: '履歴', icon: '🛒' },
+              { key: 'deposits' as const, label: '入金', icon: '💵' },
+              { key: 'shipping' as const, label: '発送', icon: '📦' },
               { key: 'customers' as const, label: '顧客', icon: '👥' },
               { key: 'agents' as const, label: 'エージェント', icon: '👔' },
             ].map((tab) => (
@@ -1841,6 +2067,235 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+
+        {/* 入金タブ */}
+        {activeTab === 'deposits' && (
+          <div className="space-y-6">
+            {/* 入金登録カード */}
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6 font-sans">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">入金登録</h2>
+              <form onSubmit={handleCreateDeposit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">顧客 (ID 氏名)</label>
+                    <select
+                      value={depositForm.customerId}
+                      onChange={(e) => setDepositForm({ ...depositForm, customerId: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      required
+                    >
+                      <option value="">顧客を選択してください</option>
+                      {customersList.map(c => (
+                        <option key={c.id} value={c.customerId}>
+                          {c.customerId} {c.fullName || c.customerName}
+                        </option>
+                      ))}
+                      {agentsList.map(a => (
+                        <option key={a.id} value={a.customerId}>
+                          {a.customerId} {a.fullName || a.customerName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">入金確認日</label>
+                    <input
+                      type="date"
+                      value={depositForm.depositDate}
+                      onChange={(e) => setDepositForm({ ...depositForm, depositDate: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">入金額 (USD)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="0.00"
+                        value={depositForm.amount}
+                        onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-black"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">入金方法</label>
+                    <select
+                      value={depositForm.paymentMethod}
+                      onChange={(e) => setDepositForm({ ...depositForm, paymentMethod: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      required
+                    >
+                      <option value="bank">銀行</option>
+                      <option value="paypal">PayPal</option>
+                      <option value="usdt">USDT</option>
+                    </select>
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm sm:text-base mt-2"
+                >
+                  登録する
+                </button>
+              </form>
+            </div>
+
+            {/* フィルター＆抽出合計金額カード */}
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6 font-sans">
+              <div className="flex flex-col gap-3 mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 whitespace-nowrap w-28">IDフィルター:</span>
+                  <select
+                    value={depositFilterCustomer}
+                    onChange={(e) => setDepositFilterCustomer(e.target.value)}
+                    className="border border-gray-300 rounded px-3 py-3 text-base flex-1 bg-white text-black"
+                  >
+                    <option value="all">すべてのID</option>
+                    {(() => {
+                      const allIds = new Set<string>();
+                      depositsList.forEach(d => allIds.add(d.customer_id));
+                      return Array.from(allIds).sort().map(id => {
+                        const cust = customersList.find(c => c.customerId === id) || agentsList.find(a => a.customerId === id);
+                        const name = cust ? (cust.fullName || cust.customerName) : '';
+                        const truncatedName = name.length > 15 ? name.substring(0, 15) + '...' : name;
+                        return (
+                          <option key={id} value={id}>
+                            {id} {truncatedName}
+                          </option>
+                        );
+                      });
+                    })()}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 whitespace-nowrap w-28">期間(年月):</span>
+                  <div className="flex gap-2 flex-1">
+                    <select
+                      value={depositFilterYear}
+                      onChange={(e) => setDepositFilterYear(e.target.value)}
+                      className="border border-gray-300 rounded px-3 py-3 text-base flex-1 bg-white text-black"
+                    >
+                      <option value="all">すべての年</option>
+                      <option value="2026">2026年</option>
+                      <option value="2027">2027年</option>
+                      <option value="2028">2028年</option>
+                      <option value="2029">2029年</option>
+                      <option value="2030">2030年</option>
+                    </select>
+                    <select
+                      value={depositFilterMonth}
+                      onChange={(e) => setDepositFilterMonth(e.target.value)}
+                      className="border border-gray-300 rounded px-3 py-3 text-base flex-1 bg-white text-black"
+                    >
+                      <option value="all">すべての月</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                        <option key={m} value={m.toString()}>{m}月</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  onClick={exportDepositsCSV}
+                  className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition text-sm sm:text-base"
+                >
+                  📥 CSVダウンロード
+                </button>
+              </div>
+
+              {/* 抽出合計金額カード */}
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm mb-6">
+                <div className="bg-white border border-indigo-50 rounded-lg p-3">
+                  <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">
+                    合計金額
+                  </p>
+                  <p className="text-xl sm:text-2xl font-black text-indigo-600">
+                    ${Math.round(getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
+                  </p>
+                </div>
+              </div>
+
+              {/* 入金履歴一覧リスト */}
+              <h3 className="text-lg font-bold mb-3 text-gray-900">入金履歴リスト</h3>
+              {loadingDeposits ? (
+                <div className="text-center py-6 text-gray-500">読み込み中...</div>
+              ) : getFilteredDeposits().length === 0 ? (
+                <div className="text-center py-6 text-gray-500">入金データが存在しません</div>
+              ) : (
+                <div className="overflow-x-auto border border-gray-100 rounded-lg">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">入金日</th>
+                        <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">入金額</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">顧客 (ID 氏名)</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">支払方法</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {getFilteredDeposits().map((item) => {
+                        const cust = customersList.find(c => c.customerId === item.customer_id) || agentsList.find(a => a.customerId === item.customer_id);
+                        const name = cust ? (cust.fullName || cust.customerName) : '';
+                        const dateFormatted = item.deposit_date.replace(/-/g, '/');
+                        const paymentMethodNames: Record<string, string> = {
+                          bank: '銀行',
+                          paypal: 'PayPal',
+                          usdt: 'USDT'
+                        };
+                        return (
+                          <tr key={item.id} className="hover:bg-gray-50 transition text-black">
+                            <td className="px-4 py-3 whitespace-nowrap text-left font-medium text-gray-700">
+                              {dateFormatted}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
+                              ${Number(item.amount).toLocaleString('en-US')}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-left">
+                              <span className="font-bold text-gray-900">{item.customer_id}</span>{' '}
+                              <span className="text-gray-500 text-xs">{name}</span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
+                              {paymentMethodNames[item.payment_method] || item.payment_method}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-center">
+                              <button
+                                onClick={() => {
+                                  setEditingDeposit(item);
+                                  setEditDepositForm({
+                                    depositDate: item.deposit_date,
+                                    amount: item.amount.toString(),
+                                    paymentMethod: item.payment_method
+                                  });
+                                }}
+                                className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-700 transition"
+                              >
+                                編集
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 発送タブ */}
+        {activeTab === 'shipping' && (
+          <div className="bg-white rounded-lg shadow p-12 text-center font-sans">
+            <p className="text-gray-500 text-lg">発送機能は準備中です</p>
+          </div>
+        )}
       </main>
 
       {selectedRequest && actionType === 'reject' && (
@@ -2131,6 +2586,84 @@ export default function AdminDashboard() {
                 <button
                   type="submit"
                   className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                >
+                  保存
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 入金編集モーダル */}
+      {editingDeposit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-gray-100 font-sans" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-4 text-indigo-600">入金履歴の編集</h2>
+            <p className="text-gray-600 mb-1 font-semibold text-black">
+              顧客ID: {editingDeposit.customer_id}
+            </p>
+            
+            <form onSubmit={handleUpdateDeposit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">入金確認日</label>
+                <input
+                  type="date"
+                  value={editDepositForm.depositDate}
+                  onChange={(e) => setEditDepositForm({ ...editDepositForm, depositDate: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none text-black bg-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">入金額 (USD)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                  <input
+                    type="number"
+                    step="any"
+                    value={editDepositForm.amount}
+                    onChange={(e) => setEditDepositForm({ ...editDepositForm, amount: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none text-black bg-white"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">入金方法</label>
+                <select
+                  value={editDepositForm.paymentMethod}
+                  onChange={(e) => setEditDepositForm({ ...editDepositForm, paymentMethod: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                  required
+                >
+                  <option value="bank">銀行</option>
+                  <option value="paypal">PayPal</option>
+                  <option value="usdt">USDT</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteDeposit(editingDeposit.id)}
+                  className="bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm"
+                >
+                  削除
+                </button>
+                <div className="flex-1"></div>
+                <button
+                  type="button"
+                  onClick={() => setEditingDeposit(null)}
+                  className="border border-gray-300 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-50 transition text-sm"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  className="bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm"
                 >
                   保存
                 </button>
