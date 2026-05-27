@@ -1434,7 +1434,7 @@ export default function AdminDashboard() {
                           <div className="flex gap-2 mt-2">
                             <button
                               onClick={() => updateStatus(request.id, 'approved')}
-                              className="flex-1 bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center"
+                              className="flex-1 bg-green-600 text-white h-12 shrink-0 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center"
                             >
                               承認
                             </button>
@@ -1443,7 +1443,7 @@ export default function AdminDashboard() {
                                 setSelectedRequest(request);
                                 setActionType('reject');
                               }}
-                              className="flex-1 bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center"
+                              className="flex-1 bg-red-600 text-white h-12 shrink-0 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center"
                             >
                               却下
                             </button>
@@ -1475,7 +1475,7 @@ export default function AdminDashboard() {
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <button
                           onClick={() => updateStatus(request.id, 'approved')}
-                          className="flex-1 bg-green-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
+                          className="w-full sm:flex-1 bg-green-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
                         >
                           承認
                         </button>
@@ -1484,7 +1484,7 @@ export default function AdminDashboard() {
                             setSelectedRequest(request);
                             setActionType('counter');
                           }}
-                          className="flex-1 bg-blue-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center"
+                          className="w-full sm:flex-1 bg-blue-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center"
                         >
                           カウンターオファー
                         </button>
@@ -1493,7 +1493,7 @@ export default function AdminDashboard() {
                             setSelectedRequest(request);
                             setActionType('reject');
                           }}
-                          className="flex-1 bg-red-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center"
+                          className="w-full sm:flex-1 bg-red-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center"
                         >
                           却下
                         </button>
@@ -1512,13 +1512,13 @@ export default function AdminDashboard() {
                             setFinalPriceInput(Math.round(suggestedPrice).toString());
                             setActionType('won');
                           }}
-                          className="flex-1 bg-green-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
+                          className="w-full sm:flex-1 bg-green-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
                         >
                           落札
                         </button>
                         <button
                           onClick={() => updateFinalStatus(request.id, 'lost')}
-                          className="flex-1 bg-red-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center"
+                          className="w-full sm:flex-1 bg-red-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center"
                         >
                           落札できず
                         </button>
