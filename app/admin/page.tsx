@@ -2080,7 +2080,7 @@ export default function AdminDashboard() {
                     <select
                       value={depositForm.customerId}
                       onChange={(e) => setDepositForm({ ...depositForm, customerId: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
                       required
                     >
                       <option value="">顧客を選択してください</option>
@@ -2102,7 +2102,8 @@ export default function AdminDashboard() {
                       type="date"
                       value={depositForm.depositDate}
                       onChange={(e) => setDepositForm({ ...depositForm, depositDate: e.target.value })}
-                      className="w-full min-w-0 box-border border border-gray-300 rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      className="w-full h-12 min-w-0 max-w-full box-border border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
                       required
                     />
                   </div>
@@ -2116,7 +2117,7 @@ export default function AdminDashboard() {
                         placeholder="0.00"
                         value={depositForm.amount}
                         onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-black"
+                        className="w-full h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-black box-border"
                         required
                       />
                     </div>
@@ -2126,7 +2127,7 @@ export default function AdminDashboard() {
                     <select
                       value={depositForm.paymentMethod}
                       onChange={(e) => setDepositForm({ ...depositForm, paymentMethod: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
                       required
                     >
                       <option value="bank">銀行</option>
@@ -2137,7 +2138,7 @@ export default function AdminDashboard() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm sm:text-base mt-2"
+                  className="w-full h-12 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition text-sm sm:text-base mt-2 flex items-center justify-center"
                 >
                   登録する
                 </button>
