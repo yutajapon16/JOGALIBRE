@@ -1320,7 +1320,7 @@ export default function AdminDashboard() {
                             href={request.productUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-center text-xs text-indigo-600 hover:underline font-bold py-1.5 bg-indigo-50 rounded px-2 block w-full"
+                            className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full"
                           >
                             ヤフオクURL
                           </a>
@@ -1666,7 +1666,7 @@ export default function AdminDashboard() {
                                 href={item.productUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-center text-[10px] text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-2 block w-full"
+                                className="text-center text-[10px] text-white hover:underline hover:opacity-90 font-bold py-1 bg-[#ff0033] rounded px-2 block w-full"
                               >
                                 ヤフオクURL
                               </a>
