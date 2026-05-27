@@ -1559,16 +1559,15 @@ export default function AdminDashboard() {
                 <select
                   value={selectedCustomer}
                   onChange={(e) => setSelectedCustomer(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
                 >
                   <option value="all">すべてのID</option>
                   {getCustomerIdList().map(id => {
                     const firstMatch = purchasedItems.find(item => item.customerId === id);
                     const name = firstMatch ? (firstMatch.customerFullName || firstMatch.customerName) : '';
-                    const truncatedName = name.length > 15 ? name.substring(0, 15) + '...' : name;
                     return (
                       <option key={id} value={id}>
-                        {id} {truncatedName}
+                        {id} {name}
                       </option>
                     );
                   })}
@@ -1581,7 +1580,7 @@ export default function AdminDashboard() {
                   <select
                     value={purchasedYear}
                     onChange={(e) => setPurchasedYear(e.target.value)}
-                    className="w-1/2 border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
+                    className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
                   >
                     <option value="all">すべての年</option>
                     <option value="2026">2026年</option>
@@ -1593,7 +1592,7 @@ export default function AdminDashboard() {
                   <select
                     value={purchasedMonth}
                     onChange={(e) => setPurchasedMonth(e.target.value)}
-                    className="w-1/2 border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
+                    className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
                   >
                     <option value="all">すべての月</option>
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
@@ -1605,7 +1604,7 @@ export default function AdminDashboard() {
 
               <button
                 onClick={exportPurchasedItemsCSV}
-                className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition text-sm sm:text-base"
+                className="w-full h-12 bg-emerald-600 text-white px-4 rounded-lg font-semibold hover:bg-emerald-700 transition text-sm sm:text-base flex items-center justify-center"
               >
                 📥 CSVダウンロード
               </button>
@@ -2076,7 +2075,7 @@ export default function AdminDashboard() {
               <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">入金登録</h2>
               <form onSubmit={handleCreateDeposit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-sm font-semibold text-gray-700 mb-1">顧客</label>
                     <select
                       value={depositForm.customerId}
@@ -2097,7 +2096,7 @@ export default function AdminDashboard() {
                       ))}
                     </select>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-sm font-semibold text-gray-700 mb-1">入金確認日</label>
                     <input
                       type="date"
@@ -2107,7 +2106,7 @@ export default function AdminDashboard() {
                       required
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-sm font-semibold text-gray-700 mb-1">入金額 (USD)</label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
@@ -2122,7 +2121,7 @@ export default function AdminDashboard() {
                       />
                     </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-sm font-semibold text-gray-700 mb-1">入金方法</label>
                     <select
                       value={depositForm.paymentMethod}
@@ -2153,7 +2152,7 @@ export default function AdminDashboard() {
                   <select
                     value={depositFilterCustomer}
                     onChange={(e) => setDepositFilterCustomer(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
+                    className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
                   >
                     <option value="all">すべてのID</option>
                     {(() => {
@@ -2162,10 +2161,9 @@ export default function AdminDashboard() {
                       return Array.from(allIds).sort().map(id => {
                         const cust = customersList.find(c => c.customerId === id) || agentsList.find(a => a.customerId === id);
                         const name = cust ? (cust.fullName || cust.customerName) : '';
-                        const truncatedName = name.length > 15 ? name.substring(0, 15) + '...' : name;
                         return (
                           <option key={id} value={id}>
-                            {id} {truncatedName}
+                            {id} {name}
                           </option>
                         );
                       });
@@ -2179,7 +2177,7 @@ export default function AdminDashboard() {
                     <select
                       value={depositFilterYear}
                       onChange={(e) => setDepositFilterYear(e.target.value)}
-                      className="w-1/2 border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
+                      className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
                     >
                       <option value="all">すべての年</option>
                       <option value="2026">2026年</option>
@@ -2191,7 +2189,7 @@ export default function AdminDashboard() {
                     <select
                       value={depositFilterMonth}
                       onChange={(e) => setDepositFilterMonth(e.target.value)}
-                      className="w-1/2 border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
+                      className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
                     >
                       <option value="all">すべての月</option>
                       {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
@@ -2203,7 +2201,7 @@ export default function AdminDashboard() {
 
                 <button
                   onClick={exportDepositsCSV}
-                  className="w-full bg-emerald-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-emerald-700 transition text-sm sm:text-base"
+                  className="w-full h-12 bg-emerald-600 text-white px-4 rounded-lg font-semibold hover:bg-emerald-700 transition text-sm sm:text-base flex items-center justify-center"
                 >
                   📥 CSVダウンロード
                 </button>
