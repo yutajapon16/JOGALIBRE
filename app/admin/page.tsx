@@ -1214,12 +1214,12 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex">
             {[
-              { key: 'requests' as const, label: 'リクエスト', icon: '📋' },
-              { key: 'purchased' as const, label: '履歴', icon: '🛒' },
+              { key: 'requests' as const, label: '申請', icon: '📋' },
+              { key: 'purchased' as const, label: '購入', icon: '🛒' },
               { key: 'deposits' as const, label: '入金', icon: '💵' },
               { key: 'shipping' as const, label: '発送', icon: '📦' },
               { key: 'customers' as const, label: '顧客', icon: '👥' },
-              { key: 'agents' as const, label: 'エージェント', icon: '👔' },
+              { key: 'agents' as const, label: 'AGT', icon: '👔' },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -2077,7 +2077,7 @@ export default function AdminDashboard() {
               <form onSubmit={handleCreateDeposit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">顧客 (ID 氏名)</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">顧客</label>
                     <select
                       value={depositForm.customerId}
                       onChange={(e) => setDepositForm({ ...depositForm, customerId: e.target.value })}
@@ -2103,7 +2103,7 @@ export default function AdminDashboard() {
                       type="date"
                       value={depositForm.depositDate}
                       onChange={(e) => setDepositForm({ ...depositForm, depositDate: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      className="w-full max-w-full box-border border border-gray-300 rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
                       required
                     />
                   </div>
@@ -2222,7 +2222,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* 入金履歴一覧リスト */}
-              <h3 className="text-lg font-bold mb-3 text-gray-900">入金履歴リスト</h3>
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">入金履歴</h2>
               {loadingDeposits ? (
                 <div className="text-center py-6 text-gray-500">読み込み中...</div>
               ) : getFilteredDeposits().length === 0 ? (
@@ -2234,7 +2234,7 @@ export default function AdminDashboard() {
                       <tr>
                         <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">入金日</th>
                         <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">入金額</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">顧客 (ID 氏名)</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">顧客</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">支払方法</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">操作</th>
                       </tr>
