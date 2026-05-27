@@ -2110,7 +2110,8 @@ export default function AdminDashboard() {
                         width: '100%',
                         maxWidth: '100%',
                         boxSizing: 'border-box',
-                        padding: '0 10px'
+                        padding: '0 10px',
+                        lineHeight: '46px'
                       }}
                       required
                     />
