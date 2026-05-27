@@ -1050,7 +1050,7 @@ export default function AdminDashboard() {
                 type="email"
                 value={loginForm.email}
                 onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-4 h-12 py-0 box-border text-base bg-white text-black focus:ring-2 focus:ring-indigo-500 outline-none"
                 required
               />
             </div>
@@ -1060,13 +1060,13 @@ export default function AdminDashboard() {
                 type="password"
                 value={loginForm.password}
                 onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-4 h-12 py-0 box-border text-base bg-white text-black focus:ring-2 focus:ring-indigo-500 outline-none"
                 required
               />
             </div>
             <button
               type="submit"
-              className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+              className="w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center text-base"
             >
               ログイン
             </button>
@@ -1125,7 +1125,7 @@ export default function AdminDashboard() {
                 href="whatsapp://"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 bg-[#25D366] text-white px-4 py-3 rounded-lg hover:bg-[#128C7E] transition text-sm sm:text-base flex items-center justify-center gap-2"
+                className="flex-1 bg-[#25D366] text-white px-4 h-12 rounded-lg hover:bg-[#128C7E] transition text-sm sm:text-base flex items-center justify-center gap-2"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1181,7 +1181,7 @@ export default function AdminDashboard() {
                     }
                   }
                 }}
-                className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
+                className={`flex-1 h-12 rounded-lg transition text-sm sm:text-base flex items-center justify-center ${notificationStatus === 'enabled'
                   ? 'bg-gray-500 text-white hover:bg-gray-600'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
@@ -1197,7 +1197,7 @@ export default function AdminDashboard() {
                 else if (activeTab === 'deposits') { fetchDeposits(); fetchUsersData(); }
                 else fetchUsersData();
               }}
-              className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
+              className="bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full flex items-center justify-center"
             >
               🔁 更新
             </button>
@@ -1389,7 +1389,7 @@ export default function AdminDashboard() {
                         {request.status === 'rejected' && (
                           <button
                             onClick={() => confirmCustomerRejection(request.id)}
-                            className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                            className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center"
                           >
                             削除を確認
                           </button>
@@ -1422,7 +1422,7 @@ export default function AdminDashboard() {
                           setSelectedRequest(request);
                           setActionType('reject');
                         }}
-                        className="w-full bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base mb-2"
+                        className="w-full bg-red-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base mb-2 flex items-center justify-center"
                       >
                         却下 (オファー取り消し)
                       </button>
@@ -1437,7 +1437,7 @@ export default function AdminDashboard() {
                           <div className="flex gap-2 mt-2">
                             <button
                               onClick={() => updateStatus(request.id, 'approved')}
-                              className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
+                              className="flex-1 bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center"
                             >
                               承認
                             </button>
@@ -1446,7 +1446,7 @@ export default function AdminDashboard() {
                                 setSelectedRequest(request);
                                 setActionType('reject');
                               }}
-                              className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                              className="flex-1 bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center"
                             >
                               却下
                             </button>
@@ -1467,7 +1467,7 @@ export default function AdminDashboard() {
                         <p className="text-sm text-red-800 mb-2">顧客がカウンターオファーを拒否しました</p>
                         <button
                           onClick={() => confirmCustomerRejection(request.id)}
-                          className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                          className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center"
                         >
                           削除を確認
                         </button>
@@ -1478,7 +1478,7 @@ export default function AdminDashboard() {
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <button
                           onClick={() => updateStatus(request.id, 'approved')}
-                          className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base"
+                          className="flex-1 bg-green-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
                         >
                           承認
                         </button>
@@ -1487,7 +1487,7 @@ export default function AdminDashboard() {
                             setSelectedRequest(request);
                             setActionType('counter');
                           }}
-                          className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base"
+                          className="flex-1 bg-blue-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center"
                         >
                           カウンターオファー
                         </button>
@@ -1496,7 +1496,7 @@ export default function AdminDashboard() {
                             setSelectedRequest(request);
                             setActionType('reject');
                           }}
-                          className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base"
+                          className="flex-1 bg-red-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center"
                         >
                           却下
                         </button>
@@ -1515,13 +1515,13 @@ export default function AdminDashboard() {
                             setFinalPriceInput(Math.round(suggestedPrice).toString());
                             setActionType('won');
                           }}
-                          className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base"
+                          className="flex-1 bg-green-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
                         >
                           落札
                         </button>
                         <button
                           onClick={() => updateFinalStatus(request.id, 'lost')}
-                          className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base"
+                          className="flex-1 bg-red-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center"
                         >
                           落札できず
                         </button>
@@ -1531,7 +1531,7 @@ export default function AdminDashboard() {
                     {request.finalStatus === 'lost' && (
                       <button
                         onClick={() => confirmCustomerRejection(request.id)}
-                        className="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition mt-3"
+                        className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition mt-3 flex items-center justify-center"
                       >
                         削除を確認
                       </button>
@@ -2337,13 +2337,13 @@ export default function AdminDashboard() {
                   setActionType(null);
                   setRejectReason('');
                 }}
-                className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleReject}
-                className="flex-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                className="flex-1 bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center"
               >
                 却下
               </button>
@@ -2374,7 +2374,7 @@ export default function AdminDashboard() {
                   placeholder="0"
                   value={shippingCostJpy}
                   onChange={(e) => setShippingCostJpy(e.target.value)}
-                  className="w-32 border border-gray-300 rounded px-3 py-2 text-sm text-right"
+                  className="w-32 h-12 border border-gray-300 rounded px-3 py-0 text-base text-right box-border focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black font-semibold"
                 />
               </div>
 
@@ -2413,13 +2413,13 @@ export default function AdminDashboard() {
                   setActionType(null);
                   setShippingCostJpy('');
                 }}
-                className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleCounterOffer}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+                className="flex-1 bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center"
               >
                 送信
               </button>
@@ -2443,7 +2443,7 @@ export default function AdminDashboard() {
                     type="number"
                     value={finalPriceInput}
                     onChange={(e) => setFinalPriceInput(e.target.value)}
-                    className="w-32 border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-lg font-bold text-indigo-600 text-right focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-32 h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-bold text-indigo-600 text-right focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white"
                     autoFocus
                   />
                 </div>
@@ -2460,7 +2460,7 @@ export default function AdminDashboard() {
                   setActionType(null);
                   setFinalPriceInput('');
                 }}
-                className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
               >
                 キャンセル
               </button>
@@ -2475,7 +2475,7 @@ export default function AdminDashboard() {
                     updateFinalStatus(selectedRequest.id, 'won', price);
                   }
                 }}
-                className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
+                className="flex-1 bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center"
               >
                 落札を確定
               </button>
@@ -2501,7 +2501,7 @@ export default function AdminDashboard() {
                     type="number"
                     value={editForm.depositAmount}
                     onChange={(e) => setEditForm({ ...editForm, depositAmount: Number(e.target.value) })}
-                    className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white text-black"
                     required
                   />
                 </div>
@@ -2528,7 +2528,7 @@ export default function AdminDashboard() {
                     value={editForm.agentCustomerId}
                     onChange={(e) => setEditForm({ ...editForm, agentCustomerId: e.target.value })}
                     placeholder="A001 など"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white text-black"
                   />
                   <p className="text-[10px] text-gray-500 mt-1">
                     ※エージェントID（Aから始まるID）を入力すると、顧客とエージェントが紐づきます
@@ -2540,13 +2540,13 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+                  className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                  className="flex-1 bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center"
                 >
                   保存
                 </button>
@@ -2575,7 +2575,7 @@ export default function AdminDashboard() {
                   value={editingStockItem.stockNumber}
                   onChange={(e) => setEditingStockItem({ ...editingStockItem, stockNumber: e.target.value })}
                   placeholder="例: C001S001"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white text-black"
                   autoFocus
                 />
                 <p className="text-[10px] text-gray-500 mt-1">
@@ -2587,13 +2587,13 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setEditingStockItem(null)}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+                  className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                  className="flex-1 bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center"
                 >
                   保存
                 </button>
@@ -2619,7 +2619,17 @@ export default function AdminDashboard() {
                   type="date"
                   value={editDepositForm.depositDate}
                   onChange={(e) => setEditDepositForm({ ...editDepositForm, depositDate: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none text-black bg-white"
+                  className="w-full h-12 block min-w-0 max-w-full box-border border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                  style={{
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    padding: '0 10px',
+                    lineHeight: '46px'
+                  }}
                   required
                 />
               </div>
@@ -2633,7 +2643,7 @@ export default function AdminDashboard() {
                     step="any"
                     value={editDepositForm.amount}
                     onChange={(e) => setEditDepositForm({ ...editDepositForm, amount: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg pl-7 pr-3 py-2 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none text-black bg-white"
+                    className="w-full h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none text-black bg-white box-border"
                     required
                   />
                 </div>
@@ -2644,7 +2654,7 @@ export default function AdminDashboard() {
                 <select
                   value={editDepositForm.paymentMethod}
                   onChange={(e) => setEditDepositForm({ ...editDepositForm, paymentMethod: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
                   required
                 >
                   <option value="bank">銀行</option>
@@ -2657,7 +2667,7 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => handleDeleteDeposit(editingDeposit.id)}
-                  className="bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm"
+                  className="bg-red-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm flex items-center justify-center"
                 >
                   削除
                 </button>
@@ -2665,13 +2675,13 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setEditingDeposit(null)}
-                  className="border border-gray-300 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-50 transition text-sm"
+                  className="border border-gray-300 text-gray-700 h-12 px-4 rounded-lg font-semibold hover:bg-gray-50 transition text-sm flex items-center justify-center"
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
-                  className="bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm"
+                  className="bg-indigo-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm flex items-center justify-center"
                 >
                   保存
                 </button>
