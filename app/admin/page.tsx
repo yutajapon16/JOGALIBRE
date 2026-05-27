@@ -1286,31 +1286,35 @@ export default function AdminDashboard() {
                       )}
 
                       <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
-                        <div className="flex flex-col gap-0.5">
-                          <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{request.productTitle}</h3>
-                          {request.productEndTime && (
-                            <p className="text-[10px] text-gray-500 mb-1">
-                              終了まで: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, 'ja')}</span>
-                            </p>
-                          )}
-                          <div className="flex flex-row items-center gap-1 mt-1 flex-nowrap overflow-x-auto">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getStatusColor(request.status)}`}>
-                              {getStatusText(request.status)}
-                            </span>
-                            {request.finalStatus && (
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getFinalStatusColor(request.finalStatus)}`}>
-                                {getFinalStatusText(request.finalStatus)}
-                              </span>
-                            )}
-                            {request.adminNeedsConfirm && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
-                                却下
-                              </span>
-                            )}
+                        {/* 1. 商品タイトル */}
+                        <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{request.productTitle}</h3>
+
+                        {/* 2. 終了までボックス (薄グレー) */}
+                        {request.productEndTime && (
+                          <div className="text-left text-xs text-gray-700 font-bold py-1.5 bg-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                            終了まで: <span className="text-red-600">{getTimeRemaining(request.productEndTime, 'ja')}</span>
                           </div>
+                        )}
+
+                        {/* 3. ステータスバッジ */}
+                        <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getStatusColor(request.status)}`}>
+                            {getStatusText(request.status)}
+                          </span>
+                          {request.finalStatus && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getFinalStatusColor(request.finalStatus)}`}>
+                              {getFinalStatusText(request.finalStatus)}
+                            </span>
+                          )}
+                          {request.adminNeedsConfirm && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
+                              却下
+                            </span>
+                          )}
                         </div>
 
-                        <div className="w-full mt-auto">
+                        {/* 4. ヤフオクURLボタン */}
+                        <div className="w-full">
                           <a
                             href={request.productUrl}
                             target="_blank"
