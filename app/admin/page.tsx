@@ -1551,15 +1551,15 @@ export default function AdminDashboard() {
         {/* 履歴タブ */}
         {activeTab === 'purchased' && (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4">購入済み商品</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-4">購入商品</h2>
 
-            <div className="flex flex-col gap-3 mb-6">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 whitespace-nowrap w-28">IDフィルター:</span>
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex flex-col gap-1 w-full">
+                <span className="text-sm font-semibold text-gray-600">ID:</span>
                 <select
                   value={selectedCustomer}
                   onChange={(e) => setSelectedCustomer(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
                 >
                   <option value="all">すべてのID</option>
                   {getCustomerIdList().map(id => {
@@ -1575,13 +1575,13 @@ export default function AdminDashboard() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 whitespace-nowrap w-28">期間(年月):</span>
-                <div className="flex gap-2 flex-1">
+              <div className="flex flex-col gap-1 w-full">
+                <span className="text-sm font-semibold text-gray-600">期間:</span>
+                <div className="flex gap-2 w-full">
                   <select
                     value={purchasedYear}
                     onChange={(e) => setPurchasedYear(e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                    className="w-1/2 border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
                   >
                     <option value="all">すべての年</option>
                     <option value="2026">2026年</option>
@@ -1593,7 +1593,7 @@ export default function AdminDashboard() {
                   <select
                     value={purchasedMonth}
                     onChange={(e) => setPurchasedMonth(e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                    className="w-1/2 border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
                   >
                     <option value="all">すべての月</option>
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
@@ -2103,7 +2103,7 @@ export default function AdminDashboard() {
                       type="date"
                       value={depositForm.depositDate}
                       onChange={(e) => setDepositForm({ ...depositForm, depositDate: e.target.value })}
-                      className="w-full max-w-full box-border border border-gray-300 rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      className="w-full min-w-0 box-border border border-gray-300 rounded-lg px-3 py-2 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
                       required
                     />
                   </div>
@@ -2147,13 +2147,13 @@ export default function AdminDashboard() {
 
             {/* フィルター＆抽出合計金額カード */}
             <div className="bg-white rounded-lg shadow p-4 sm:p-6 font-sans">
-              <div className="flex flex-col gap-3 mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600 whitespace-nowrap w-28">IDフィルター:</span>
+              <div className="flex flex-col gap-4 mb-6">
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">ID:</span>
                   <select
                     value={depositFilterCustomer}
                     onChange={(e) => setDepositFilterCustomer(e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-3 text-base flex-1 bg-white text-black"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
                   >
                     <option value="all">すべてのID</option>
                     {(() => {
@@ -2173,13 +2173,13 @@ export default function AdminDashboard() {
                   </select>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600 whitespace-nowrap w-28">期間(年月):</span>
-                  <div className="flex gap-2 flex-1">
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">期間:</span>
+                  <div className="flex gap-2 w-full">
                     <select
                       value={depositFilterYear}
                       onChange={(e) => setDepositFilterYear(e.target.value)}
-                      className="border border-gray-300 rounded px-3 py-3 text-base flex-1 bg-white text-black"
+                      className="w-1/2 border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
                     >
                       <option value="all">すべての年</option>
                       <option value="2026">2026年</option>
@@ -2191,7 +2191,7 @@ export default function AdminDashboard() {
                     <select
                       value={depositFilterMonth}
                       onChange={(e) => setDepositFilterMonth(e.target.value)}
-                      className="border border-gray-300 rounded px-3 py-3 text-base flex-1 bg-white text-black"
+                      className="w-1/2 border border-gray-300 rounded-lg px-3 py-3 text-base bg-white text-black box-border"
                     >
                       <option value="all">すべての月</option>
                       {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
@@ -2232,9 +2232,9 @@ export default function AdminDashboard() {
                   <table className="min-w-full divide-y divide-gray-200 text-sm">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">入金日</th>
-                        <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">入金額</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">顧客</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">入金日</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">入金額</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">顧客</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">支払方法</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">操作</th>
                       </tr>
