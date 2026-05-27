@@ -2102,8 +2102,16 @@ export default function AdminDashboard() {
                       type="date"
                       value={depositForm.depositDate}
                       onChange={(e) => setDepositForm({ ...depositForm, depositDate: e.target.value })}
-                      className="w-full h-12 min-w-0 max-w-full box-border border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
-                      style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+                      className="w-full h-12 block min-w-0 max-w-full box-border border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      style={{
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        display: 'block',
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
+                        padding: '0 10px'
+                      }}
                       required
                     />
                   </div>
