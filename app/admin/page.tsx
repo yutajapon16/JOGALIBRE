@@ -1291,8 +1291,9 @@ export default function AdminDashboard() {
 
                         {/* 2. 終了までボックス (薄グレー) */}
                         {request.productEndTime && (
-                          <div className="text-left text-xs text-gray-700 font-bold py-1.5 bg-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
-                            終了まで: <span className="text-red-600">{getTimeRemaining(request.productEndTime, 'ja')}</span>
+                          <div className="text-left text-xs py-1.5 bg-gray-50 border border-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                            <span className="text-gray-500 font-medium mr-1">終了まで:</span>
+                            <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, 'ja')}</span>
                           </div>
                         )}
 
