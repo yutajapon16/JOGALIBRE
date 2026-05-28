@@ -121,6 +121,8 @@ const translations = {
     condAll: 'Todos',
     condNew: 'Nuevo',
     condUsed: 'Usado',
+    depositsTab: 'Depósitos',
+    shippingTab: 'Envíos',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -221,6 +223,8 @@ const translations = {
     condAll: 'Todos',
     condNew: 'Novo',
     condUsed: 'Usado',
+    depositsTab: 'Depósitos',
+    shippingTab: 'Envios',
   }
 };
 
@@ -320,7 +324,7 @@ export default function Home() {
     country: '',
     agentCustomerId: ''
   });
-  const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping'>('search');
 
   // 支払い方法選択モーダル用
   const [selectedPaymentItem, setSelectedPaymentItem] = useState<BidRequest | null>(null);
@@ -2070,13 +2074,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* タブ選択バーを為替レートボックスの下に配置 */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mt-4 font-sans">
+        {/* タブ選択バー（管理画面と同様のラインデザイン ＆ Sticky化） */}
+        <nav className="bg-white border-b sticky top-0 z-10 mt-4 font-sans -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
           <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none">
             {[
               { key: 'search' as const, label: t.searchBottomTab, icon: '🔍' },
               { key: 'favorites' as const, label: t.favoritesTab, icon: '⭐' },
               { key: 'requests' as const, label: t.myRequests, icon: '📋' },
+              { key: 'deposits' as const, label: t.depositsTab, icon: '💵' },
+              { key: 'shipping' as const, label: t.shippingTab, icon: '📦' },
               { key: 'purchased' as const, label: t.purchasedItems, icon: '🛒' },
               { key: 'mypage' as const, label: t.myPage, icon: '👤' },
             ].map((tab) => (
@@ -2090,10 +2096,10 @@ export default function Home() {
                     fetchUserProfile();
                   }
                 }}
-                className={`flex-1 py-2 px-1 text-center text-[9px] sm:text-[10px] font-bold border-b-2 transition min-w-[60px] ${
+                className={`flex-1 py-3 px-2 text-center text-[10px] sm:text-xs font-semibold border-b-2 transition min-w-[65px] ${
                   activeTab === tab.key
-                    ? 'border-indigo-600 text-indigo-600 bg-indigo-50/30'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50/50'
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
                 <span className="block text-lg mb-0.5">{tab.icon}</span>
@@ -2101,7 +2107,7 @@ export default function Home() {
               </button>
             ))}
           </div>
-        </div>
+        </nav>
       </div>
 
       <main className="max-w-7xl mx-auto px-4 pt-0 sm:pt-0 pb-8 sm:px-6 lg:px-8">
@@ -2675,6 +2681,20 @@ export default function Home() {
 
               </>
             )}
+          </div>
+        ) : activeTab === 'deposits' ? (
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans">
+            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.depositsTab}</h2>
+            <div className="text-center text-gray-500 py-12">
+              <p>{lang === 'es' ? 'No hay información de depósitos.' : 'Não há informações de depósitos.'}</p>
+            </div>
+          </div>
+        ) : activeTab === 'shipping' ? (
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans">
+            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.shippingTab}</h2>
+            <div className="text-center text-gray-500 py-12">
+              <p>{lang === 'es' ? 'No hay información de envío.' : 'Não há informações de envio.'}</p>
+            </div>
           </div>
         ) : activeTab === 'mypage' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
