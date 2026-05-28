@@ -2487,51 +2487,53 @@ export default function Home() {
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 font-sans">
               <h2 className="text-xl sm:text-2xl font-bold mb-4">{t.purchasedItems}</h2>
 
-              <div className="flex flex-col gap-3 mb-6">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 whitespace-nowrap w-28">{t.filterByCustomer}:</span>
-                <select
-                  value={selectedCustomer}
-                  onChange={(e) => setSelectedCustomer(e.target.value)}
-                  className="border border-gray-300 rounded px-3 h-12 text-base flex-1 bg-white"
-                >
-                  <option value="all">{t.allCustomers}</option>
-                  {getCustomerList().map(customerName => (
-                    <option key={customerName} value={customerName}>
-                      {customerName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 whitespace-nowrap w-28">{lang === 'es' ? 'Período:' : 'Período:'}</span>
-                <div className="flex gap-2 flex-1">
+              <div className="flex flex-col gap-4 mb-6">
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">{t.filterByCustomer}:</span>
                   <select
-                    value={purchasedYear}
-                    onChange={(e) => setPurchasedYear(e.target.value)}
-                    className="border border-gray-300 rounded px-3 h-12 text-base flex-1 bg-white"
+                    value={selectedCustomer}
+                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                    className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
                   >
-                    <option value="all">{lang === 'es' ? 'Año' : 'Ano'}</option>
-                    <option value="2026">2026</option>
-                    <option value="2027">2027</option>
-                    <option value="2028">2028</option>
-                    <option value="2029">2029</option>
-                    <option value="2030">2030</option>
-                  </select>
-                  <select
-                    value={purchasedMonth}
-                    onChange={(e) => setPurchasedMonth(e.target.value)}
-                    className="border border-gray-300 rounded px-3 h-12 text-base flex-1 bg-white"
-                  >
-                    <option value="all">{lang === 'es' ? 'Mes' : 'Mês'}</option>
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                      <option key={m} value={m.toString()}>{m}</option>
+                    <option value="all">{t.allCustomers}</option>
+                    {getCustomerList().map(customerName => (
+                      <option key={customerName} value={customerName}>
+                        {customerName}
+                      </option>
                     ))}
                   </select>
                 </div>
+
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">
+                    {lang === 'es' ? 'Período:' : 'Período:'}
+                  </span>
+                  <div className="flex gap-2 w-full">
+                    <select
+                      value={purchasedYear}
+                      onChange={(e) => setPurchasedYear(e.target.value)}
+                      className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                    >
+                      <option value="all">{lang === 'es' ? 'Año' : 'Ano'}</option>
+                      <option value="2026">2026</option>
+                      <option value="2027">2027</option>
+                      <option value="2028">2028</option>
+                      <option value="2029">2029</option>
+                      <option value="2030">2030</option>
+                    </select>
+                    <select
+                      value={purchasedMonth}
+                      onChange={(e) => setPurchasedMonth(e.target.value)}
+                      className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                    >
+                      <option value="all">{lang === 'es' ? 'Mes' : 'Mês'}</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                        <option key={m} value={m.toString()}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-            </div>
 
             {/* WhatsApp 支払い証明書送信ボタン */}
             <div className="mb-6">
@@ -2567,22 +2569,22 @@ export default function Home() {
                 .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
 
               return (
-                <div className="grid grid-cols-2 gap-3 mb-0 bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
-                  <div className="bg-white border border-red-100 rounded-lg p-3">
-                    <p className="text-[10px] sm:text-xs font-bold text-red-500 uppercase tracking-wider mb-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-red-500 uppercase tracking-wider">
                       {lang === 'es' ? 'Monto Pendiente' : 'Valor Pendente'}
-                    </p>
-                    <p className="text-xl sm:text-2xl font-black text-red-600">
+                    </span>
+                    <span className="text-base font-black text-red-600">
                       ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
-                    </p>
+                    </span>
                   </div>
-                  <div className="bg-white border border-indigo-50 rounded-lg p-3">
-                    <p className="text-[10px] sm:text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">
+                  <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider">
                       {lang === 'es' ? 'Monto Total' : 'Valor Total'}
-                    </p>
-                    <p className="text-xl sm:text-2xl font-black text-indigo-600">
+                    </span>
+                    <span className="text-base font-black text-indigo-600">
                       ${Math.round(summaryTotal).toLocaleString('en-US')}
-                    </p>
+                    </span>
                   </div>
                 </div>
               );
@@ -2603,7 +2605,7 @@ export default function Home() {
                     .sort((a, b) => new Date(b.confirmedAt || '').getTime() - new Date(a.confirmedAt || '').getTime())
                     .map((item, index) => (
                       <div key={`purchased-${index}-${item.id}`} className="bg-white rounded-lg shadow-md p-3 sm:p-4 border border-gray-100 font-sans">
-                        <div className="flex gap-4 mb-3">
+                        <div className="flex gap-4 mb-2">
                           {item.productImage && (
                             <div className="relative w-32 h-32 flex-shrink-0">
                               <Image
@@ -2615,26 +2617,31 @@ export default function Home() {
                               />
                             </div>
                           )}
-                          <div className="flex-1 min-w-0 h-32 flex flex-col justify-between py-0.5 overflow-hidden">
-                            <div>
-                              <h3 className="text-xs font-semibold mb-1 line-clamp-2 leading-tight">{item.productTitle}</h3>
-                              <div className="text-[11px] text-gray-600 space-y-0.5 w-full">
-                                <p className="truncate">
-                                  {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
-                                    lang === 'es' ? 'Su AGT: ' : 'Seu AGT: '
-                                  ) : (
-                                    'Cliente: '
-                                  )}
-                                  <span className="font-bold text-gray-900">{item.customerName}</span>
-                                </p>
-                                <p className="whitespace-nowrap">{lang === 'es' ? 'Fecha:' : 'Data:'} {formatDateTime(item.confirmedAt || '', 'customer')}</p>
-                                {item.stockNumber && (
-                                  <p className="font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded border inline-block text-[10px] mt-0.5">
-                                    Stock No: {item.stockNumber}
-                                  </p>
-                                )}
+                          <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
+                            {/* 1. 商品タイトル (最大2行) */}
+                            <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight">{item.productTitle}</h3>
+
+                            {/* 2. 在庫番号ボックス (申請タブの終了までと同等のスタイル・高さ) */}
+                            {item.stockNumber ? (
+                              <div className="text-left text-xs py-1.5 bg-gray-50 border border-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                                <span className="text-gray-500 font-medium mr-1">
+                                  {lang === 'es' ? 'Nº de stock:' : 'Nº de stock:'}
+                                </span>
+                                <span className="font-semibold text-gray-900">{item.stockNumber}</span>
                               </div>
-                            </div>
+                            ) : (
+                              <div className="text-left text-xs py-1.5 bg-gray-50 border border-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis opacity-0 select-none">
+                                <span className="text-gray-500 font-medium mr-1">
+                                  {lang === 'es' ? 'Nº de stock:' : 'Nº de stock:'}
+                                </span>
+                                <span className="font-semibold text-gray-900">-</span>
+                              </div>
+                            )}
+
+                            {/* 3. ステータスバッジの列は空欄にする */}
+                            <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto h-5"></div>
+
+                            {/* 4. ヤフオクURLボタン */}
                             <div className="w-full">
                               <a
                                 href={item.productUrl}
@@ -2648,36 +2655,60 @@ export default function Home() {
                           </div>
                         </div>
 
-                        <div className="pt-3 border-t flex items-center justify-between gap-2">
+                        {/* 顧客/エージェント情報 & 確認日時のh-12ボックス */}
+                        <div className="mb-2 h-12 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs box-border grid grid-cols-2 gap-2">
+                          <div className="flex flex-col justify-center h-full min-w-0">
+                            <span className="text-gray-500 text-[10px] leading-tight">
+                              {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
+                                lang === 'es' ? 'Su AGT:' : 'Seu AGT:'
+                              ) : (
+                                'Cliente:'
+                              )}
+                            </span>
+                            <span className="font-semibold truncate text-black leading-tight">
+                              {item.customerName}
+                            </span>
+                          </div>
+                          <div className="flex flex-col justify-center h-full min-w-0">
+                            <span className="text-gray-500 text-[10px] leading-tight">
+                              {lang === 'es' ? 'Fecha de confirmación:' : 'Data de confirmação:'}
+                            </span>
+                            <span className="font-semibold truncate text-black leading-tight">
+                              {item.confirmedAt ? formatDateTime(item.confirmedAt, 'customer') : '-'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 支払情報 & 金額ボックス (h-12) */}
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                           <div>
                             {!item.paid ? (
                               <button
                                 onClick={() => openPaymentModal(item)}
-                                className="text-center text-xs text-white font-bold h-12 bg-green-600 hover:bg-green-700 rounded px-4 shadow-sm transition whitespace-nowrap flex items-center justify-center font-sans"
+                                className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 transition shadow-sm font-sans flex items-center justify-center"
                               >
                                 {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
                               </button>
                             ) : (
-                              <div className="flex items-center gap-1.5 shrink-0 font-sans">
-                                <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full whitespace-nowrap shrink-0">
+                              <div className="flex items-center gap-1.5 shrink-0 font-sans py-1.5">
+                                <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-semibold rounded-full whitespace-nowrap shrink-0">
                                   ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
                                 </span>
                                 {item.paidAt && (
-                                  <span className="text-[11px] font-bold text-gray-600 whitespace-nowrap">
+                                  <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap">
                                     {formatDateTime(item.paidAt, 'customer')}
                                   </span>
                                 )}
                               </div>
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 font-sans">
-                            <p className={`text-lg sm:text-xl font-bold whitespace-nowrap shrink-0 ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                              ${Math.round(
-                                item.finalPrice ||
-                                (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
-                              ).toLocaleString('en-US')}
-                            </p>
-                          </div>
+                          
+                          <span className={`text-base font-bold whitespace-nowrap font-sans ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                            ${Math.round(
+                              item.finalPrice ||
+                              (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
+                            ).toLocaleString('en-US')}
+                          </span>
                         </div>
                       </div>
                     ))}
