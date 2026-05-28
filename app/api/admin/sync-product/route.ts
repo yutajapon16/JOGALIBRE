@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
+import { parseJstDateTime } from '@/lib/utils';
 
 async function getSupabaseServer() {
   return createServerClient(
@@ -115,8 +116,8 @@ export async function POST(request: Request) {
               endTime = parsedDate.toISOString();
             }
           } else if (typeof itemData.endTime === 'string') {
-            const parsedDate = new Date(itemData.endTime);
-            if (!isNaN(parsedDate.getTime())) {
+            const parsedDate = parseJstDateTime(itemData.endTime);
+            if (parsedDate) {
               endTime = parsedDate.toISOString();
             }
           }
@@ -134,7 +135,8 @@ export async function POST(request: Request) {
       });
     }
 
-    const isNewEndTimeFuture = new Date(endTime).getTime() > Date.now();
+    const parsedEndTime = parseJstDateTime(endTime);
+    const isNewEndTimeFuture = parsedEndTime ? parsedEndTime.getTime() > Date.now() : false;
 
     if (!isNewEndTimeFuture) {
       // 取得した終了時刻が過去（再出品されていない状態）

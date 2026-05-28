@@ -1,15 +1,18 @@
 export const formatDateTime = (dateString: string, mode: 'admin' | 'customer' = 'admin') => {
   if (!dateString) return '-';
 
+  // Safari 等で Invalid Date にならないよう半角スペースを T に置換し、区切り文字を正規化する
+  const cleanStr = dateString.trim().replace(/\//g, '-').replace(' ', 'T');
+
   // タイムゾーン情報がない場合、UTC として扱う(page側) / JSTとして扱う(admin側)の差があったため、
   // admin/page.tsx では "+09:00" を付けて呼んでいたのを統一し、呼び出し側で解決させるか、
   // あるいは元のコードの通り "Z" (またはタイムゾーンなし) としてパースします。
   // ここでは元コードの安全性を重視し、"Z"を付加するアプローチ（page.tsx互換）を基本とします。
   let date: Date;
-  if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-    date = new Date(dateString + 'Z');
+  if (!cleanStr.includes('Z') && !cleanStr.includes('+') && !cleanStr.includes('-', 10)) {
+    date = new Date(cleanStr + 'Z');
   } else {
-    date = new Date(dateString);
+    date = new Date(cleanStr);
   }
 
   if (isNaN(date.getTime())) return dateString;
@@ -60,11 +63,15 @@ export const formatDateTime = (dateString: string, mode: 'admin' | 'customer' = 
 
 export const formatDateOnly = (dateString: string, mode: 'admin' | 'customer' = 'admin') => {
   if (!dateString) return '-';
+
+  // Safari 等で Invalid Date にならないよう半角スペースを T に置換し、区切り文字を正規化する
+  const cleanStr = dateString.trim().replace(/\//g, '-').replace(' ', 'T');
+
   let date: Date;
-  if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-    date = new Date(dateString + 'Z');
+  if (!cleanStr.includes('Z') && !cleanStr.includes('+') && !cleanStr.includes('-', 10)) {
+    date = new Date(cleanStr + 'Z');
   } else {
-    date = new Date(dateString);
+    date = new Date(cleanStr);
   }
 
   if (isNaN(date.getTime())) return dateString;
@@ -126,16 +133,44 @@ export const parseYahooTimeRaw = (raw: string) => {
   return formattedTime || raw.replace(/残り|あと|残り時間|まで/g, '').trim();
 };
 
+/**
+ * ヤフオクなどの日付文字列（日本時間 JST 基準）を、環境（UTCサーバーや海外のクライアントなど）に依存せず、
+ * かつ各種ブラウザ（iOS Safari等）でエラーにならないよう安全に Date オブジェクトにパースします。
+ */
+export const parseJstDateTime = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
+
+  // 前後の空白を除去
+  let cleanStr = dateStr.trim();
+
+  // スラッシュ '/' が使われている場合はハイフン '-' に統一
+  cleanStr = cleanStr.replace(/\//g, '-');
+
+  // すでに ISO 形式でタイムゾーンがある場合はそのままパース
+  // Z または +XX:XX または -XX:XX (日付のハイフンと区別するためインデックス10以降)
+  const hasTimeZone = cleanStr.includes('Z') || cleanStr.includes('+') || cleanStr.includes('-', 10);
+
+  if (!hasTimeZone) {
+    // タイムゾーンがない場合、日本時間 (JST = +09:00) として扱う
+    // 日付と時刻の間のスペースを 'T' に置換してブラウザでのパースエラーを防止
+    cleanStr = cleanStr.replace(' ', 'T');
+    // JST タイムゾーンを付与
+    cleanStr = cleanStr + '+09:00';
+  } else {
+    // タイムゾーンがある場合も、スペースを 'T' に置換しておくことで Safari 等でのパースエラーを防ぐ
+    cleanStr = cleanStr.replace(' ', 'T');
+  }
+
+  const parsed = new Date(cleanStr);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
+
 export const getTimeRemaining = (endTime: string, lang: 'ja' | 'es' | 'pt', timeLeftStr?: string) => {
   if (!endTime) return timeLeftStr || '-';
 
-  // タイムゾーン情報がない場合、日本標準時 (JST) として扱う
-  let endDate: Date;
-  if (!endTime.includes('Z') && !endTime.includes('+') && !endTime.includes('-', 10)) {
-    endDate = new Date(endTime + '+09:00');
-  } else {
-    endDate = new Date(endTime);
-  }
+  // タイムゾーンを考慮して安全にパース
+  const endDate = parseJstDateTime(endTime);
+  if (!endDate) return timeLeftStr || '-';
 
   const now = new Date().getTime();
   const end = endDate.getTime();

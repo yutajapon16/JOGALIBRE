@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseJstDateTime } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
@@ -95,8 +96,8 @@ export async function POST(request: Request) {
                   endTime = parsedDate.toISOString();
                 }
               } else if (typeof itemData.endTime === 'string') {
-                const parsedDate = new Date(itemData.endTime);
-                if (!isNaN(parsedDate.getTime())) {
+                const parsedDate = parseJstDateTime(itemData.endTime);
+                if (parsedDate) {
                   endTime = parsedDate.toISOString();
                 } else {
                   endTime = itemData.endTime; // パースできない場合は文字列のまま保持（フォールバック）
@@ -247,8 +248,8 @@ export async function POST(request: Request) {
     // 残り時間の計算 (詳細取得用)
     let timeLeft = '-';
     if (endTime) {
-      const parsedEndTime = new Date(endTime);
-      if (!isNaN(parsedEndTime.getTime())) {
+      const parsedEndTime = parseJstDateTime(endTime);
+      if (parsedEndTime) {
         const diff = Math.max(0, parsedEndTime.getTime() - Date.now());
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
         const h = Math.floor((diff / (1000 * 60 * 60)) % 24);

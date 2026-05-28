@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
-import { parseYahooTimeRaw } from '@/lib/utils';
+import { parseYahooTimeRaw, parseJstDateTime } from '@/lib/utils';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -104,10 +104,10 @@ export async function GET(request: Request) {
             let timeLeft = '-';
             let endTimeISO = '';
             if (endTimeStr) {
-              const endTimeUnix = new Date(endTimeStr).getTime();
-              if (!isNaN(endTimeUnix)) {
-                endTimeISO = new Date(endTimeUnix).toISOString();
-                const diff = Math.max(0, endTimeUnix - Date.now());
+              const parsedDate = parseJstDateTime(endTimeStr);
+              if (parsedDate) {
+                endTimeISO = parsedDate.toISOString();
+                const diff = Math.max(0, parsedDate.getTime() - Date.now());
                 const d = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
                 const m = Math.floor((diff / 1000 / 60) % 60);
