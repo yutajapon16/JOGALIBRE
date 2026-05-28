@@ -2133,15 +2133,14 @@ export default function Home() {
             )}
           </div>
         ) : activeTab === 'requests' ? (
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myRequests}</h2>
-
-            {myRequests.length === 0 ? (
-              <div className="text-center text-gray-500 py-12">
-                <p>No hay solicitudes</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
+          myRequests.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center font-sans">
+              <p className="text-gray-500 text-lg">
+                {lang === 'es' ? 'No hay solicitudes' : 'Não há solicitações'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
                 {myRequests
                   .sort((a, b) => {
                     const now = new Date().getTime();
@@ -2481,13 +2480,14 @@ export default function Home() {
                     </div>
                   ))}
               </div>
-            )}
-          </div>
+            )
         ) : activeTab === 'purchased' ? (
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4">{t.purchasedItems}</h2>
+          <>
+            {/* 上部ヘッダー（フィルター等）の個別カード化 */}
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 font-sans">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4">{t.purchasedItems}</h2>
 
-            <div className="flex flex-col gap-3 mb-6 font-sans">
+              <div className="flex flex-col gap-3 mb-6">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 whitespace-nowrap w-28">{t.filterByCustomer}:</span>
                 <select
@@ -2567,7 +2567,7 @@ export default function Home() {
                 .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
 
               return (
-                <div className="grid grid-cols-2 gap-3 mb-6 bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
+                <div className="grid grid-cols-2 gap-3 mb-0 bg-gray-50 border border-gray-100 rounded-xl p-4 shadow-sm">
                   <div className="bg-white border border-red-100 rounded-lg p-3">
                     <p className="text-[10px] sm:text-xs font-bold text-red-500 uppercase tracking-wider mb-1">
                       {lang === 'es' ? 'Monto Pendiente' : 'Valor Pendente'}
@@ -2587,11 +2587,14 @@ export default function Home() {
                 </div>
               );
             })()}
+            </div>
 
 
             {purchasedItems.length === 0 ? (
-              <div className="text-center text-gray-500 py-12">
-                <p>No hay productos comprados</p>
+              <div className="bg-white rounded-lg shadow-md p-12 text-center font-sans">
+                <p className="text-gray-500 text-lg">
+                  {lang === 'es' ? 'No hay productos comprados' : 'Não há produtos comprados'}
+                </p>
               </div>
             ) : (
               <>
@@ -2599,7 +2602,7 @@ export default function Home() {
                   {getFilteredPurchasedItems()
                     .sort((a, b) => new Date(b.confirmedAt || '').getTime() - new Date(a.confirmedAt || '').getTime())
                     .map((item, index) => (
-                      <div key={`purchased-${index}-${item.id}`} className="border rounded-lg p-4">
+                      <div key={`purchased-${index}-${item.id}`} className="bg-white rounded-lg shadow-md p-3 sm:p-4 border border-gray-100 font-sans">
                         <div className="flex gap-4 mb-3">
                           {item.productImage && (
                             <div className="relative w-32 h-32 flex-shrink-0">
@@ -2683,7 +2686,7 @@ export default function Home() {
 
               </>
             )}
-          </div>
+          </>
         ) : activeTab === 'deposits' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans">
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.depositsTab}</h2>
