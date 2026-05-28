@@ -1927,7 +1927,7 @@ export default function Home() {
           </div>
         </div>
       )}
-      <header className="bg-white shadow sticky top-0 z-50 pt-safe">
+      <header className="bg-white shadow pt-safe">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ & 言語選択 & ログアウト */}
           <div className="flex justify-between items-center mb-2">
@@ -2076,7 +2076,7 @@ export default function Home() {
       </div>
 
       {/* タブ選択バー（管理画面と同様のラインデザイン ＆ Sticky化） */}
-      <nav className="bg-white border-b sticky top-0 z-10 font-sans shadow-sm">
+      <nav className="bg-white border-b sticky top-0 z-40 font-sans shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none">
             {[
