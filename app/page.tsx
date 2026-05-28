@@ -2073,17 +2073,19 @@ export default function Home() {
             {t.exchangeRate}: <span className="font-bold text-indigo-600 ml-1.5">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
           </div>
         </div>
+      </div>
 
-        {/* タブ選択バー（管理画面と同様のラインデザイン ＆ Sticky化） */}
-        <nav className="bg-white border-b sticky top-0 z-10 mt-4 font-sans -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      {/* タブ選択バー（管理画面と同様のラインデザイン ＆ Sticky化） */}
+      <nav className="bg-white border-b sticky top-0 z-10 font-sans shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none">
             {[
               { key: 'search' as const, label: t.searchBottomTab, icon: '🔍' },
               { key: 'favorites' as const, label: t.favoritesTab, icon: '⭐' },
               { key: 'requests' as const, label: t.myRequests, icon: '📋' },
+              { key: 'purchased' as const, label: t.purchasedItems, icon: '🛒' },
               { key: 'deposits' as const, label: t.depositsTab, icon: '💵' },
               { key: 'shipping' as const, label: t.shippingTab, icon: '📦' },
-              { key: 'purchased' as const, label: t.purchasedItems, icon: '🛒' },
               { key: 'mypage' as const, label: t.myPage, icon: '👤' },
             ].map((tab) => (
               <button
@@ -2107,10 +2109,10 @@ export default function Home() {
               </button>
             ))}
           </div>
-        </nav>
-      </div>
+        </div>
+      </nav>
 
-      <main className="max-w-7xl mx-auto px-4 pt-0 sm:pt-0 pb-8 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto px-4 pt-6 pb-8 sm:px-6 lg:px-8">
         {activeTab === 'favorites' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-8">
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.favoritesTab}</h2>
