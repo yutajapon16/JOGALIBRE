@@ -1408,15 +1408,19 @@ export default function AdminDashboard() {
                     )}
 
                     {request.customerCounterOffer && (
-                      <div className="mb-2 p-3 bg-purple-50 rounded-lg">
-                        <p className="text-sm text-gray-600">顧客からのカウンターオファー:</p>
-                        <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer).toLocaleString('en-US')}</p>
+                      <div className="flex flex-col gap-2 mb-2 w-full">
+                        <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
+                          <span className="text-xs text-gray-500 font-medium">顧客からのカウンターオファー:</span>
+                          <span className="text-base font-bold text-purple-700">
+                            ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
+                          </span>
+                        </div>
 
                         {!request.customerCounterOfferUsed && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
-                          <div className="flex gap-2 mt-2">
+                          <div className="flex flex-col gap-2 w-full">
                             <button
                               onClick={() => updateStatus(request.id, 'approved')}
-                              className="flex-1 bg-green-600 text-white h-12 shrink-0 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center"
+                              className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center text-sm sm:text-base"
                             >
                               承認
                             </button>
@@ -1425,17 +1429,17 @@ export default function AdminDashboard() {
                                 setSelectedRequest(request);
                                 setActionType('reject');
                               }}
-                              className="flex-1 bg-red-600 text-white h-12 shrink-0 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center"
+                              className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center text-sm sm:text-base"
                             >
                               却下
                             </button>
                           </div>
                         )}
 
-                        {/* ✓承認済みを削除（上の管理者カウンターオファーボックスに移動済み） */}
-
                         {request.adminNeedsConfirm && (
-                          <p className="text-xs text-red-600 mt-2">✓ 却下済み</p>
+                          <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center text-xs text-red-600 font-semibold">
+                            ✓ 却下済み
+                          </div>
                         )}
                       </div>
                     )}

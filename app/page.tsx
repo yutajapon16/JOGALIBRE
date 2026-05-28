@@ -2296,47 +2296,78 @@ export default function Home() {
 
                       {/* ケース2: 顧客がカウンターオファー送信済み（管理者返答待ち） */}
                       {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
-                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                          <span className="text-xs text-gray-500 font-medium">Contraoferta: ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</span>
-                          <span className="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded shadow-sm">
-                            {t.yourCounterOffer}: ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
-                          </span>
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                            <span className="text-base font-bold text-blue-700">
+                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                            </span>
+                          </div>
+                          <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
+                            <span className="text-base font-bold text-purple-700">
+                              ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                            </span>
+                          </div>
                         </div>
                       )}
 
                       {/* ケース3A: 管理者が顧客のカウンターオファーを承認 */}
                       {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-gray-500">Contra: ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</span>
-                            <span className="font-bold text-purple-700">{t.yourCounterOffer}: ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}</span>
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                            <span className="text-base font-bold text-blue-700">
+                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                            </span>
                           </div>
-                          <div className="text-xs text-green-600 font-semibold truncate leading-tight">
-                            {lang === 'es' ? 'Tu contraoferta fue aceptada. Esperando subasta.' : 'Sua contraoferta foi aceita. Aguardando leilão.'}
+                          <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
+                            <span className="text-base font-bold text-purple-700">
+                              ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                            </span>
+                          </div>
+                          <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center">
+                            <p className="text-xs font-semibold text-green-700">
+                              {lang === 'es' 
+                                ? 'Tu contraoferta fue aceptada. Esperando subasta.' 
+                                : 'Sua contraoferta foi aceita. Aguardando leilão.'}
+                            </p>
                           </div>
                         </div>
                       )}
 
                       {/* ケース3B: 顧客が管理者のカウンターオファーを承認 */}
                       {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-blue-700 font-bold">Contra: ${Math.round(request.counterOffer || 0).toLocaleString('en-US')} (Aceptado)</span>
-                            <span className="text-gray-400 font-medium">{t.yourCounterOffer}: ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')} (Rechazado)</span>
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                            <span className="text-base font-bold text-blue-700">
+                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                            </span>
                           </div>
-                          <div className="text-xs text-green-600 font-semibold truncate leading-tight">
-                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
+                          <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center">
+                            <p className="text-xs font-semibold text-green-700">
+                              {lang === 'es' ? 'Aceptaste la contraoferta. Esperando el resultado de la subasta.' : 'Você aceitou a contraoferta. Aguardando o resultado do leilão.'}
+                            </p>
                           </div>
                         </div>
                       )}
 
                       {/* ケース3C: 顧客が管理者のカウンターオファーを直接承認 */}
                       {!request.customerCounterOffer && request.counterOffer && request.status === 'approved' && !request.finalStatus && (
-                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                          <span className="text-xs text-blue-700 font-bold">Contra: ${Math.round(request.counterOffer || 0).toLocaleString('en-US')} (Aceptado)</span>
-                          <span className="text-xs text-gray-500 font-semibold">
-                            {lang === 'es' ? 'Esperando subasta' : 'Aguardando leilão'}
-                          </span>
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                            <span className="text-base font-bold text-blue-700">
+                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                            </span>
+                          </div>
+                          <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center">
+                            <p className="text-xs font-semibold text-green-700">
+                              {lang === 'es' ? 'Aceptaste la contraoferta. Esperando el resultado de la subasta.' : 'Você aceitou a contraoferta. Aguardando o resultado do leilão.'}
+                            </p>
+                          </div>
                         </div>
                       )}
 
@@ -2351,14 +2382,21 @@ export default function Home() {
 
                       {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 削除確認待ち */}
                       {request.adminNeedsConfirm && !request.customerCounterOffer && (
-                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-gray-500">Contraoferta:</span>
-                            <span className="font-bold text-blue-700">${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</span>
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                            <span className="text-base font-bold text-blue-700">
+                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                            </span>
+                          </div>
+                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center">
+                            <p className="text-xs font-semibold text-gray-600">
+                              {lang === 'es' ? 'Rechazaste la contraoferta.' : 'Você rejeitou a contraoferta.'}
+                            </p>
                           </div>
                           <button
                             onClick={() => confirmRejection(request.id)}
-                            className="w-full bg-red-600 text-white h-9 rounded-lg hover:bg-red-700 text-xs font-bold"
+                            className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
                           >
                             {t.confirm}
                           </button>
@@ -2367,27 +2405,31 @@ export default function Home() {
 
                       {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
                       {request.status === 'rejected' && request.customerCounterOffer && (
-                        <div className="mb-2 h-24 p-2 bg-gray-50 border border-gray-100 rounded-lg flex gap-2">
-                          <div className="flex-1 flex flex-col justify-between border-r border-gray-200 pr-2">
-                            <div className="text-[10px] text-gray-400 font-semibold truncate">
-                              {t.yourCounterOffer}: ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
-                            </div>
-                            <button
-                              onClick={() => confirmRejection(request.id)}
-                              className="w-full bg-red-600 text-white h-7 rounded text-[10px] font-bold hover:bg-red-700"
-                            >
-                              {t.confirm}
-                            </button>
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-gray-400 font-medium">{t.yourCounterOffer}:</span>
+                            <span className="text-base font-bold text-gray-400">
+                              ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')} (Rechazado)
+                            </span>
                           </div>
-                          <div className="flex-1 flex flex-col justify-between pl-1">
-                            <div className="text-[10px] text-gray-500 font-semibold truncate">
-                              Contra: ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
-                            </div>
+                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                            <span className="text-base font-bold text-blue-700">
+                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                            </span>
+                          </div>
+                          <div className="flex flex-col gap-2 w-full">
                             <button
                               onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                              className="w-full bg-green-600 text-white h-7 rounded text-[10px] font-bold hover:bg-green-700"
+                              className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
                             >
                               {t.accept}
+                            </button>
+                            <button
+                              onClick={() => confirmRejection(request.id)}
+                              className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                            >
+                              {t.confirm}
                             </button>
                           </div>
                         </div>
