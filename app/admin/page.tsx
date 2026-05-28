@@ -722,7 +722,8 @@ export default function AdminDashboard() {
         paidAt: item.paid_at,
         paid: item.paid || false,
         stockNumber: item.stock_number as string,
-        customerId: item.customer_id as string
+        customerId: item.customer_id as string,
+        agentCustomerId: item.agent_customer_id as string | null | undefined
       }));
 
       setPurchasedItems(convertedItems);
@@ -1527,105 +1528,108 @@ export default function AdminDashboard() {
 
         {/* 履歴タブ */}
         {activeTab === 'purchased' && (
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4">購入商品</h2>
+          <>
+            {/* 上部ヘッダー（フィルター等）の個別カード化 */}
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4">購入商品</h2>
 
-            <div className="flex flex-col gap-4 mb-6">
-              <div className="flex flex-col gap-1 w-full">
-                <span className="text-sm font-semibold text-gray-600">ID:</span>
-                <select
-                  value={selectedCustomer}
-                  onChange={(e) => setSelectedCustomer(e.target.value)}
-                  className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
-                >
-                  <option value="all">すべてのID</option>
-                  {getCustomerIdList().map(id => {
-                    const firstMatch = purchasedItems.find(item => item.customerId === id);
-                    const name = firstMatch ? (firstMatch.customerFullName || firstMatch.customerName) : '';
-                    return (
-                      <option key={id} value={id}>
-                        {id} {name}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1 w-full">
-                <span className="text-sm font-semibold text-gray-600">期間:</span>
-                <div className="flex gap-2 w-full">
+              <div className="flex flex-col gap-4 mb-6">
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">ID:</span>
                   <select
-                    value={purchasedYear}
-                    onChange={(e) => setPurchasedYear(e.target.value)}
-                    className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                    value={selectedCustomer}
+                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                    className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
                   >
-                    <option value="all">すべての年</option>
-                    <option value="2026">2026年</option>
-                    <option value="2027">2027年</option>
-                    <option value="2028">2028年</option>
-                    <option value="2029">2029年</option>
-                    <option value="2030">2030年</option>
-                  </select>
-                  <select
-                    value={purchasedMonth}
-                    onChange={(e) => setPurchasedMonth(e.target.value)}
-                    className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
-                  >
-                    <option value="all">すべての月</option>
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                      <option key={m} value={m.toString()}>{m}月</option>
-                    ))}
+                    <option value="all">すべてのID</option>
+                    {getCustomerIdList().map(id => {
+                      const firstMatch = purchasedItems.find(item => item.customerId === id);
+                      const name = firstMatch ? (firstMatch.customerFullName || firstMatch.customerName) : '';
+                      return (
+                        <option key={id} value={id}>
+                          {id} {name}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
+
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">期間:</span>
+                  <div className="flex gap-2 w-full">
+                    <select
+                      value={purchasedYear}
+                      onChange={(e) => setPurchasedYear(e.target.value)}
+                      className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                    >
+                      <option value="all">すべての年</option>
+                      <option value="2026">2026年</option>
+                      <option value="2027">2027年</option>
+                      <option value="2028">2028年</option>
+                      <option value="2029">2029年</option>
+                      <option value="2030">2030年</option>
+                    </select>
+                    <select
+                      value={purchasedMonth}
+                      onChange={(e) => setPurchasedMonth(e.target.value)}
+                      className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                    >
+                      <option value="all">すべての月</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                        <option key={m} value={m.toString()}>{m}月</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  onClick={exportPurchasedItemsCSV}
+                  className="w-full h-12 bg-emerald-600 text-white px-4 rounded-lg font-semibold hover:bg-emerald-700 transition text-sm sm:text-base flex items-center justify-center"
+                >
+                  📥 CSVダウンロード
+                </button>
               </div>
 
-              <button
-                onClick={exportPurchasedItemsCSV}
-                className="w-full h-12 bg-emerald-600 text-white px-4 rounded-lg font-semibold hover:bg-emerald-700 transition text-sm sm:text-base flex items-center justify-center"
-              >
-                📥 CSVダウンロード
-              </button>
+              {/* 期間集計カード */}
+              {purchasedItems.length > 0 && (() => {
+                const filteredItemsForSummary = getFilteredPurchasedItems();
+                const unpaidSummaryTotal = filteredItemsForSummary
+                  .filter(item => !item.paid)
+                  .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+                const summaryTotal = filteredItemsForSummary
+                  .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+
+                return (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-red-500">未入金額</span>
+                      <span className="text-base font-black text-red-600">
+                        ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
+                      </span>
+                    </div>
+                    <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-indigo-500">合計金額</span>
+                      <span className="text-base font-black text-indigo-600">
+                        ${Math.round(summaryTotal).toLocaleString('en-US')}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* 期間集計カード */}
-            {purchasedItems.length > 0 && (() => {
-              const filteredItemsForSummary = getFilteredPurchasedItems();
-              const unpaidSummaryTotal = filteredItemsForSummary
-                .filter(item => !item.paid)
-                .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
-              const summaryTotal = filteredItemsForSummary
-                .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
-
-              return (
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                    <span className="text-xs font-bold text-red-500">未入金額</span>
-                    <span className="text-base font-black text-red-600">
-                      ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
-                    </span>
-                  </div>
-                  <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                    <span className="text-xs font-bold text-indigo-500">合計金額</span>
-                    <span className="text-base font-black text-indigo-600">
-                      ${Math.round(summaryTotal).toLocaleString('en-US')}
-                    </span>
-                  </div>
-                </div>
-              );
-            })()}
-
             {purchasedItems.length === 0 ? (
-              <div className="text-center text-gray-500 py-12">
-                <p>購入済み商品がありません</p>
+              <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                <p className="text-gray-500 text-lg">購入済み商品がありません</p>
               </div>
             ) : (
               <>
-                <div className="space-y-4 mb-6">
+                <div className="space-y-4">
                   {getFilteredPurchasedItems()
                     .sort((a, b) => new Date(b.confirmedAt || '').getTime() - new Date(a.confirmedAt || '').getTime())
                     .map((item) => (
-                      <div key={item.id} className="border rounded-lg p-4">
-                        <div className="flex gap-4 mb-3">
+                      <div key={item.id} className="bg-white rounded-lg shadow-md p-3 sm:p-4">
+                        <div className="flex gap-4 mb-2">
                           {item.productImage && (
                             <div className="relative w-32 h-32 flex-shrink-0">
                               <Image
@@ -1638,35 +1642,32 @@ export default function AdminDashboard() {
                             </div>
                           )}
                           <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
-                            <h3 className="text-xs font-semibold mb-1 line-clamp-2 leading-tight">{item.productTitle}</h3>
-                            <div className="text-[10px] text-gray-600 mb-1 space-y-0.5">
-                              <p className="truncate"><span className="font-semibold text-gray-800">顧客名: {item.customerName}</span></p>
-                              <p className="whitespace-nowrap truncate">
-                                <span className="font-semibold text-gray-800">確認日時:</span>{' '}
-                                <span>{formatDateTime(item.confirmedAt || '')}</span>
-                              </p>
-                              <div className="flex items-center gap-1.5 mt-1 whitespace-nowrap overflow-hidden">
-                                {item.stockNumber ? (
-                                  <span className="font-bold text-gray-900 bg-gray-50 px-1.5 py-0.5 rounded border text-[9px] shrink-0">
-                                    Stock No: {item.stockNumber}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-400 text-[10px] shrink-0">在庫番号なし</span>
-                                )}
-                                <button
-                                  onClick={() => handleUpdateStockNumber(item.id, item.productTitle, item.stockNumber || '')}
-                                  className="text-[10px] text-indigo-600 hover:text-indigo-800 underline font-medium shrink-0"
-                                >
-                                  {item.stockNumber ? '編集' : '追加'}
-                                </button>
-                              </div>
+                            {/* 1. 商品タイトル */}
+                            <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{item.productTitle}</h3>
+
+                            {/* 2. 在庫番号表示ボックス (申請タブの終了までと同サイズ・幅) */}
+                            <div className="text-left text-xs py-1.5 bg-gray-50 border border-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                              <span className="text-gray-500 font-medium mr-1">在庫番号:</span>
+                              <span className="font-semibold text-gray-900">{item.stockNumber || 'なし'}</span>
                             </div>
-                            <div className="flex flex-col w-full mt-auto">
+
+                            {/* 3. 在庫番号の編集/追加ボタン (申請タブのステータスバッジの場所に右揃え) */}
+                            <div className="flex justify-end w-full">
+                              <button
+                                onClick={() => handleUpdateStockNumber(item.id, item.productTitle, item.stockNumber || '')}
+                                className="text-xs text-indigo-600 hover:text-indigo-800 underline font-semibold"
+                              >
+                                {item.stockNumber ? '編集' : '追加'}
+                              </button>
+                            </div>
+
+                            {/* 4. ヤフオクURLボタン */}
+                            <div className="w-full">
                               <a
                                 href={item.productUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-center text-[10px] text-white hover:underline hover:opacity-90 font-bold py-1 bg-[#ff0033] rounded px-2 block w-full"
+                                className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full"
                               >
                                 ヤフオクURL
                               </a>
@@ -1674,51 +1675,56 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-gray-50 rounded text-xs sm:text-sm">
-                          <div>
-                            <p className="text-gray-600">ID</p>
-                            <p className="font-semibold">{item.customerId}</p>
+                        {/* 申請タブと全く同じ申請内容ボックス（h-24） */}
+                        <div className="h-24 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs mb-2 box-border grid grid-rows-2 grid-cols-2">
+                          <div className="flex flex-col justify-center h-12">
+                            <span className="text-gray-500 text-[10px] leading-tight">ID:</span>
+                            <span className="font-semibold truncate text-black leading-tight">{item.customerId}</span>
                           </div>
-                          <div>
-                            <p className="text-gray-600">WhatsApp</p>
-                            <p className="font-semibold">{item.customerWhatsapp || '未登録'}</p>
+                          <div className="flex flex-col justify-center h-12">
+                            <span className="text-gray-500 text-[10px] leading-tight">確認日時:</span>
+                            <span className="font-semibold truncate text-black leading-tight">{formatDateTime(item.confirmedAt || '')}</span>
                           </div>
-                          <div>
-                            <p className="text-gray-600">氏名</p>
-                            <p className="font-semibold">{item.customerFullName || item.customerName}</p>
+                          <div className="flex flex-col justify-center h-12">
+                            <span className="text-gray-500 text-[10px] leading-tight">氏名:</span>
+                            <span className="font-semibold truncate text-black leading-tight">{item.customerFullName || item.customerName}</span>
                           </div>
-                          <div>
-                            <p className="text-gray-600">言語</p>
-                            <p className="font-semibold">{item.language === 'es' ? 'スペイン語' : 'ポルトガル語'}</p>
+                          <div className="flex flex-col justify-center h-12">
+                            <span className="text-gray-500 text-[10px] leading-tight">
+                              {item.customerId?.startsWith('C') && item.agentCustomerId ? 'エージェント名:' : '顧客名:'}
+                            </span>
+                            <span className="font-semibold truncate text-black leading-tight">{item.customerName}</span>
                           </div>
                         </div>
 
-                        <div className="pt-3 border-t flex items-center justify-between">
+                        {/* 支払情報 & 金額ボックス (h-12) */}
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <label className="flex items-center cursor-pointer">
+                            <label className="flex items-center cursor-pointer select-none">
                               <input
                                 type="checkbox"
                                 checked={item.paid}
                                 onChange={(e) => updatePaidStatus(item.id, e.target.checked)}
-                                className="w-5 h-5 mr-2 cursor-pointer"
+                                className="w-5 h-5 mr-2 cursor-pointer text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                               />
                               <span className="text-sm font-semibold text-gray-700">支払済</span>
                             </label>
                             {item.paid && item.paidAt && (
                               <span className="text-xs text-gray-500 whitespace-nowrap">
-                                {formatDateTime(item.paidAt)}
+                                ({formatDateTime(item.paidAt)})
                               </span>
                             )}
                           </div>
-                          <p className={`text-xl sm:text-2xl font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                          <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
                             ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
-                          </p>
+                          </span>
                         </div>
                       </div>
                     ))}
                 </div>
 
-                <div className="border-t pt-4">
+                {/* 合計表示カードの独立化 */}
+                <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mt-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xl font-semibold">
                       合計{selectedCustomer !== 'all' && '（選択したID）'}:
@@ -1726,7 +1732,7 @@ export default function AdminDashboard() {
                     <span className="text-3xl font-bold text-indigo-600">
                       ${Math.round(
                         getFilteredPurchasedItems()
-                          .filter(item => !item.paid)  // ← 支払済を除外
+                          .filter(item => !item.paid)  // 支払済を除外
                           .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
                       ).toLocaleString('en-US')}
                     </span>
@@ -1737,7 +1743,7 @@ export default function AdminDashboard() {
                 </div>
               </>
             )}
-          </div>
+          </>
         )}
 
         {/* 顧客タブ */}
