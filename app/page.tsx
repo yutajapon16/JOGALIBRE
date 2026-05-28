@@ -1597,7 +1597,7 @@ export default function Home() {
                   <select
                     value={lang}
                     onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white mb-2"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white mb-2"
                   >
                     <option value="es">Español</option>
                     <option value="pt">Português</option>
@@ -1612,7 +1612,7 @@ export default function Home() {
                     name="fullName"
                     value={loginForm.fullName}
                     onChange={(e) => setLoginForm({ ...loginForm, fullName: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                     autoComplete="name"
                     required
                   />
@@ -1624,7 +1624,7 @@ export default function Home() {
                     name="whatsapp"
                     value={loginForm.whatsapp}
                     onChange={(e) => setLoginForm({ ...loginForm, whatsapp: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                     placeholder="+55 11 98765-4321"
                     autoComplete="tel"
                     required
@@ -1638,7 +1638,7 @@ export default function Home() {
                     name="country"
                     value={loginForm.country}
                     onChange={(e) => setLoginForm({ ...loginForm, country: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
                     required
                   >
                     <option value="" disabled>
@@ -1660,7 +1660,7 @@ export default function Home() {
                     name="zipCode"
                     value={loginForm.zipCode}
                     onChange={(e) => setLoginForm({ ...loginForm, zipCode: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                     placeholder="12345-678"
                     required
                   />
@@ -1674,7 +1674,7 @@ export default function Home() {
                     name="address"
                     value={loginForm.address}
                     onChange={(e) => setLoginForm({ ...loginForm, address: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                     placeholder={lang === 'es' ? 'Calle, Número, Ciudad' : 'Rua, Número, Cidade'}
                     required
                   />
@@ -1688,7 +1688,7 @@ export default function Home() {
                     name="agentCustomerId"
                     value={loginForm.agentCustomerId || ''}
                     onChange={(e) => setLoginForm({ ...loginForm, agentCustomerId: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                     placeholder="A001"
                   />
                 </div>
@@ -1700,7 +1700,7 @@ export default function Home() {
                 <select
                   value={lang}
                   onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white mb-2"
+                  className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white mb-2"
                 >
                   <option value="es">Español</option>
                   <option value="pt">Português</option>
@@ -1714,7 +1714,7 @@ export default function Home() {
                 name="email"
                 value={loginForm.email}
                 onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-4 h-12"
                 autoComplete="username"
                 required
               />
@@ -1726,7 +1726,7 @@ export default function Home() {
                 name="password"
                 value={loginForm.password}
                 onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-4 h-12"
                 autoComplete="current-password"
                 required
                 minLength={6}
@@ -1734,7 +1734,7 @@ export default function Home() {
             </div>
             <button
               type="submit"
-              className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition"
+              className="w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition"
             >
               {showSignUp ? (lang === 'es' ? 'Crear Cuenta' : 'Criar Conta') : t.loginButton}
             </button>
@@ -2059,7 +2059,7 @@ export default function Home() {
             else if (activeTab === 'purchased') fetchPurchasedItems();
             else { fetchExchangeRate(); }
           }}
-          className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
+          className="bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
         >
           🔁 {t.refresh}
         </button>
@@ -2069,12 +2069,10 @@ export default function Home() {
             {t.exchangeRate}: <span className="text-indigo-600">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
           </div>
         </div>
-      </div>
 
-      {/* ボトムナビゲーション */}
-      <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t z-50 pb-safe">
-        <div className="max-w-7xl mx-auto px-1 sm:px-4">
-          <div className="flex justify-between items-center h-16 sm:h-20">
+        {/* タブ選択バーを為替レートボックスの下に配置 */}
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mt-4 font-sans">
+          <div className="flex overflow-x-auto whitespace-nowrap scrollbar-none">
             {[
               { key: 'search' as const, label: t.searchBottomTab, icon: '🔍' },
               { key: 'favorites' as const, label: t.favoritesTab, icon: '⭐' },
@@ -2089,41 +2087,24 @@ export default function Home() {
                   if (tab.key === 'requests') fetchMyRequests();
                   if (tab.key === 'purchased') fetchPurchasedItems();
                   if (tab.key === 'mypage' && currentUser) {
-                    // タブを開くたびに最新データを取得して確実に入力欄を埋める
                     fetchUserProfile();
-                    // 通知状態をチェック
-                    const permission = getNotificationPermission();
-                    if (permission === 'unsupported') {
-                      setNotificationStatus('unsupported');
-                    } else if (permission === 'granted') {
-                      // サブスクリプションがDBにあるか確認
-                      fetch(`/api/push-subscribe?userId=${currentUser.id}`)
-                        .then(r => r.ok ? setNotificationStatus('enabled') : setNotificationStatus('disabled'))
-                        .catch(() => setNotificationStatus('disabled'));
-                    } else {
-                      setNotificationStatus('disabled');
-                    }
                   }
                 }}
-                className={`flex-1 flex flex-col items-center justify-center h-full transition-colors relative min-w-0 ${activeTab === tab.key
-                  ? 'text-indigo-600'
-                  : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                className={`flex-1 py-3 px-2 text-center text-xs font-bold border-b-2 transition min-w-[70px] ${
+                  activeTab === tab.key
+                    ? 'border-indigo-600 text-indigo-600 bg-indigo-50/30'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50/50'
+                }`}
               >
-                {/* 選択時のインジケーター */}
-                {activeTab === tab.key && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-indigo-600 rounded-b-full"></div>
-                )}
-                <span className={`text-xl sm:text-2xl mb-1 ${activeTab === tab.key ? 'scale-110' : ''} transition-transform`}>{tab.icon}</span>
-                <span className="text-[10px] sm:text-xs font-bold tracking-tight truncate w-full text-center px-1">{tab.label}</span>
+                <span className="block text-lg mb-0.5">{tab.icon}</span>
+                {tab.label}
               </button>
             ))}
           </div>
         </div>
-      </nav>
+      </div>
 
-      {/* ボトムナビゲーション用に下部の余白を追加 */}
-      <main className="max-w-7xl mx-auto px-4 pt-0 sm:pt-0 pb-24 sm:pb-32 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto px-4 pt-0 sm:pt-0 pb-8 sm:px-6 lg:px-8">
         {activeTab === 'favorites' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-8">
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.favoritesTab}</h2>
@@ -2175,7 +2156,7 @@ export default function Home() {
                     return new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime();
                   })
                   .map((request) => (
-                    <div key={request.id} className="border rounded-lg p-4">
+                    <div key={request.id} className="bg-white rounded-lg shadow-md p-3 sm:p-4 border border-gray-100 font-sans">
                       <div className="flex gap-4 mb-2">
                         {request.productImage && (
                           <div className="relative w-32 h-32 flex-shrink-0">
@@ -2188,72 +2169,82 @@ export default function Home() {
                             />
                           </div>
                         )}
-                        <div className="flex-1 h-32 flex flex-col justify-between py-0.5 min-w-0 overflow-hidden">
-                          <div className="flex flex-col gap-0.5">
-                            <h3 className="text-xs font-semibold mb-1 line-clamp-2 overflow-hidden text-ellipsis leading-tight">{request.productTitle}</h3>
-                            <div className="text-[11px] text-gray-600 space-y-0.5 w-full">
-                              <p className="truncate">
-                                {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
-                                  lang === 'es' ? 'Su AGT: ' : 'Seu AGT: '
-                                ) : (
-                                  'Cliente: '
-                                )}
-                                <span className="font-bold text-gray-900">{request.customerName}</span>
-                              </p>
-                              {request.productEndTime && (
-                                <p className="whitespace-nowrap">
-                                  {t.endsIn}: <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, lang)}</span>
-                                </p>
-                              )}
-                              <div className="flex flex-row gap-1 mt-1 flex-nowrap overflow-x-auto">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center whitespace-nowrap shrink-0 ${getStatusColor(request.status)}`}>
-                                  {t[request.status as keyof typeof t] || request.status}
-                                </span>
-                                {request.finalStatus && (
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center whitespace-nowrap shrink-0 ${getFinalStatusColor(request.finalStatus)}`}>
-                                    {t[request.finalStatus as keyof typeof t]}
-                                  </span>
-                                )}
-                                {request.adminNeedsConfirm && (
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold flex items-center justify-center whitespace-nowrap shrink-0 bg-red-100 text-red-800`}>
-                                    {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
-                                  </span>
-                                )}
-                              </div>
+                        <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
+                          {/* 1. 商品タイトル */}
+                          <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight">{request.productTitle}</h3>
+
+                          {/* 2. 終了までボックス (薄グレー) */}
+                          {request.productEndTime && (
+                            <div className="text-left text-xs py-1.5 bg-gray-50 border border-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                              <span className="text-gray-500 font-medium mr-1">{t.endsIn}:</span>
+                              <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, lang)}</span>
                             </div>
+                          )}
+
+                          {/* 3. ステータスバッジ */}
+                          <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getStatusColor(request.status)}`}>
+                              {t[request.status as keyof typeof t] || request.status}
+                            </span>
+                            {request.finalStatus && (
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getFinalStatusColor(request.finalStatus)}`}>
+                                {t[request.finalStatus as keyof typeof t] || request.finalStatus}
+                              </span>
+                            )}
+                            {request.adminNeedsConfirm && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
+                                {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                              </span>
+                            )}
                           </div>
 
-                          <div className="w-full mt-auto pt-1">
+                          {/* 4. ヤフオクURLボタン */}
+                          <div className="w-full">
                             <a
                               href={request.productUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-2 block w-full"
+                              className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full"
                             >
-                              {t.viewOnYahoo}
+                              Yahoo! Auction
                             </a>
                           </div>
                         </div>
                       </div>
 
-                      <div className="mb-2 p-3 bg-gray-50 rounded-lg flex items-baseline gap-1">
-                        <span className="text-xs text-gray-500">{t.maxBid}:</span>
-                        <span className="text-lg font-bold text-indigo-600 leading-none">
+                      {/* 希望入札額ボックス (h-12) */}
+                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                        <span className="text-xs text-gray-500 font-medium">{t.maxBid}:</span>
+                        <span className="text-base font-bold text-indigo-600">
                           ${Math.round(request.maxBid || 0).toLocaleString('en-US')}
                         </span>
                       </div>
 
-                      {request.status === 'rejected' && !request.customerCounterOffer && (
-                        <div className="mb-2 p-3 bg-red-50 rounded">
-                          {request.rejectReason && (
-                            <>
-                              <p className="text-sm text-gray-600">{t.rejectReason}:</p>
-                              <p className="text-red-700 mb-2">{request.rejectReason}</p>
-                            </>
+                      {/* 申請詳細の1行化 */}
+                      <div className="flex justify-between items-center text-[10px] sm:text-xs text-gray-600 px-1 mb-2">
+                        <span className="truncate">
+                          {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
+                            lang === 'es' ? 'Su AGT: ' : 'Seu AGT: '
+                          ) : (
+                            'Cliente: '
                           )}
+                          <span className="font-bold text-gray-900">{request.customerName}</span>
+                        </span>
+                        {request.createdAt && (
+                          <span className="text-gray-400 shrink-0 font-medium">
+                            {formatDateTime(request.createdAt, 'customer')}
+                          </span>
+                        )}
+                      </div>
+
+                      {request.status === 'rejected' && !request.customerCounterOffer && (
+                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
+                          <div className="text-xs text-red-600 truncate font-semibold">
+                            {t.rejectReason}: {request.rejectReason || '-'}
+                          </div>
                           <button
                             onClick={() => confirmRejection(request.id)}
-                            className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                            className="w-full bg-red-600 text-white h-9 rounded-lg hover:bg-red-700 text-xs font-bold"
                           >
                             {t.confirm}
                           </button>
@@ -2262,15 +2253,17 @@ export default function Home() {
 
                       {/* ケース1: 最初の管理者カウンターオファー（顧客未返答） */}
                       {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
-                        <div className="mb-2 p-3 bg-blue-50 rounded">
-                          <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base mb-2">
-                            ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
-                          </p>
-                          <div className="flex gap-2">
+                        <div className="mb-2 h-24 p-2 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
+                          <div className="flex justify-between items-center px-1">
+                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                            <span className="text-sm font-bold text-blue-700">
+                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                            </span>
+                          </div>
+                          <div className="flex gap-1.5">
                             <button
                               onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                              className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                              className="flex-1 bg-green-600 text-white h-8 rounded font-bold text-[10px] sm:text-xs hover:bg-green-700"
                             >
                               {t.accept}
                             </button>
@@ -2279,13 +2272,13 @@ export default function Home() {
                                 setSelectedRequestForCounter(request);
                                 setShowCounterModal(true);
                               }}
-                              className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                              className="flex-1 bg-blue-600 text-white h-8 rounded font-bold text-[10px] sm:text-xs hover:bg-blue-700"
                             >
                               {t.counterOfferAction}
                             </button>
                             <button
                               onClick={() => handleCounterOfferResponse(request.id, 'reject')}
-                              className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                              className="flex-1 bg-red-600 text-white h-8 rounded font-bold text-[10px] sm:text-xs hover:bg-red-700"
                             >
                               {t.reject}
                             </button>
@@ -2295,77 +2288,54 @@ export default function Home() {
 
                       {/* ケース2: 顧客がカウンターオファー送信済み（管理者返答待ち） */}
                       {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
-                        <div className="mb-2 p-3 bg-blue-50 rounded">
-                          <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base">
-                            ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
-                          </p>
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                          <span className="text-xs text-gray-500 font-medium">Contraoferta: ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</span>
+                          <span className="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded shadow-sm">
+                            {t.yourCounterOffer}: ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                          </span>
                         </div>
                       )}
 
-                      {/* ケース3A: 管理者が顧客のカウンターオファーを承認 (Fabio) */}
+                      {/* ケース3A: 管理者が顧客のカウンターオファーを承認 */}
                       {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                        <>
-                          <div className="mb-2 p-3 bg-blue-50 rounded">
-                            <p className="text-sm text-gray-600">Contraoferta:</p>
-                            <p className="font-semibold text-blue-700 text-base">
-                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
-                            </p>
+                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-500">Contra: ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</span>
+                            <span className="font-bold text-purple-700">{t.yourCounterOffer}: ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}</span>
                           </div>
-                          <div className="mb-2 p-3 bg-purple-50 rounded">
-                            <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                            <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}</p>
-                            <p className="text-xs text-red-600 mb-1">
-                              {lang === 'es' ? 'Tu contraoferta fue aceptada.' : 'Sua contraoferta foi aceita.'}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
-                            </p>
+                          <div className="text-xs text-green-600 font-semibold truncate leading-tight">
+                            {lang === 'es' ? 'Tu contraoferta fue aceptada. Esperando subasta.' : 'Sua contraoferta foi aceita. Aguardando leilão.'}
                           </div>
-                        </>
-                      )}
-
-                      {/* ケース3B: 顧客が管理者のカウンターオファーを承認 (Carlos系: 顧客カウンターあり) */}
-                      {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                        <>
-                          <div className="mb-2 p-3 bg-blue-50 rounded">
-                            <p className="text-sm text-gray-600">Contraoferta:</p>
-                            <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</p>
-                            <p className="text-xs text-red-600 mb-1">
-                              {lang === 'es' ? 'Tú aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
-                            </p>
-                          </div>
-                          <div className="mb-2 p-3 bg-purple-50 rounded">
-                            <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                            <p className="font-semibold text-purple-700 text-base mb-1">${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}</p>
-                            <p className="text-xs text-red-600">
-                              {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
-                            </p>
-                          </div>
-                        </>
-                      )}
-
-                      {/* ケース3C: 顧客が管理者のカウンターオファーを直接承認 (顧客カウンターなし) */}
-                      {!request.customerCounterOffer && request.counterOffer && request.status === 'approved' && !request.finalStatus && (
-                        <div className="mb-2 p-3 bg-blue-50 rounded">
-                          <p className="text-sm text-gray-600">Contraoferta:</p>
-                          <p className="font-semibold text-blue-700 text-base mb-1">${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</p>
-                          <p className="text-xs text-red-600 mb-1">
-                            {lang === 'es' ? 'Tú aceptaste la contraoferta del administrador.' : 'Você aceitou a contraoferta do administrador.'}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
-                          </p>
                         </div>
                       )}
 
-                      {/* ステータスが承認（approved）かつ最終結果（finalStatus）が未設定の場合の汎用メッセージ */}
+                      {/* ケース3B: 顧客が管理者のカウンターオファーを承認 */}
+                      {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
+                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-blue-700 font-bold">Contra: ${Math.round(request.counterOffer || 0).toLocaleString('en-US')} (Aceptado)</span>
+                            <span className="text-gray-400 font-medium">{t.yourCounterOffer}: ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')} (Rechazado)</span>
+                          </div>
+                          <div className="text-xs text-green-600 font-semibold truncate leading-tight">
+                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando resultado do leilão.'}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ケース3C: 顧客が管理者のカウンターオファーを直接承認 */}
+                      {!request.customerCounterOffer && request.counterOffer && request.status === 'approved' && !request.finalStatus && (
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                          <span className="text-xs text-blue-700 font-bold">Contra: ${Math.round(request.counterOffer || 0).toLocaleString('en-US')} (Aceptado)</span>
+                          <span className="text-xs text-gray-500 font-semibold">
+                            {lang === 'es' ? 'Esperando subasta' : 'Aguardando leilão'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 汎用承認完了メッセージ */}
                       {request.status === 'approved' && !request.finalStatus && !request.customerCounterOffer && !request.counterOffer && (
-                        <div className="mb-2 p-3 bg-green-50 rounded">
-                          <p className="text-xs text-gray-600">
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center">
+                          <p className="text-xs font-semibold text-green-600">
                             {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando o resultado do leilão.'}
                           </p>
                         </div>
@@ -2373,16 +2343,14 @@ export default function Home() {
 
                       {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 削除確認待ち */}
                       {request.adminNeedsConfirm && !request.customerCounterOffer && (
-                        <div className="mb-2">
-                          <div className="p-3 bg-blue-50 rounded mb-3">
-                            <p className="text-sm text-gray-600">Contraoferta:</p>
-                            <p className="font-semibold text-blue-700 text-base">
-                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
-                            </p>
+                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-gray-500">Contraoferta:</span>
+                            <span className="font-bold text-blue-700">${Math.round(request.counterOffer || 0).toLocaleString('en-US')}</span>
                           </div>
                           <button
                             onClick={() => confirmRejection(request.id)}
-                            className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                            className="w-full bg-red-600 text-white h-9 rounded-lg hover:bg-red-700 text-xs font-bold"
                           >
                             {t.confirm}
                           </button>
@@ -2391,59 +2359,48 @@ export default function Home() {
 
                       {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
                       {request.status === 'rejected' && request.customerCounterOffer && (
-                        <div className="mb-2">
-                          <button
-                            onClick={() => confirmRejection(request.id)}
-                            className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 mb-3"
-                          >
-                            {t.confirm}
-                          </button>
-
-                          <div className="p-3 bg-blue-50 rounded mb-2">
-                            <p className="text-sm text-gray-600">Contraoferta:</p>
-                            <p className="font-semibold text-blue-700 text-base mb-2">
-                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
-                            </p>
+                        <div className="mb-2 h-24 p-2 bg-gray-50 border border-gray-100 rounded-lg flex gap-2">
+                          <div className="flex-1 flex flex-col justify-between border-r border-gray-200 pr-2">
+                            <div className="text-[10px] text-gray-400 font-semibold truncate">
+                              {t.yourCounterOffer}: ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                            </div>
+                            <button
+                              onClick={() => confirmRejection(request.id)}
+                              className="w-full bg-red-600 text-white h-7 rounded text-[10px] font-bold hover:bg-red-700"
+                            >
+                              {t.confirm}
+                            </button>
+                          </div>
+                          <div className="flex-1 flex flex-col justify-between pl-1">
+                            <div className="text-[10px] text-gray-500 font-semibold truncate">
+                              Contra: ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                            </div>
                             <button
                               onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                              className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                              className="w-full bg-green-600 text-white h-7 rounded text-[10px] font-bold hover:bg-green-700"
                             >
                               {t.accept}
                             </button>
                           </div>
-
-                          <div className="p-3 bg-purple-50 rounded">
-                            <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                            <p className="font-semibold text-purple-700 text-base">
-                              ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
-                            </p>
-                            <p className="text-xs text-red-600">
-                              {lang === 'es' ? 'Rechazado por el administrador.' : 'Rejeitado pelo administrador.'}
-                            </p>
-                          </div>
                         </div>
                       )}
 
-                      {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
-                        <div className="mb-2 p-3 bg-purple-50 rounded">
-                          <p className="text-sm text-gray-600">{t.yourCounterOffer}:</p>
-                          <p className="font-semibold text-purple-700 text-base">${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}</p>
-                        </div>
-                      )}
-                      {/* (以前重複していたブロックを削除しました) */}
+                      {/* 重複部分の排除 */}
 
                       {request.finalStatus === 'won' && !request.customerConfirmed && (
-                        <div className="mb-2 p-3 bg-green-50 rounded">
-                          <p className="text-sm text-gray-600">{t.finalPrice}:</p>
-                          <p className="text-base font-semibold text-green-600">
-                            ${Math.round(
-                              request.finalPrice ||
-                              (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
-                            ).toLocaleString('en-US')}
-                          </p>
+                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500 font-medium">{t.finalPrice}:</span>
+                            <span className="text-sm font-bold text-green-600">
+                              ${Math.round(
+                                request.finalPrice ||
+                                (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
+                              ).toLocaleString('en-US')} ({lang === 'es' ? '¡Ganado!' : 'Ganhou!'})
+                            </span>
+                          </div>
                           <button
                             onClick={() => handleFinalStatusConfirm(request.id)}
-                            className="mt-3 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+                            className="w-full bg-green-600 text-white h-9 rounded-lg hover:bg-green-700 text-xs font-bold"
                           >
                             {t.confirm}
                           </button>
@@ -2451,11 +2408,11 @@ export default function Home() {
                       )}
 
                       {request.finalStatus === 'lost' && (
-                        <div className="mb-2 p-3 bg-red-50 rounded">
-                          <p className="font-semibold text-red-700">{t.lost}</p>
+                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
+                          <p className="font-bold text-red-600 text-xs">{t.lost}</p>
                           <button
                             onClick={() => handleFinalStatusConfirm(request.id)}
-                            className="mt-3 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                            className="w-full bg-red-600 text-white h-9 rounded-lg hover:bg-red-700 text-xs font-bold"
                           >
                             {t.confirm}
                           </button>
@@ -2470,13 +2427,13 @@ export default function Home() {
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-4">{t.purchasedItems}</h2>
 
-            <div className="flex flex-col gap-3 mb-6">
+            <div className="flex flex-col gap-3 mb-6 font-sans">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 whitespace-nowrap w-28">{t.filterByCustomer}:</span>
                 <select
                   value={selectedCustomer}
                   onChange={(e) => setSelectedCustomer(e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                  className="border border-gray-300 rounded px-3 h-12 text-base flex-1 bg-white"
                 >
                   <option value="all">{t.allCustomers}</option>
                   {getCustomerList().map(customerName => (
@@ -2493,7 +2450,7 @@ export default function Home() {
                   <select
                     value={purchasedYear}
                     onChange={(e) => setPurchasedYear(e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                    className="border border-gray-300 rounded px-3 h-12 text-base flex-1 bg-white"
                   >
                     <option value="all">{lang === 'es' ? 'Año' : 'Ano'}</option>
                     <option value="2026">2026</option>
@@ -2505,7 +2462,7 @@ export default function Home() {
                   <select
                     value={purchasedMonth}
                     onChange={(e) => setPurchasedMonth(e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-3 text-base flex-1"
+                    className="border border-gray-300 rounded px-3 h-12 text-base flex-1 bg-white"
                   >
                     <option value="all">{lang === 'es' ? 'Mes' : 'Mês'}</option>
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
@@ -2633,12 +2590,12 @@ export default function Home() {
                             {!item.paid ? (
                               <button
                                 onClick={() => openPaymentModal(item)}
-                                className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 shadow-sm transition whitespace-nowrap"
+                                className="text-center text-xs text-white font-bold h-12 bg-green-600 hover:bg-green-700 rounded px-4 shadow-sm transition whitespace-nowrap flex items-center justify-center font-sans"
                               >
                                 {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
                               </button>
                             ) : (
-                              <div className="flex items-center gap-1.5 shrink-0">
+                              <div className="flex items-center gap-1.5 shrink-0 font-sans">
                                 <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full whitespace-nowrap shrink-0">
                                   ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
                                 </span>
@@ -2650,7 +2607,7 @@ export default function Home() {
                               </div>
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 font-sans">
                             <p className={`text-lg sm:text-xl font-bold whitespace-nowrap shrink-0 ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
                               ${Math.round(
                                 item.finalPrice ||
@@ -2715,7 +2672,7 @@ export default function Home() {
                     type="email"
                     value={currentUser?.email || ''}
                     disabled
-                    className="w-full border border-gray-200 rounded-lg px-4 py-3 bg-gray-50 text-gray-500"
+                    className="w-full border border-gray-200 rounded-lg px-4 h-12 bg-gray-50 text-gray-500"
                   />
                 </div>
                 <div>
@@ -2724,7 +2681,7 @@ export default function Home() {
                     type="text"
                     value={profileForm.fullName}
                     onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                   />
                 </div>
                 <div>
@@ -2733,7 +2690,7 @@ export default function Home() {
                     type="tel"
                     value={profileForm.whatsapp}
                     onChange={(e) => setProfileForm({ ...profileForm, whatsapp: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                     placeholder="+55 11 98765-4321"
                   />
                 </div>
@@ -2745,7 +2702,7 @@ export default function Home() {
                     type="text"
                     value={currentUser?.country || ''}
                     disabled
-                    className="w-full border border-gray-200 rounded-lg px-4 py-3 bg-gray-50 text-gray-500"
+                    className="w-full border border-gray-200 rounded-lg px-4 h-12 bg-gray-50 text-gray-500"
                   />
                 </div>
                 <div>
@@ -2756,7 +2713,7 @@ export default function Home() {
                     type="text"
                     value={profileForm.zipCode}
                     onChange={(e) => setProfileForm({ ...profileForm, zipCode: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                   />
                 </div>
                 <div>
@@ -2767,7 +2724,7 @@ export default function Home() {
                     type="text"
                     value={profileForm.address}
                     onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                   />
                 </div>
                 {currentUser?.role === 'customer' && (
@@ -2780,7 +2737,7 @@ export default function Home() {
                       value={profileForm.agentCustomerId}
                       onChange={(e) => setProfileForm({ ...profileForm, agentCustomerId: e.target.value })}
                       placeholder="e.g. A001"
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono"
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12 font-mono"
                     />
                   </div>
                 )}
@@ -2801,7 +2758,7 @@ export default function Home() {
                     }
                   }}
                   disabled={profileSaving}
-                  className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400"
+                  className="w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:bg-gray-400"
                 >
                   {profileSaving ? '...' : t.saveProfile}
                 </button>
@@ -2818,7 +2775,7 @@ export default function Home() {
                     type="password"
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                     minLength={6}
                     placeholder={lang === 'es' ? 'Mínimo 6 caracteres' : 'Mínimo 6 caracteres'}
                   />
@@ -2829,7 +2786,7 @@ export default function Home() {
                     type="password"
                     value={passwordForm.confirmPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
                     minLength={6}
                   />
                 </div>
@@ -2856,7 +2813,7 @@ export default function Home() {
                     }
                   }}
                   disabled={passwordSaving}
-                  className="w-full bg-yellow-500 text-white py-3 rounded-lg font-semibold hover:bg-yellow-600 transition disabled:bg-gray-400"
+                  className="w-full bg-yellow-500 text-white h-12 rounded-lg font-semibold hover:bg-yellow-600 transition disabled:bg-gray-400"
                 >
                   {passwordSaving ? '...' : t.changePassword}
                 </button>
@@ -2867,7 +2824,7 @@ export default function Home() {
             <div className="border-t pt-6 mt-6">
               <button
                 onClick={handleLogout}
-                className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition"
+                className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition"
               >
                 {t.logout}
               </button>
@@ -2925,12 +2882,12 @@ export default function Home() {
                       placeholder={t.searchPlaceholder}
                       value={searchUrl}
                       onChange={(e) => setSearchUrl(e.target.value)}
-                      className="flex-1 p-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                      className="flex-1 px-4 h-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm font-sans"
                     />
                     <button
                       onClick={handleImport}
                       disabled={loading}
-                      className="bg-indigo-600 text-white min-w-[120px] px-6 py-3.5 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 whitespace-nowrap text-sm shadow-sm"
+                      className="bg-indigo-600 text-white min-w-[120px] px-6 h-12 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 whitespace-nowrap text-sm shadow-sm font-sans"
                     >
                       {loading ? '...' : t.import}
                     </button>
@@ -2949,16 +2906,14 @@ export default function Home() {
                           setProducts([]);
                           setSearchPage(1);
                           setNextPageExists(false);
-                          // 単独カテゴリ（Moto等）の場合はリセットし、サブカテゴリありの場合は currentCategory を維持して1つ前に戻る
                         }}
-                        className="w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold py-2 bg-indigo-50 rounded px-6 block shadow-sm border border-indigo-100 transition-colors"
+                        className="w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold h-12 bg-indigo-50 rounded px-6 flex items-center justify-center shadow-sm border border-indigo-100 transition-colors font-sans"
                       >
                         {(() => {
                           let catName = '';
                           if (currentCategory) {
                             catName = lang === 'es' ? currentCategory.es : currentCategory.pt;
                           } else {
-                            // 単独カテゴリ（Moto等）の名称をURLから推測するか、メインカテゴリ一覧から探す
                             const found = CATEGORIES.find(c => c.url && activeCategoryUrl.includes(c.url.split('?')[0]));
                             if (found) {
                               catName = lang === 'es' ? found.es : found.pt;
@@ -2974,7 +2929,7 @@ export default function Home() {
                   {!activeCategoryUrl && currentCategory && (
                     <button
                       onClick={() => setCurrentCategory(null)}
-                      className="mb-4 w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold py-2 bg-indigo-50 rounded px-6 block shadow-sm border border-indigo-100 transition-colors"
+                      className="mb-4 w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold h-12 bg-indigo-50 rounded px-6 flex items-center justify-center shadow-sm border border-indigo-100 transition-colors font-sans"
                     >
                       {t.back} ({lang === 'es' ? 'Categorías principales' : 'Categorias principais'})
                     </button>
@@ -3009,7 +2964,7 @@ export default function Home() {
               )}
 
               {searchType === 'keyword' && (
-                <div className="flex flex-col gap-4 animate-in fade-in duration-300">
+                <div className="flex flex-col gap-4 animate-in fade-in duration-300 font-sans">
                   <div className="flex gap-3">
                     <input
                       type="text"
@@ -3017,12 +2972,12 @@ export default function Home() {
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleKeywordSearch()}
-                      className="flex-1 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
+                      className="flex-1 px-4 h-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm"
                     />
                     <button
                       onClick={handleKeywordSearch}
                       disabled={loading || isSearching}
-                      className="bg-indigo-600 text-white min-w-[120px] px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm shadow-sm"
+                      className="bg-indigo-600 text-white min-w-[120px] px-6 h-12 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-indigo-300 text-sm shadow-sm"
                     >
                       {isSearching ? '...' : t.search}
                     </button>
@@ -3034,7 +2989,7 @@ export default function Home() {
                         setSearchCondition('all');
                         handleKeywordSearch(undefined, 1, 'all');
                       }}
-                      className={`py-3 rounded-full font-bold text-sm transition text-center ${
+                      className={`h-12 flex items-center justify-center rounded-full font-bold text-sm transition text-center ${
                         searchCondition === 'all'
                           ? 'bg-indigo-900 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -3047,7 +3002,7 @@ export default function Home() {
                         setSearchCondition('new');
                         handleKeywordSearch(undefined, 1, 'new');
                       }}
-                      className={`py-3 rounded-full font-bold text-sm transition text-center ${
+                      className={`h-12 flex items-center justify-center rounded-full font-bold text-sm transition text-center ${
                         searchCondition === 'new'
                           ? 'bg-indigo-900 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -3060,7 +3015,7 @@ export default function Home() {
                         setSearchCondition('used');
                         handleKeywordSearch(undefined, 1, 'used');
                       }}
-                      className={`py-3 rounded-full font-bold text-sm transition text-center ${
+                      className={`h-12 flex items-center justify-center rounded-full font-bold text-sm transition text-center ${
                         searchCondition === 'used'
                           ? 'bg-indigo-900 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
