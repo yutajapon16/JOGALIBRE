@@ -1761,18 +1761,18 @@ export default function AdminDashboard() {
             </div>
 
             {/* サマリーカード */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 font-sans">
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">保証金確認済 / 登録顧客数</p>
-                <p className="text-2xl font-bold mt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 font-sans">
+              <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                <span className="text-xs font-bold text-gray-500">保証金確認済 / 登録顧客数</span>
+                <span className="text-base font-bold text-indigo-600">
                   {customersList.filter(c => c.depositConfirmedAt).length} / {customersList.length} 名
-                </p>
+                </span>
               </div>
-              <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">未入金総額 / 入金済総額</p>
-                <p className="text-2xl font-bold mt-1">
+              <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額</span>
+                <span className="text-base font-bold text-orange-600">
                   ${Math.round(customersList.reduce((sum, c) => sum + c.unpaidAmount, 0)).toLocaleString('en-US')} / ${Math.round(customersList.reduce((sum, c) => sum + c.paidAmount, 0)).toLocaleString('en-US')}
-                </p>
+                </span>
               </div>
             </div>
 
@@ -1911,24 +1911,24 @@ export default function AdminDashboard() {
             </div>
 
             {/* サマリーカード */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 font-sans">
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">保証金確認済 / 登録エージェント数</p>
-                <p className="text-2xl font-bold mt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 font-sans">
+              <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                <span className="text-xs font-bold text-gray-500">保証金確認済 / 登録エージェント数</span>
+                <span className="text-base font-bold text-indigo-600">
                   {agentsList.filter(a => a.depositConfirmedAt).length} / {agentsList.length} 名
-                </p>
+                </span>
               </div>
-              <div className="bg-gradient-to-br from-yellow-500 to-orange-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">未入金総額 / 入金済総額（管理顧客分）</p>
-                <p className="text-2xl font-bold mt-1">
+              <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                <span className="text-[10px] sm:text-xs font-bold text-gray-500">未入金額 / 入金済総額（管理顧客分）</span>
+                <span className="text-base font-bold text-orange-600">
                   ${Math.round(agentsList.reduce((sum, a) => sum + a.unpaidAmount, 0)).toLocaleString('en-US')} / ${Math.round(agentsList.reduce((sum, a) => sum + a.paidAmount, 0)).toLocaleString('en-US')}
-                </p>
+                </span>
               </div>
-              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-4 rounded-xl text-white shadow-md">
-                <p className="text-xs opacity-80 font-medium">未入金総額 / 入金済総額（エージェント分）</p>
-                <p className="text-2xl font-bold mt-1">
+              <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                <span className="text-[10px] sm:text-xs font-bold text-gray-500">未入金額 / 入金済総額（エージェント分）</span>
+                <span className="text-base font-bold text-emerald-600">
                   ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfUnpaidAmount || 0), 0)).toLocaleString('en-US')} / ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfPaidAmount || 0), 0)).toLocaleString('en-US')}
-                </p>
+                </span>
               </div>
             </div>
 
