@@ -2253,9 +2253,9 @@ export default function Home() {
 
                       {request.status === 'rejected' && !request.customerCounterOffer && (
                         <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center text-xs gap-1.5">
+                          <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs gap-1.5 shadow-sm">
                             <span className="text-xs text-gray-500 font-medium">{t.rejectReason}:</span>
-                            <span className="text-xs text-red-600 font-semibold truncate">{request.rejectReason || '-'}</span>
+                            <span className="text-xs text-red-800 font-semibold truncate">{request.rejectReason || '-'}</span>
                           </div>
                           <button
                             onClick={() => confirmRejection(request.id)}
@@ -2445,19 +2445,23 @@ export default function Home() {
                       {/* 重複部分の排除 */}
 
                       {request.finalStatus === 'won' && !request.customerConfirmed && (
-                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-gray-500 font-medium">{t.finalPrice}:</span>
-                            <span className="text-sm font-bold text-green-600">
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          {/* 最終金額h-12ボックス */}
+                          <div className="h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm">
+                            <span className="text-xs text-gray-500 font-medium">
+                              {lang === 'es' ? 'Precio de adjudicación:' : 'Valor de arremate:'}
+                            </span>
+                            <span className="text-base font-bold text-green-800">
                               ${Math.round(
                                 request.finalPrice ||
                                 (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
-                              ).toLocaleString('en-US')} ({lang === 'es' ? '¡Ganado!' : 'Ganhou!'})
+                              ).toLocaleString('en-US')}
                             </span>
                           </div>
+                          {/* 確認ボタンボックス */}
                           <button
                             onClick={() => handleFinalStatusConfirm(request.id)}
-                            className="w-full bg-green-600 text-white h-9 rounded-lg hover:bg-green-700 text-xs font-bold"
+                            className="w-full bg-green-600 text-white h-12 rounded-lg hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
                           >
                             {t.confirm}
                           </button>
@@ -2466,7 +2470,7 @@ export default function Home() {
 
                       {request.finalStatus === 'lost' && (
                         <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center text-xs text-red-600 font-semibold">
+                          <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs text-red-800 font-semibold shadow-sm">
                             {t.lost}
                           </div>
                           <button
