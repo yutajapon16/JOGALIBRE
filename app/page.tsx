@@ -2246,8 +2246,9 @@ export default function Home() {
 
                       {request.status === 'rejected' && !request.customerCounterOffer && (
                         <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center text-xs text-red-600 font-semibold truncate">
-                            {t.rejectReason}: {request.rejectReason || '-'}
+                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center text-xs gap-1.5">
+                            <span className="text-xs text-gray-500 font-medium">{t.rejectReason}:</span>
+                            <span className="text-xs text-red-600 font-semibold truncate">{request.rejectReason || '-'}</span>
                           </div>
                           <button
                             onClick={() => confirmRejection(request.id)}
