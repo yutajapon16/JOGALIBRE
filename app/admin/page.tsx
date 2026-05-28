@@ -36,6 +36,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [rejectReason, setRejectReason] = useState('');
   const [shippingCostJpy, setShippingCostJpy] = useState('');
+  const [fobCostJpy, setFobCostJpy] = useState('1500');
   const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
   const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
   const [finalPriceInput, setFinalPriceInput] = useState('');
@@ -774,6 +775,7 @@ export default function AdminDashboard() {
         setActionType(null);
         setRejectReason('');
         setShippingCostJpy('');
+        setFobCostJpy('1500');
 
         // プッシュ通知を送信（対象顧客のリクエストを特定）
         const targetRequest = bidRequests.find(r => r.id === id);
@@ -943,10 +945,10 @@ export default function AdminDashboard() {
 
   const handleCounterOffer = () => {
     if (selectedRequest) {
-      const FOB_COST = 1500;
+      const fob = fobCostJpy.trim() ? parseFloat(fobCostJpy) : 1500;
       const shipping = shippingCostJpy.trim() ? parseFloat(shippingCostJpy) : 0;
 
-      const totalJpy = (selectedRequest.productPrice || 0) + shipping + FOB_COST;
+      const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
       // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
       const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
       const priceWithProfit = totalJpy / profitDivisor;
@@ -2335,18 +2337,24 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-2xl font-bold mb-4">カウンターオファー</h2>
-            <p className="text-gray-600 mb-2">{selectedRequest.productTitle}</p>
-            <p className="text-sm text-gray-500 mb-4">
-              顧客のオファー: ${Math.round(selectedRequest.customerCounterOffer || selectedRequest.maxBid || 0).toLocaleString('en-US')}
-            </p>
+            <p className="text-gray-600 mb-2 font-semibold">{selectedRequest.productTitle}</p>
+            
+            {/* 顧客オファー金額のh-12ボックス化 */}
+            <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between mb-4">
+              <span className="text-sm text-gray-500 font-medium">顧客のオファー:</span>
+              <span className="text-base font-bold text-indigo-600">
+                ${Math.round(selectedRequest.customerCounterOffer || selectedRequest.maxBid || 0).toLocaleString('en-US')}
+              </span>
+            </div>
 
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <div className="flex justify-between text-sm mb-2">
+              <div className="flex justify-between text-sm mb-3 items-center">
                 <span className="text-gray-600">現在価格:</span>
-                <span className="font-semibold">¥{selectedRequest.productPrice?.toLocaleString() || 'N/A'}</span>
+                <span className="font-semibold text-black">¥{selectedRequest.productPrice?.toLocaleString() || 'N/A'}</span>
               </div>
 
-              <div className="flex justify-between items-center text-sm mb-2">
+              {/* 送料入力（h-12） */}
+              <div className="flex justify-between items-center text-sm mb-3">
                 <span className="text-gray-600">送料:</span>
                 <input
                   type="number"
@@ -2357,24 +2365,51 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="flex justify-between text-sm mb-2">
+              {/* FOB費用入力（h-12化） */}
+              <div className="flex justify-between items-center text-sm mb-3">
                 <span className="text-gray-600">FOB費用:</span>
-                <span className="font-semibold">¥1,500</span>
+                <input
+                  type="number"
+                  placeholder="1500"
+                  value={fobCostJpy}
+                  onChange={(e) => setFobCostJpy(e.target.value)}
+                  className="w-32 h-12 border border-gray-300 rounded px-3 py-0 text-base text-right box-border focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black font-semibold"
+                />
               </div>
 
-              <div className="flex justify-between text-sm mb-2 pt-2 border-t">
+              {/* 合計 (JPY) の動的計算表示 */}
+              <div className="flex justify-between text-sm mb-2 pt-2 border-t items-center">
                 <span className="text-gray-600 font-semibold">合計（JPY）:</span>
-                <span className="font-bold">
-                  ¥{((selectedRequest.productPrice || 0) + parseFloat(shippingCostJpy || '0') + 1500).toLocaleString()}
+                <span className="font-bold text-black text-base">
+                  ¥{((selectedRequest.productPrice || 0) + parseFloat(shippingCostJpy || '0') + parseFloat(fobCostJpy || '0')).toLocaleString()}
                 </span>
               </div>
-              <div className="flex justify-between pt-2 border-t">
-                <span className="text-gray-600 font-semibold">USD価格（利益込み）:</span>
+
+              {/* 利益 (JPY) の追加 */}
+              {(() => {
+                const fob = parseFloat(fobCostJpy || '0');
+                const shipping = parseFloat(shippingCostJpy || '0');
+                const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
+                const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
+                const priceWithProfit = totalJpy / profitDivisor;
+                const profitJpy = priceWithProfit - totalJpy;
+
+                return (
+                  <div className="flex justify-between text-sm mb-2 text-emerald-600 font-semibold items-center">
+                    <span>利益（JPY）:</span>
+                    <span>¥{Math.round(profitJpy).toLocaleString()}</span>
+                  </div>
+                );
+              })()}
+
+              {/* カウンターオファー金額 (USD) の表示 */}
+              <div className="flex justify-between pt-2 border-t items-center">
+                <span className="text-gray-600 font-semibold text-sm">カウンターオファー金額（USD）:</span>
                 <span className="text-xl font-bold text-blue-600">
                   ${(() => {
-                    const FOB_COST = 1500;
-                    const totalJpy = (selectedRequest.productPrice || 0) + parseFloat(shippingCostJpy || '0') + FOB_COST;
-                    // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
+                    const fob = parseFloat(fobCostJpy || '0');
+                    const shipping = parseFloat(shippingCostJpy || '0');
+                    const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
                     const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
                     const priceWithProfit = totalJpy / profitDivisor;
                     const usdPrice = priceWithProfit / exchangeRate;
@@ -2391,6 +2426,7 @@ export default function AdminDashboard() {
                   setSelectedRequest(null);
                   setActionType(null);
                   setShippingCostJpy('');
+                  setFobCostJpy('1500');
                 }}
                 className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
               >
