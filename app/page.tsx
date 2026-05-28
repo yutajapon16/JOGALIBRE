@@ -2270,7 +2270,7 @@ export default function Home() {
                       {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
                         <div className="flex flex-col gap-2 mb-2 w-full">
                           <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-blue-700 font-medium">Contraoferta:</span>
+                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
                             <span className="text-base font-bold text-blue-700">
                               ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                             </span>
