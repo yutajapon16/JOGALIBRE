@@ -2470,6 +2470,26 @@ export default function Home() {
 
                       {request.finalStatus === 'lost' && (
                         <div className="flex flex-col gap-2 mb-2 w-full">
+                          {/* 管理者カウンターオファーがある場合は維持表示 */}
+                          {request.counterOffer && (
+                            <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                              <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                              <span className="text-base font-bold text-blue-700">
+                                ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* 顧客自身のカウンターオファーがある場合は維持表示 (管理者に承認された場合のみ) */}
+                          {request.customerCounterOffer && !request.customerCounterOfferUsed && (
+                            <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
+                              <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
+                              <span className="text-base font-bold text-purple-700">
+                                ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                              </span>
+                            </div>
+                          )}
+
                           <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs text-red-800 font-semibold shadow-sm">
                             {t.lost}
                           </div>
