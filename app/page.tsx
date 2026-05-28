@@ -2390,7 +2390,7 @@ export default function Home() {
                             </span>
                           </div>
                           <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center">
-                            <p className="text-xs font-semibold text-gray-600">
+                            <p className="text-xs font-semibold text-red-600">
                               {lang === 'es' ? 'Rechazaste la contraoferta.' : 'Você rejeitou a contraoferta.'}
                             </p>
                           </div>

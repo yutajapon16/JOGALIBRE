@@ -1409,7 +1409,7 @@ export default function AdminDashboard() {
 
                     {request.customerCounterOffer && (
                       <div className="flex flex-col gap-2 mb-2 w-full">
-                        <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
+                        <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center gap-1.5">
                           <span className="text-xs text-gray-500 font-medium">顧客からのカウンターオファー:</span>
                           <span className="text-base font-bold text-purple-700">
                             ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
