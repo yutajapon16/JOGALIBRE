@@ -3098,7 +3098,7 @@ export default function Home() {
                   )}
                   <div className="text-left text-[10px] sm:text-xs h-7 flex items-center bg-gray-50 border border-gray-100 rounded px-1.5 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
                     <span className="text-gray-500 font-medium mr-1">{t.currentPrice}:</span>
-                    <span className="font-bold text-indigo-700">${calculateUSDPrice(selectedProduct.currentPrice)}</span>
+                    <span className="font-extrabold text-sm text-indigo-700 ml-0.5">${calculateUSDPrice(selectedProduct.currentPrice)}</span>
                   </div>
                   <a
                     href={selectedProduct.url}
