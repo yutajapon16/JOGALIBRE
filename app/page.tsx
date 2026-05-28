@@ -1858,7 +1858,7 @@ export default function Home() {
               href={product.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-center text-[10px] sm:text-xs text-indigo-600 hover:underline font-bold py-1 sm:py-1.5 bg-indigo-50 rounded block w-full mb-1"
+              className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full mb-1"
             >
               {t.viewOnYahoo}
             </a>
@@ -1985,13 +1985,14 @@ export default function Home() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
-        {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
+          {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
+          <div className="grid grid-cols-2 gap-2">
           <a
             href="https://wa.me/817013476721"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 bg-[#25D366] text-white px-4 py-3 rounded-lg hover:bg-[#128C7E] transition text-sm sm:text-base flex items-center justify-center gap-2"
+            className="flex-1 bg-[#25D366] text-white px-4 h-12 rounded-lg hover:bg-[#128C7E] transition text-sm sm:text-base flex items-center justify-center gap-2"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -2043,30 +2044,29 @@ export default function Home() {
                 console.error('Push error:', err);
               }
             }}
-            className={`flex-1 px-4 py-3 rounded-lg transition text-sm sm:text-base ${notificationStatus === 'enabled'
+            className={`flex-1 px-4 h-12 rounded-lg transition text-sm sm:text-base flex items-center justify-center gap-2 ${notificationStatus === 'enabled'
               ? 'bg-gray-500 text-white hover:bg-gray-600'
               : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
           >
             {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
           </button>
-        </div>
+          </div>
 
-        {/* 更新ボタン（全幅） */}
-        <button
-          onClick={() => {
-            if (activeTab === 'requests') fetchMyRequests();
-            else if (activeTab === 'purchased') fetchPurchasedItems();
-            else { fetchExchangeRate(); }
-          }}
-          className="bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full"
-        >
-          🔁 {t.refresh}
-        </button>
+          {/* 更新ボタン（全幅） */}
+          <button
+            onClick={() => {
+              if (activeTab === 'requests') fetchMyRequests();
+              else if (activeTab === 'purchased') fetchPurchasedItems();
+              else { fetchExchangeRate(); }
+            }}
+            className="bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full flex items-center justify-center"
+          >
+            🔁 {t.refresh}
+          </button>
 
-        <div className="bg-white p-3 rounded-lg shadow-inner border border-gray-100 flex justify-center items-center">
-          <div className="text-sm font-bold text-gray-600">
-            {t.exchangeRate}: <span className="text-indigo-600">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
+          <div className="w-full h-12 bg-white border border-gray-300 rounded-lg text-sm sm:text-base flex items-center justify-center font-medium shadow-sm text-gray-700 font-sans">
+            {t.exchangeRate}: <span className="font-bold text-indigo-600 ml-1.5">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
           </div>
         </div>
 
@@ -2090,7 +2090,7 @@ export default function Home() {
                     fetchUserProfile();
                   }
                 }}
-                className={`flex-1 py-3 px-2 text-center text-xs font-bold border-b-2 transition min-w-[70px] ${
+                className={`flex-1 py-2 px-1 text-center text-[9px] sm:text-[10px] font-bold border-b-2 transition min-w-[60px] ${
                   activeTab === tab.key
                     ? 'border-indigo-600 text-indigo-600 bg-indigo-50/30'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50/50'
@@ -2206,7 +2206,7 @@ export default function Home() {
                               rel="noopener noreferrer"
                               className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full"
                             >
-                              Yahoo! Auction
+                              {t.viewOnYahoo}
                             </a>
                           </div>
                         </div>
@@ -2220,21 +2220,28 @@ export default function Home() {
                         </span>
                       </div>
 
-                      {/* 申請詳細の1行化 */}
-                      <div className="flex justify-between items-center text-[10px] sm:text-xs text-gray-600 px-1 mb-2">
-                        <span className="truncate">
-                          {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
-                            lang === 'es' ? 'Su AGT: ' : 'Seu AGT: '
-                          ) : (
-                            'Cliente: '
-                          )}
-                          <span className="font-bold text-gray-900">{request.customerName}</span>
-                        </span>
-                        {request.createdAt && (
-                          <span className="text-gray-400 shrink-0 font-medium">
-                            {formatDateTime(request.createdAt, 'customer')}
+                      {/* 申請詳細情報のh-12ボックス化 */}
+                      <div className="mb-2 h-12 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs box-border grid grid-cols-2 gap-2">
+                        <div className="flex flex-col justify-center h-full min-w-0">
+                          <span className="text-gray-500 text-[10px] leading-tight">
+                            {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
+                              lang === 'es' ? 'Su AGT:' : 'Seu AGT:'
+                            ) : (
+                              'Cliente:'
+                            )}
                           </span>
-                        )}
+                          <span className="font-semibold truncate text-black leading-tight">
+                            {request.customerName}
+                          </span>
+                        </div>
+                        <div className="flex flex-col justify-center h-full min-w-0">
+                          <span className="text-gray-500 text-[10px] leading-tight">
+                            {lang === 'es' ? 'Fecha de solicitud:' : 'Data de solicitação:'}
+                          </span>
+                          <span className="font-semibold truncate text-black leading-tight">
+                            {request.createdAt ? formatDateTime(request.createdAt, 'customer') : '-'}
+                          </span>
+                        </div>
                       </div>
 
                       {request.status === 'rejected' && !request.customerCounterOffer && (
@@ -2577,7 +2584,7 @@ export default function Home() {
                                 href={item.productUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-2 block w-full"
+                                className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full"
                               >
                                 {t.viewOnYahoo}
                               </a>
@@ -3072,53 +3079,32 @@ export default function Home() {
               <h2 className="text-2xl font-bold mb-4">{t.makeOffer}</h2>
 
               <div className="flex gap-3 mb-4">
-                <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 relative group/modal-gallery">
-                  {selectedProduct.images && selectedProduct.images.length > 1 ? (
-                    <>
-                      <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full">
-                        {selectedProduct.images.map((imgUrl: string, idx: number) => (
-                          <div key={idx} className="flex-shrink-0 w-full h-full snap-center">
-                             <Image
-                               src={imgUrl}
-                               alt={`${selectedProduct.title} - ${idx + 1}`}
-                               fill
-                               className="object-cover"
-                               sizes="128px"
-                             />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5 z-10">
-                        {selectedProduct.images.slice(0, 3).map((_, i: number) => (
-                          <div key={i} className="w-1 h-1 rounded-full bg-white/60 shadow-sm"></div>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <Image
-                      src={selectedProduct.imageUrl}
-                      alt={selectedProduct.title}
-                      fill
-                      className="object-cover"
-                      sizes="128px"
-                    />
-                  )}
+                <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 relative">
+                  <Image
+                    src={selectedProduct.imageUrl}
+                    alt={selectedProduct.title}
+                    fill
+                    className="object-cover"
+                    sizes="128px"
+                  />
                 </div>
-                <div className="flex-1 flex flex-col py-0.5 overflow-hidden">
-                  <h3 className="text-sm font-semibold mb-1 line-clamp-2 leading-tight">{selectedProduct.title}</h3>
-                  <div className="flex flex-col gap-0.5 mt-auto mb-2">
-                    <p className="text-xs text-gray-600">
-                      {t.currentPrice}: ¥{selectedProduct.currentPrice.toLocaleString()}
-                    </p>
-                    <p className="text-sm font-bold text-indigo-700">
-                      USD: ${calculateUSDPrice(selectedProduct.currentPrice)}
-                    </p>
+                <div className="flex-1 flex flex-col justify-between h-32 overflow-hidden">
+                  <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight">{selectedProduct.title}</h3>
+                  {selectedProduct.endTime && (
+                    <div className="text-left text-[10px] sm:text-xs py-0.5 bg-gray-50 border border-gray-100 rounded px-1.5 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                      <span className="text-gray-500 font-medium mr-1">{t.endsIn}:</span>
+                      <span className="font-semibold text-red-600">{getTimeRemaining(selectedProduct.endTime, lang, selectedProduct.timeLeft)}</span>
+                    </div>
+                  )}
+                  <div className="text-left text-[10px] sm:text-xs py-0.5 bg-gray-50 border border-gray-100 rounded px-1.5 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                    <span className="text-gray-500 font-medium mr-1">{t.currentPrice}:</span>
+                    <span className="font-bold text-indigo-700">${calculateUSDPrice(selectedProduct.currentPrice)}</span>
                   </div>
                   <a
                     href={selectedProduct.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-center text-xs text-indigo-600 hover:underline font-bold py-1 bg-indigo-50 rounded px-1 block w-full"
+                    className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1 bg-[#ff0033] rounded px-2 block w-full"
                   >
                     {t.viewOnYahoo}
                   </a>
@@ -3155,7 +3141,7 @@ export default function Home() {
                       }
                     }}
                     readOnly={!!(currentUser?.role === 'customer' && currentUser?.agentCustomerId)}
-                    className={`w-full border border-gray-300 rounded-lg px-4 py-3 text-base shadow-sm focus:ring-2 focus:ring-indigo-500 font-bold placeholder:text-gray-300 placeholder:font-normal ${
+                    className={`w-full border border-gray-300 rounded-lg px-4 h-12 text-base shadow-sm focus:ring-2 focus:ring-indigo-500 font-bold placeholder:text-gray-300 placeholder:font-normal ${
                       (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
                         ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200'
                         : ''
@@ -3174,7 +3160,7 @@ export default function Home() {
                       type="number"
                       value={bidForm.maxBid}
                       onChange={(e) => setBidForm({ ...bidForm, maxBid: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg pl-8 pr-4 py-3 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300 placeholder:font-normal"
+                      className="w-full border border-gray-300 rounded-lg pl-8 pr-4 h-12 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300 placeholder:font-normal"
                       required
                       min="1"
                       placeholder="USD"
@@ -3188,14 +3174,14 @@ export default function Home() {
                       setSelectedProduct(null);
                       setBidForm({ name: '', maxBid: '' });
                     }}
-                    className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50 transition"
+                    className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
                   >
                     {t.cancel}
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmittingBid}
-                    className={`flex-1 bg-indigo-600 text-white py-2 rounded-lg font-semibold transition ${
+                    className={`flex-1 bg-indigo-600 text-white h-12 rounded-lg font-semibold transition flex items-center justify-center ${
                       isSubmittingBid ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'
                     }`}
                   >
