@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [rejectReason, setRejectReason] = useState('');
   const [shippingCostJpy, setShippingCostJpy] = useState('');
-  const [fobCostJpy, setFobCostJpy] = useState('1500');
+  const [fobCostJpy, setFobCostJpy] = useState('1,500');
   const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
   const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
   const [finalPriceInput, setFinalPriceInput] = useState('');
@@ -775,7 +775,7 @@ export default function AdminDashboard() {
         setActionType(null);
         setRejectReason('');
         setShippingCostJpy('');
-        setFobCostJpy('1500');
+        setFobCostJpy('1,500');
 
         // プッシュ通知を送信（対象顧客のリクエストを特定）
         const targetRequest = bidRequests.find(r => r.id === id);
@@ -943,10 +943,16 @@ export default function AdminDashboard() {
     }
   };
 
+  const formatCommaSeparatedNumber = (val: string) => {
+    const clean = val.replace(/[^0-9]/g, '');
+    if (!clean) return '';
+    return parseInt(clean, 10).toLocaleString('en-US');
+  };
+
   const handleCounterOffer = () => {
     if (selectedRequest) {
-      const fob = fobCostJpy.trim() ? parseFloat(fobCostJpy) : 1500;
-      const shipping = shippingCostJpy.trim() ? parseFloat(shippingCostJpy) : 0;
+      const fob = fobCostJpy.replace(/,/g, '').trim() ? parseFloat(fobCostJpy.replace(/,/g, '')) : 1500;
+      const shipping = shippingCostJpy.replace(/,/g, '').trim() ? parseFloat(shippingCostJpy.replace(/,/g, '')) : 0;
 
       const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
       // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
@@ -2350,18 +2356,18 @@ export default function AdminDashboard() {
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
               <div className="flex justify-between text-sm mb-3 items-center">
                 <span className="text-gray-600">現在価格:</span>
-                <span className="font-semibold text-black">¥{selectedRequest.productPrice?.toLocaleString() || 'N/A'}</span>
+                <span className="text-base font-bold text-black">¥{selectedRequest.productPrice?.toLocaleString() || 'N/A'}</span>
               </div>
 
               {/* 送料入力（h-12） */}
               <div className="flex justify-between items-center text-sm mb-3">
                 <span className="text-gray-600">送料:</span>
                 <input
-                  type="number"
+                  type="text"
                   placeholder="0"
                   value={shippingCostJpy}
-                  onChange={(e) => setShippingCostJpy(e.target.value)}
-                  className="w-32 h-12 border border-gray-300 rounded px-3 py-0 text-base text-right box-border focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black font-semibold"
+                  onChange={(e) => setShippingCostJpy(formatCommaSeparatedNumber(e.target.value))}
+                  className="w-32 h-12 border border-gray-300 rounded px-3 py-0 text-base text-right box-border focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black font-bold"
                 />
               </div>
 
@@ -2369,11 +2375,11 @@ export default function AdminDashboard() {
               <div className="flex justify-between items-center text-sm mb-3">
                 <span className="text-gray-600">FOB費用:</span>
                 <input
-                  type="number"
-                  placeholder="1500"
+                  type="text"
+                  placeholder="1,500"
                   value={fobCostJpy}
-                  onChange={(e) => setFobCostJpy(e.target.value)}
-                  className="w-32 h-12 border border-gray-300 rounded px-3 py-0 text-base text-right box-border focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black font-semibold"
+                  onChange={(e) => setFobCostJpy(formatCommaSeparatedNumber(e.target.value))}
+                  className="w-32 h-12 border border-gray-300 rounded px-3 py-0 text-base text-right box-border focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black font-bold"
                 />
               </div>
 
@@ -2381,14 +2387,14 @@ export default function AdminDashboard() {
               <div className="flex justify-between text-sm mb-2 pt-2 border-t items-center">
                 <span className="text-gray-600 font-semibold">合計（JPY）:</span>
                 <span className="font-bold text-black text-base">
-                  ¥{((selectedRequest.productPrice || 0) + parseFloat(shippingCostJpy || '0') + parseFloat(fobCostJpy || '0')).toLocaleString()}
+                  ¥{((selectedRequest.productPrice || 0) + parseFloat(shippingCostJpy.replace(/,/g, '') || '0') + parseFloat(fobCostJpy.replace(/,/g, '') || '0')).toLocaleString()}
                 </span>
               </div>
 
               {/* 利益 (JPY) の追加 */}
               {(() => {
-                const fob = parseFloat(fobCostJpy || '0');
-                const shipping = parseFloat(shippingCostJpy || '0');
+                const fob = parseFloat(fobCostJpy.replace(/,/g, '') || '0');
+                const shipping = parseFloat(shippingCostJpy.replace(/,/g, '') || '0');
                 const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
                 const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
                 const priceWithProfit = totalJpy / profitDivisor;
@@ -2397,18 +2403,18 @@ export default function AdminDashboard() {
                 return (
                   <div className="flex justify-between text-sm mb-2 text-emerald-600 font-semibold items-center">
                     <span>利益（JPY）:</span>
-                    <span>¥{Math.round(profitJpy).toLocaleString()}</span>
+                    <span className="font-bold text-emerald-600 text-base">¥{Math.round(profitJpy).toLocaleString()}</span>
                   </div>
                 );
               })()}
 
               {/* カウンターオファー金額 (USD) の表示 */}
               <div className="flex justify-between pt-2 border-t items-center">
-                <span className="text-gray-600 font-semibold text-sm">カウンターオファー金額（USD）:</span>
+                <span className="text-gray-600 font-semibold text-sm">カウンターオファー金額:</span>
                 <span className="text-xl font-bold text-blue-600">
                   ${(() => {
-                    const fob = parseFloat(fobCostJpy || '0');
-                    const shipping = parseFloat(shippingCostJpy || '0');
+                    const fob = parseFloat(fobCostJpy.replace(/,/g, '') || '0');
+                    const shipping = parseFloat(shippingCostJpy.replace(/,/g, '') || '0');
                     const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
                     const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
                     const priceWithProfit = totalJpy / profitDivisor;
@@ -2426,7 +2432,7 @@ export default function AdminDashboard() {
                   setSelectedRequest(null);
                   setActionType(null);
                   setShippingCostJpy('');
-                  setFobCostJpy('1500');
+                  setFobCostJpy('1,500');
                 }}
                 className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
               >
