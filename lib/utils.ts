@@ -1,21 +1,8 @@
 export const formatDateTime = (dateString: string, mode: 'admin' | 'customer' = 'admin') => {
   if (!dateString) return '-';
 
-  // Safari 等で Invalid Date にならないよう半角スペースを T に置換し、区切り文字を正規化する
-  const cleanStr = dateString.trim().replace(/\//g, '-').replace(' ', 'T');
-
-  // タイムゾーン情報がない場合、UTC として扱う(page側) / JSTとして扱う(admin側)の差があったため、
-  // admin/page.tsx では "+09:00" を付けて呼んでいたのを統一し、呼び出し側で解決させるか、
-  // あるいは元のコードの通り "Z" (またはタイムゾーンなし) としてパースします。
-  // ここでは元コードの安全性を重視し、"Z"を付加するアプローチ（page.tsx互換）を基本とします。
-  let date: Date;
-  if (!cleanStr.includes('Z') && !cleanStr.includes('+') && !cleanStr.includes('-', 10)) {
-    date = new Date(cleanStr + 'Z');
-  } else {
-    date = new Date(cleanStr);
-  }
-
-  if (isNaN(date.getTime())) return dateString;
+  const date = parseDbDateTime(dateString);
+  if (!date || isNaN(date.getTime())) return dateString;
 
   // ローカルタイムゾーンの取得
   const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -64,15 +51,8 @@ export const formatDateTime = (dateString: string, mode: 'admin' | 'customer' = 
 export const formatDateOnly = (dateString: string, mode: 'admin' | 'customer' = 'admin') => {
   if (!dateString) return '-';
 
-  // Safari 等で Invalid Date にならないよう半角スペースを T に置換し、区切り文字を正規化する
-  const cleanStr = dateString.trim().replace(/\//g, '-').replace(' ', 'T');
-
-  let date: Date;
-  if (!cleanStr.includes('Z') && !cleanStr.includes('+') && !cleanStr.includes('-', 10)) {
-    date = new Date(cleanStr + 'Z');
-  } else {
-    date = new Date(cleanStr);
-  }
+  const date = parseDbDateTime(dateString);
+  if (!date || isNaN(date.getTime())) return dateString;
 
   if (isNaN(date.getTime())) return dateString;
 
@@ -134,6 +114,33 @@ export const parseYahooTimeRaw = (raw: string) => {
 };
 
 /**
+ * データベースから取得した日付文字列（通常UTC基準だが、TIMESTAMP WITHOUT TIME ZONEによりタイムゾーン情報が削られている可能性がある）を、
+ * 環境に依存せず、かつ各種ブラウザ（iOS Safari等）でエラーにならないよう安全に Date オブジェクトにパースします。
+ */
+export const parseDbDateTime = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
+
+  // 前後の空白を除去
+  let cleanStr = dateStr.trim();
+
+  // スラッシュ '/' が使われている場合はハイフン '-' に統一
+  cleanStr = cleanStr.replace(/\//g, '-');
+
+  // すでに ISO 形式でタイムゾーンがある場合はそのままパース
+  const hasTimeZone = cleanStr.includes('Z') || cleanStr.includes('+') || cleanStr.includes('-', 10);
+
+  if (!hasTimeZone) {
+    // タイムゾーンがない場合、DB内の値はUTCとして保存されているため、'Z' を付与してパースする
+    cleanStr = cleanStr.replace(' ', 'T') + 'Z';
+  } else {
+    cleanStr = cleanStr.replace(' ', 'T');
+  }
+
+  const parsed = new Date(cleanStr);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
+
+/**
  * ヤフオクなどの日付文字列（日本時間 JST 基準）を、環境（UTCサーバーや海外のクライアントなど）に依存せず、
  * かつ各種ブラウザ（iOS Safari等）でエラーにならないよう安全に Date オブジェクトにパースします。
  */
@@ -168,8 +175,8 @@ export const parseJstDateTime = (dateStr: string): Date | null => {
 export const getTimeRemaining = (endTime: string, lang: 'ja' | 'es' | 'pt', timeLeftStr?: string) => {
   if (!endTime) return timeLeftStr || '-';
 
-  // タイムゾーンを考慮して安全にパース
-  const endDate = parseJstDateTime(endTime);
+  // DBからの値（またはAPIからのZ付きISO文字列）なので、parseDbDateTimeを使用する
+  const endDate = parseDbDateTime(endTime);
   if (!endDate) return timeLeftStr || '-';
 
   const now = new Date().getTime();

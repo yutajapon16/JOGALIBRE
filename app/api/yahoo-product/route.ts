@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { parseJstDateTime } from '@/lib/utils';
+import { parseJstDateTime, parseDbDateTime } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
@@ -248,7 +248,7 @@ export async function POST(request: Request) {
     // 残り時間の計算 (詳細取得用)
     let timeLeft = '-';
     if (endTime) {
-      const parsedEndTime = parseJstDateTime(endTime);
+      const parsedEndTime = parseDbDateTime(endTime);
       if (parsedEndTime) {
         const diff = Math.max(0, parsedEndTime.getTime() - Date.now());
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));

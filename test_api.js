@@ -1,59 +1,56 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-
 async function run() {
+  const url = 'https://auctions.yahoo.co.jp/jp/auction/1230853321';
   try {
-    const { data: users, error: usersError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    const { data: requests, error: requestsError } = await supabase
-      .from('bid_requests')
-      .select('*')
-      .eq('final_status', 'won')
-      .eq('customer_confirmed', true);
-
-    console.log("Total Users in DB:", users.length);
-    console.log("Total Requests in DB:", requests.length);
-
-    const userRequestsMap = new Map();
-    requests.forEach(req => {
-      const key = req.customer_email; 
-      if (key) {
-        if (!userRequestsMap.has(key)) {
-          userRequestsMap.set(key, []);
-        }
-        userRequestsMap.get(key).push(req);
+    console.log("Fetching URL:", url);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       }
     });
+    const html = await response.text();
+    const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
+    if (!nextDataMatch) {
+      console.log("NEXT_DATA not found");
+      return;
+    }
+    const jsonData = JSON.parse(nextDataMatch[1]);
+    const itemData = jsonData.props?.pageProps?.initialState?.item?.detail?.item || {};
+    console.log("itemData.endTime type:", typeof itemData.endTime);
+    console.log("itemData.endTime value:", itemData.endTime);
 
-    const compiledUsers = users.map(u => {
-      const userReqs = u.email ? (userRequestsMap.get(u.email) || []) : [];
-      const unpaidCount = userReqs.filter(r => !r.paid).length;
-      const unpaidAmount = userReqs.filter(r => !r.paid).reduce((sum, r) => sum + (r.final_price || 0), 0);
-      const paidCount = userReqs.filter(r => r.paid).length;
-      const paidAmount = userReqs.filter(r => r.paid).reduce((sum, r) => sum + (r.final_price || 0), 0);
+    // parseJstDateTime と同様のパーステスト
+    const endTimeVal = itemData.endTime;
+    let endTimeISO = '';
+    let parsedDate = null;
+    if (typeof endTimeVal === 'number') {
+      parsedDate = new Date(endTimeVal * 1000);
+    } else if (typeof endTimeVal === 'string') {
+      // parseJstDateTime 簡易版
+      let cleanStr = endTimeVal.trim().replace(/\//g, '-');
+      const hasTimeZone = cleanStr.includes('Z') || cleanStr.includes('+') || cleanStr.includes('-', 10);
+      if (!hasTimeZone) {
+        cleanStr = cleanStr.replace(' ', 'T') + '+09:00';
+      } else {
+        cleanStr = cleanStr.replace(' ', 'T');
+      }
+      parsedDate = new Date(cleanStr);
+    }
 
-      return {
-        email: u.email,
-        role: u.role,
-        fullName: u.full_name,
-        customerId: u.customer_id,
-        unpaidAmount,
-        paidAmount
-      };
-    });
-
-    console.log("Compiled Users:");
-    compiledUsers.forEach(u => {
-      console.log(`Email: ${u.email} | Role: ${u.role} | ID: ${u.customerId} | Name: ${u.fullName} | Unpaid: $${u.unpaidAmount} | Paid: $${u.paidAmount}`);
-    });
+    if (parsedDate) {
+      console.log("Parsed Date Object:", parsedDate.toString());
+      console.log("Parsed ISO String:", parsedDate.toISOString());
+      console.log("Parsed Unix Time:", parsedDate.getTime());
+      console.log("Date.now():", Date.now());
+      const diff = parsedDate.getTime() - Date.now();
+      console.log("Difference (ms):", diff);
+      const hours = diff / (1000 * 60 * 60);
+      console.log("Difference (hours):", hours);
+    } else {
+      console.log("Failed to parse date");
+    }
 
   } catch (e) {
-    console.error(e);
+    console.error("Error fetching or parsing:", e);
   }
 }
 

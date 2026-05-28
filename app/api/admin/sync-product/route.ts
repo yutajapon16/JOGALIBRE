@@ -3,7 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
-import { parseJstDateTime } from '@/lib/utils';
+import { parseJstDateTime, parseDbDateTime } from '@/lib/utils';
 
 async function getSupabaseServer() {
   return createServerClient(
@@ -135,7 +135,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const parsedEndTime = parseJstDateTime(endTime);
+    const parsedEndTime = parseDbDateTime(endTime);
     const isNewEndTimeFuture = parsedEndTime ? parsedEndTime.getTime() > Date.now() : false;
 
     if (!isNewEndTimeFuture) {
