@@ -1919,13 +1919,13 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                <span className="text-[10px] sm:text-xs font-bold text-gray-500">未入金額 / 入金済総額（管理顧客分）</span>
+                <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額（管理顧客分）</span>
                 <span className="text-base font-bold text-orange-600">
                   ${Math.round(agentsList.reduce((sum, a) => sum + a.unpaidAmount, 0)).toLocaleString('en-US')} / ${Math.round(agentsList.reduce((sum, a) => sum + a.paidAmount, 0)).toLocaleString('en-US')}
                 </span>
               </div>
               <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                <span className="text-[10px] sm:text-xs font-bold text-gray-500">未入金額 / 入金済総額（AGT分）</span>
+                <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額（AGT分）</span>
                 <span className="text-base font-bold text-emerald-600">
                   ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfUnpaidAmount || 0), 0)).toLocaleString('en-US')} / ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfPaidAmount || 0), 0)).toLocaleString('en-US')}
                 </span>
