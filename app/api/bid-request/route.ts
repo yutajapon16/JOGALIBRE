@@ -353,8 +353,8 @@ export async function PATCH(request: Request) {
       if (customerConfirmed === true && !currentRequest.customer_confirmed_at) {
         updateData.customer_confirmed_at = new Date().toISOString();
 
-        // 在庫番号の自動採番 (ステップ6)
-        if (!currentRequest.stock_number) {
+        // 在庫番号の自動採番 (落札商品 won の場合のみ)
+        if (!currentRequest.stock_number && currentRequest.final_status === 'won') {
           // 1. ユーザーロールから顧客ID (customer_id) を取得
           const { data: userRole } = await supabaseAdmin
             .from('user_roles')
