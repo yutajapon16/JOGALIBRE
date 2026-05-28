@@ -3091,12 +3091,12 @@ export default function Home() {
                 <div className="flex-1 flex flex-col justify-between h-32 overflow-hidden">
                   <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight">{selectedProduct.title}</h3>
                   {selectedProduct.endTime && (
-                    <div className="text-left text-[10px] sm:text-xs py-0.5 bg-gray-50 border border-gray-100 rounded px-1.5 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                    <div className="text-left text-[10px] sm:text-xs h-7 flex items-center bg-gray-50 border border-gray-100 rounded px-1.5 w-full whitespace-nowrap overflow-hidden text-ellipsis">
                       <span className="text-gray-500 font-medium mr-1">{t.endsIn}:</span>
                       <span className="font-semibold text-red-600">{getTimeRemaining(selectedProduct.endTime, lang, selectedProduct.timeLeft)}</span>
                     </div>
                   )}
-                  <div className="text-left text-[10px] sm:text-xs py-0.5 bg-gray-50 border border-gray-100 rounded px-1.5 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                  <div className="text-left text-[10px] sm:text-xs h-7 flex items-center bg-gray-50 border border-gray-100 rounded px-1.5 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
                     <span className="text-gray-500 font-medium mr-1">{t.currentPrice}:</span>
                     <span className="font-bold text-indigo-700">${calculateUSDPrice(selectedProduct.currentPrice)}</span>
                   </div>
@@ -3104,7 +3104,7 @@ export default function Home() {
                     href={selectedProduct.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1 bg-[#ff0033] rounded px-2 block w-full"
+                    className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
                   >
                     {t.viewOnYahoo}
                   </a>
