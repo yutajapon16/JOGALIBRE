@@ -2232,7 +2232,7 @@ export default function Home() {
                         <div className="flex flex-col justify-center h-full min-w-0">
                           <span className="text-gray-500 text-[10px] leading-tight">
                             {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
-                              lang === 'es' ? 'Su AGT:' : 'Seu AGT:'
+                              lang === 'es' ? 'Tu agente:' : 'Seu agente:'
                             ) : (
                               'Cliente:'
                             )}
@@ -2660,7 +2660,7 @@ export default function Home() {
                           <div className="flex flex-col justify-center h-full min-w-0">
                             <span className="text-gray-500 text-[10px] leading-tight">
                               {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
-                                lang === 'es' ? 'Su AGT:' : 'Seu AGT:'
+                                lang === 'es' ? 'Tu agente:' : 'Seu agente:'
                               ) : (
                                 'Cliente:'
                               )}
