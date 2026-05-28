@@ -2245,13 +2245,13 @@ export default function Home() {
                       </div>
 
                       {request.status === 'rejected' && !request.customerCounterOffer && (
-                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
-                          <div className="text-xs text-red-600 truncate font-semibold">
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center text-xs text-red-600 font-semibold truncate">
                             {t.rejectReason}: {request.rejectReason || '-'}
                           </div>
                           <button
                             onClick={() => confirmRejection(request.id)}
-                            className="w-full bg-red-600 text-white h-9 rounded-lg hover:bg-red-700 text-xs font-bold"
+                            className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
                           >
                             {t.confirm}
                           </button>
@@ -2260,17 +2260,17 @@ export default function Home() {
 
                       {/* ケース1: 最初の管理者カウンターオファー（顧客未返答） */}
                       {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
-                        <div className="mb-2 h-24 p-2 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
-                          <div className="flex justify-between items-center px-1">
-                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                            <span className="text-sm font-bold text-blue-700">
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-blue-700 font-medium">Contraoferta:</span>
+                            <span className="text-base font-bold text-blue-700">
                               ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                             </span>
                           </div>
-                          <div className="flex gap-1.5">
+                          <div className="flex flex-col gap-2 w-full">
                             <button
                               onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                              className="flex-1 bg-green-600 text-white h-8 rounded font-bold text-[10px] sm:text-xs hover:bg-green-700"
+                              className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
                             >
                               {t.accept}
                             </button>
@@ -2279,13 +2279,13 @@ export default function Home() {
                                 setSelectedRequestForCounter(request);
                                 setShowCounterModal(true);
                               }}
-                              className="flex-1 bg-blue-600 text-white h-8 rounded font-bold text-[10px] sm:text-xs hover:bg-blue-700"
+                              className="w-full bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center"
                             >
                               {t.counterOfferAction}
                             </button>
                             <button
                               onClick={() => handleCounterOfferResponse(request.id, 'reject')}
-                              className="flex-1 bg-red-600 text-white h-8 rounded font-bold text-[10px] sm:text-xs hover:bg-red-700"
+                              className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center"
                             >
                               {t.reject}
                             </button>
@@ -2415,11 +2415,13 @@ export default function Home() {
                       )}
 
                       {request.finalStatus === 'lost' && (
-                        <div className="mb-2 h-24 p-3 bg-gray-50 border border-gray-100 rounded-lg flex flex-col justify-between">
-                          <p className="font-bold text-red-600 text-xs">{t.lost}</p>
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center text-xs text-red-600 font-semibold">
+                            {t.lost}
+                          </div>
                           <button
                             onClick={() => handleFinalStatusConfirm(request.id)}
-                            className="w-full bg-red-600 text-white h-9 rounded-lg hover:bg-red-700 text-xs font-bold"
+                            className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
                           >
                             {t.confirm}
                           </button>

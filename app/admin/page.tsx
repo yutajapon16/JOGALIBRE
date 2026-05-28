@@ -1373,9 +1373,8 @@ export default function AdminDashboard() {
                     </div>
 
                     {request.status === 'rejected' && request.rejectReason && (
-                      <div className="mb-2 p-3 bg-red-50 rounded-lg">
-                        <p className="text-sm text-gray-600">却下理由:</p>
-                        <p className="font-semibold text-red-700">{request.rejectReason}</p>
+                      <div className="h-12 px-3 bg-red-50 rounded-lg flex items-center text-xs font-semibold text-red-700 mb-2 truncate">
+                        却下理由: {request.rejectReason}
                       </div>
                     )}
 
