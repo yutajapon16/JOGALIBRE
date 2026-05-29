@@ -1857,34 +1857,32 @@ export default function Home() {
         <div className="p-3 sm:p-4 flex flex-col flex-1">
           <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 leading-[1.25rem] h-[2.5rem] overflow-hidden w-full mb-2">{product.title}</h3>
 
-          <div className="mt-auto space-y-1.5 sm:space-y-2">
+          <div className="mt-auto space-y-2">
             <a
               href={product.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full mb-1"
+              className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center"
             >
               {t.viewOnYahoo}
             </a>
-            <div className="flex justify-between items-center bg-gray-50 p-1.5 sm:p-2 rounded mt-1 sm:mt-2">
+            <div className="h-9 flex justify-between items-center bg-gray-50 px-2.5 sm:px-3 rounded">
               <span className="text-[10px] sm:text-xs text-gray-500 font-medium">{t.bidsLabel}:</span>
               <span className="text-[10px] sm:text-xs font-bold text-gray-700 bg-white px-1.5 sm:px-2 py-0.5 rounded shadow-sm">{product.bids || 0}</span>
             </div>
-            <div className="flex justify-between items-center text-[10px] sm:text-xs bg-red-50 p-1.5 sm:p-2 rounded text-red-700 font-medium">
+            <div className="h-9 flex justify-between items-center text-[10px] sm:text-xs bg-red-50 px-2.5 sm:px-3 rounded text-red-700 font-medium">
               <span>{t.timeLeft}:</span>
               <span className="text-right line-clamp-2 max-w-[60%] font-semibold">{getTimeRemaining(product.endTime || '', lang, product.timeLeft)}</span>
             </div>
 
-            <div className="my-2 sm:my-3">
-              <div className="flex items-center justify-between bg-green-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg">
-                <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">USD</span>
-                <div className="flex items-center">
-                  <span className="font-extrabold text-green-700 text-lg sm:text-xl leading-none tabular-nums tracking-tight">
-                    <span className="text-sm font-semibold mr-0.5">$</span>
-                    {calculateUSDPrice(product.currentPrice)}
-                  </span>
-                  <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
-                </div>
+            <div className="h-12 flex items-center justify-between bg-green-50 px-2.5 sm:px-3 rounded-lg">
+              <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">USD</span>
+              <div className="flex items-center">
+                <span className="font-extrabold text-green-700 text-lg sm:text-xl leading-none tabular-nums tracking-tight">
+                  <span className="text-sm font-semibold mr-0.5">$</span>
+                  {calculateUSDPrice(product.currentPrice)}
+                </span>
+                <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
               </div>
             </div>
 
@@ -1902,8 +1900,7 @@ export default function Home() {
                   });
                 }
               }}
-              className="w-full bg-indigo-600 text-white font-bold py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg hover:bg-indigo-700 transition shadow-sm hover:shadow active:scale-[0.98] flex items-center justify-center gap-1.5 sm:gap-2 mt-auto text-xs sm:text-sm"
-              style={{ minHeight: '40px' }}
+              className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold rounded-lg transition shadow-sm hover:shadow flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
             >
               <span>{t.makeOffer}</span>
             </button>
