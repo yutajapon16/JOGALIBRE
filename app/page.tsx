@@ -2396,8 +2396,8 @@ export default function Home() {
                               ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                             </span>
                           </div>
-                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center">
-                            <p className="text-xs font-semibold text-red-600">
+                          <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center shadow-sm">
+                            <p className="text-xs font-semibold text-red-800">
                               {lang === 'es' ? 'Rechazaste la contraoferta.' : 'Você rejeitou a contraoferta.'}
                             </p>
                           </div>

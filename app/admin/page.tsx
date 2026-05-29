@@ -1403,7 +1403,7 @@ export default function AdminDashboard() {
                       </div>
                     )}
 
-                    {request.status === 'counter_offer' && !request.customerCounterOffer && (
+                    {request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
                       <button
                         onClick={() => {
                           setSelectedRequest(request);
