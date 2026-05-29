@@ -2955,7 +2955,7 @@ export default function Home() {
                           <td className="w-1/3 px-4 py-3 whitespace-nowrap text-center font-medium text-gray-700">
                             {dateFormatted}
                           </td>
-                          <td className="w-1/3 px-4 py-3 whitespace-nowrap text-center font-bold text-green-600">
+                          <td className="w-1/3 px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
                             ${Number(item.amount).toLocaleString('en-US')}
                           </td>
                           <td className="w-1/3 px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
