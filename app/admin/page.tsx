@@ -1308,7 +1308,11 @@ export default function AdminDashboard() {
 
                         {/* 3. ステータスバッジ */}
                         <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getStatusColor(request.status)}`}>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${
+                            request.status === 'counter_offer' && request.customerCounterOffer
+                              ? 'bg-purple-100 text-purple-800'
+                              : getStatusColor(request.status)
+                          }`}>
                             {getStatusText(request.status)}
                           </span>
                           {request.finalStatus && (

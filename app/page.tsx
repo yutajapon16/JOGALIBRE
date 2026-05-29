@@ -2190,7 +2190,11 @@ export default function Home() {
 
                           {/* 3. ステータスバッジ */}
                           <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getStatusColor(request.status)}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${
+                              request.status === 'counter_offer' && request.customerCounterOffer
+                                ? 'bg-purple-100 text-purple-800'
+                                : getStatusColor(request.status)
+                            }`}>
                               {t[request.status as keyof typeof t] || request.status}
                             </span>
                             {request.finalStatus && (
@@ -3324,9 +3328,14 @@ export default function Home() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
               <h2 className="text-xl font-bold mb-4">{t.counterOfferAction}</h2>
-              <p className="text-sm text-gray-600 mb-2">
-                {lang === 'es' ? 'Contraoferta actual:' : 'Contraoferta atual:'} ${Math.round(selectedRequestForCounter.counterOffer || 0).toLocaleString('en-US')}
-              </p>
+              <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between mb-4">
+                <span className="text-xs text-gray-500 font-medium">
+                  {lang === 'es' ? 'Contraoferta del administrador:' : 'Contraoferta do administrador:'}
+                </span>
+                <span className="text-base font-bold text-blue-700">
+                  ${Math.round(selectedRequestForCounter.counterOffer || 0).toLocaleString('en-US')}
+                </span>
+              </div>
 
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">{t.yourCounterOffer}</label>
