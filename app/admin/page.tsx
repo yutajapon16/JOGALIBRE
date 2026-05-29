@@ -1019,7 +1019,7 @@ export default function AdminDashboard() {
     const statusMap: Record<string, string> = {
       pending: '保留中',
       approved: '承認済',
-      rejected: '却下済',
+      rejected: '却下',
       counter_offer: 'カウンターオファー',
       completed: '完了'
     };
@@ -1320,7 +1320,7 @@ export default function AdminDashboard() {
                               {getFinalStatusText(request.finalStatus)}
                             </span>
                           )}
-                          {request.adminNeedsConfirm && (
+                          {request.adminNeedsConfirm && request.status !== 'rejected' && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
                               却下
                             </span>
@@ -1384,7 +1384,7 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    {request.status === 'rejected' && request.rejectReason && (
+                    {request.status === 'rejected' && request.rejectReason && !request.customerCounterOffer && (
                       <div className="h-12 px-3 bg-red-50 rounded-lg flex items-center text-xs mb-2 gap-1.5">
                         <span className="text-xs text-gray-500 font-medium">却下理由:</span>
                         <span className="text-xs font-semibold text-red-700 truncate">{request.rejectReason}</span>
@@ -1448,9 +1448,10 @@ export default function AdminDashboard() {
                           </div>
                         )}
 
-                        {request.adminNeedsConfirm && (
-                          <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center text-xs text-red-600 font-semibold">
-                            ✓ 却下済み
+                        {request.status === 'rejected' && request.rejectReason && (
+                          <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-1.5 mt-2">
+                            <span className="text-xs text-gray-500 font-medium shrink-0">却下理由:</span>
+                            <span className="text-xs font-semibold text-red-600 break-all">{request.rejectReason}</span>
                           </div>
                         )}
                       </div>

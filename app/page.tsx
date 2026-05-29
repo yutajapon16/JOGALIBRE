@@ -2419,10 +2419,28 @@ export default function Home() {
                         <div className="flex flex-col gap-2 mb-2 w-full">
                           <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-400 font-medium">{t.yourCounterOffer}:</span>
-                            <span className="text-base font-bold text-gray-400">
-                              ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')} (Rechazado)
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-base font-bold text-gray-400">
+                                ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                              </span>
+                              <span className="text-xs font-semibold text-red-600">
+                                {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                              </span>
+                            </div>
                           </div>
+
+                          {/* 却下理由ボックス */}
+                          {request.rejectReason && (
+                            <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-1.5">
+                              <span className="text-xs text-gray-500 font-medium shrink-0">
+                                {lang === 'es' ? 'Razón de rechazo:' : 'Razão de rejeição:'}
+                              </span>
+                              <span className="text-xs font-semibold text-red-600 break-all">
+                                {request.rejectReason}
+                              </span>
+                            </div>
+                          )}
+
                           <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
                             <span className="text-base font-bold text-blue-700">
@@ -2440,7 +2458,7 @@ export default function Home() {
                               onClick={() => confirmRejection(request.id)}
                               className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
                             >
-                              {t.confirm}
+                              {t.reject}
                             </button>
                           </div>
                         </div>
