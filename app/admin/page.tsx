@@ -1340,7 +1340,7 @@ export default function AdminDashboard() {
                               {getFinalStatusText(request.finalStatus)}
                             </span>
                           )}
-                          {request.adminNeedsConfirm && request.status !== 'rejected' && (
+                          {request.adminNeedsConfirm && request.status !== 'rejected' && request.status !== 'approved' && !request.finalStatus && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
                               却下
                             </span>
