@@ -1442,9 +1442,9 @@ export default function AdminDashboard() {
                     )}
 
                     {request.counterOffer && request.finalStatus !== 'won' && !(request.status === 'approved' && request.customerCounterOffer && !request.customerCounterOfferUsed) && (
-                      <div className="mb-2 h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center">
+                      <div className="mb-2 h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between w-full">
+                        <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
                           <span className="text-base font-bold text-blue-700">
                             ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                           </span>
@@ -1471,7 +1471,7 @@ export default function AdminDashboard() {
 
                     {request.customerCounterOffer && !request.customerCounterOfferUsed && request.finalStatus !== 'won' && (
                       <div className="flex flex-col gap-2 mb-2 w-full">
-                        <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center gap-1.5">
+                        <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between w-full">
                           <span className="text-xs text-gray-500 font-medium">顧客からのカウンターオファー:</span>
                           <span className="text-base font-bold text-purple-700">
                             ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
