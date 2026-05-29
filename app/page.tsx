@@ -326,6 +326,12 @@ export default function Home() {
   });
   const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping'>('search');
 
+  // 入金履歴用
+  const [depositsList, setDepositsList] = useState<any[]>([]);
+  const [loadingDeposits, setLoadingDeposits] = useState(false);
+  const [depositFilterYear, setDepositFilterYear] = useState('all');
+  const [depositFilterMonth, setDepositFilterMonth] = useState('all');
+
   // 支払い方法選択モーダル用
   const [selectedPaymentItem, setSelectedPaymentItem] = useState<BidRequest | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -645,6 +651,8 @@ export default function Home() {
               await fetchMyRequests();
             } else if (activeTab === 'purchased') {
               await fetchPurchasedItems();
+            } else if (activeTab === 'deposits') {
+              await fetchDeposits();
             }
           } catch (e) {
             console.error('Refresh error:', e);
@@ -894,6 +902,48 @@ export default function Home() {
     } catch (error) {
       console.error('Error fetching purchased items:', error);
     }
+  };
+
+  const fetchDeposits = async () => {
+    if (!currentUser) return;
+    setLoadingDeposits(true);
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/deposits?t=${Date.now()}`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch deposits');
+      }
+
+      const { deposits: data } = await res.json();
+      setDepositsList(data || []);
+    } catch (error) {
+      console.error('Error fetching deposits:', error);
+    } finally {
+      setLoadingDeposits(false);
+    }
+  };
+
+  const getFilteredDeposits = () => {
+    let list = depositsList;
+    if (depositFilterYear !== 'all') {
+      list = list.filter(d => d.deposit_date.startsWith(depositFilterYear));
+    }
+    if (depositFilterMonth !== 'all') {
+      list = list.filter(d => {
+        const parts = d.deposit_date.split('-');
+        if (parts.length < 2) return false;
+        return Number(parts[1]).toString() === depositFilterMonth;
+      });
+    }
+    return list;
   };
 
   const fetchFavorites = async () => {
@@ -2091,6 +2141,7 @@ export default function Home() {
                   setActiveTab(tab.key);
                   if (tab.key === 'requests') fetchMyRequests();
                   if (tab.key === 'purchased') fetchPurchasedItems();
+                  if (tab.key === 'deposits') fetchDeposits();
                   if (tab.key === 'mypage' && currentUser) {
                     fetchUserProfile();
                   }
@@ -2799,9 +2850,122 @@ export default function Home() {
         ) : activeTab === 'deposits' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans">
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.depositsTab}</h2>
-            <div className="text-center text-gray-500 py-12">
-              <p>{lang === 'es' ? 'No hay información de depósitos.' : 'Não há informações de depósitos.'}</p>
+
+            <div className="flex flex-col gap-4 mb-6">
+              {/* 期間フィルター（年・月） */}
+              <div className="flex flex-col gap-1 w-full">
+                <span className="text-sm font-semibold text-gray-600">
+                  {lang === 'es' ? 'Período' : 'Período'}:
+                </span>
+                <div className="flex gap-2 w-full">
+                  <select
+                    value={depositFilterYear}
+                    onChange={(e) => setDepositFilterYear(e.target.value)}
+                    className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                  >
+                    <option value="all">{lang === 'es' ? 'Todos los años' : 'Todos os anos'}</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                    <option value="2030">2030</option>
+                  </select>
+                  <select
+                    value={depositFilterMonth}
+                    onChange={(e) => setDepositFilterMonth(e.target.value)}
+                    className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                  >
+                    <option value="all">{lang === 'es' ? 'Todos los meses' : 'Todos os meses'}</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                      <option key={m} value={m.toString()}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* WhatsApp 支払い証明書送信ボタン */}
+              <a
+                href="https://wa.me/817013476721"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-12 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-lg font-semibold transition text-sm sm:text-base flex items-center justify-center gap-2 shadow-md"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                </svg>
+                <span>{t.sendPaymentProof}</span>
+              </a>
             </div>
+
+            {/* 抽出合計金額カード */}
+            <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-6">
+              <span className="text-xs font-bold text-indigo-500">
+                {lang === 'es' ? 'Total' : 'Total'}
+              </span>
+              <span className="text-base font-black text-indigo-600">
+                ${Math.round(getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
+              </span>
+            </div>
+
+            {/* 入金履歴一覧リスト */}
+            {loadingDeposits ? (
+              <div className="text-center py-12 text-gray-500">
+                {lang === 'es' ? 'Cargando...' : 'Carregando...'}
+              </div>
+            ) : getFilteredDeposits().length === 0 ? (
+              <div className="text-center py-12 text-gray-500 border border-dashed border-gray-200 rounded-lg bg-gray-50/50">
+                {lang === 'es' ? 'No hay información de depósitos.' : 'Não há informações de depósitos.'}
+              </div>
+            ) : (
+              <div className="overflow-x-auto border border-gray-100 rounded-lg">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">
+                        {t.date}
+                      </th>
+                      <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">
+                        {lang === 'es' ? 'Monto' : 'Valor'}
+                      </th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                        {lang === 'es' ? 'Método' : 'Método'}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {getFilteredDeposits().map((item) => {
+                      const parts = item.deposit_date.split('-');
+                      const dateFormatted = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : item.deposit_date.replace(/-/g, '/');
+                      const paymentMethodNames: Record<string, string> = {
+                        bank: 'Banco',
+                        paypal: 'PayPal',
+                        usdt: 'USDT'
+                      };
+                      return (
+                        <tr key={item.id} className="hover:bg-gray-50 transition text-black">
+                          <td className="px-4 py-3 whitespace-nowrap text-left font-medium text-gray-700">
+                            {dateFormatted}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
+                            ${Number(item.amount).toLocaleString('en-US')}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
+                            {paymentMethodNames[item.payment_method] || item.payment_method}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         ) : activeTab === 'shipping' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans">
