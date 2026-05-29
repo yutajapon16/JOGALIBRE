@@ -2190,19 +2190,30 @@ export default function Home() {
 
                           {/* 3. ステータスバッジ */}
                           <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${
-                              request.status === 'counter_offer' && request.customerCounterOffer
-                                ? 'bg-purple-100 text-purple-800'
-                                : getStatusColor(request.status)
-                            }`}>
-                              {t[request.status as keyof typeof t] || request.status}
-                            </span>
+                            {request.status === 'rejected' && request.customerCounterOffer ? (
+                              <>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-purple-100 text-purple-800">
+                                  {t.counter_offer}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
+                                  {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                                </span>
+                              </>
+                            ) : (
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${
+                                request.status === 'counter_offer' && request.customerCounterOffer
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : getStatusColor(request.status)
+                              }`}>
+                                {t[request.status as keyof typeof t] || request.status}
+                              </span>
+                            )}
                             {request.finalStatus && (
                               <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getFinalStatusColor(request.finalStatus)}`}>
                                 {t[request.finalStatus as keyof typeof t] || request.finalStatus}
                               </span>
                             )}
-                            {request.adminNeedsConfirm && (
+                            {request.adminNeedsConfirm && request.status !== 'rejected' && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
                                 {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
                               </span>
@@ -2420,22 +2431,22 @@ export default function Home() {
                           <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-400 font-medium">{t.yourCounterOffer}:</span>
                             <div className="flex items-center gap-2">
-                              <span className="text-base font-bold text-gray-400">
-                                ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
-                              </span>
                               <span className="text-xs font-semibold text-red-600">
                                 {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                              </span>
+                              <span className="text-base font-bold text-gray-400">
+                                ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
                               </span>
                             </div>
                           </div>
 
                           {/* 却下理由ボックス */}
                           {request.rejectReason && (
-                            <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-1.5">
+                            <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-1.5 shadow-sm">
                               <span className="text-xs text-gray-500 font-medium shrink-0">
                                 {lang === 'es' ? 'Razón de rechazo:' : 'Razão de rejeição:'}
                               </span>
-                              <span className="text-xs font-semibold text-red-600 break-all">
+                              <span className="text-xs font-semibold text-red-600 truncate">
                                 {request.rejectReason}
                               </span>
                             </div>

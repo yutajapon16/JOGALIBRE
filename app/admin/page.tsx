@@ -1308,13 +1308,24 @@ export default function AdminDashboard() {
 
                         {/* 3. ステータスバッジ */}
                         <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${
-                            request.status === 'counter_offer' && request.customerCounterOffer
-                              ? 'bg-purple-100 text-purple-800'
-                              : getStatusColor(request.status)
-                          }`}>
-                            {getStatusText(request.status)}
-                          </span>
+                          {request.status === 'rejected' && request.customerCounterOffer ? (
+                            <>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-purple-100 text-purple-800">
+                                カウンターオファー
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
+                                却下
+                              </span>
+                            </>
+                          ) : (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${
+                              request.status === 'counter_offer' && request.customerCounterOffer
+                                ? 'bg-purple-100 text-purple-800'
+                                : getStatusColor(request.status)
+                            }`}>
+                              {getStatusText(request.status)}
+                            </span>
+                          )}
                           {request.finalStatus && (
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getFinalStatusColor(request.finalStatus)}`}>
                               {getFinalStatusText(request.finalStatus)}
@@ -1449,9 +1460,9 @@ export default function AdminDashboard() {
                         )}
 
                         {request.status === 'rejected' && request.rejectReason && (
-                          <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-1.5 mt-2">
+                          <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-1.5 shadow-sm">
                             <span className="text-xs text-gray-500 font-medium shrink-0">却下理由:</span>
-                            <span className="text-xs font-semibold text-red-600 break-all">{request.rejectReason}</span>
+                            <span className="text-xs font-semibold text-red-600 truncate">{request.rejectReason}</span>
                           </div>
                         )}
                       </div>
