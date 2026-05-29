@@ -2199,6 +2199,15 @@ export default function Home() {
                                   {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
                                 </span>
                               </>
+                            ) : request.status === 'approved' && request.customerCounterOffer && request.customerCounterOfferUsed && !request.finalStatus ? (
+                              <>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-blue-100 text-blue-800">
+                                  {t.counter_offer}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-green-100 text-green-800">
+                                  {t.approved}
+                                </span>
+                              </>
                             ) : (
                               <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${
                                 request.status === 'counter_offer' && request.customerCounterOffer

@@ -1317,6 +1317,15 @@ export default function AdminDashboard() {
                                 却下
                               </span>
                             </>
+                          ) : request.status === 'approved' && request.customerCounterOffer && request.customerCounterOfferUsed && !request.finalStatus ? (
+                            <>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-blue-100 text-blue-800">
+                                カウンターオファー
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-green-100 text-green-800">
+                                承認済
+                              </span>
+                            </>
                           ) : (
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${
                               request.status === 'counter_offer' && request.customerCounterOffer
@@ -1402,7 +1411,16 @@ export default function AdminDashboard() {
                       </div>
                     )}
 
-                    {request.counterOffer && (
+                    {request.finalStatus === 'won' && (
+                      <div className="mb-2 h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm">
+                        <span className="text-xs text-gray-500 font-medium">落札金額:</span>
+                        <span className="text-base font-bold text-green-800">
+                          ${Math.round(request.finalPrice || 0).toLocaleString('en-US')}
+                        </span>
+                      </div>
+                    )}
+
+                    {request.counterOffer && request.finalStatus !== 'won' && (
                       <div className="mb-2 h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
@@ -1430,7 +1448,7 @@ export default function AdminDashboard() {
                       </button>
                     )}
 
-                    {request.customerCounterOffer && (
+                    {request.customerCounterOffer && !request.customerCounterOfferUsed && request.finalStatus !== 'won' && (
                       <div className="flex flex-col gap-2 mb-2 w-full">
                         <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center gap-1.5">
                           <span className="text-xs text-gray-500 font-medium">顧客からのカウンターオファー:</span>
