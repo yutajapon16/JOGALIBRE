@@ -1693,7 +1693,7 @@ export default function Home() {
                     value={loginForm.agentCustomerId || ''}
                     onChange={(e) => setLoginForm({ ...loginForm, agentCustomerId: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                    placeholder="A001"
+                    placeholder=""
                   />
                 </div>
               </>
@@ -2815,16 +2815,18 @@ export default function Home() {
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myPage}</h2>
 
             {/* 保証金情報 (Deposit Info) */}
-            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/80 shadow-sm">
-              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-2">
-                {lang === 'es' ? 'Garantía' : 'Garantia'}
-              </p>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl font-bold text-gray-800 leading-none">
+            <div className="mb-6 h-12 px-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/80 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
+                  {lang === 'es' ? 'Garantía' : 'Garantia'}:
+                </span>
+                <span className="text-base sm:text-lg font-bold text-gray-800 leading-none">
                   ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 1000 : 300)}
                 </span>
+              </div>
+              <div>
                 {currentUser?.depositConfirmedAt ? (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ml-auto bg-green-100 text-green-800">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
                     ✓ {lang === 'es' ? 'Confirmado' : 'Confirmado'}: {formatDateOnly(currentUser.depositConfirmedAt, 'customer')}
                   </span>
                 ) : (
@@ -2840,7 +2842,7 @@ export default function Home() {
                       };
                       openPaymentModal(depositItem as any);
                     }}
-                    className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 shadow-sm transition whitespace-nowrap ml-auto"
+                    className="text-center text-xs text-white font-bold h-8 bg-green-600 hover:bg-green-700 rounded-lg px-3 shadow-sm transition whitespace-nowrap flex items-center justify-center"
                   >
                     {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
                   </button>
@@ -2922,7 +2924,7 @@ export default function Home() {
                       type="text"
                       value={profileForm.agentCustomerId}
                       onChange={(e) => setProfileForm({ ...profileForm, agentCustomerId: e.target.value })}
-                      placeholder="e.g. A001"
+                      placeholder=""
                       className="w-full border border-gray-300 rounded-lg px-4 h-12 font-mono"
                     />
                   </div>
