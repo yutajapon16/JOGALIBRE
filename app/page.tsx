@@ -2190,42 +2190,63 @@ export default function Home() {
 
                           {/* 3. ステータスバッジ */}
                           <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto">
-                            {request.status === 'rejected' && request.customerCounterOffer ? (
+                            {request.finalStatus ? (
+                              // 落札または落札できずが確定している場合
                               <>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-purple-100 text-purple-800">
-                                  {t.counter_offer}
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getStatusColor(request.status)}`}>
+                                  {t[request.status as keyof typeof t] || request.status}
                                 </span>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
-                                  {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
-                                </span>
-                              </>
-                            ) : request.status === 'approved' && request.customerCounterOffer && request.customerCounterOfferUsed && !request.finalStatus ? (
-                              <>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-blue-100 text-blue-800">
-                                  {t.counter_offer}
-                                </span>
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-green-100 text-green-800">
-                                  {t.approved}
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getFinalStatusColor(request.finalStatus)}`}>
+                                  {t[request.finalStatus as keyof typeof t] || request.finalStatus}
                                 </span>
                               </>
                             ) : (
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${
-                                request.status === 'counter_offer' && request.customerCounterOffer
-                                  ? 'bg-purple-100 text-purple-800'
-                                  : getStatusColor(request.status)
-                              }`}>
-                                {t[request.status as keyof typeof t] || request.status}
-                              </span>
-                            )}
-                            {request.finalStatus && (
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${getFinalStatusColor(request.finalStatus)}`}>
-                                {t[request.finalStatus as keyof typeof t] || request.finalStatus}
-                              </span>
-                            )}
-                            {request.adminNeedsConfirm && request.status !== 'rejected' && request.status !== 'approved' && !request.finalStatus && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
-                                {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
-                              </span>
+                              // 落札結果がまだない場合
+                              <>
+                                {request.status === 'rejected' && request.customerCounterOffer ? (
+                                  <>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-purple-100 text-purple-800">
+                                      {t.counter_offer}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
+                                      {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                                    </span>
+                                  </>
+                                ) : request.status === 'approved' && request.customerCounterOfferUsed ? (
+                                  // 顧客が管理者のカウンターオファーを「承認」した場合
+                                  <>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-blue-100 text-blue-800">
+                                      {t.counter_offer}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-green-100 text-green-800">
+                                      {t.approved}
+                                    </span>
+                                  </>
+                                ) : request.status === 'approved' && !request.customerCounterOfferUsed && request.customerCounterOffer ? (
+                                  // 管理者が顧客のカウンターオファーを「承認」した場合
+                                  <>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-purple-100 text-purple-800">
+                                      {t.counter_offer}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-green-100 text-green-800">
+                                      {t.approved}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 ${
+                                    request.status === 'counter_offer' && request.customerCounterOffer
+                                      ? 'bg-purple-100 text-purple-800'
+                                      : getStatusColor(request.status)
+                                  }`}>
+                                    {t[request.status as keyof typeof t] || request.status}
+                                  </span>
+                                )}
+                                {request.adminNeedsConfirm && request.status !== 'rejected' && request.status !== 'approved' && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap shrink-0 bg-red-100 text-red-800">
+                                    {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                                  </span>
+                                )}
+                              </>
                             )}
                           </div>
 
@@ -2346,12 +2367,6 @@ export default function Home() {
                       {/* ケース3A: 管理者が顧客のカウンターオファーを承認 */}
                       {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
                         <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                            <span className="text-base font-bold text-blue-700">
-                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
-                            </span>
-                          </div>
                           <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
                             <span className="text-base font-bold text-purple-700">
@@ -2513,7 +2528,7 @@ export default function Home() {
                       {request.finalStatus === 'lost' && (
                         <div className="flex flex-col gap-2 mb-2 w-full">
                           {/* 管理者カウンターオファーがある場合は維持表示 */}
-                          {request.counterOffer && (
+                          {request.counterOffer && !(request.customerCounterOffer && !request.customerCounterOfferUsed) && (
                             <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
                               <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
                               <span className="text-base font-bold text-blue-700">
@@ -3377,13 +3392,16 @@ export default function Home() {
 
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">{t.yourCounterOffer}</label>
-                <input
-                  type="number"
-                  value={customerCounterAmount}
-                  onChange={(e) => setCustomerCounterAmount(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                  placeholder="USD"
-                />
+                <div className="relative flex items-center">
+                  <span className="absolute left-4 text-gray-500 font-semibold">$</span>
+                  <input
+                    type="number"
+                    value={customerCounterAmount}
+                    onChange={(e) => setCustomerCounterAmount(e.target.value)}
+                    className="w-full h-12 border border-gray-300 rounded-lg pl-8 pr-4 focus:outline-none focus:border-blue-500 font-semibold"
+                    placeholder="0"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-3">
@@ -3393,7 +3411,7 @@ export default function Home() {
                     setSelectedRequestForCounter(null);
                     setCustomerCounterAmount('');
                   }}
-                  className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
+                  className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 flex items-center justify-center"
                 >
                   {t.cancel}
                 </button>
@@ -3406,7 +3424,7 @@ export default function Home() {
                       setCustomerCounterAmount('');
                     }
                   }}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+                  className="flex-1 bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center"
                 >
                   {lang === 'es' ? 'Enviar' : 'Enviar'}
                 </button>
