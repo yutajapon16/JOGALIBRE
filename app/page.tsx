@@ -1857,7 +1857,7 @@ export default function Home() {
         <div className="p-3 sm:p-4 flex flex-col flex-1">
           <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 leading-[1.25rem] h-[2.5rem] overflow-hidden w-full mb-2">{product.title}</h3>
 
-          <div className="mt-auto space-y-2">
+          <div className="mt-auto space-y-1.5">
             <a
               href={product.url}
               target="_blank"
@@ -1875,11 +1875,11 @@ export default function Home() {
               <span className="text-right line-clamp-2 max-w-[60%] font-semibold">{getTimeRemaining(product.endTime || '', lang, product.timeLeft)}</span>
             </div>
 
-            <div className="h-12 flex items-center justify-between bg-green-50 px-2.5 sm:px-3 rounded-lg">
+            <div className="h-9 flex items-center justify-between bg-green-50 px-2.5 sm:px-3 rounded">
               <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">USD</span>
               <div className="flex items-center">
-                <span className="font-extrabold text-green-700 text-lg sm:text-xl leading-none tabular-nums tracking-tight">
-                  <span className="text-sm font-semibold mr-0.5">$</span>
+                <span className="font-extrabold text-green-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
+                  <span className="text-xs font-semibold mr-0.5">$</span>
                   {calculateUSDPrice(product.currentPrice)}
                 </span>
                 <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
