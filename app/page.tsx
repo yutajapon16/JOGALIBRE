@@ -2341,8 +2341,8 @@ export default function Home() {
                           <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center">
                             <p className="text-xs font-semibold text-green-700">
                               {lang === 'es' 
-                                ? 'Tu contraoferta fue aceptada. Esperando subasta.' 
-                                : 'Sua contraoferta foi aceita. Aguardando leilão.'}
+                                ? 'Tu contraoferta fue aceptada. Esperando el resultado de la subasta.' 
+                                : 'Sua contraoferta foi aceita. Aguardando o resultado do leilão.'}
                             </p>
                           </div>
                         </div>
