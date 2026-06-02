@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     let exchangeRate = 150;
     try {
       const rateData = await getResilientExchangeRate();
-      exchangeRate = rateData.usdToJpy;
+      exchangeRate = rateData.rates.JPY;
     } catch (err) {
       console.error('Error fetching exchange rate in cron, using fallback:', err);
     }

@@ -55,6 +55,7 @@ export interface BidRequest {
   paidAt?: string | null;
   paid?: boolean;
   stockNumber?: string | null;
+  invoiceNumber?: string | null;
 }
 
 export interface SearchItem {

@@ -6,9 +6,8 @@ export async function GET() {
     const rateData = await getResilientExchangeRate();
 
     return NextResponse.json({
-      usdToJpy: rateData.usdToJpy,
-      marketRate: rateData.usdToJpy + 4,
-      ttbAdjustment: -4,
+      usdToJpy: rateData.rates.JPY,
+      rates: rateData.rates,
       lastUpdated: rateData.lastUpdated,
       isCached: rateData.isCached
     });
@@ -16,8 +15,14 @@ export async function GET() {
     console.error('Exchange rate route error:', error);
     return NextResponse.json({
       usdToJpy: 150,
-      marketRate: 154,
-      ttbAdjustment: -4,
+      rates: {
+        JPY: 150,
+        BRL: 5.6,
+        PYG: 7500,
+        CLP: 930,
+        BOB: 6.9,
+        ARS: 935
+      },
       lastUpdated: new Date().toISOString(),
       isCached: true,
       fallback: true

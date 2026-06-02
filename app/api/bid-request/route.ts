@@ -305,7 +305,7 @@ export async function PATCH(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid, stockNumber } = body;
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid, stockNumber, invoiceNumber } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -336,6 +336,7 @@ export async function PATCH(request: Request) {
       if (shippingCostJpy !== undefined) updateData.shipping_cost_jpy = shippingCostJpy;
       if (finalStatus !== undefined) updateData.final_status = finalStatus;
       if (stockNumber !== undefined) updateData.stock_number = stockNumber ? stockNumber.trim() : null;
+      if (invoiceNumber !== undefined) updateData.invoice_number = invoiceNumber ? invoiceNumber.trim() : null;
       if (paid !== undefined) {
         updateData.paid = paid;
         if (paid === true && !currentRequest.paid_at) {

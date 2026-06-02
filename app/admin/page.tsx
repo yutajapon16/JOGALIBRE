@@ -53,7 +53,102 @@ export default function AdminDashboard() {
     agentCustomerId: ''
   });
   const [editingStockItem, setEditingStockItem] = useState<{ id: string; title: string; stockNumber: string } | null>(null);
+  const [editingInvoiceItem, setEditingInvoiceItem] = useState<{ id: string; title: string; invoiceNumber: string } | null>(null);
   const [isSyncing, setIsSyncing] = useState<string | null>(null); // ヤフオク同期中のリクエストID
+
+  // ヤフオク以外の商品の手動追加用ステート
+  const [showManualAddModal, setShowManualAddModal] = useState(false);
+  const [manualAddForm, setManualAddForm] = useState({
+    productTitle: '',
+    productUrl: '',
+    customerId: '',
+    createdAt: new Date().toISOString().split('T')[0],
+    finalPrice: '',
+  });
+  const [manualAddImage, setManualAddImage] = useState<File | null>(null);
+  const [manualAddImagePreview, setManualAddImagePreview] = useState<string | null>(null);
+  const [isSubmittingManualAdd, setIsSubmittingManualAdd] = useState(false);
+
+  const getSelectedCustomerInfo = (customerId: string) => {
+    if (!customerId) return null;
+    const customer = customersList.find(c => c.customer_id === customerId);
+    if (customer) {
+      const agent = customer.agent_customer_id
+        ? agentsList.find(a => a.customer_id === customer.agent_customer_id)
+        : null;
+      return {
+        role: 'customer',
+        name: customer.full_name || customer.email.split('@')[0],
+        agentName: agent ? (agent.full_name || agent.email.split('@')[0]) : null,
+      };
+    }
+    const agent = agentsList.find(a => a.customer_id === customerId);
+    if (agent) {
+      return {
+        role: 'agent',
+        name: agent.full_name || agent.email.split('@')[0],
+        agentName: null,
+      };
+    }
+    return null;
+  };
+
+  const handleManualAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualAddForm.productTitle || !manualAddForm.customerId || !manualAddForm.finalPrice || !manualAddForm.createdAt) {
+      alert('必須項目を入力してください。');
+      return;
+    }
+    setIsSubmittingManualAdd(true);
+
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const formData = new FormData();
+      formData.append('productTitle', manualAddForm.productTitle);
+      if (manualAddForm.productUrl) {
+        formData.append('productUrl', manualAddForm.productUrl);
+      }
+      formData.append('customerId', manualAddForm.customerId);
+      formData.append('createdAt', manualAddForm.createdAt);
+      formData.append('finalPrice', manualAddForm.finalPrice);
+      if (manualAddImage) {
+        formData.append('image', manualAddImage);
+      }
+
+      const res = await fetch('/api/bid-request/manual', {
+        method: 'POST',
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: formData
+      });
+
+      if (res.ok) {
+        alert('商品を登録しました。');
+        setShowManualAddModal(false);
+        setManualAddForm({
+          productTitle: '',
+          productUrl: '',
+          customerId: '',
+          createdAt: new Date().toISOString().split('T')[0],
+          finalPrice: '',
+        });
+        setManualAddImage(null);
+        setManualAddImagePreview(null);
+        fetchBidRequests();
+      } else {
+        const errorData = await res.json();
+        alert('登録に失敗しました: ' + (errorData.error || res.statusText));
+      }
+    } catch (error) {
+      console.error('Error submitting manual add:', error);
+      alert('通信エラーが発生しました。');
+    } finally {
+      setIsSubmittingManualAdd(false);
+    }
+  };
 
   // 入金管理用のステート
   const [depositsList, setDepositsList] = useState<any[]>([]);
@@ -420,6 +515,7 @@ export default function AdminDashboard() {
       } else if (activeTab === 'deposits') {
         fetchDeposits();
         fetchUsersData();
+        fetchPurchasedItems();
       } else {
         fetchUsersData();
       }
@@ -471,6 +567,7 @@ export default function AdminDashboard() {
             } else if (activeTab === 'deposits') {
               await fetchDeposits();
               await fetchUsersData();
+              await fetchPurchasedItems();
             } else {
               await fetchUsersData();
             }
@@ -723,6 +820,8 @@ export default function AdminDashboard() {
         paidAt: item.paid_at,
         paid: item.paid || false,
         stockNumber: item.stock_number as string,
+        invoiceNumber: item.invoice_number as string,
+        productId: item.product_id as string,
         customerId: item.customer_id as string,
         agentCustomerId: item.agent_customer_id as string | null | undefined
       }));
@@ -933,8 +1032,38 @@ export default function AdminDashboard() {
     }
   };
 
+  const updateInvoiceNumber = async (id: string, invoiceNumber: string) => {
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/bid-request', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({ id, invoiceNumber: invoiceNumber.trim() || null })
+      });
+
+      if (res.ok) {
+        fetchPurchasedItems();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`請求書番号の更新に失敗しました: ${err.error || ''}`);
+      }
+    } catch (error) {
+      console.error('Error updating invoice number:', error);
+      alert('通信エラーが発生しました。');
+    }
+  };
+
   const handleUpdateStockNumber = (id: string, title: string, currentStockNumber: string) => {
     setEditingStockItem({ id, title, stockNumber: currentStockNumber || '' });
+  };
+
+  const handleUpdateInvoiceNumber = (id: string, title: string, currentInvoiceNumber: string) => {
+    setEditingInvoiceItem({ id, title, invoiceNumber: currentInvoiceNumber || '' });
   };
 
   const handleReject = () => {
@@ -1250,9 +1379,19 @@ export default function AdminDashboard() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* リクエストタブ */}
         {activeTab === 'requests' && (
-          bidRequests.length === 0 ? (
+          <div className="flex flex-col gap-4 w-full">
+            <button
+              onClick={() => {
+                fetchUsersData();
+                setShowManualAddModal(true);
+              }}
+              className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 font-sans shrink-0"
+            >
+              ヤフオク以外の購入商品を追加
+            </button>
+
+            {bidRequests.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-12 text-center">
               <p className="text-gray-500 text-lg">オファーリクエストなし</p>
             </div>
@@ -1282,8 +1421,8 @@ export default function AdminDashboard() {
                 .map((request) => (
                   <div key={request.id} className="bg-white rounded-lg shadow-md p-3 sm:p-4">
                     <div className="flex gap-4 mb-2">
-                      {request.productImage && (
-                        <div className="relative w-32 h-32 flex-shrink-0">
+                      <div className="relative w-32 h-32 flex-shrink-0">
+                        {request.productImage ? (
                           <Image
                             src={request.productImage}
                             alt={request.productTitle}
@@ -1291,23 +1430,31 @@ export default function AdminDashboard() {
                             className="object-cover rounded"
                             sizes="128px"
                           />
-                        </div>
-                      )}
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2 text-black font-sans">
+                            <span className="text-xs font-semibold text-gray-500">
+                              写真なし
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
                       <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
                         {/* 1. 商品タイトル */}
-                        <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{request.productTitle}</h3>
+                        <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight h-[30px] overflow-hidden">{request.productTitle}</h3>
 
-                        {/* 2. 終了までボックス (薄グレー) */}
-                        {request.productEndTime && (
-                          <div className="text-left text-xs py-1.5 bg-gray-50 border border-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
-                            <span className="text-gray-500 font-medium mr-1">終了まで:</span>
-                            <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, 'ja')}</span>
+                        {/* 2. 終了までボックス (h-7) */}
+                        <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center w-full box-border">
+                          <div className="min-w-0 flex items-center overflow-hidden whitespace-nowrap text-ellipsis">
+                            <span className="text-gray-500 text-xs font-medium mr-1">終了まで:</span>
+                            <span className="font-semibold text-red-600 text-xs truncate">
+                              {request.productEndTime ? getTimeRemaining(request.productEndTime, 'ja') : '-'}
+                            </span>
                           </div>
-                        )}
+                        </div>
 
-                        {/* 3. ステータスバッジ */}
-                        <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto">
+                        {/* 3. ステータスバッジ (h-7) */}
+                        <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center gap-1 w-full box-border overflow-x-auto whitespace-nowrap">
                           {request.finalStatus ? (
                             // 落札または落札できずが確定している場合
                             <>
@@ -1368,16 +1515,24 @@ export default function AdminDashboard() {
                           )}
                         </div>
 
-                        {/* 4. ヤフオクURLボタン */}
+                        {/* 4. ヤフオクURLボタン (h-7) */}
                         <div className="w-full">
-                          <a
-                            href={request.productUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full"
-                          >
-                            ヤフオクURL
-                          </a>
+                          {request.productUrl ? (
+                            <a
+                              href={request.productUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
+                                request.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
+                              }`}
+                            >
+                              {request.productId?.startsWith('m-') ? 'URL' : 'ヤフオクURL'}
+                            </a>
+                          ) : (
+                            <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none font-sans">
+                              URLなし
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1590,8 +1745,9 @@ export default function AdminDashboard() {
                   </div>
                 ))}
             </div>
-          )
-        )}
+          )}
+        </div>
+      )}
 
         {/* 履歴タブ */}
         {activeTab === 'purchased' && (
@@ -1667,17 +1823,17 @@ export default function AdminDashboard() {
                   .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
 
                 return (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-red-500">未入金額</span>
-                      <span className="text-base font-black text-red-600">
-                        ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
-                      </span>
-                    </div>
+                  <div className="flex flex-col gap-3">
                     <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                       <span className="text-xs font-bold text-indigo-500">合計金額</span>
                       <span className="text-base font-black text-indigo-600">
                         ${Math.round(summaryTotal).toLocaleString('en-US')}
+                      </span>
+                    </div>
+                    <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-red-500">未入金額</span>
+                      <span className="text-base font-black text-red-600">
+                        ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                   </div>
@@ -1697,8 +1853,8 @@ export default function AdminDashboard() {
                     .map((item) => (
                       <div key={item.id} className="bg-white rounded-lg shadow-md p-3 sm:p-4">
                         <div className="flex gap-4 mb-2">
-                          {item.productImage && (
-                            <div className="relative w-32 h-32 flex-shrink-0">
+                          <div className="relative w-32 h-32 flex-shrink-0">
+                            {item.productImage ? (
                               <Image
                                 src={item.productImage}
                                 alt={item.productTitle}
@@ -1706,38 +1862,68 @@ export default function AdminDashboard() {
                                 className="object-cover rounded"
                                 sizes="128px"
                               />
-                            </div>
-                          )}
+                            ) : (
+                              <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2 text-black font-sans">
+                                <span className="text-xs font-semibold text-gray-500 font-sans">
+                                  写真なし
+                                </span>
+                              </div>
+                            )}
+                          </div>
                           <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
                             {/* 1. 商品タイトル */}
-                            <h3 className="text-sm font-semibold line-clamp-2 leading-tight">{item.productTitle}</h3>
+                            <h3 className="text-xs font-semibold line-clamp-2 leading-tight h-[30px] overflow-hidden">{item.productTitle}</h3>
 
-                            {/* 2. 在庫番号表示ボックス (申請タブの終了までと同サイズ・幅) */}
-                            <div className="text-left text-xs py-1.5 bg-gray-50 border border-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
-                              <span className="text-gray-500 font-medium mr-1">在庫番号:</span>
-                              <span className="font-semibold text-gray-900">{item.stockNumber || 'なし'}</span>
-                            </div>
-
-                            {/* 3. 在庫番号の編集/追加ボタン (申請タブのステータスバッジの場所に右揃え) */}
-                            <div className="flex justify-end w-full">
+                            {/* 2. 在庫番号表示ボックス (h-7) */}
+                            <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center justify-between w-full box-border">
+                              <div className="min-w-0 flex items-center overflow-hidden whitespace-nowrap text-ellipsis mr-2">
+                                <span className="text-gray-500 text-xs font-medium mr-1">在庫番号:</span>
+                                <span className="font-semibold text-gray-900 text-xs truncate">
+                                  {item.stockNumber || '-'}
+                                </span>
+                              </div>
                               <button
                                 onClick={() => handleUpdateStockNumber(item.id, item.productTitle, item.stockNumber || '')}
-                                className="text-xs text-indigo-600 hover:text-indigo-800 underline font-semibold"
+                                className="text-xs text-indigo-600 hover:text-indigo-800 underline font-semibold shrink-0"
                               >
                                 {item.stockNumber ? '編集' : '追加'}
                               </button>
                             </div>
 
-                            {/* 4. ヤフオクURLボタン */}
-                            <div className="w-full">
-                              <a
-                                href={item.productUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full"
+                            {/* 3. 請求書番号表示ボックス (h-7) */}
+                            <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center justify-between w-full box-border">
+                              <div className="min-w-0 flex items-center overflow-hidden whitespace-nowrap text-ellipsis mr-2">
+                                <span className="text-gray-500 text-xs font-medium mr-1">請求書番号:</span>
+                                <span className="font-semibold text-gray-900 text-xs truncate">
+                                  {item.invoiceNumber || '-'}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => handleUpdateInvoiceNumber(item.id, item.productTitle, item.invoiceNumber || '')}
+                                className="text-xs text-indigo-600 hover:text-indigo-800 underline font-semibold shrink-0"
                               >
-                                ヤフオクURL
-                              </a>
+                                {item.invoiceNumber ? '編集' : '追加'}
+                              </button>
+                            </div>
+
+                            {/* 4. ヤフオクURLボタン (h-7) */}
+                            <div className="w-full">
+                              {item.productUrl ? (
+                                <a
+                                  href={item.productUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
+                                    item.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
+                                  }`}
+                                >
+                                  {item.productId?.startsWith('m-') ? 'URL' : 'ヤフオクURL'}
+                                </a>
+                              ) : (
+                                <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none font-sans">
+                                  URLなし
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1837,8 +2023,14 @@ export default function AdminDashboard() {
               </div>
               <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                 <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額</span>
-                <span className="text-base font-bold text-orange-600">
-                  ${Math.round(customersList.reduce((sum, c) => sum + c.unpaidAmount, 0)).toLocaleString('en-US')} / ${Math.round(customersList.reduce((sum, c) => sum + c.paidAmount, 0)).toLocaleString('en-US')}
+                <span className="text-base font-bold flex items-center gap-1.5">
+                  <span className="text-red-600">
+                    ${Math.round(customersList.reduce((sum, c) => sum + c.unpaidAmount, 0)).toLocaleString('en-US')}
+                  </span>
+                  <span className="text-gray-400">/</span>
+                  <span className="text-green-600">
+                    ${Math.round(customersList.reduce((sum, c) => sum + c.paidAmount, 0)).toLocaleString('en-US')}
+                  </span>
                 </span>
               </div>
             </div>
@@ -1987,14 +2179,26 @@ export default function AdminDashboard() {
               </div>
               <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                 <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額（管理顧客分）</span>
-                <span className="text-base font-bold text-orange-600">
-                  ${Math.round(agentsList.reduce((sum, a) => sum + a.unpaidAmount, 0)).toLocaleString('en-US')} / ${Math.round(agentsList.reduce((sum, a) => sum + a.paidAmount, 0)).toLocaleString('en-US')}
+                <span className="text-base font-bold flex items-center gap-1.5">
+                  <span className="text-red-600">
+                    ${Math.round(agentsList.reduce((sum, a) => sum + a.unpaidAmount, 0)).toLocaleString('en-US')}
+                  </span>
+                  <span className="text-gray-400">/</span>
+                  <span className="text-green-600">
+                    ${Math.round(agentsList.reduce((sum, a) => sum + a.paidAmount, 0)).toLocaleString('en-US')}
+                  </span>
                 </span>
               </div>
               <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                 <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額（AGT分）</span>
-                <span className="text-base font-bold text-emerald-600">
-                  ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfUnpaidAmount || 0), 0)).toLocaleString('en-US')} / ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfPaidAmount || 0), 0)).toLocaleString('en-US')}
+                <span className="text-base font-bold flex items-center gap-1.5">
+                  <span className="text-red-600">
+                    ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfUnpaidAmount || 0), 0)).toLocaleString('en-US')}
+                  </span>
+                  <span className="text-gray-400">/</span>
+                  <span className="text-green-600">
+                    ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfPaidAmount || 0), 0)).toLocaleString('en-US')}
+                  </span>
                 </span>
               </div>
             </div>
@@ -2264,12 +2468,37 @@ export default function AdminDashboard() {
               </div>
 
               {/* 抽出合計金額カード */}
-              <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-6">
+              <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-3">
                 <span className="text-xs font-bold text-indigo-500">合計金額</span>
                 <span className="text-base font-black text-indigo-600">
                   ${Math.round(getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
                 </span>
               </div>
+
+              {depositFilterCustomer && depositFilterCustomer !== 'all' && (() => {
+                const totalDeposits = depositsList
+                  .filter(d => d.customer_id === depositFilterCustomer)
+                  .reduce((sum, item) => sum + (item.amount || 0), 0);
+                const totalPurchased = purchasedItems
+                  .filter(item => item.customerId === depositFilterCustomer)
+                  .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+                const balance = totalDeposits - totalPurchased;
+                const isNegative = balance < 0;
+                const formattedBalance = isNegative 
+                  ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
+                  : `$${Math.round(balance).toLocaleString('en-US')}`;
+
+                return (
+                  <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-6`}>
+                    <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
+                      残高
+                    </span>
+                    <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
+                      {formattedBalance}
+                    </span>
+                  </div>
+                );
+              })()}
 
               {/* 入金履歴一覧リスト */}
               <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">入金履歴</h2>
@@ -2679,6 +2908,53 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* 請求書番号編集モーダル */}
+      {editingInvoiceItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-gray-100 font-sans" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-4 text-indigo-600">請求書番号の編集</h2>
+            <p className="text-gray-600 mb-4 font-semibold text-black">{editingInvoiceItem.title}</p>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              await updateInvoiceNumber(editingInvoiceItem.id, editingInvoiceItem.invoiceNumber);
+              setEditingInvoiceItem(null);
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">請求書番号</label>
+                <input
+                  type="text"
+                  value={editingInvoiceItem.invoiceNumber}
+                  onChange={(e) => setEditingInvoiceItem({ ...editingInvoiceItem, invoiceNumber: e.target.value })}
+                  placeholder="例: INV-12345"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white text-black"
+                  autoFocus
+                />
+                <p className="text-[10px] text-gray-500 mt-1">
+                  ※空にするとクリアされます
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => setEditingInvoiceItem(null)}
+                  className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center"
+                >
+                  保存
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* 入金編集モーダル */}
       {editingDeposit && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -2760,6 +3036,179 @@ export default function AdminDashboard() {
                   className="bg-indigo-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm flex items-center justify-center"
                 >
                   保存
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ヤフオク以外の購入商品手動追加モーダル */}
+      {showManualAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-gray-100 font-sans max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg sm:text-xl font-bold mb-4 text-indigo-600 truncate whitespace-nowrap">ヤフオク以外の購入商品を追加</h2>
+
+            <form onSubmit={handleManualAddSubmit} className="space-y-4">
+              {/* 商品画像 */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">商品画像（任意）</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-500 transition relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setManualAddImage(file);
+                        setManualAddImagePreview(URL.createObjectURL(file));
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  {manualAddImagePreview ? (
+                    <div className="relative w-full h-32">
+                      <img
+                        src={manualAddImagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-contain rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setManualAddImage(null);
+                          setManualAddImagePreview(null);
+                        }}
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 text-xs w-6 h-6 flex items-center justify-center font-bold hover:bg-red-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="py-4">
+                      <span className="text-gray-500 text-sm">ドラッグ＆ドロップまたはクリックして画像を選択</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 商品タイトル */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">商品タイトル</label>
+                <input
+                  type="text"
+                  value={manualAddForm.productTitle}
+                  onChange={(e) => setManualAddForm({ ...manualAddForm, productTitle: e.target.value })}
+                  placeholder="商品名を入力してください"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
+                  required
+                />
+              </div>
+
+              {/* 商品URL */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">商品URL（任意）</label>
+                <input
+                  type="url"
+                  value={manualAddForm.productUrl}
+                  onChange={(e) => setManualAddForm({ ...manualAddForm, productUrl: e.target.value })}
+                  placeholder="https://example.com"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
+                />
+              </div>
+
+              {/* 顧客ID */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">顧客ID</label>
+                <select
+                  value={manualAddForm.customerId}
+                  onChange={(e) => setManualAddForm({ ...manualAddForm, customerId: e.target.value })}
+                  className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
+                  required
+                >
+                  <option value="">顧客IDを選択してください</option>
+                  {[
+                    ...customersList.map(c => ({ id: c.customerId, name: c.fullName, role: 'customer', agentId: c.agentCustomerId })),
+                    ...agentsList.map(a => ({ id: a.customerId, name: a.fullName, role: 'agent', agentId: null }))
+                  ]
+                    .filter(u => u.id)
+                    .map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.id} - {user.name}
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+
+              {/* 購入日時 */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">購入日時</label>
+                <input
+                  type="date"
+                  value={manualAddForm.createdAt}
+                  onChange={(e) => setManualAddForm({ ...manualAddForm, createdAt: e.target.value })}
+                  className="w-full h-12 block min-w-0 max-w-full box-border border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                  style={{
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    padding: '0 10px',
+                    lineHeight: '46px'
+                  }}
+                  required
+                />
+              </div>
+
+              {/* 販売金額 */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">販売金額</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                  <input
+                    type="number"
+                    step="any"
+                    value={manualAddForm.finalPrice}
+                    onChange={(e) => setManualAddForm({ ...manualAddForm, finalPrice: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none text-black bg-white box-border"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* ボタン */}
+              <div className="flex gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowManualAddModal(false);
+                    setManualAddForm({
+                      productTitle: '',
+                      productUrl: '',
+                      customerId: '',
+                      createdAt: new Date().toISOString().split('T')[0],
+                      finalPrice: '',
+                    });
+                    setManualAddImage(null);
+                    setManualAddImagePreview(null);
+                  }}
+                  className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center text-sm"
+                  disabled={isSubmittingManualAdd}
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center text-sm"
+                  disabled={isSubmittingManualAdd}
+                >
+                  {isSubmittingManualAdd ? '登録中...' : '登録'}
                 </button>
               </div>
             </form>

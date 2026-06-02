@@ -105,3 +105,24 @@ CREATE TABLE IF NOT EXISTS deposits (
 -- パフォーマンス向上のためのインデックス作成
 CREATE INDEX IF NOT EXISTS idx_deposits_customer_id ON deposits(customer_id);
 CREATE INDEX IF NOT EXISTS idx_deposits_deposit_date ON deposits(deposit_date);
+
+-- 13. 請求書番号を保存するカラムを追加
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS invoice_number TEXT DEFAULT NULL;
+CREATE INDEX IF NOT EXISTS idx_bid_requests_invoice_number ON bid_requests(invoice_number);
+
+-- 14. Storage バケットの自動作成と公開読み取りポリシーの設定
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('bid-images', 'bid-images', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+ON CONFLICT (id) DO NOTHING;
+
+-- すべてのユーザーが bid-images バケット内の画像を参照できるポリシー
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+CREATE POLICY "Public Access" ON storage.objects
+FOR SELECT TO public
+USING (bucket_id = 'bid-images');
+
+-- 認証されたユーザーが bid-images バケットに画像をアップロードできるポリシー
+DROP POLICY IF EXISTS "Allow upload for authenticated users" ON storage.objects;
+CREATE POLICY "Allow upload for authenticated users" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'bid-images');

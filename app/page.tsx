@@ -325,6 +325,8 @@ export default function Home() {
     agentCustomerId: ''
   });
   const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping'>('search');
+  const [hasClosedDepositReminder, setHasClosedDepositReminder] = useState(false);
+  const [showDepositReminder, setShowDepositReminder] = useState(false);
 
   // 入金履歴用
   const [depositsList, setDepositsList] = useState<any[]>([]);
@@ -410,6 +412,15 @@ export default function Home() {
   const [purchasedYear, setPurchasedYear] = useState<string>('all');
   const [purchasedMonth, setPurchasedMonth] = useState<string>('all');
   const [exchangeRate, setExchangeRate] = useState(150);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({
+    JPY: 150,
+    BRL: 5.6,
+    PYG: 7500,
+    CLP: 930,
+    BOB: 6.9,
+    ARS: 935,
+  });
   const [showCounterModal, setShowCounterModal] = useState(false);  // ← 追加
   const [selectedRequestForCounter, setSelectedRequestForCounter] = useState<BidRequest | null>(null);  // ← 追加
   const [customerCounterAmount, setCustomerCounterAmount] = useState('');  // ← 追加
@@ -555,6 +566,22 @@ export default function Home() {
     }
   }, [currentUser?.termsAcceptedAt, currentUser?.id, isProfileLoaded]);
 
+  useEffect(() => {
+    if (currentUser && isProfileLoaded) {
+      const hasAcceptedTerms = currentUser.termsAcceptedAt !== null && currentUser.termsAcceptedAt !== undefined;
+      const isDepositPending = !currentUser.depositConfirmedAt;
+      
+      if (hasAcceptedTerms && isDepositPending && !hasClosedDepositReminder) {
+        setShowDepositReminder(true);
+      } else {
+        setShowDepositReminder(false);
+      }
+    } else {
+      setShowDepositReminder(false);
+      setHasClosedDepositReminder(false);
+    }
+  }, [currentUser?.id, currentUser?.termsAcceptedAt, currentUser?.depositConfirmedAt, isProfileLoaded, hasClosedDepositReminder]);
+
   const fetchNotifications = async () => {
     if (!currentUser) return;
     try {
@@ -653,6 +680,7 @@ export default function Home() {
               await fetchPurchasedItems();
             } else if (activeTab === 'deposits') {
               await fetchDeposits();
+              await fetchPurchasedItems();
             }
           } catch (e) {
             console.error('Refresh error:', e);
@@ -679,22 +707,32 @@ export default function Home() {
   }, [activeTab, searchType, keyword, activeCategoryUrl, currentUser]);
 
   // 日本語タイトルを選択言語に翻訳するヘルパー
-  const translateTitles = async (titles: string[], targetLang: string): Promise<string[]> => {
-    if (targetLang === 'ja' || titles.length === 0) return titles;
+  // 日本語タイトルを選択言語に翻訳するヘルパー
+  const translateSingleTitle = async (title: string, targetLang: string): Promise<string> => {
+    if (!title || targetLang === 'ja') return title;
     try {
-      const DELIMITER = ' ||| ';
-      const joined = titles.join(DELIMITER);
       const res = await fetch(
         `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${targetLang}&dt=t`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ q: joined }).toString()
+          body: new URLSearchParams({ q: title }).toString()
         }
       );
       const data = await res.json();
-      const translated = data?.[0]?.map((x: string[]) => x[0]).join('') || joined;
-      return translated.split(DELIMITER).map((t: string) => t.trim());
+      const translated = data?.[0]?.map((x: string[]) => x[0]).join('') || title;
+      return translated.trim();
+    } catch (e) {
+      console.error('Single title translation error:', e);
+      return title;
+    }
+  };
+
+  const translateTitles = async (titles: string[], targetLang: string): Promise<string[]> => {
+    if (targetLang === 'ja' || titles.length === 0) return titles;
+    try {
+      const promises = titles.map(title => translateSingleTitle(title, targetLang));
+      return await Promise.all(promises);
     } catch (e) {
       console.error('Title translation error:', e);
       return titles;
@@ -707,6 +745,9 @@ export default function Home() {
       const data = await res.json();
       if (data.usdToJpy) {
         setExchangeRate(data.usdToJpy);
+      }
+      if (data.rates) {
+        setExchangeRates(data.rates);
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
@@ -888,6 +929,8 @@ export default function Home() {
         paid: item.paid || false,
         shippingCostJpy: item.shipping_cost_jpy,
         stockNumber: item.stock_number as string,
+        invoiceNumber: item.invoice_number as string,
+        productId: item.product_id as string,
       }));
 
       // 商品タイトルを選択言語に翻訳
@@ -1290,6 +1333,25 @@ export default function Home() {
     const usdPrice = priceWithProfit / exchangeRate;
     const roundedUp = Math.ceil(usdPrice / 10) * 10;
     return roundedUp.toLocaleString('en-US');
+  };
+
+  const calculateConvertedPrice = (jpyPrice: number) => {
+    const FOB_COST = 1500;
+    const totalJpyPrice = jpyPrice + FOB_COST;
+    const profitDivisor = currentUser?.customerId?.startsWith('A') ? 0.8 : 0.6;
+    const priceWithProfit = totalJpyPrice / profitDivisor;
+    
+    const jpyRate = exchangeRates['JPY'] || exchangeRate || 150;
+    const usdPrice = priceWithProfit / jpyRate;
+    const roundedUp = Math.ceil(usdPrice / 10) * 10;
+    
+    if (selectedCurrency === 'USD') {
+      return roundedUp.toLocaleString('en-US');
+    } else {
+      const rate = exchangeRates[selectedCurrency] || 1;
+      const converted = Math.ceil(roundedUp * rate);
+      return converted.toLocaleString('en-US');
+    }
   };
 
   const fetchMyRequests = async () => {
@@ -1926,13 +1988,21 @@ export default function Home() {
             </div>
 
             <div className="h-9 flex items-center justify-between bg-green-50 px-2.5 sm:px-3 rounded">
-              <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">USD</span>
+              <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">
+                {selectedCurrency}
+              </span>
               <div className="flex items-center">
                 <span className="font-extrabold text-green-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
-                  <span className="text-xs font-semibold mr-0.5">$</span>
-                  {calculateUSDPrice(product.currentPrice)}
+                  <span className="text-xs font-semibold mr-0.5">
+                    {selectedCurrency === 'USD' ? '$' : (selectedCurrency + ' ')}
+                  </span>
+                  {calculateConvertedPrice(product.currentPrice)}
                 </span>
-                <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">APROX<br />FOB</span>
+                {selectedCurrency === 'USD' && (
+                  <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">
+                    APROX<br />FOB
+                  </span>
+                )}
               </div>
             </div>
 
@@ -2116,8 +2186,33 @@ export default function Home() {
             🔁 {t.refresh}
           </button>
 
-          <div className="w-full h-12 bg-white border border-gray-300 rounded-lg text-sm sm:text-base flex items-center justify-center font-medium shadow-sm text-gray-700 font-sans">
-            {t.exchangeRate}: <span className="font-bold text-indigo-600 ml-1.5">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
+          <div className="w-full h-12 bg-white border border-gray-300 rounded-lg text-sm sm:text-base flex items-center justify-between px-4 font-medium shadow-sm text-gray-700 font-sans">
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-500 text-xs sm:text-sm">
+                {lang === 'es' ? 'Moneda' : 'Moeda'}:
+              </span>
+              <select
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
+                className="border border-gray-300 rounded px-1.5 py-0.5 text-xs sm:text-sm bg-white font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="USD">USD</option>
+                <option value="BRL">BRL</option>
+                <option value="PYG">PYG</option>
+                <option value="CLP">CLP</option>
+                <option value="BOB">BOB</option>
+                <option value="ARS">ARS</option>
+              </select>
+            </div>
+            <div className="text-right">
+              <span className="text-gray-500 text-xs sm:text-sm">{t.exchangeRate}:</span>
+              <span className="font-bold text-indigo-600 ml-1.5">
+                {selectedCurrency === 'USD' 
+                  ? `USD 1 = JPY ${(exchangeRates['JPY'] || exchangeRate).toFixed(2)}` 
+                  : `USD 1 = ${selectedCurrency} ${(exchangeRates[selectedCurrency] || 0).toFixed(2)}`
+                }
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -2134,19 +2229,23 @@ export default function Home() {
               { key: 'deposits' as const, label: t.depositsTab, icon: '💵' },
               { key: 'shipping' as const, label: t.shippingTab, icon: '📦' },
               { key: 'mypage' as const, label: t.myPage, icon: '👤' },
-            ].map((tab) => (
+            ].map((tab, _idx, arr) => (
               <button
                 key={tab.key}
                 onClick={() => {
                   setActiveTab(tab.key);
                   if (tab.key === 'requests') fetchMyRequests();
                   if (tab.key === 'purchased') fetchPurchasedItems();
-                  if (tab.key === 'deposits') fetchDeposits();
+                  if (tab.key === 'deposits') {
+                    fetchDeposits();
+                    fetchPurchasedItems();
+                  }
                   if (tab.key === 'mypage' && currentUser) {
                     fetchUserProfile();
                   }
                 }}
-                className={`flex-1 py-3 px-2 text-center text-[10px] sm:text-xs font-semibold border-b-2 transition min-w-[65px] ${
+                style={{ flexBasis: `${100 / arr.length}%` }}
+                className={`grow shrink-0 min-w-[65px] py-3 px-0.5 text-center text-[9px] sm:text-xs font-semibold border-b-2 transition ${
                   activeTab === tab.key
                     ? 'border-indigo-600 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -2213,8 +2312,8 @@ export default function Home() {
                   .map((request) => (
                     <div key={request.id} className="bg-white rounded-lg shadow-md p-3 sm:p-4 border border-gray-100 font-sans">
                       <div className="flex gap-4 mb-2">
-                        {request.productImage && (
-                          <div className="relative w-32 h-32 flex-shrink-0">
+                        <div className="relative w-32 h-32 flex-shrink-0">
+                          {request.productImage ? (
                             <Image
                               src={request.productImage}
                               alt={request.productTitle}
@@ -2222,22 +2321,30 @@ export default function Home() {
                               className="object-cover rounded"
                               sizes="128px"
                             />
-                          </div>
-                        )}
-                        <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
-                          {/* 1. 商品タイトル */}
-                          <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight">{request.productTitle}</h3>
-
-                          {/* 2. 終了までボックス (薄グレー) */}
-                          {request.productEndTime && (
-                            <div className="text-left text-xs py-1.5 bg-gray-50 border border-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
-                              <span className="text-gray-500 font-medium mr-1">{t.endsIn}:</span>
-                              <span className="font-semibold text-red-600">{getTimeRemaining(request.productEndTime, lang)}</span>
+                          ) : (
+                            <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2 text-black">
+                              <span className="text-xs font-semibold text-gray-500 font-sans">
+                                {lang === 'es' ? 'Sin foto' : 'Sem foto'}
+                              </span>
                             </div>
                           )}
+                        </div>
+                        <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
+                          {/* 1. 商品タイトル */}
+                          <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight h-[30px] overflow-hidden">{request.productTitle}</h3>
 
-                          {/* 3. ステータスバッジ */}
-                          <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto">
+                          {/* 2. 終了までボックス (h-7) */}
+                          <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center w-full box-border">
+                            <div className="min-w-0 flex items-center overflow-hidden whitespace-nowrap text-ellipsis">
+                              <span className="text-gray-500 text-xs font-medium mr-1">{t.endsIn}:</span>
+                              <span className="font-semibold text-red-600 text-xs truncate">
+                                {request.productEndTime ? getTimeRemaining(request.productEndTime, lang) : '-'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 3. ステータスバッジ (h-7) */}
+                          <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center gap-1 w-full box-border overflow-x-auto whitespace-nowrap">
                             {request.finalStatus ? (
                               // 落札または落札できずが確定している場合
                               <>
@@ -2298,16 +2405,24 @@ export default function Home() {
                             )}
                           </div>
 
-                          {/* 4. ヤフオクURLボタン */}
+                          {/* 4. ヤフオクURLボタン (h-7) */}
                           <div className="w-full">
-                            <a
-                              href={request.productUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full"
-                            >
-                              {t.viewOnYahoo}
-                            </a>
+                            {request.productUrl ? (
+                              <a
+                                href={request.productUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
+                                  request.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
+                                }`}
+                              >
+                                {request.productId?.startsWith('m-') ? 'URL' : t.viewOnYahoo}
+                              </a>
+                            ) : (
+                              <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none font-sans">
+                                {lang === 'es' ? 'Sin URL' : 'Sem URL'}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2698,21 +2813,21 @@ export default function Home() {
                 .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
 
               return (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                    <span className="text-xs font-bold text-red-500 uppercase tracking-wider">
-                      {lang === 'es' ? 'Monto Pendiente' : 'Valor Pendente'}
-                    </span>
-                    <span className="text-base font-black text-red-600">
-                      ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
-                    </span>
-                  </div>
+                <div className="flex flex-col gap-3">
                   <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                     <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider">
                       {lang === 'es' ? 'Monto Total' : 'Valor Total'}
                     </span>
                     <span className="text-base font-black text-indigo-600">
                       ${Math.round(summaryTotal).toLocaleString('en-US')}
+                    </span>
+                  </div>
+                  <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-red-500 uppercase tracking-wider">
+                      {lang === 'es' ? 'Monto Pendiente' : 'Valor Pendente'}
+                    </span>
+                    <span className="text-base font-black text-red-600">
+                      ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
                     </span>
                   </div>
                 </div>
@@ -2735,8 +2850,8 @@ export default function Home() {
                     .map((item, index) => (
                       <div key={`purchased-${index}-${item.id}`} className="bg-white rounded-lg shadow-md p-3 sm:p-4 border border-gray-100 font-sans">
                         <div className="flex gap-4 mb-2">
-                          {item.productImage && (
-                            <div className="relative w-32 h-32 flex-shrink-0">
+                          <div className="relative w-32 h-32 flex-shrink-0">
+                            {item.productImage ? (
                               <Image
                                 src={item.productImage}
                                 alt={item.productTitle}
@@ -2744,42 +2859,56 @@ export default function Home() {
                                 className="object-cover rounded"
                                 sizes="128px"
                               />
-                            </div>
-                          )}
-                          <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
-                            {/* 1. 商品タイトル (最大2行) */}
-                            <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight">{item.productTitle}</h3>
-
-                            {/* 2. 在庫番号ボックス (申請タブの終了までと同等のスタイル・高さ) */}
-                            {item.stockNumber ? (
-                              <div className="text-left text-xs py-1.5 bg-gray-50 border border-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
-                                <span className="text-gray-500 font-medium mr-1">
-                                  {lang === 'es' ? 'Nº de stock:' : 'Nº de stock:'}
-                                </span>
-                                <span className="font-semibold text-gray-900">{item.stockNumber}</span>
-                              </div>
                             ) : (
-                              <div className="text-left text-xs py-1.5 bg-gray-50 border border-gray-100 rounded px-2 block w-full whitespace-nowrap overflow-hidden text-ellipsis opacity-0 select-none">
-                                <span className="text-gray-500 font-medium mr-1">
-                                  {lang === 'es' ? 'Nº de stock:' : 'Nº de stock:'}
+                              <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2 text-black">
+                                <span className="text-xs font-semibold text-gray-500 font-sans">
+                                  {lang === 'es' ? 'Sin foto' : 'Sem foto'}
                                 </span>
-                                <span className="font-semibold text-gray-900">-</span>
                               </div>
                             )}
+                          </div>
+                          <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
+                            {/* 1. 商品タイトル (最大2行) */}
+                            <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight h-[30px] overflow-hidden">{item.productTitle}</h3>
 
-                            {/* 3. ステータスバッジの列は空欄にする */}
-                            <div className="flex flex-row items-center gap-1 flex-nowrap overflow-x-auto h-5"></div>
+                            {/* 2. 在庫番号表示ボックス (h-7) */}
+                            <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center w-full box-border">
+                              <div className="min-w-0 flex items-center overflow-hidden whitespace-nowrap text-ellipsis">
+                                <span className="text-gray-500 text-xs font-medium mr-1">
+                                  {lang === 'es' ? 'Nº de stock:' : 'Nº de stock:'}
+                                </span>
+                                <span className="font-semibold text-gray-900 text-xs truncate">{item.stockNumber || '-'}</span>
+                              </div>
+                            </div>
 
-                            {/* 4. ヤフオクURLボタン */}
+                            {/* 3. 請求書番号表示ボックス (h-7) */}
+                            <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center w-full box-border">
+                              <div className="min-w-0 flex items-center overflow-hidden whitespace-nowrap text-ellipsis">
+                                <span className="text-gray-500 text-xs font-medium mr-1">
+                                  {lang === 'es' ? 'Nº de factura:' : 'Nº de fatura:'}
+                                </span>
+                                <span className="font-semibold text-gray-900 text-xs truncate">{item.invoiceNumber || '-'}</span>
+                              </div>
+                            </div>
+
+                            {/* 4. ヤフオクURLボタン (h-7) */}
                             <div className="w-full">
-                              <a
-                                href={item.productUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold py-1.5 bg-[#ff0033] rounded px-2 block w-full"
-                              >
-                                {t.viewOnYahoo}
-                              </a>
+                              {item.productUrl ? (
+                                <a
+                                  href={item.productUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
+                                    item.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
+                                  }`}
+                                >
+                                  {item.productId?.startsWith('m-') ? 'URL' : t.viewOnYahoo}
+                                </a>
+                              ) : (
+                                <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none font-sans">
+                                  {lang === 'es' ? 'Sin URL' : 'Sem URL'}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2907,7 +3036,7 @@ export default function Home() {
             </div>
 
             {/* 抽出合計金額カード */}
-            <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-6">
+            <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-3">
               <span className="text-xs font-bold text-indigo-500">
                 {lang === 'es' ? 'Total' : 'Total'}
               </span>
@@ -2915,6 +3044,28 @@ export default function Home() {
                 ${Math.round(getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
               </span>
             </div>
+
+            {/* 残高ボックス */}
+            {(() => {
+              const totalDeposits = depositsList.reduce((sum, item) => sum + (item.amount || 0), 0);
+              const totalPurchased = purchasedItems.reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+              const balance = totalDeposits - totalPurchased;
+              const isNegative = balance < 0;
+              const formattedBalance = isNegative 
+                ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
+                : `$${Math.round(balance).toLocaleString('en-US')}`;
+
+              return (
+                <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-6`}>
+                  <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
+                    {lang === 'es' ? 'Balance' : 'Saldo'}
+                  </span>
+                  <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
+                    {formattedBalance}
+                  </span>
+                </div>
+              );
+            })()}
 
             {/* 入金履歴一覧リスト */}
             {loadingDeposits ? (
@@ -2993,7 +3144,7 @@ export default function Home() {
               <div>
                 {currentUser?.depositConfirmedAt ? (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
-                    ✓ {lang === 'es' ? 'Confirmado' : 'Confirmado'}: {formatDateOnly(currentUser.depositConfirmedAt, 'customer')}
+                    ✓ {lang === 'es' ? 'Confirmado' : 'Confirmado'}
                   </span>
                 ) : (
                   <button
@@ -3445,7 +3596,10 @@ export default function Home() {
                   )}
                   <div className="text-left text-[10px] sm:text-xs h-7 flex items-center bg-gray-50 border border-gray-100 rounded px-1.5 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
                     <span className="text-gray-500 font-medium mr-1">{t.currentPrice}:</span>
-                    <span className="font-extrabold text-sm text-indigo-700 ml-0.5">${calculateUSDPrice(selectedProduct.currentPrice)}</span>
+                    <span className="font-extrabold text-sm text-indigo-700 ml-0.5">
+                      {selectedCurrency === 'USD' ? '$' : (selectedCurrency + ' ')}
+                      {calculateConvertedPrice(selectedProduct.currentPrice)}
+                    </span>
                   </div>
                   <a
                     href={selectedProduct.url}
@@ -4115,6 +4269,70 @@ export default function Home() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 保証金入金催促モーダル */}
+      {showDepositReminder && (
+        <div className="fixed inset-0 bg-black/65 backdrop-blur-sm z-[140] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col my-8 animate-in fade-in zoom-in duration-300 relative p-6">
+            {/* 閉じるボタン ✕ */}
+            <button
+              onClick={() => setHasClosedDepositReminder(true)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition duration-200 font-bold"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+
+            {/* ヘッダー */}
+            <div className="text-center mt-2 mb-4">
+              <span className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-50 text-amber-500 text-2xl mx-auto mb-3">
+                ⚠️
+              </span>
+              <h2 className="text-lg sm:text-xl font-black text-gray-900">
+                {lang === 'es' ? 'Depósito de Garantía Requerido' : 'Depósito de Garantia Necessário'}
+              </h2>
+            </div>
+
+            {/* 説明文 */}
+            <p className="text-sm text-gray-600 text-center mb-6 leading-relaxed">
+              {lang === 'es' 
+                ? 'Para comenzar a realizar ofertas en las subastas de Yahoo Japón, es necesario completar el pago del depósito de garantía.' 
+                : 'Para começar a realizar lances nos leilões do Yahoo Japão, é necessário concluir o pagamento do depósito de garantia.'}
+            </p>
+
+            {/* 保証金ボックス */}
+            <div className="h-14 px-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/80 shadow-sm flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
+                  {lang === 'es' ? 'Garantía' : 'Garantia'}:
+                </span>
+                <span className="text-base sm:text-lg font-bold text-gray-800 leading-none">
+                  ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 1000 : 300)}
+                </span>
+              </div>
+              <div>
+                <button
+                  onClick={() => {
+                    const depositItem = {
+                      id: 'deposit',
+                      productTitle: lang === 'es' ? 'Depósito de garantía' : 'Depósito de garantia',
+                      finalPrice: (currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null)
+                        ? currentUser.depositAmount
+                        : (currentUser?.role === 'agent' ? 1000 : 300),
+                      stockNumber: 'deposit'
+                    };
+                    openPaymentModal(depositItem as any);
+                    setHasClosedDepositReminder(true);
+                  }}
+                  className="text-center text-xs text-white font-bold h-9 bg-green-600 hover:bg-green-700 rounded-lg px-3 shadow-sm transition whitespace-nowrap flex items-center justify-center"
+                >
+                  {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
