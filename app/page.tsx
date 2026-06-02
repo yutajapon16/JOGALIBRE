@@ -1335,6 +1335,18 @@ export default function Home() {
     return roundedUp.toLocaleString('en-US');
   };
 
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case 'USD': return '$';
+      case 'BRL': return 'R$';
+      case 'PYG': return '₲';
+      case 'CLP': return 'CLP$';
+      case 'BOB': return 'Bs.';
+      case 'ARS': return 'ARS$';
+      default: return '$';
+    }
+  };
+
   const calculateConvertedPrice = (jpyPrice: number) => {
     const FOB_COST = 1500;
     const totalJpyPrice = jpyPrice + FOB_COST;
@@ -1349,8 +1361,18 @@ export default function Home() {
       return roundedUp.toLocaleString('en-US');
     } else {
       const rate = exchangeRates[selectedCurrency] || 1;
-      const converted = Math.ceil(roundedUp * rate);
-      return converted.toLocaleString('en-US');
+      const rawConverted = roundedUp * rate;
+      
+      let finalConverted = rawConverted;
+      if (selectedCurrency === 'BRL' || selectedCurrency === 'BOB') {
+        finalConverted = Math.ceil(rawConverted / 10) * 10;
+      } else if (selectedCurrency === 'PYG' || selectedCurrency === 'CLP' || selectedCurrency === 'ARS') {
+        finalConverted = Math.ceil(rawConverted / 1000) * 1000;
+      } else {
+        finalConverted = Math.ceil(rawConverted);
+      }
+      
+      return finalConverted.toLocaleString('en-US');
     }
   };
 
@@ -1994,7 +2016,7 @@ export default function Home() {
               <div className="flex items-center">
                 <span className="font-extrabold text-green-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
                   <span className="text-xs font-semibold mr-0.5">
-                    {selectedCurrency === 'USD' ? '$' : (selectedCurrency + ' ')}
+                    {getCurrencySymbol(selectedCurrency)}
                   </span>
                   {calculateConvertedPrice(product.currentPrice)}
                 </span>
@@ -3597,7 +3619,7 @@ export default function Home() {
                   <div className="text-left text-[10px] sm:text-xs h-7 flex items-center bg-gray-50 border border-gray-100 rounded px-1.5 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
                     <span className="text-gray-500 font-medium mr-1">{t.currentPrice}:</span>
                     <span className="font-extrabold text-sm text-indigo-700 ml-0.5">
-                      {selectedCurrency === 'USD' ? '$' : (selectedCurrency + ' ')}
+                      {getCurrencySymbol(selectedCurrency)}
                       {calculateConvertedPrice(selectedProduct.currentPrice)}
                     </span>
                   </div>
