@@ -1335,6 +1335,23 @@ export default function Home() {
     return roundedUp.toLocaleString('en-US');
   };
 
+  const formatExchangeRate = (value: number, currency: string) => {
+    const fixedValue = value.toFixed(2);
+    const formatted = Number(fixedValue).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    if (currency === 'USD' || currency === 'JPY') {
+      return formatted;
+    } else {
+      return formatted
+        .replace(/,/g, 'TEMP')
+        .replace(/\./g, ',')
+        .replace(/TEMP/g, '.');
+    }
+  };
+
   const getCurrencySymbol = (currency: string) => {
     switch (currency) {
       case 'USD': return '$';
@@ -2194,25 +2211,34 @@ export default function Home() {
             >
               {notificationStatus === 'enabled' ? '🔔 Push ✅' : '🔔 Push'}
             </button>
-            <select
-              value={selectedCurrency}
-              onChange={(e) => setSelectedCurrency(e.target.value)}
-              className="h-12 border border-gray-300 rounded-lg px-3 bg-white text-xs font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full text-center"
-            >
-              <option value="USD">USD</option>
-              <option value="BRL">BRL</option>
-              <option value="PYG">PYG</option>
-              <option value="CLP">CLP</option>
-              <option value="BOB">BOB</option>
-              <option value="ARS">ARS</option>
-            </select>
+
+            {/* 通貨選択ドロップダウン (WhatsAppの下) */}
+            <div className="relative h-12 w-full">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none font-medium">
+                {lang === 'es' ? 'Moneda:' : 'Moeda:'}
+              </span>
+              <select
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
+                className="h-12 border border-gray-300 rounded-lg pl-20 pr-4 bg-white text-sm sm:text-base font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full text-center appearance-none"
+              >
+                <option value="USD">USD</option>
+                <option value="BRL">BRL</option>
+                <option value="PYG">PYG</option>
+                <option value="CLP">CLP</option>
+                <option value="BOB">BOB</option>
+                <option value="ARS">ARS</option>
+              </select>
+            </div>
+
+            {/* 更新ボタン (Pushの下、半幅に短縮) */}
             <button
               onClick={() => {
                 if (activeTab === 'requests') fetchMyRequests();
                 else if (activeTab === 'purchased') fetchPurchasedItems();
                 else { fetchExchangeRate(); }
               }}
-              className="bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full flex items-center justify-center font-bold"
+              className="bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full flex items-center justify-center"
             >
               🔁 {t.refresh}
             </button>
@@ -2221,8 +2247,8 @@ export default function Home() {
           <div className="w-full h-12 bg-white border border-gray-300 rounded-lg text-sm sm:text-base flex items-center justify-center font-medium shadow-sm text-gray-700 font-sans">
             {t.exchangeRate}: <span className="font-bold text-indigo-600 ml-1.5">
               {selectedCurrency === 'USD' 
-                ? `USD 1 = JPY ${(exchangeRates['JPY'] || exchangeRate).toFixed(2)}` 
-                : `USD 1 = ${selectedCurrency} ${(exchangeRates[selectedCurrency] || 0).toFixed(2)}`
+                ? `USD 1 = JPY ${formatExchangeRate(exchangeRates['JPY'] || exchangeRate || 150, 'USD')}` 
+                : `USD 1 = ${selectedCurrency} ${formatExchangeRate(exchangeRates[selectedCurrency] || 0, selectedCurrency)}`
               }
             </span>
           </div>
