@@ -402,7 +402,7 @@ async function generateAiSummary(description: string, targetLang: 'es' | 'pt'): 
     throw new Error('Gemini API key is not configured');
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const promptEs = `Eres un asistente de compras experto. Tu tarea es traducir y resumir la siguiente descripción de producto en japonés al español.
 Genera un resumen conciso usando viñetas (bullet points) en el siguiente formato, basándote únicamente en la información proporcionada (si un dato no está en el texto, escribe "No especificado"):
