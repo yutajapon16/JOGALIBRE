@@ -838,7 +838,7 @@ export default function Home() {
           const updated = {
             ...prev,
             termsAcceptedAt: new Date().toISOString(),
-            depositAmount: prev.role === 'agent' ? 1000 : 300
+            depositAmount: prev.role === 'agent' ? 500 : 100
           };
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('joga_user_cache', JSON.stringify(updated));
@@ -3274,7 +3274,7 @@ export default function Home() {
                   {lang === 'es' ? 'Garantía' : 'Garantia'}:
                 </span>
                 <span className="text-base sm:text-lg font-bold text-gray-800 leading-none">
-                  ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 1000 : 300)}
+                  ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 500 : 100)}
                 </span>
               </div>
               <div>
@@ -3290,7 +3290,7 @@ export default function Home() {
                         productTitle: lang === 'es' ? 'Depósito de garantía' : 'Depósito de garantia',
                         finalPrice: (currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null)
                           ? currentUser.depositAmount
-                          : (currentUser?.role === 'agent' ? 1000 : 300),
+                          : (currentUser?.role === 'agent' ? 500 : 100),
                         stockNumber: 'deposit'
                       };
                       openPaymentModal(depositItem as any);
@@ -4448,7 +4448,7 @@ export default function Home() {
                   {lang === 'es' ? 'Garantía' : 'Garantia'}:
                 </span>
                 <span className="text-base sm:text-lg font-bold text-gray-800 leading-none">
-                  ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 1000 : 300)}
+                  ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 500 : 100)}
                 </span>
               </div>
               <div>
@@ -4459,7 +4459,7 @@ export default function Home() {
                       productTitle: lang === 'es' ? 'Depósito de garantía' : 'Depósito de garantia',
                       finalPrice: (currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null)
                         ? currentUser.depositAmount
-                        : (currentUser?.role === 'agent' ? 1000 : 300),
+                        : (currentUser?.role === 'agent' ? 500 : 100),
                       stockNumber: 'deposit'
                     };
                     openPaymentModal(depositItem as any);

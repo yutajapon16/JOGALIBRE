@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
  
     const userRole = role || 'customer';
-    const defaultDeposit = userRole === 'agent' ? 1000 : 300;
+    const defaultDeposit = userRole === 'agent' ? 500 : 100;
  
     // supabaseAdmin で user_roles に登録（RLSバイパス）
     const { error: roleError } = await supabaseAdmin

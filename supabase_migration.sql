@@ -88,8 +88,8 @@ TO authenticated
 USING (role = 'agent');
 
 -- 11. 既存の保証金データが未設定（または0）のユーザーに対し、ロールに応じたデフォルト保証金を設定
-UPDATE user_roles SET deposit_amount = 1000 WHERE role = 'agent' AND (deposit_amount = 0 OR deposit_amount IS NULL);
-UPDATE user_roles SET deposit_amount = 300 WHERE role = 'customer' AND (deposit_amount = 0 OR deposit_amount IS NULL);
+UPDATE user_roles SET deposit_amount = 500 WHERE role = 'agent' AND (deposit_amount = 0 OR deposit_amount IS NULL);
+UPDATE user_roles SET deposit_amount = 100 WHERE role = 'customer' AND (deposit_amount = 0 OR deposit_amount IS NULL);
 
 -- 12. 入金履歴を管理するテーブルを追加
 CREATE TABLE IF NOT EXISTS deposits (
