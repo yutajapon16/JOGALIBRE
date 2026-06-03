@@ -22,7 +22,7 @@ interface AppNotification {
 const translations = {
   es: {
     title: 'JOGALIBRE',
-    subtitle: 'Subastas de Yahoo Japón',
+    subtitle: 'Compra y Subasta Directa de Japón',
     language: 'Idioma',
     searchPlaceholder: 'Pega la URL del producto de Yahoo Auctions aquí...',
     import: 'Importar',
@@ -126,7 +126,7 @@ const translations = {
   },
   pt: {
     title: 'JOGALIBRE',
-    subtitle: 'Leilões do Yahoo Japão',
+    subtitle: 'Compra e Leilão Direto do Japão',
     language: 'Idioma',
     searchPlaceholder: 'Cole a URL do produto do Yahoo Auctions aqui...',
     import: 'Importar',
@@ -2208,7 +2208,9 @@ export default function Home() {
 
           {/* 2行目: サブタイトル & お知らせボタン */}
           <div className="flex justify-between items-center">
-            <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t.subtitle}</p>
+            <p className="text-[8px] min-[375px]:text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap truncate mr-2 flex-1 min-w-0" title={t.subtitle}>
+              {t.subtitle}
+            </p>
 
             <div className="flex items-center gap-2">
               <select
