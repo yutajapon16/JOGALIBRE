@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES } from '@/lib/constants';
 
@@ -1046,10 +1046,13 @@ export default function Home() {
           
           // end_time カラムが null の場合（既存の古いデータ）、created_at と time_left から逆算する
           if (!endTimeStr && f.created_at && f.time_left) {
-            const createdTime = new Date(f.created_at as string).getTime();
-            const durationMs = parseTimeLeftToMs(f.time_left as string);
-            if (durationMs > 0) {
-              endTimeStr = new Date(createdTime + durationMs).toISOString();
+            const createdDate = parseDbDateTime(f.created_at as string);
+            if (createdDate) {
+              const createdTime = createdDate.getTime();
+              const durationMs = parseTimeLeftToMs(f.time_left as string);
+              if (durationMs > 0) {
+                endTimeStr = new Date(createdTime + durationMs).toISOString();
+              }
             }
           }
 
