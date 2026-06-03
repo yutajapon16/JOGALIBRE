@@ -989,6 +989,33 @@ export default function Home() {
     return list;
   };
 
+  const parseTimeLeftToMs = (timeLeftStr: string): number => {
+    if (!timeLeftStr) return 0;
+    const cleanStr = timeLeftStr.replace(/\s+/g, '');
+    
+    // d h m 形式のパース
+    const dMatch = cleanStr.match(/(\d+)d/);
+    const hMatch = cleanStr.match(/(\d+)h/);
+    const mMatch = cleanStr.match(/(\d+)m/);
+    
+    let ms = 0;
+    if (dMatch) ms += parseInt(dMatch[1], 10) * 24 * 3600 * 1000;
+    if (hMatch) ms += parseInt(hMatch[1], 10) * 3600 * 1000;
+    if (mMatch) ms += parseInt(mMatch[1], 10) * 60 * 1000;
+    
+    if (ms === 0) {
+      // 日本語形式のパース (例: 3日, 12時間, 4分)
+      const dayMatch = cleanStr.match(/(\d+)日/);
+      const hourMatch = cleanStr.match(/(\d+)時間/);
+      const minMatch = cleanStr.match(/(\d+)分/);
+      if (dayMatch) ms += parseInt(dayMatch[1], 10) * 24 * 3600 * 1000;
+      if (hourMatch) ms += parseInt(hourMatch[1], 10) * 3600 * 1000;
+      if (minMatch) ms += parseInt(minMatch[1], 10) * 60 * 1000;
+    }
+    
+    return ms;
+  };
+
   const fetchFavorites = async () => {
     if (currentUser) {
       try {
@@ -1014,24 +1041,37 @@ export default function Home() {
         const translatedTitles = await translateTitles(titles, lang);
 
         // format to match product structure
-        const formattedFavorites = (data || []).map((f: Record<string, string | number | boolean>, i: number) => ({
-          id: f.product_id as string,
-          title: translatedTitles[i] || f.product_title as string,
-          url: f.product_url as string,
-          imageUrl: f.product_image as string,
-          currentPrice: f.product_price as number,
-          bids: f.bids as number,
-          timeLeft: f.time_left as string,
-          endTime: f.end_time as string || '',
-          isFavorite: true,
-          dbId: f.id as string
-        }));
+        const formattedFavorites = (data || []).map((f: Record<string, string | number | boolean>, i: number) => {
+          let endTimeStr = f.end_time as string || '';
+          
+          // end_time カラムが null の場合（既存の古いデータ）、created_at と time_left から逆算する
+          if (!endTimeStr && f.created_at && f.time_left) {
+            const createdTime = new Date(f.created_at as string).getTime();
+            const durationMs = parseTimeLeftToMs(f.time_left as string);
+            if (durationMs > 0) {
+              endTimeStr = new Date(createdTime + durationMs).toISOString();
+            }
+          }
+
+          return {
+            id: f.product_id as string,
+            title: translatedTitles[i] || f.product_title as string,
+            url: f.product_url as string,
+            imageUrl: f.product_image as string,
+            currentPrice: f.product_price as number,
+            bids: f.bids as number,
+            timeLeft: f.time_left as string,
+            endTime: endTimeStr,
+            isFavorite: true,
+            dbId: f.id as string
+          };
+        });
 
         // ソート処理（残り時間が短い順。ただし、終了した商品は最後へ）
         const now = Date.now();
         const sortedFavorites = formattedFavorites.sort((a: any, b: any) => {
-          const timeA = a.endTime ? new Date(a.endTime).getTime() : Infinity;
-          const timeB = b.endTime ? new Date(b.endTime).getTime() : Infinity;
+          const timeA = a.endTime && !isNaN(new Date(a.endTime).getTime()) ? new Date(a.endTime).getTime() : Infinity;
+          const timeB = b.endTime && !isNaN(new Date(b.endTime).getTime()) ? new Date(b.endTime).getTime() : Infinity;
           
           const isEndedA = timeA < now;
           const isEndedB = timeB < now;
@@ -1143,8 +1183,8 @@ export default function Home() {
           
           const now = Date.now();
           return newList.sort((a: any, b: any) => {
-            const timeA = a.endTime ? new Date(a.endTime).getTime() : Infinity;
-            const timeB = b.endTime ? new Date(b.endTime).getTime() : Infinity;
+            const timeA = a.endTime && !isNaN(new Date(a.endTime).getTime()) ? new Date(a.endTime).getTime() : Infinity;
+            const timeB = b.endTime && !isNaN(new Date(b.endTime).getTime()) ? new Date(b.endTime).getTime() : Infinity;
             
             const isEndedA = timeA < now;
             const isEndedB = timeB < now;
