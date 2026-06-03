@@ -1067,24 +1067,31 @@ export default function Home() {
             timeLeft: f.time_left as string,
             endTime: endTimeStr,
             isFavorite: true,
-            dbId: f.id as string
+            dbId: f.id as string,
+            createdAt: f.created_at as string
           };
         });
 
-        // ソート処理（残り時間が短い順。ただし、終了した商品は最後へ）
-        const now = Date.now();
+        // ソート処理（残り時間が短い順。申請タブと同一の並び順ルール）
         const sortedFavorites = formattedFavorites.sort((a: any, b: any) => {
+          const now = Date.now();
           const timeA = a.endTime && !isNaN(new Date(a.endTime).getTime()) ? new Date(a.endTime).getTime() : Infinity;
           const timeB = b.endTime && !isNaN(new Date(b.endTime).getTime()) ? new Date(b.endTime).getTime() : Infinity;
           
-          const isEndedA = timeA < now;
-          const isEndedB = timeB < now;
+          const isEndedA = timeA <= now;
+          const isEndedB = timeB <= now;
           
-          if (isEndedA === isEndedB) {
-            return timeA - timeB; // 終了が近い順
+          // 1. 終了済みを優先的に上に表示
+          if (isEndedA && !isEndedB) return -1;
+          if (!isEndedA && isEndedB) return 1;
+          
+          // 2. 両方が「終了済み」または「未終了」の場合、終了時間が早い順
+          if (timeA !== timeB) {
+            return timeA - timeB;
           }
-          if (isEndedA && !isEndedB) return 1; // 終了したものを後ろへ
-          return -1;
+          
+          // 3. 終了時間が同じ（または両方なし）の場合は作成日時順
+          return new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime();
         });
 
         setFavorites(sortedFavorites);
@@ -1182,22 +1189,29 @@ export default function Home() {
             endTime: data.end_time || product.endTime || '',
             isFavorite: true,
             dbId: data.id,
-            source: product.source
+            source: product.source,
+            createdAt: data.created_at
           }, ...prev];
           
-          const now = Date.now();
           return newList.sort((a: any, b: any) => {
+            const now = Date.now();
             const timeA = a.endTime && !isNaN(new Date(a.endTime).getTime()) ? new Date(a.endTime).getTime() : Infinity;
             const timeB = b.endTime && !isNaN(new Date(b.endTime).getTime()) ? new Date(b.endTime).getTime() : Infinity;
             
-            const isEndedA = timeA < now;
-            const isEndedB = timeB < now;
+            const isEndedA = timeA <= now;
+            const isEndedB = timeB <= now;
             
-            if (isEndedA === isEndedB) {
+            // 1. 終了済みを優先的に上に表示
+            if (isEndedA && !isEndedB) return -1;
+            if (!isEndedA && isEndedB) return 1;
+            
+            // 2. 両方が「終了済み」または「未終了」の場合、終了時間が早い順
+            if (timeA !== timeB) {
               return timeA - timeB;
             }
-            if (isEndedA && !isEndedB) return 1;
-            return -1;
+            
+            // 3. 終了時間が同じ（または両方なし）の場合は作成日時順
+            return new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime();
           });
         });
       }
