@@ -2108,7 +2108,7 @@ export default function Home() {
 
           <div className="mt-auto space-y-1.5">
             <a
-              href={product.url}
+              href={`/product/${product.id}?url=${encodeURIComponent(product.url || '')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center"
@@ -2547,7 +2547,7 @@ export default function Home() {
                           <div className="w-full">
                             {request.productUrl ? (
                               <a
-                                href={request.productUrl}
+                                href={request.productId?.startsWith('m-') ? request.productUrl : `/product/${request.productId}?url=${encodeURIComponent(request.productUrl || '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
@@ -3033,7 +3033,7 @@ export default function Home() {
                             <div className="w-full">
                               {item.productUrl ? (
                                 <a
-                                  href={item.productUrl}
+                                  href={item.productId?.startsWith('m-') ? item.productUrl : `/product/${item.productId}?url=${encodeURIComponent(item.productUrl || '')}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
@@ -3739,7 +3739,7 @@ export default function Home() {
                     </span>
                   </div>
                   <a
-                    href={selectedProduct.url}
+                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent(selectedProduct.url || '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"

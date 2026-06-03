@@ -244,6 +244,33 @@ export async function POST(request: Request) {
         clearTimeout(timeoutTranslate);
       }
     }
+    // AIによる要約翻訳の生成
+    let aiSummaryEs = '';
+    let aiSummaryPt = '';
+
+    if (description && process.env.GEMINI_API_KEY) {
+      const controllerAi = new AbortController();
+      const timeoutAi = setTimeout(() => controllerAi.abort(), 6000);
+      try {
+        const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2500);
+        const [summaryEs, summaryPt] = await Promise.all([
+          generateAiSummary(cleanDesc, 'es').catch(err => {
+            console.error('Gemini ES Summary error:', err);
+            return '';
+          }),
+          generateAiSummary(cleanDesc, 'pt').catch(err => {
+            console.error('Gemini PT Summary error:', err);
+            return '';
+          })
+        ]);
+        aiSummaryEs = summaryEs;
+        aiSummaryPt = summaryPt;
+      } catch (e) {
+        console.error('AI Summary overall error:', e);
+      } finally {
+        clearTimeout(timeoutAi);
+      }
+    }
 
     // 残り時間の計算 (詳細取得用)
     let timeLeft = '-';
@@ -273,7 +300,9 @@ export async function POST(request: Request) {
       description: description,
       translatedDescription: translatedDescription,
       titleJa: title,
-      images: allImages.length > 0 ? allImages : [imageUrl]
+      images: allImages.length > 0 ? allImages : [imageUrl],
+      aiSummaryEs: aiSummaryEs,
+      aiSummaryPt: aiSummaryPt
     };
 
 
@@ -286,4 +315,70 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+async function generateAiSummary(description: string, targetLang: 'es' | 'pt'): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('Gemini API key is not configured');
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  const promptEs = `Eres un asistente de compras experto. Tu tarea es traducir y resumir la siguiente descripción de producto en japonés al español.
+Genera un resumen conciso usando viñetas (bullet points) en el siguiente formato, basándote únicamente en la información proporcionada (si un dato no está en el texto, escribe "No especificado"):
+
+- **Especificaciones / Detalles**: (tamaño, color, modelo, etc.)
+- **Estado del producto**: (daños, suciedad, desgaste, etc.)
+- **Funcionamiento**: (si funciona, si no se ha probado, o si es considerado chatarra/junk)
+- **Accesorios**: (lo que se incluye en el paquete)
+- **Envío**: (empresa de envío o método de envío en Japón, si se indica)
+
+No agregues conclusiones ni comentarios personales. Limítate a resumir los datos reales.
+
+Descripción del producto:
+${description}`;
+
+  const promptPt = `Você é um assistente de compras especializado. Sua tarefa é traduzir e resumir a seguinte descrição de produto em japonês para o português.
+Gere um resumo conciso usando marcadores (bullet points) no formato a seguir, baseando-se apenas nas informações fornecidas (se uma informação não estiver no texto, escreva "Não especificado"):
+
+- **Especificações / Detalhes**: (tamanho, cor, modelo, etc.)
+- **Estado do produto**: (danos, sujeira, desgaste, etc.)
+- **Funcionamento**: (se funciona, se não foi testado, ou se é considerado sucata/junk)
+- **Acessórios**: (o que está incluído no pacote)
+- **Envío**: (empresa de envio ou método de envio no Japão, se indicado)
+
+Não adicione conclusões ou comentários pessoais. Limite-se a resumir os dados reais.
+
+Descrição do produto:
+${description}`;
+
+  const prompt = targetLang === 'es' ? promptEs : promptPt;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }]
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Gemini API error: ${response.status} - ${errText}`);
+  }
+
+  const resData = await response.json();
+  const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error('Empty response from Gemini API');
+  }
+
+  return text.trim();
 }
