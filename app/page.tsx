@@ -991,7 +991,8 @@ export default function Home() {
 
   const parseTimeLeftToMs = (timeLeftStr: string): number => {
     if (!timeLeftStr) return 0;
-    const cleanStr = timeLeftStr.replace(/\s+/g, '');
+    // 大文字小文字の区別を避けるために小文字に変換し、空白を除去
+    const cleanStr = timeLeftStr.toLowerCase().replace(/\s+/g, '');
     
     // d h m 形式のパース
     const dMatch = cleanStr.match(/(\d+)d/);
