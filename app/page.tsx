@@ -4296,13 +4296,25 @@ export default function Home() {
                   </div>
                   <div>
                     {currentUser?.role === 'agent' ? (
-                      lang === 'es' 
-                        ? 'Para utilizar el sistema, se requiere un depósito de garantía (USD 500). Se reembolsará en su totalidad al cancelar la cuenta, siempre que no haya pagos pendientes.'
-                        : 'Para utilizar o sistema, é necessário um depósito de garantia (USD 500). O valor será reembolsado integralmente no cancelamento da conta, desde que não haja pagamentos pendentes.'
+                      lang === 'es' ? (
+                        <>
+                          Para utilizar el sistema, se requiere un depósito de garantía (<span className="text-red-500 font-extrabold">USD 500</span>). Se reembolsará en su totalidad al cancelar la cuenta, siempre que no haya pagos pendientes.
+                        </>
+                      ) : (
+                        <>
+                          Para utilizar o sistema, é necessário um depósito de garantia (<span className="text-red-500 font-extrabold">USD 500</span>). O valor será reembolsado integralmente no cancelamento da conta, desde que não haja pagamentos pendentes.
+                        </>
+                      )
                     ) : (
-                      lang === 'es'
-                        ? 'Para utilizar el sistema, se requiere un depósito de garantía (USD 100). Se reembolsará en su totalidad al cancelar la cuenta, siempre que no haya pagos pendientes.'
-                        : 'Para utilizar o sistema, é necessário um depósito de garantia (USD 100). O valor será reembolsado integralmente no cancelamento da conta, desde que não haja pagamentos pendentes.'
+                      lang === 'es' ? (
+                        <>
+                          Para utilizar el sistema, se requiere un depósito de garantía (<span className="text-red-500 font-extrabold">USD 100</span>). Se reembolsará en su totalidad al cancelar la cuenta, siempre que no haya pagos pendientes.
+                        </>
+                      ) : (
+                        <>
+                          Para utilizar o sistema, é necessário um depósito de garantia (<span className="text-red-500 font-extrabold">USD 100</span>). O valor será reembolsado integralmente no cancelamento da conta, desde que não haja pagamentos pendentes.
+                        </>
+                      )
                     )}
                   </div>
                 </div>
@@ -4323,8 +4335,8 @@ export default function Home() {
                   </div>
                   <div>
                     {lang === 'es'
-                      ? 'Debido a las especificaciones de Yahoo Auctions, una vez que el administrador ha realizado una oferta, no se puede cancelar, modificar ni realizar devoluciones bajo ninguna circunstancia.'
-                      : 'Devido às especificações do Yahoo Auctions, após o administrador efetuar o lance, não é possível cancelar, alterar ou realizar devoluções sob nenhuma circunstância.'}
+                      ? 'Debido a las especificaciones del sistema de Japón, una vez que el administrador ha realizado una oferta, no se puede cancelar, modificar ni realizar devoluciones bajo ninguna circunstancia.'
+                      : 'Devido às especificações do sistema do Japão, após o administrador efetuar o lance, não é possível cancelar, alterar ou realizar devoluções sob nenhuma circunstância.'}
                   </div>
                 </div>
               </label>
