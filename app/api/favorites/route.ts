@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { productId, productTitle, productUrl, productImage, productPrice, bids, timeLeft } = body;
+        const { productId, productTitle, productUrl, productImage, productPrice, bids, timeLeft, endTime } = body;
 
         const newFav = {
             user_id: user.id,
@@ -45,7 +45,8 @@ export async function POST(request: Request) {
             product_image: productImage,
             product_price: productPrice,
             bids: bids || 0,
-            time_left: timeLeft || ''
+            time_left: timeLeft || '',
+            end_time: endTime || null
         };
 
         const { data, error } = await supabaseAdmin

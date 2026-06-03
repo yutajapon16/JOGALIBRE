@@ -126,3 +126,6 @@ DROP POLICY IF EXISTS "Allow upload for authenticated users" ON storage.objects;
 CREATE POLICY "Allow upload for authenticated users" ON storage.objects
 FOR INSERT TO authenticated
 WITH CHECK (bucket_id = 'bid-images');
+
+-- 15. お気に入りテーブルに終了日時(end_time)カラムを追加
+ALTER TABLE favorites ADD COLUMN IF NOT EXISTS end_time TIMESTAMP WITH TIME ZONE DEFAULT NULL;

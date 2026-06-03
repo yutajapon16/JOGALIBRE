@@ -1009,20 +1009,41 @@ export default function Home() {
         }
         const { favorites: data } = await res.json();
 
+        // 商品タイトルを選択言語に翻訳
+        const titles = (data || []).map((f: any) => f.product_title || '');
+        const translatedTitles = await translateTitles(titles, lang);
+
         // format to match product structure
-        const formattedFavorites = (data || []).map((f: Record<string, string | number | boolean>) => ({
+        const formattedFavorites = (data || []).map((f: Record<string, string | number | boolean>, i: number) => ({
           id: f.product_id as string,
-          title: f.product_title as string,
+          title: translatedTitles[i] || f.product_title as string,
           url: f.product_url as string,
           imageUrl: f.product_image as string,
           currentPrice: f.product_price as number,
           bids: f.bids as number,
           timeLeft: f.time_left as string,
+          endTime: f.end_time as string || '',
           isFavorite: true,
           dbId: f.id as string
         }));
 
-        setFavorites(formattedFavorites);
+        // ソート処理（残り時間が短い順。ただし、終了した商品は最後へ）
+        const now = Date.now();
+        const sortedFavorites = formattedFavorites.sort((a: any, b: any) => {
+          const timeA = a.endTime ? new Date(a.endTime).getTime() : Infinity;
+          const timeB = b.endTime ? new Date(b.endTime).getTime() : Infinity;
+          
+          const isEndedA = timeA < now;
+          const isEndedB = timeB < now;
+          
+          if (isEndedA === isEndedB) {
+            return timeA - timeB; // 終了が近い順
+          }
+          if (isEndedA && !isEndedB) return 1; // 終了したものを後ろへ
+          return -1;
+        });
+
+        setFavorites(sortedFavorites);
       } catch (error) {
         console.error('Error fetching favorites:', error);
       }
@@ -1090,7 +1111,8 @@ export default function Home() {
             productImage: product.imageUrl || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : ''),
             productPrice: product.currentPrice || '',
             bids: product.bids || 0,
-            timeLeft: product.timeLeft || ''
+            timeLeft: product.timeLeft || '',
+            endTime: product.endTime || ''
           })
         });
 
@@ -1104,18 +1126,36 @@ export default function Home() {
         const { favorite: data } = await res.json();
 
         // ローカルstate更新
-        setFavorites(prev => [{
-          id: data.product_id,
-          title: data.product_title,
-          url: data.product_url,
-          imageUrl: data.product_image,
-          currentPrice: data.product_price,
-          bids: data.bids,
-          timeLeft: data.time_left,
-          isFavorite: true,
-          dbId: data.id,
-          source: product.source
-        }, ...prev]);
+        setFavorites(prev => {
+          const newList = [{
+            id: data.product_id,
+            title: product.titleJa || product.title || data.product_title,
+            url: data.product_url,
+            imageUrl: data.product_image,
+            currentPrice: data.product_price,
+            bids: data.bids,
+            timeLeft: data.time_left,
+            endTime: data.end_time || product.endTime || '',
+            isFavorite: true,
+            dbId: data.id,
+            source: product.source
+          }, ...prev];
+          
+          const now = Date.now();
+          return newList.sort((a: any, b: any) => {
+            const timeA = a.endTime ? new Date(a.endTime).getTime() : Infinity;
+            const timeB = b.endTime ? new Date(b.endTime).getTime() : Infinity;
+            
+            const isEndedA = timeA < now;
+            const isEndedB = timeB < now;
+            
+            if (isEndedA === isEndedB) {
+              return timeA - timeB;
+            }
+            if (isEndedA && !isEndedB) return 1;
+            return -1;
+          });
+        });
       }
     } catch (error) {
       clearTimeout(timeoutId);
@@ -2118,8 +2158,8 @@ export default function Home() {
                 onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
                 className="bg-gray-50 border border-gray-200 text-gray-700 py-1 px-2 rounded-lg text-[10px] sm:text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-auto"
               >
-                <option value="es">ES</option>
-                <option value="pt">PT</option>
+                <option value="es">Español</option>
+                <option value="pt">Português</option>
               </select>
 
               <button
