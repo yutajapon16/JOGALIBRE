@@ -1462,7 +1462,7 @@ export default function Home() {
     }
   };
 
-  const calculateConvertedPrice = (jpyPrice: number) => {
+  const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency) => {
     const FOB_COST = 1500;
     const totalJpyPrice = jpyPrice + FOB_COST;
     const profitDivisor = currentUser?.customerId?.startsWith('A') ? 0.8 : 0.6;
@@ -1472,16 +1472,16 @@ export default function Home() {
     const usdPrice = priceWithProfit / jpyRate;
     const roundedUp = Math.ceil(usdPrice / 10) * 10;
     
-    if (selectedCurrency === 'USD') {
+    if (targetCurrency === 'USD') {
       return roundedUp.toLocaleString('en-US');
     } else {
-      const rate = exchangeRates[selectedCurrency] || 1;
+      const rate = exchangeRates[targetCurrency] || 1;
       const rawConverted = roundedUp * rate;
       
       let finalConverted = rawConverted;
-      if (selectedCurrency === 'BRL' || selectedCurrency === 'BOB') {
+      if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
         finalConverted = Math.ceil(rawConverted / 10) * 10;
-      } else if (selectedCurrency === 'PYG' || selectedCurrency === 'CLP' || selectedCurrency === 'ARS') {
+      } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
         finalConverted = Math.ceil(rawConverted / 1000) * 1000;
       } else {
         finalConverted = Math.ceil(rawConverted);
@@ -3730,11 +3730,10 @@ export default function Home() {
                       <span className="font-semibold text-red-600">{getTimeRemaining(selectedProduct.endTime, lang, selectedProduct.timeLeft)}</span>
                     </div>
                   )}
-                  <div className="text-left text-[10px] sm:text-xs h-7 flex items-center bg-gray-50 border border-gray-100 rounded px-1.5 block w-full whitespace-nowrap overflow-hidden text-ellipsis">
-                    <span className="text-gray-500 font-medium mr-1">{t.currentPrice}:</span>
-                    <span className="font-extrabold text-sm text-indigo-700 ml-0.5">
-                      {getCurrencySymbol(selectedCurrency)}
-                      {calculateConvertedPrice(selectedProduct.currentPrice)}
+                  <div className="text-[10px] sm:text-xs h-7 flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-1.5 w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                    <span className="text-gray-500 font-medium">{t.currentPrice}: USD</span>
+                    <span className="font-extrabold text-sm text-indigo-700">
+                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD')}
                     </span>
                   </div>
                   <a
@@ -3788,8 +3787,11 @@ export default function Home() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-700">
-                    {t.maxBid}
+                  <label className="flex justify-between items-center text-sm font-semibold mb-2 text-gray-700">
+                    <span>{t.maxBid}</span>
+                    <span className="text-xs text-red-500 font-bold">
+                      {lang === 'es' ? 'Por favor, ingrese el monto en USD' : 'Por favor, insira o valor em USD'}
+                    </span>
                   </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
