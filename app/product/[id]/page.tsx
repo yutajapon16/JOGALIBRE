@@ -86,7 +86,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       makeOffer: 'Fazer Oferta',
       maxBid: 'Sua oferta máxima',
       submit: 'Enviar Oferta',
-      loading: 'Obtendo detalles del producto e gerando resumo de IA...',
+      loading: 'Obtendo detalhes do produto e gerando resumo de IA...',
       errorFetch: 'Não foi possível carregar as informações do produto.',
       errorUrl: 'URL do produto inválida.',
       warnUsd: '⚠️ Insira o valor em USD',
@@ -102,6 +102,48 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const t = translations[lang];
 
+  // プロフィール取得（トップページと同期）
+  const fetchUserProfile = async (user = currentUser) => {
+    if (!user) return;
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/profile?t=${Date.now()}`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        credentials: 'include'
+      });
+
+      if (res.ok) {
+        const { profile } = await res.json();
+        if (profile) {
+          setCurrentUser(prev => {
+            const nextUser = prev ? {
+              ...prev,
+              role: profile.role || prev.role,
+              fullName: profile.full_name || undefined,
+              whatsapp: profile.whatsapp || undefined,
+              customerId: profile.customer_id || undefined,
+              address: profile.address || undefined,
+              zipCode: profile.zip_code || undefined,
+              country: profile.country || undefined,
+              agentCustomerId: profile.agent_customer_id || undefined,
+              agentFullName: profile.agent_full_name || undefined,
+              depositAmount: profile.deposit_amount !== undefined && profile.deposit_amount !== null ? Number(profile.deposit_amount) : prev.depositAmount,
+              depositConfirmedAt: profile.deposit_confirmed_at || prev.depositConfirmedAt,
+              termsAcceptedAt: profile.terms_accepted_at || prev.termsAcceptedAt,
+            } : prev;
+            return nextUser;
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user profile in detail page:', error);
+    }
+  };
+
   useEffect(() => {
     // URLパラメーターの id を解決
     params.then(resolvedParams => {
@@ -114,9 +156,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       setLang(savedLang);
     }
 
+    // 早期キャッシュ復元 (getCurrentUser完了までのちらつき防止)
+    if (typeof localStorage !== 'undefined') {
+      const cached = localStorage.getItem('joga_user_cache');
+      if (cached && !currentUser) {
+        try {
+          const cacheData = JSON.parse(cached);
+          setCurrentUser(prev => prev ? prev : { ...cacheData, email: '' } as any);
+        } catch {}
+      }
+    }
+
     // 初回ロードで現在のユーザー情報を取得
     getCurrentUser().then(user => {
-      if (user) setCurrentUser(user);
+      if (user) {
+        setCurrentUser(user);
+        fetchUserProfile(user);
+      }
     }).catch(err => {
       console.error('Fast failure in initial getCurrentUser:', err);
     });
@@ -128,17 +184,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       } else if (session?.user) {
         const user = await getCurrentUser(session.user);
         if (user) {
+          let updatedUser = user;
           setCurrentUser(prev => {
-            if (prev && prev.id === user.id) {
-              return {
-                ...prev,
-                ...user,
-                customerId: user.customerId || prev.customerId,
-                fullName: user.fullName || prev.fullName
-              };
-            }
-            return user;
+            const next = prev ? {
+              ...prev,
+              ...user,
+              customerId: user.customerId || prev.customerId,
+              fullName: user.fullName || prev.fullName
+            } : user;
+            updatedUser = next;
+            return next;
           });
+          fetchUserProfile(updatedUser);
         }
       }
     });
@@ -527,7 +584,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
                   {(currentUser?.role === 'customer' && currentUser?.agentCustomerId)
-                    ? (lang === 'es' ? 'Su agente' : 'Seu agente')
+                    ? (lang === 'es' ? 'Tu agente' : 'Seu agente')
                     : t.yourName}
                 </label>
                 <input

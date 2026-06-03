@@ -3759,7 +3759,7 @@ export default function Home() {
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-gray-700">
                     {(currentUser?.role === 'customer' && currentUser?.agentCustomerId)
-                      ? (lang === 'es' ? 'Su agente' : 'Seu agente')
+                      ? (lang === 'es' ? 'Tu agente' : 'Seu agente')
                       : t.yourName}
                   </label>
                   <input
