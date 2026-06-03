@@ -243,14 +243,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       const rate = exchangeRates[targetCurrency] || 1;
       const rawConverted = roundedUp * rate;
       
-      if (targetCurrency === 'PYG' || targetCurrency === 'CLP') {
-        return Math.round(rawConverted).toLocaleString('es-PY');
+      let finalConverted = rawConverted;
+      if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
+        finalConverted = Math.ceil(rawConverted / 10) * 10;
+      } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
+        finalConverted = Math.ceil(rawConverted / 1000) * 1000;
       } else {
-        return rawConverted.toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
+        finalConverted = Math.ceil(rawConverted);
       }
+      
+      return finalConverted.toLocaleString('en-US').replace(/,/g, '.');
     }
   };
 
@@ -359,12 +361,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      {/* ヘッダー (戻る・通貨・言語ドロップダウンを均等に3等分して配置、商品タイトルは削除) */}
+      {/* ヘッダー (戻る・通貨・言語ドロップダウンを均等に3等分して配置、文言はすべて中央揃え) */}
       <header className="bg-white shadow sticky top-0 z-40">
         <div className="max-w-3xl mx-auto px-4 py-2 grid grid-cols-3 gap-2 items-center">
           <button
             onClick={() => router.back()}
-            className="h-12 w-full bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 active:scale-[0.98] transition flex items-center justify-center text-xs font-bold"
+            className="h-12 w-full bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 active:scale-[0.98] transition flex items-center justify-center text-xs font-bold text-center"
           >
             {t.back}
           </button>
@@ -372,7 +374,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <select
             value={selectedCurrency}
             onChange={(e) => setSelectedCurrency(e.target.value)}
-            className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full"
+            className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full text-center"
           >
             <option value="USD">USD 🇺🇸</option>
             <option value="BRL">BRL 🇧🇷</option>
@@ -385,7 +387,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <select
             value={lang}
             onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-            className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full"
+            className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full text-center"
           >
             <option value="es">Español</option>
             <option value="pt">Português</option>

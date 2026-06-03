@@ -214,9 +214,24 @@ export async function POST(request: Request) {
       Date.now().toString();
 
     // iframeによる商品説明の取得（ヤフオクストア等の「もっと読む」対応）
-    const iframeMatch = html.match(/<iframe[^>]*src="([^"]*(?:show\/description|auctions\.yahoo\.co\.jp\/html|auctions\.yahoo\.co\.jp\/jp\/show\/description)[^"]*)"/i);
-    if (iframeMatch) {
-      let iframeUrl = iframeMatch[1];
+    let iframeUrl = '';
+    // 1. 商品説明エリア div/section (idやclassにExplanationやProductDescriptionを含む) から優先的に iframe を抽出
+    const explanationAreaMatch = html.match(/<(?:div|section)[^>]*(?:id|class)="[^"]*(?:Explanation|ProductDescription)[^"]*"[^>]*>([\s\S]*?)<\/(?:div|section)>/i);
+    if (explanationAreaMatch) {
+      const iframeInAreaMatch = explanationAreaMatch[1].match(/<iframe[^>]*src="([^"]*)"/i);
+      if (iframeInAreaMatch) {
+        iframeUrl = iframeInAreaMatch[1];
+      }
+    }
+    // 2. 見つからない場合、ドメイン判定ベースでHTML全体からフォールバック探索
+    if (!iframeUrl) {
+      const fallbackIframeMatch = html.match(/<iframe[^>]*src="([^"]*(?:show\/description|auctions\.yahoo|shopping\.yahoo|auct-store\.yahoo)[^"]*)"/i);
+      if (fallbackIframeMatch) {
+        iframeUrl = fallbackIframeMatch[1];
+      }
+    }
+
+    if (iframeUrl) {
       if (iframeUrl.startsWith('//')) {
         iframeUrl = 'https:' + iframeUrl;
       } else if (iframeUrl.startsWith('/')) {
