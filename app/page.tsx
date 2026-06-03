@@ -2222,12 +2222,12 @@ export default function Home() {
                 onChange={(e) => setSelectedCurrency(e.target.value)}
                 className="h-12 border border-gray-300 rounded-lg pl-20 pr-4 bg-white text-sm sm:text-base font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full text-center appearance-none"
               >
-                <option value="USD">USD</option>
-                <option value="BRL">BRL</option>
-                <option value="PYG">PYG</option>
-                <option value="CLP">CLP</option>
-                <option value="BOB">BOB</option>
-                <option value="ARS">ARS</option>
+                <option value="USD">USD 🇺🇸</option>
+                <option value="BRL">BRL 🇧🇷</option>
+                <option value="PYG">PYG 🇵🇾</option>
+                <option value="CLP">CLP 🇨🇱</option>
+                <option value="BOB">BOB 🇧🇴</option>
+                <option value="ARS">ARS 🇦🇷</option>
               </select>
             </div>
 
