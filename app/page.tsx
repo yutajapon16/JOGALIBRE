@@ -4377,8 +4377,8 @@ export default function Home() {
                   </div>
                   <div>
                     {lang === 'es'
-                      ? 'Además del precio del producto, el envío nacional en Japón, el envío internacional, la comisión FOB y los aranceles generados al importar son responsabilidad del cliente. El monto mostrado antes de la oferta no incluye el envío nacional en Japón, por lo que el monto puede aumentar con la contraoferta del administrador.'
-                      : 'Além do preço do produto, o frete nacional no Japão, o frete internacional, a comissão FOB e os impostos gerados na importação são de responsabilidade do cliente. O valor exibido antes da oferta não inclui o frete nacional no Japão, portanto o valor pode aumentar com a contraoferta do administrador.'}
+                      ? 'Además del monto mostrado, el envío internacional y los aranceles generados en la importación corren por cuenta del cliente. Asimismo, el monto mostrado antes de ofertar no incluye el envío nacional en Japón, y el monto total puede aumentar debido a la contraoferta del administrador.'
+                      : 'Além do valor exibido, o frete internacional e os impostos de importação correm por conta do cliente. Além disso, o valor exibido antes de dar o lance não inclui o frete nacional no Japão, e o valor total pode aumentar devido à contraoferta do administrador.'}
                   </div>
                 </div>
               </label>
@@ -4398,8 +4398,8 @@ export default function Home() {
                   </div>
                   <div>
                     {lang === 'es'
-                      ? 'Dado que se trata principalmente de artículos de segunda mano (productos de Yahoo Auctions), usted acepta que comprende los riesgos de mal funcionamiento, arañazos o suciedad, y no realizará reclamaciones ni devoluciones. Los accidentes de envío se regirán por las normas de la empresa de transporte.'
-                      : 'Dado que se trata principalmente de itens de segunda mão (produtos do Yahoo Auctions), você aceita que compreende os riscos de mau funcionamento, arranhões ou sujeira, e não realizará reclamações ou devoluções. Os acidentes de envio serão regidos pelas normas da transportadora.'}
+                      ? 'Especialmente en el caso de artículos usados, usted acepta que comprende los riesgos de mal funcionamiento, arañazos o suciedad, y no realizará reclamaciones ni devoluciones. Por favor, verifique bien el estado utilizando la traducción u otros medios antes de realizar una oferta. En caso de accidentes durante el envío, se aplicarán las normas de la empresa de transporte.'
+                      : 'Especialmente no caso de itens usados, você aceita que compreende os riscos de mau funcionamento, arranhões ou sujeira, e não realizará reclamações ou devoluções. Por favor, verifique bem o estado usando a tradução ou outros meios antes de fazer um lance. Os acidentes de envio serão regidos pelas normas da transportadora.'}
                   </div>
                 </div>
               </label>
