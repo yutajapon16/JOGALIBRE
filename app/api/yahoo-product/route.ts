@@ -36,6 +36,7 @@ export async function POST(request: Request) {
     let shippingCost = 0;
     let shippingUnknown = false;
     let allImages: string[] = [];
+    let description = '';
 
     const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
 
@@ -75,17 +76,40 @@ export async function POST(request: Request) {
               '';
 
             // 全画像URLを取得
-            allImages = itemData.images?.map((img: { url: string }) => img.url) ||
-              itemData.imageDetail?.map((img: { url: string }) => img.url) ||
-              itemData.gallery?.map((img: { url: string }) => img.url) ||
-              [];
+            if (Array.isArray(itemData.img)) {
+              allImages = itemData.img.map((img: any) => img.image || img.url || img.thumbnail).filter(Boolean);
+            } else if (itemData.images) {
+              allImages = itemData.images.map((img: any) => img.url || img.image).filter(Boolean);
+            } else if (itemData.imageDetail) {
+              allImages = itemData.imageDetail.map((img: any) => img.url || img.image).filter(Boolean);
+            } else if (itemData.gallery) {
+              allImages = itemData.gallery.map((img: any) => img.url || img.image).filter(Boolean);
+            } else {
+              allImages = [];
+            }
 
             imageUrl = allImages[0] ||
-              itemData.img?.url ||
+              (typeof itemData.img === 'string' ? itemData.img : '') ||
               itemData.image ||
               itemData.imageUrl ||
               itemData.thumbnail ||
               imageUrl;
+
+            // 説明文の取得
+            if (itemData.description) {
+              if (Array.isArray(itemData.description)) {
+                description = itemData.description.filter(Boolean).join('\n');
+              } else if (typeof itemData.description === 'string') {
+                description = itemData.description;
+              }
+            } else if (itemData.descriptionHtml) {
+              description = itemData.descriptionHtml
+                .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+                .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            }
 
             // 終了時刻を取得（UNIXタイムスタンプまたはISO文字列）
             if (itemData.endTime) {
@@ -190,16 +214,17 @@ export async function POST(request: Request) {
       Date.now().toString();
 
     // 商品の説明文を抽出
-    let description = '';
-    const descriptionMatch = html.match(/<div[^>]*class="ProductDescription__body"[^>]*>([\s\S]*?)<\/div>/i);
-    if (descriptionMatch) {
-      // タグを除去してテキストのみ抽出（または簡易HTMLとして保持）
-      description = descriptionMatch[1].replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '').trim();
-    } else {
-      // 別のパターン
-      const descPart = html.match(/<!--\s*description\s*-->([\s\S]*?)<!--\s*\/description\s*-->/i);
-      if (descPart) {
-        description = descPart[1].trim();
+    if (!description) {
+      const descriptionMatch = html.match(/<div[^>]*class="ProductDescription__body"[^>]*>([\s\S]*?)<\/div>/i);
+      if (descriptionMatch) {
+        // タグを除去してテキストのみ抽出（または簡易HTMLとして保持）
+        description = descriptionMatch[1].replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '').trim();
+      } else {
+        // 別のパターン
+        const descPart = html.match(/<!--\s*description\s*-->([\s\S]*?)<!--\s*\/description\s*-->/i);
+        if (descPart) {
+          description = descPart[1].trim();
+        }
       }
     }
 
