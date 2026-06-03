@@ -3789,8 +3789,8 @@ export default function Home() {
                 <div>
                   <label className="flex justify-between items-center text-sm font-semibold mb-2 text-gray-700">
                     <span>{t.maxBid}</span>
-                    <span className="text-xs text-red-500 font-bold">
-                      {lang === 'es' ? 'Por favor, ingrese el monto en USD' : 'Por favor, insira o valor em USD'}
+                    <span className="text-[10px] sm:text-xs text-red-500 font-bold">
+                      {lang === 'es' ? '⚠️ Ingrese el monto en USD' : '⚠️ Insira o valor em USD'}
                     </span>
                   </label>
                   <div className="relative">
