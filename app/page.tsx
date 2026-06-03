@@ -2108,7 +2108,7 @@ export default function Home() {
 
           <div className="mt-auto space-y-1.5">
             <a
-              href={`/product/${product.id}?url=${encodeURIComponent(product.url || '')}`}
+              href={`/product/${product.id}?url=${encodeURIComponent(product.url || '')}&lang=${lang}`}
               className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center"
             >
               {t.viewOnYahoo}
@@ -2545,7 +2545,7 @@ export default function Home() {
                           <div className="w-full">
                             {request.productUrl ? (
                               <a
-                                href={request.productId?.startsWith('m-') ? request.productUrl : `/product/${request.productId}?url=${encodeURIComponent(request.productUrl || '')}`}
+                                href={request.productId?.startsWith('m-') ? request.productUrl : `/product/${request.productId}?url=${encodeURIComponent(request.productUrl || '')}&lang=${lang}`}
                                 target={request.productId?.startsWith('m-') ? "_blank" : undefined}
                                 rel={request.productId?.startsWith('m-') ? "noopener noreferrer" : undefined}
                                 className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
@@ -3031,7 +3031,7 @@ export default function Home() {
                             <div className="w-full">
                               {item.productUrl ? (
                                 <a
-                                  href={item.productId?.startsWith('m-') ? item.productUrl : `/product/${item.productId}?url=${encodeURIComponent(item.productUrl || '')}`}
+                                  href={item.productId?.startsWith('m-') ? item.productUrl : `/product/${item.productId}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}`}
                                   target={item.productId?.startsWith('m-') ? "_blank" : undefined}
                                   rel={item.productId?.startsWith('m-') ? "noopener noreferrer" : undefined}
                                   className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
@@ -3737,7 +3737,7 @@ export default function Home() {
                     </span>
                   </div>
                   <a
-                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent(selectedProduct.url || '')}`}
+                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent(selectedProduct.url || '')}&lang=${lang}`}
                     className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
                   >
                     {t.viewOnYahoo}

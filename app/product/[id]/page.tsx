@@ -68,6 +68,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       offerSuccess: '¡Oferta enviada con éxito!',
       offerError: 'Error al enviar la oferta. Por favor, inténtelo de nuevo.',
       disclaimer: '※ Este resumen es generado automáticamente por IA a partir de la descripción en japonés. No se garantiza la precisión al 100%. Verifique también la página original.',
+      aiDisclaimer: '🤖 Este resumen ha sido generado automáticamente por Inteligencia Artificial (Gemini) a partir de la descripción original en japonés. No se garantiza la precisión al 100%.',
+      googleDisclaimer: '🌐 Esta es una traducción automática de Google del texto original en japonés. Para mayor seguridad, verifique los detalles en la página original.',
       currentPrice: 'Precio actual',
       bids: 'Ofertas:',
       endsIn: 'Termina en:',
@@ -93,6 +95,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       offerSuccess: '¡Oferta enviada com sucesso!',
       offerError: 'Erro ao enviar a oferta. Por favor, tente novamente.',
       disclaimer: '※ Este resumo é gerado automaticamente por IA a partir da descrição em japonês. Não é garantida a precisão de 100%. Verifique também a página original.',
+      aiDisclaimer: '🤖 Este resumo foi gerado automaticamente por Inteligência Artificial (Gemini) a partir da descrição original em português (resumido do japonês). Não é garantida a precisão de 100%.',
+      googleDisclaimer: '🌐 Esta é uma tradução automática do Google do texto original em japonês. Para maior segurança, verifique os detalhes na página original.',
       currentPrice: 'Preço atual',
       bids: 'Lances:',
       endsIn: 'Termina em:',
@@ -150,10 +154,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       setProductId(resolvedParams.id);
     });
 
-    // ローカルストレージなどから言語設定を取得
-    const savedLang = localStorage.getItem('lang');
-    if (savedLang === 'es' || savedLang === 'pt') {
-      setLang(savedLang);
+    // URLクエリまたはローカルストレージから言語設定を取得
+    const queryLang = searchParams.get('lang');
+    if (queryLang === 'es' || queryLang === 'pt') {
+      setLang(queryLang);
+    } else {
+      const savedLang = localStorage.getItem('lang');
+      if (savedLang === 'es' || savedLang === 'pt') {
+        setLang(savedLang);
+      }
     }
 
     // 早期キャッシュ復元 (getCurrentUser完了までのちらつき防止)
@@ -432,6 +441,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             value={selectedCurrency}
             onChange={(e) => setSelectedCurrency(e.target.value)}
             className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full text-center"
+            style={{ textAlignLast: 'center', textAlign: 'center' }}
           >
             <option value="USD">USD 🇺🇸</option>
             <option value="BRL">BRL 🇧🇷</option>
@@ -445,6 +455,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             value={lang}
             onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
             className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full text-center"
+            style={{ textAlignLast: 'center', textAlign: 'center' }}
           >
             <option value="es">Español</option>
             <option value="pt">Português</option>
@@ -557,9 +568,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          {/* 免責事項 */}
-          <p className="text-[9px] text-gray-400 font-medium leading-normal bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-            {t.disclaimer}
+          {/* 注意書き・免責事項の出し分け */}
+          <p className={`text-[10px] font-semibold leading-normal p-3 rounded-xl border ${
+            !showFallbackDescription 
+              ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
+              : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+          }`}>
+            {!showFallbackDescription ? t.aiDisclaimer : t.googleDisclaimer}
           </p>
 
           {/* 元のヤフオクページへ遷移するボタン（免責事項の下に配置移動＆h-7化） */}
