@@ -2208,7 +2208,7 @@ export default function Home() {
 
           {/* 2行目: サブタイトル & お知らせボタン */}
           <div className="flex justify-between items-center">
-            <p className="text-[8px] min-[375px]:text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider whitespace-nowrap truncate mr-2 flex-1 min-w-0" title={t.subtitle}>
+            <p className="text-[8.5px] min-[375px]:text-[9.5px] sm:text-[10px] text-gray-400 font-bold tracking-normal whitespace-nowrap truncate mr-2 flex-1 min-w-0" title={t.subtitle}>
               {t.subtitle}
             </p>
 
