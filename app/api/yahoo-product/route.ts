@@ -213,6 +213,39 @@ export async function POST(request: Request) {
       (match3 && match3[1]) ||
       Date.now().toString();
 
+    // iframeによる商品説明の取得（ヤフオクストア等の「もっと読む」対応）
+    const iframeMatch = html.match(/<iframe[^>]*src="([^"]*(?:show\/description|auctions\.yahoo\.co\.jp\/html|auctions\.yahoo\.co\.jp\/jp\/show\/description)[^"]*)"/i);
+    if (iframeMatch) {
+      let iframeUrl = iframeMatch[1];
+      if (iframeUrl.startsWith('//')) {
+        iframeUrl = 'https:' + iframeUrl;
+      } else if (iframeUrl.startsWith('/')) {
+        iframeUrl = 'https://auctions.yahoo.co.jp' + iframeUrl;
+      }
+      try {
+        const iframeRes = await fetch(iframeUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        });
+        const iframeHtml = await iframeRes.text();
+        const bodyMatch = iframeHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        let iframeDesc = bodyMatch ? bodyMatch[1] : iframeHtml;
+        // スクリプトやスタイル、HTMLタグを除去してプレーンテキスト化
+        iframeDesc = iframeDesc
+          .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (iframeDesc && iframeDesc.length > 50) {
+          description = iframeDesc;
+        }
+      } catch (e) {
+        console.error('Failed to fetch explanation iframe:', e);
+      }
+    }
+
     // 商品の説明文を抽出
     if (!description) {
       const descriptionMatch = html.match(/<div[^>]*class="ProductDescription__body"[^>]*>([\s\S]*?)<\/div>/i);

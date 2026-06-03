@@ -16,10 +16,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [lang, setLang] = useState<'es' | 'pt'>('es');
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   
-  // 為替レートのState
+  // ログインユーザー情報をキャッシュから同期的に初期ロード（表示のちらつきや金額計算の不一致を防止）
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('joga_user_cache');
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
+  
+  // 選択された通貨のState (デフォルトはUSD)
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  // 為替レート関連のState
   const [exchangeRate, setExchangeRate] = useState(150);
+  const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({});
 
   // カルーセル（画像）用のインデックス
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -51,9 +68,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       offerSuccess: '¡Oferta enviada con éxito!',
       offerError: 'Error al enviar la oferta. Por favor, inténtelo de nuevo.',
       disclaimer: '※ Este resumen es generado automáticamente por IA a partir de la descripción en japonés. No se garantiza la precisión al 100%. Verifique también la página original.',
-      currentPrice: 'Precio actual (USD)',
-      bids: 'Ofertas',
-      endsIn: 'Finaliza en',
+      currentPrice: 'Precio actual',
+      bids: 'Ofertas:',
+      endsIn: 'Termina en:',
       yourName: 'Nombre completo'
     },
     pt: {
@@ -69,16 +86,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       makeOffer: 'Fazer Oferta',
       maxBid: 'Sua oferta máxima',
       submit: 'Enviar Oferta',
-      loading: 'Obtendo detalhes do produto e gerando resumo de IA...',
+      loading: 'Obtendo detalles del producto e gerando resumo de IA...',
       errorFetch: 'Não foi possível carregar as informações do produto.',
       errorUrl: 'URL do produto inválida.',
       warnUsd: '⚠️ Insira o valor em USD',
       offerSuccess: '¡Oferta enviada com sucesso!',
       offerError: 'Erro ao enviar a oferta. Por favor, tente novamente.',
       disclaimer: '※ Este resumo é gerado automaticamente por IA a partir da descrição em japonês. Não é garantida a precisão de 100%. Verifique também a página original.',
-      currentPrice: 'Preço atual (USD)',
-      bids: 'Lances',
-      endsIn: 'Termina em',
+      currentPrice: 'Preço atual',
+      bids: 'Lances:',
+      endsIn: 'Termina em:',
       yourName: 'Nome completo'
     }
   };
@@ -97,9 +114,33 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       setLang(savedLang);
     }
 
-    // 現在のユーザー情報を取得
+    // 初回ロードで現在のユーザー情報を取得
     getCurrentUser().then(user => {
-      setCurrentUser(user);
+      if (user) setCurrentUser(user);
+    }).catch(err => {
+      console.error('Fast failure in initial getCurrentUser:', err);
+    });
+
+    // セッションのリアルタイム変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+      } else if (session?.user) {
+        const user = await getCurrentUser(session.user);
+        if (user) {
+          setCurrentUser(prev => {
+            if (prev && prev.id === user.id) {
+              return {
+                ...prev,
+                ...user,
+                customerId: user.customerId || prev.customerId,
+                fullName: user.fullName || prev.fullName
+              };
+            }
+            return user;
+          });
+        }
+      }
     });
 
     // 為替レートの取得
@@ -110,11 +151,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         if (data.usdToJpy) {
           setExchangeRate(data.usdToJpy);
         }
+        if (data.rates) {
+          setExchangeRates(data.rates);
+        }
       } catch (error) {
         console.error('Error fetching exchange rate:', error);
       }
     };
     fetchExchangeRate();
+
+    return () => subscription.unsubscribe();
   }, [params]);
 
   // ユーザーがロードされたら、名前の初期値をフォームにセット
@@ -167,15 +213,45 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     fetchProduct();
   }, [targetUrl, lang]);
 
-  // USD価格の計算ロジック（FOB、利益率、為替レートを考慮した10ドル単位切り上げ）
-  const calculateUSDPrice = (jpyPrice: number) => {
+  // 各種通貨の記号取得
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case 'USD': return '$';
+      case 'BRL': return 'R$';
+      case 'PYG': return '₲';
+      case 'CLP': return '$';
+      case 'BOB': return 'Bs.';
+      case 'ARS': return '$';
+      default: return '$';
+    }
+  };
+
+  // 通貨換算の計算ロジック（トップページと完全同期）
+  const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency) => {
     const FOB_COST = 1500;
     const totalJpyPrice = jpyPrice + FOB_COST;
     const profitDivisor = currentUser?.customerId?.startsWith('A') ? 0.8 : 0.6;
     const priceWithProfit = totalJpyPrice / profitDivisor;
-    const usdPrice = priceWithProfit / exchangeRate;
+    
+    const jpyRate = exchangeRates['JPY'] || exchangeRate || 150;
+    const usdPrice = priceWithProfit / jpyRate;
     const roundedUp = Math.ceil(usdPrice / 10) * 10;
-    return roundedUp.toLocaleString('en-US');
+    
+    if (targetCurrency === 'USD') {
+      return roundedUp.toLocaleString('en-US');
+    } else {
+      const rate = exchangeRates[targetCurrency] || 1;
+      const rawConverted = roundedUp * rate;
+      
+      if (targetCurrency === 'PYG' || targetCurrency === 'CLP') {
+        return Math.round(rawConverted).toLocaleString('es-PY');
+      } else {
+        return rawConverted.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+    }
   };
 
   // オファー送信処理
@@ -283,22 +359,33 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      {/* ヘッダー */}
+      {/* ヘッダー (戻る・通貨・言語ドロップダウンを均等に3等分して配置、商品タイトルは削除) */}
       <header className="bg-white shadow sticky top-0 z-40">
-        <div className="max-w-3xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+        <div className="max-w-3xl mx-auto px-4 py-2 grid grid-cols-3 gap-2 items-center">
           <button
             onClick={() => router.back()}
-            className="h-12 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 active:scale-[0.98] transition flex items-center justify-center text-xs font-bold flex-shrink-0"
+            className="h-12 w-full bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 active:scale-[0.98] transition flex items-center justify-center text-xs font-bold"
           >
             {t.back}
           </button>
-          <h1 className="text-sm sm:text-base font-black text-gray-900 truncate max-w-[200px] sm:max-w-sm flex-1 text-center">
-            {product.title}
-          </h1>
+          
+          <select
+            value={selectedCurrency}
+            onChange={(e) => setSelectedCurrency(e.target.value)}
+            className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full"
+          >
+            <option value="USD">USD 🇺🇸</option>
+            <option value="BRL">BRL 🇧🇷</option>
+            <option value="PYG">PYG 🇵🇾</option>
+            <option value="CLP">CLP 🇨🇱</option>
+            <option value="BOB">BOB 🇧🇴</option>
+            <option value="ARS">ARS 🇦🇷</option>
+          </select>
+
           <select
             value={lang}
             onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-            className="bg-gray-100 border border-gray-200 text-gray-700 h-10 px-2 rounded-lg text-xs font-bold flex-shrink-0"
+            className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full"
           >
             <option value="es">Español</option>
             <option value="pt">Português</option>
@@ -361,36 +448,34 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        {/* 2. 商品の基本情報（すべてh-12ボックスで縦に構成） */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
-          {/* 商品タイトル */}
-          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center">
-            <span className="text-xs sm:text-sm font-bold text-gray-900 truncate w-full" title={product.title}>
-              {product.title}
-            </span>
-          </div>
+        {/* 商品タイトル (h-12ボックスから取り出し、他画面と同様に2行まで表示) */}
+        <h2 className="text-sm sm:text-base font-bold text-gray-800 line-clamp-2 leading-tight w-full px-1">
+          {product.title}
+        </h2>
 
+        {/* 2. 商品の基本情報（項目は左揃え、数値は右揃えでスタイリング） */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
           {/* 入札件数 */}
           <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase">{t.bids}</span>
-            <span className="text-sm font-black text-gray-700">
+            <span className="text-xs font-bold text-gray-500">{t.bids}</span>
+            <span className="text-xs sm:text-sm font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm">
               {product.bids || 0}
             </span>
           </div>
 
-          {/* 終了まで */}
-          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase">{t.endsIn}</span>
-            <span className="text-sm font-semibold text-red-600">
+          {/* 終了まで (背景薄い赤、文字赤) */}
+          <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between text-red-700 font-semibold">
+            <span className="text-xs font-bold">{t.endsIn}</span>
+            <span className="text-xs sm:text-sm">
               {getTimeRemaining(product.endTime || '', lang, product.timeLeft)}
             </span>
           </div>
 
-          {/* 現在価格 (USD) */}
-          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase">{t.currentPrice}</span>
-            <span className="text-sm font-black text-indigo-700">
-              $ {calculateUSDPrice(product.currentPrice)}
+          {/* 現在価格 (背景薄い緑、文字緑) */}
+          <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between text-green-700 font-bold">
+            <span className="text-xs">{t.currentPrice}: {selectedCurrency}</span>
+            <span className="text-sm sm:text-base font-extrabold">
+              {getCurrencySymbol(selectedCurrency)} {calculateConvertedPrice(product.currentPrice)}
             </span>
           </div>
         </div>
@@ -418,12 +503,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {t.disclaimer}
           </p>
 
-          {/* 元のヤフオクページへ遷移するボタン（免責事項の下に配置移動＆h-12化） */}
+          {/* 元のヤフオクページへ遷移するボタン（免責事項の下に配置移動＆h-7化） */}
           <a
             href={product.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full h-12 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center transition shadow-sm"
+            className="w-full h-7 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center transition shadow-sm"
           >
             {t.originalPage}
           </a>
@@ -490,14 +575,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold rounded-xl transition text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-100 disabled:opacity-50"
+                className={`w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold transition flex items-center justify-center ${
+                  submitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'
+                }`}
               >
                 {submitting ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
-                  <>
-                    <span>{t.submit}</span>
-                  </>
+                  <span>{t.submit}</span>
                 )}
               </button>
             </form>
