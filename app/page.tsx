@@ -4051,12 +4051,12 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* 合計入金額 BRL (青) */}
-                    <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-indigo-500 tracking-wider">
+                    {/* 合計入金額 BRL (緑) */}
+                    <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-green-500 tracking-wider">
                         Total BRL
                       </span>
-                      <span className="text-base font-black text-indigo-600">
+                      <span className="text-base font-black text-green-600">
                         R$ {formatBrl(filteredDepositsTotalBrl)}
                       </span>
                     </div>
