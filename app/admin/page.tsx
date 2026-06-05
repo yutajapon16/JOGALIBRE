@@ -158,17 +158,25 @@ export default function AdminDashboard() {
     customerId: '',
     depositDate: new Date().toISOString().split('T')[0],
     amount: '',
-    paymentMethod: 'bank'
+    paymentMethod: 'bank',
+    currency: 'USD'
   });
   const [editingDeposit, setEditingDeposit] = useState<any | null>(null);
   const [editDepositForm, setEditDepositForm] = useState({
     depositDate: '',
     amount: '',
-    paymentMethod: 'bank'
+    paymentMethod: 'bank',
+    currency: 'USD'
   });
   const [depositFilterCustomer, setDepositFilterCustomer] = useState<string>('all');
   const [depositFilterYear, setDepositFilterYear] = useState<string>('all');
   const [depositFilterMonth, setDepositFilterMonth] = useState<string>('all');
+
+  // 入金登録フォーム用および編集モーダル用のB001紐づき顧客判定
+  const selectedCustInfoForForm = customersList.find(c => c.customerId === depositForm.customerId);
+  const isB001LinkedForForm = selectedCustInfoForForm?.agentCustomerId === 'B001';
+  const selectedCustInfoForEdit = editingDeposit ? customersList.find(c => c.customerId === editingDeposit.customer_id) : null;
+  const isB001LinkedForEdit = selectedCustInfoForEdit?.agentCustomerId === 'B001';
 
   // ヤフオク最新情報を同期・復旧する処理
   const handleSyncYahooProduct = async (requestItem: BidRequest) => {
@@ -291,6 +299,9 @@ export default function AdminDashboard() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
+      const isBRL = isB001LinkedForForm && depositForm.currency === 'BRL';
+      const actualPaymentMethod = isBRL ? `${depositForm.paymentMethod}_brl` : depositForm.paymentMethod;
+
       const res = await fetch('/api/admin/deposits', {
         method: 'POST',
         headers: {
@@ -301,7 +312,7 @@ export default function AdminDashboard() {
           customerId: depositForm.customerId,
           depositDate: depositForm.depositDate,
           amount: parseFloat(depositForm.amount),
-          paymentMethod: depositForm.paymentMethod
+          paymentMethod: actualPaymentMethod
         })
       });
 
@@ -310,7 +321,9 @@ export default function AdminDashboard() {
         setDepositForm({
           ...depositForm,
           customerId: '',
-          amount: ''
+          amount: '',
+          currency: 'USD',
+          paymentMethod: 'bank'
         });
         fetchDeposits();
       } else {
@@ -331,6 +344,9 @@ export default function AdminDashboard() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
+      const isBRL = isB001LinkedForEdit && editDepositForm.currency === 'BRL';
+      const actualPaymentMethod = isBRL ? `${editDepositForm.paymentMethod}_brl` : editDepositForm.paymentMethod;
+
       const res = await fetch('/api/admin/deposits', {
         method: 'PATCH',
         headers: {
@@ -341,7 +357,7 @@ export default function AdminDashboard() {
           id: editingDeposit.id,
           depositDate: editDepositForm.depositDate,
           amount: parseFloat(editDepositForm.amount),
-          paymentMethod: editDepositForm.paymentMethod
+          paymentMethod: actualPaymentMethod
         })
       });
 
@@ -391,7 +407,16 @@ export default function AdminDashboard() {
     let filtered = depositsList;
 
     if (depositFilterCustomer !== 'all') {
-      filtered = filtered.filter(item => item.customer_id === depositFilterCustomer);
+      if (depositFilterCustomer === 'B001_FFGN') {
+        const linkedCustomerIds = customersList
+          .filter(c => c.agentCustomerId === 'B001')
+          .map(c => c.customerId);
+        filtered = filtered.filter(item => 
+          item.customer_id === 'B001' || linkedCustomerIds.includes(item.customer_id)
+        );
+      } else {
+        filtered = filtered.filter(item => item.customer_id === depositFilterCustomer);
+      }
     }
 
     if (depositFilterYear !== 'all') {
@@ -430,16 +455,22 @@ export default function AdminDashboard() {
     const paymentMethodNames: Record<string, string> = {
       bank: '銀行',
       paypal: 'PayPal',
-      usdt: 'USDT'
+      usdt: 'USDT',
+      pix_brl: 'PIX (BRL)',
+      cash_brl: '現金 (BRL)',
+      cash: '現金',
+      pix: 'PIX'
     };
 
     const rows = items.map(item => {
       const name = customerMap.get(item.customer_id) || '';
+      const isBrl = item.payment_method?.endsWith('_brl');
+      const amountVal = isBrl ? `R$ ${item.amount}` : item.amount;
       return [
         item.deposit_date.replace(/-/g, '/'),
         item.customer_id,
         `"${name.replace(/"/g, '""')}"`,
-        item.amount,
+        amountVal,
         paymentMethodNames[item.payment_method] || item.payment_method
       ];
     });
@@ -1129,7 +1160,11 @@ export default function AdminDashboard() {
 
       const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
       // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
-      const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
+      // ただし、B001に紐づく顧客の場合は利益率60%を設定 (除数 0.4)
+      let profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
+      if (selectedRequest.agentCustomerId === 'B001') {
+        profitDivisor = 0.4;
+      }
       const priceWithProfit = totalJpy / profitDivisor;
       const usdPrice = priceWithProfit / exchangeRate;
       const roundedUsd = Math.ceil(usdPrice / 10) * 10;
@@ -1602,6 +1637,21 @@ export default function AdminDashboard() {
                         <span>同期</span>
                       </button>
                     </div>
+
+                    {request.agentCustomerId === 'B001' && (() => {
+                      const cost = request.customerCounterOffer || request.counterOffer || request.maxBid || 0;
+                      const japanAmount = Math.ceil(((cost * 0.4) / 0.9) / 10) * 10;
+                      return (
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500 font-medium">日本支払額:</span>
+                            <span className="text-base font-bold text-red-600">
+                              ${japanAmount.toLocaleString('en-US')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     <div className="h-24 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs mb-2 box-border grid grid-rows-2 grid-cols-2">
                       <div className="flex flex-col justify-center h-12">
@@ -2585,19 +2635,56 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div className="min-w-0">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">入金額 (USD)</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="0.00"
-                        value={depositForm.amount}
-                        onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })}
-                        className="w-full h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-black box-border"
-                        required
-                      />
-                    </div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      {isB001LinkedForForm ? '通貨 / 入金額' : '入金額 (USD)'}
+                    </label>
+                    {isB001LinkedForForm ? (
+                      <div className="flex gap-2">
+                        <select
+                          value={depositForm.currency}
+                          onChange={(e) => {
+                            const newCurrency = e.target.value;
+                            const defaultMethod = newCurrency === 'BRL' ? 'pix' : 'bank';
+                            setDepositForm({ 
+                              ...depositForm, 
+                              currency: newCurrency,
+                              paymentMethod: defaultMethod
+                            });
+                          }}
+                          className="w-1/3 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border focus:ring-2 focus:ring-indigo-500 outline-none"
+                        >
+                          <option value="USD">USD</option>
+                          <option value="BRL">BRL</option>
+                        </select>
+                        <div className="relative flex-1">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
+                            {depositForm.currency === 'BRL' ? 'R$' : '$'}
+                          </span>
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="0.00"
+                            value={depositForm.amount}
+                            onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })}
+                            className="w-full h-12 border border-gray-300 rounded-lg pl-8 pr-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-black box-border"
+                            required
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                        <input
+                          type="number"
+                          step="any"
+                          placeholder="0.00"
+                          value={depositForm.amount}
+                          onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })}
+                          className="w-full h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-black box-border"
+                          required
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="min-w-0">
                     <label className="block text-sm font-semibold text-gray-700 mb-1">入金方法</label>
@@ -2607,9 +2694,37 @@ export default function AdminDashboard() {
                       className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
                       required
                     >
-                      <option value="bank">銀行</option>
-                      <option value="paypal">PayPal</option>
-                      <option value="usdt">USDT</option>
+                      {(() => {
+                        if (isB001LinkedForForm) {
+                          if (depositForm.currency === 'BRL') {
+                            return (
+                              <>
+                                <option value="pix">PIX</option>
+                                <option value="cash">現金</option>
+                                <option value="bank">銀行</option>
+                              </>
+                            );
+                          } else {
+                            return (
+                              <>
+                                <option value="bank">銀行</option>
+                                <option value="paypal">PayPal</option>
+                                <option value="usdt">USDT</option>
+                                <option value="cash">現金</option>
+                              </>
+                            );
+                          }
+                        } else {
+                          return (
+                            <>
+                              <option value="bank">銀行</option>
+                              <option value="paypal">PayPal</option>
+                              <option value="usdt">USDT</option>
+                              <option value="cash">現金</option>
+                            </>
+                          );
+                        }
+                      })()}
                     </select>
                   </div>
                 </div>
@@ -2633,6 +2748,7 @@ export default function AdminDashboard() {
                     className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
                   >
                     <option value="all">すべてのID</option>
+                    <option value="B001_FFGN">B001 FFGN</option>
                     {(() => {
                       const allIds = new Set<string>();
                       depositsList.forEach(d => allIds.add(d.customer_id));
@@ -2694,26 +2810,108 @@ export default function AdminDashboard() {
               </div>
 
               {depositFilterCustomer && depositFilterCustomer !== 'all' && (() => {
-                const totalDeposits = depositsList
-                  .filter(d => d.customer_id === depositFilterCustomer)
-                  .reduce((sum, item) => sum + (item.amount || 0), 0);
-                const totalPurchased = purchasedItems
-                  .filter(item => item.customerId === depositFilterCustomer)
-                  .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+                const isB001_FFGN = depositFilterCustomer === 'B001_FFGN';
+                const isB001 = depositFilterCustomer === 'B001';
+                const linkedCustomerIds = customersList
+                  .filter(c => c.agentCustomerId === 'B001')
+                  .map(c => c.customerId);
+                const isLinked = linkedCustomerIds.includes(depositFilterCustomer);
+                const isB001OrLinked = isB001_FFGN || isB001 || isLinked;
+
+                let totalDeposits = 0;
+                let totalPurchased = 0;
+                let totalDepositsBrl = 0;
+                let totalPurchasedBrl = 0;
+
+                const brlRate = exchangeRates['BRL'] || 5.6;
+
+                if (isB001OrLinked) {
+                  const targetDeposits = depositsList.filter(d => {
+                    if (isB001_FFGN) {
+                      return d.customer_id === 'B001' || linkedCustomerIds.includes(d.customer_id);
+                    } else {
+                      return d.customer_id === depositFilterCustomer;
+                    }
+                  });
+
+                  targetDeposits.forEach(d => {
+                    const isBrl = d.payment_method?.endsWith('_brl');
+                    if (isBrl) {
+                      totalDepositsBrl += (d.amount || 0);
+                    } else {
+                      totalDeposits += (d.amount || 0);
+                    }
+                  });
+
+                  const targetPurchased = purchasedItems.filter(item => {
+                    if (isB001_FFGN) {
+                      return item.customerId === 'B001' || item.agentCustomerId === 'B001';
+                    } else {
+                      return item.customerId === depositFilterCustomer;
+                    }
+                  });
+
+                  targetPurchased.forEach(item => {
+                    const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
+                    const totalSalePrice = Math.round(cost);
+
+                    if (item.customerId === 'B001') {
+                      totalPurchased += totalSalePrice;
+                    } else if (item.agentCustomerId === 'B001') {
+                      const paraguayUsd = Math.round(totalSalePrice * 0.5);
+                      const japanUsd = calculateJapanSendAmount(item, totalSalePrice);
+                      totalPurchased += (paraguayUsd + japanUsd);
+
+                      const brazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
+                      totalPurchasedBrl += brazilBrl;
+                    }
+                  });
+                } else {
+                  totalDeposits = depositsList
+                    .filter(d => d.customer_id === depositFilterCustomer)
+                    .reduce((sum, item) => sum + (item.amount || 0), 0);
+                  totalPurchased = purchasedItems
+                    .filter(item => item.customerId === depositFilterCustomer)
+                    .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+                }
+
                 const balance = totalDeposits - totalPurchased;
                 const isNegative = balance < 0;
                 const formattedBalance = isNegative 
                   ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
                   : `$${Math.round(balance).toLocaleString('en-US')}`;
 
+                const balanceBrl = totalDepositsBrl - totalPurchasedBrl;
+                const isNegativeBrl = balanceBrl < 0;
+                const formatBrl = (amount: number) => {
+                  const rounded = Math.round(amount);
+                  return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                };
+                const formattedBalanceBrl = isNegativeBrl
+                  ? `- R$ ${formatBrl(Math.abs(balanceBrl))}`
+                  : `R$ ${formatBrl(balanceBrl)}`;
+
                 return (
-                  <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-6`}>
-                    <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
-                      残高
-                    </span>
-                    <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
-                      {formattedBalance}
-                    </span>
+                  <div className="flex flex-col gap-3 mb-6">
+                    <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
+                      <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
+                        残高 (USD)
+                      </span>
+                      <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
+                        {formattedBalance}
+                      </span>
+                    </div>
+
+                    {isB001OrLinked && (
+                      <div className={`bg-white border ${isNegativeBrl ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
+                        <span className={`text-xs font-bold ${isNegativeBrl ? 'text-red-500' : 'text-green-500'}`}>
+                          残高 BRL
+                        </span>
+                        <span className={`text-base font-black ${isNegativeBrl ? 'text-red-600' : 'text-green-600'}`}>
+                          {formattedBalanceBrl}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
@@ -2744,7 +2942,16 @@ export default function AdminDashboard() {
                         const paymentMethodNames: Record<string, string> = {
                           bank: '銀行',
                           paypal: 'PayPal',
-                          usdt: 'USDT'
+                          usdt: 'USDT',
+                          pix_brl: 'PIX (BRL)',
+                          cash_brl: '現金 (BRL)',
+                          cash: '現金',
+                          pix: 'PIX'
+                        };
+                        const isBrl = item.payment_method?.endsWith('_brl');
+                        const formatBrl = (amount: number) => {
+                          const rounded = Math.round(amount);
+                          return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
                         };
                         return (
                           <tr key={item.id} className="hover:bg-gray-50 transition text-black">
@@ -2752,7 +2959,7 @@ export default function AdminDashboard() {
                               {dateFormatted}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
-                              ${Number(item.amount).toLocaleString('en-US')}
+                              {isBrl ? `R$ ${formatBrl(Number(item.amount))}` : `$${Number(item.amount).toLocaleString('en-US')}`}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-left">
                               <span className="font-bold text-gray-900">{item.customer_id}</span>{' '}
@@ -2764,11 +2971,14 @@ export default function AdminDashboard() {
                             <td className="px-4 py-3 whitespace-nowrap text-center">
                               <button
                                 onClick={() => {
+                                  const isBrlVal = item.payment_method?.endsWith('_brl');
+                                  const rawMethod = isBrlVal ? item.payment_method.replace('_brl', '') : item.payment_method;
                                   setEditingDeposit(item);
                                   setEditDepositForm({
                                     depositDate: item.deposit_date,
                                     amount: item.amount.toString(),
-                                    paymentMethod: item.payment_method
+                                    paymentMethod: rawMethod,
+                                    currency: isBrlVal ? 'BRL' : 'USD'
                                   });
                                 }}
                                 className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-700 transition"
@@ -3205,18 +3415,54 @@ export default function AdminDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">入金額 (USD)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
-                  <input
-                    type="number"
-                    step="any"
-                    value={editDepositForm.amount}
-                    onChange={(e) => setEditDepositForm({ ...editDepositForm, amount: e.target.value })}
-                    className="w-full h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none text-black bg-white box-border"
-                    required
-                  />
-                </div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  {isB001LinkedForEdit ? '通貨 / 入金額' : '入金額 (USD)'}
+                </label>
+                {isB001LinkedForEdit ? (
+                  <div className="flex gap-2">
+                    <select
+                      value={editDepositForm.currency}
+                      onChange={(e) => {
+                        const newCurrency = e.target.value;
+                        const defaultMethod = newCurrency === 'BRL' ? 'pix' : 'bank';
+                        setEditDepositForm({ 
+                          ...editDepositForm, 
+                          currency: newCurrency,
+                          paymentMethod: defaultMethod
+                        });
+                      }}
+                      className="w-1/3 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border focus:ring-2 focus:ring-indigo-500 outline-none"
+                    >
+                      <option value="USD">USD</option>
+                      <option value="BRL">BRL</option>
+                    </select>
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
+                        {editDepositForm.currency === 'BRL' ? 'R$' : '$'}
+                      </span>
+                      <input
+                        type="number"
+                        step="any"
+                        value={editDepositForm.amount}
+                        onChange={(e) => setEditDepositForm({ ...editDepositForm, amount: e.target.value })}
+                        className="w-full h-12 border border-gray-300 rounded-lg pl-8 pr-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-black box-border"
+                        required
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="any"
+                      value={editDepositForm.amount}
+                      onChange={(e) => setEditDepositForm({ ...editDepositForm, amount: e.target.value })}
+                      className="w-full h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-semibold focus:ring-2 focus:ring-indigo-500 outline-none text-black bg-white box-border"
+                      required
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -3227,9 +3473,37 @@ export default function AdminDashboard() {
                   className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
                   required
                 >
-                  <option value="bank">銀行</option>
-                  <option value="paypal">PayPal</option>
-                  <option value="usdt">USDT</option>
+                  {(() => {
+                    if (isB001LinkedForEdit) {
+                      if (editDepositForm.currency === 'BRL') {
+                        return (
+                          <>
+                            <option value="pix">PIX</option>
+                            <option value="cash">現金</option>
+                            <option value="bank">銀行</option>
+                          </>
+                        );
+                      } else {
+                        return (
+                          <>
+                            <option value="bank">銀行</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="usdt">USDT</option>
+                            <option value="cash">現金</option>
+                          </>
+                        );
+                      }
+                    } else {
+                      return (
+                        <>
+                          <option value="bank">銀行</option>
+                          <option value="paypal">PayPal</option>
+                          <option value="usdt">USDT</option>
+                          <option value="cash">現金</option>
+                        </>
+                      );
+                    }
+                  })()}
                 </select>
               </div>
 

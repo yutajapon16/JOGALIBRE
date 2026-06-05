@@ -3745,7 +3745,7 @@ export default function Home() {
                                         <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇧🇷:' : 'Pagamento no 🇧🇷:'}</span>
                                         {item.paid_brazil ? (
                                           <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                            ✓ {lang === 'es' ? 'Pago' : 'Pago'} 🇧🇷
+                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_brazil_at ? ` ${formatDateTime(item.paid_brazil_at, 'customer')}` : ''}
                                           </span>
                                         ) : (
                                           <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
@@ -3764,7 +3764,7 @@ export default function Home() {
                                         <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇵🇾:' : 'Pagamento no 🇵🇾:'}</span>
                                         {item.paid_paraguay ? (
                                           <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                            ✓ {lang === 'es' ? 'Pago' : 'Pago'} 🇵🇾
+                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_paraguay_at ? ` ${formatDateTime(item.paid_paraguay_at, 'customer')}` : ''}
                                           </span>
                                         ) : (
                                           <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full whitespace-nowrap">
@@ -3797,7 +3797,7 @@ export default function Home() {
                                       <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
                                       {item.paid ? (
                                         <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] rounded-full whitespace-nowrap">
-                                          ✓ {lang === 'es' ? 'Pago' : 'Pago'}
+                                          ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
                                         </span>
                                       ) : (
                                         <button
@@ -3821,7 +3821,7 @@ export default function Home() {
                                         <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇧🇷:' : 'Pagamento no 🇧🇷:'}</span>
                                         {item.paid_brazil ? (
                                           <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                            ✓ {lang === 'es' ? 'Pago' : 'Pago'} 🇧🇷
+                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_brazil_at ? ` ${formatDateTime(item.paid_brazil_at, 'customer')}` : ''}
                                           </span>
                                         ) : (
                                           <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
@@ -3840,7 +3840,7 @@ export default function Home() {
                                         <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇵🇾:' : 'Pagamento no 🇵🇾:'}</span>
                                         {item.paid_paraguay ? (
                                           <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                            ✓ {lang === 'es' ? 'Pago' : 'Pago'} 🇵🇾
+                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_paraguay_at ? ` ${formatDateTime(item.paid_paraguay_at, 'customer')}` : ''}
                                           </span>
                                         ) : (
                                           <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full whitespace-nowrap">
