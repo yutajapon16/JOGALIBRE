@@ -3742,7 +3742,7 @@ export default function Home() {
                                     {/* ブラジル支払額 */}
                                     <div className="flex items-center justify-between text-xs font-bold text-gray-700">
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇧🇷:' : 'Pagamento no 🇧🇷:'}</span>
+                                        <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇧🇷:' : 'Valor no 🇧🇷:'}</span>
                                         {item.paid_brazil ? (
                                           <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
                                             ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_brazil_at ? ` ${formatDateTime(item.paid_brazil_at, 'customer')}` : ''}
@@ -3761,7 +3761,7 @@ export default function Home() {
                                     {/* パラグアイ支払額 */}
                                     <div className="flex items-center justify-between text-xs font-bold text-gray-700 border-t border-gray-200/50 pt-2.5">
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇵🇾:' : 'Pagamento no 🇵🇾:'}</span>
+                                        <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇵🇾:' : 'Valor no 🇵🇾:'}</span>
                                         {item.paid_paraguay ? (
                                           <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
                                             ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_paraguay_at ? ` ${formatDateTime(item.paid_paraguay_at, 'customer')}` : ''}
@@ -3818,7 +3818,7 @@ export default function Home() {
                                     {/* ブラジル支払額 */}
                                     <div className="flex items-center justify-between text-xs font-bold text-gray-700">
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇧🇷:' : 'Pagamento no 🇧🇷:'}</span>
+                                        <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇧🇷:' : 'Valor no 🇧🇷:'}</span>
                                         {item.paid_brazil ? (
                                           <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
                                             ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_brazil_at ? ` ${formatDateTime(item.paid_brazil_at, 'customer')}` : ''}
@@ -3837,7 +3837,7 @@ export default function Home() {
                                     {/* パラグアイ支払額 */}
                                     <div className="flex items-center justify-between text-xs font-bold text-gray-700 border-t border-gray-200/50 pt-2.5">
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇵🇾:' : 'Pagamento no 🇵🇾:'}</span>
+                                        <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇵🇾:' : 'Valor no 🇵🇾:'}</span>
                                         {item.paid_paraguay ? (
                                           <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
                                             ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_paraguay_at ? ` ${formatDateTime(item.paid_paraguay_at, 'customer')}` : ''}
@@ -4032,22 +4032,22 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* 残高 🇧🇷（Saldo 🇧🇷）（緑） - 高さをh-8に縮小、R$表示、フォントサイズ調整 */}
-                    <div className="bg-white border border-green-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-[10px] font-bold text-green-500 tracking-wider">
+                    {/* 残高 🇧🇷（Saldo 🇧🇷）（緑） - 高さをh-12に統一、R$表示 */}
+                    <div className="bg-white border border-green-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-green-500 tracking-wider">
                         {lang === 'es' ? 'Saldo 🇧🇷' : 'Saldo 🇧🇷'}
                       </span>
-                      <span className="text-sm font-extrabold text-green-600">
+                      <span className="text-base font-black text-green-600">
                         {formattedBrl}
                       </span>
                     </div>
 
-                    {/* 残高 🇵🇾（Saldo 🇵🇾）（オレンジ） - 高さをh-8に縮小、フォントサイズ調整 */}
-                    <div className="bg-white border border-orange-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-[10px] font-bold text-orange-500 tracking-wider">
+                    {/* 残高 🇵🇾（Saldo 🇵🇾）（オレンジ） - 高さをh-12に統一 */}
+                    <div className="bg-white border border-orange-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-orange-500 tracking-wider">
                         {lang === 'es' ? 'Saldo 🇵🇾' : 'Saldo 🇵🇾'}
                       </span>
-                      <span className="text-sm font-extrabold text-orange-600">
+                      <span className="text-base font-black text-orange-600">
                         {formattedPy}
                       </span>
                     </div>

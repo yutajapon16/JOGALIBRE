@@ -1645,7 +1645,7 @@ export default function AdminDashboard() {
                         <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                           <div className="flex items-center gap-1">
                             <span className="text-xs text-gray-500 font-medium">日本支払額:</span>
-                            <span className="text-base font-bold text-red-600">
+                            <span className="text-base font-bold text-indigo-600">
                               ${japanAmount.toLocaleString('en-US')}
                             </span>
                           </div>
@@ -2244,24 +2244,7 @@ export default function AdminDashboard() {
                     ))}
                 </div>
 
-                {/* 合計表示カードの独立化 */}
-                <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mt-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xl font-semibold">
-                      合計{selectedCustomer !== 'all' && '（選択したID）'}:
-                    </span>
-                    <span className="text-3xl font-bold text-indigo-600">
-                      ${Math.round(
-                        getFilteredPurchasedItems()
-                          .filter(item => !item.paid)  // 支払済を除外
-                          .reduce((sum, item) => sum + (item.finalPrice || 0), 0)
-                      ).toLocaleString('en-US')}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 text-right">
-                    未払い商品のみ / 支払済: {getFilteredPurchasedItems().filter(item => item.paid).length}件
-                  </p>
-                </div>
+
               </>
             )}
           </>
@@ -2652,6 +2635,7 @@ export default function AdminDashboard() {
                             });
                           }}
                           className="w-1/3 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border focus:ring-2 focus:ring-indigo-500 outline-none"
+                          style={{ textAlign: 'center', textAlignLast: 'center' }}
                         >
                           <option value="USD">USD</option>
                           <option value="BRL">BRL</option>
@@ -2803,7 +2787,7 @@ export default function AdminDashboard() {
 
               {/* 抽出合計金額カード */}
               <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-3">
-                <span className="text-xs font-bold text-indigo-500">合計金額</span>
+                <span className="text-xs font-bold text-indigo-500">合計金額 USD</span>
                 <span className="text-base font-black text-indigo-600">
                   ${Math.round(getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
                 </span>
@@ -2859,8 +2843,7 @@ export default function AdminDashboard() {
                       totalPurchased += totalSalePrice;
                     } else if (item.agentCustomerId === 'B001') {
                       const paraguayUsd = Math.round(totalSalePrice * 0.5);
-                      const japanUsd = calculateJapanSendAmount(item, totalSalePrice);
-                      totalPurchased += (paraguayUsd + japanUsd);
+                      totalPurchased += paraguayUsd;
 
                       const brazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
                       totalPurchasedBrl += brazilBrl;
@@ -2895,7 +2878,7 @@ export default function AdminDashboard() {
                   <div className="flex flex-col gap-3 mb-6">
                     <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
                       <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
-                        残高 (USD)
+                        残高 USD
                       </span>
                       <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
                         {formattedBalance}
@@ -2903,14 +2886,24 @@ export default function AdminDashboard() {
                     </div>
 
                     {isB001OrLinked && (
-                      <div className={`bg-white border ${isNegativeBrl ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
-                        <span className={`text-xs font-bold ${isNegativeBrl ? 'text-red-500' : 'text-green-500'}`}>
-                          残高 BRL
-                        </span>
-                        <span className={`text-base font-black ${isNegativeBrl ? 'text-red-600' : 'text-green-600'}`}>
-                          {formattedBalanceBrl}
-                        </span>
-                      </div>
+                      <>
+                        <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                          <span className="text-xs font-bold text-green-500">
+                            合計金額 BRL
+                          </span>
+                          <span className="text-base font-black text-green-600">
+                            R$ {formatBrl(totalDepositsBrl)}
+                          </span>
+                        </div>
+                        <div className={`bg-white border ${isNegativeBrl ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
+                          <span className={`text-xs font-bold ${isNegativeBrl ? 'text-red-500' : 'text-green-500'}`}>
+                            残高 BRL
+                          </span>
+                          <span className={`text-base font-black ${isNegativeBrl ? 'text-red-600' : 'text-green-600'}`}>
+                            {formattedBalanceBrl}
+                          </span>
+                        </div>
+                      </>
                     )}
                   </div>
                 );
@@ -3108,7 +3101,10 @@ export default function AdminDashboard() {
                 const fob = parseFloat(fobCostJpy.replace(/,/g, '') || '0');
                 const shipping = parseFloat(shippingCostJpy.replace(/,/g, '') || '0');
                 const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
-                const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
+                let profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
+                if (selectedRequest.agentCustomerId === 'B001') {
+                  profitDivisor = 0.4;
+                }
                 const priceWithProfit = totalJpy / profitDivisor;
                 const profitJpy = priceWithProfit - totalJpy;
 
@@ -3128,7 +3124,10 @@ export default function AdminDashboard() {
                     const fob = parseFloat(fobCostJpy.replace(/,/g, '') || '0');
                     const shipping = parseFloat(shippingCostJpy.replace(/,/g, '') || '0');
                     const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
-                    const profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
+                    let profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
+                    if (selectedRequest.agentCustomerId === 'B001') {
+                      profitDivisor = 0.4;
+                    }
                     const priceWithProfit = totalJpy / profitDivisor;
                     const usdPrice = priceWithProfit / exchangeRate;
                     const roundedUsd = Math.ceil(usdPrice / 10) * 10;
@@ -3432,6 +3431,7 @@ export default function AdminDashboard() {
                         });
                       }}
                       className="w-1/3 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border focus:ring-2 focus:ring-indigo-500 outline-none"
+                      style={{ textAlign: 'center', textAlignLast: 'center' }}
                     >
                       <option value="USD">USD</option>
                       <option value="BRL">BRL</option>
