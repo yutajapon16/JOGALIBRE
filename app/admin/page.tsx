@@ -446,7 +446,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    const headers = ['入金確認日', '顧客ID', '氏名', '入金額(USD)', '支払方法'];
+    const headers = ['入金確認日', '通貨', '顧客ID', '氏名', '入金額', '支払方法'];
 
     const customerMap = new Map<string, string>();
     customersList.forEach(c => customerMap.set(c.customerId, c.fullName || c.customerName || ''));
@@ -456,7 +456,7 @@ export default function AdminDashboard() {
       bank: '銀行',
       paypal: 'PayPal',
       usdt: 'USDT',
-      pix_brl: 'PIX (BRL)',
+      pix_brl: 'PIX',
       cash_brl: '現金 (BRL)',
       cash: '現金',
       pix: 'PIX'
@@ -465,12 +465,13 @@ export default function AdminDashboard() {
     const rows = items.map(item => {
       const name = customerMap.get(item.customer_id) || '';
       const isBrl = item.payment_method?.endsWith('_brl');
-      const amountVal = isBrl ? `R$ ${item.amount}` : item.amount;
+      const currency = isBrl ? 'BRL' : 'USD';
       return [
         item.deposit_date.replace(/-/g, '/'),
+        currency,
         item.customer_id,
         `"${name.replace(/"/g, '""')}"`,
-        amountVal,
+        item.amount,
         paymentMethodNames[item.payment_method] || item.payment_method
       ];
     });
@@ -2789,7 +2790,7 @@ export default function AdminDashboard() {
               <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-3">
                 <span className="text-xs font-bold text-indigo-500">合計金額 USD</span>
                 <span className="text-base font-black text-indigo-600">
-                  ${Math.round(getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
+                  ${Math.round(getFilteredDeposits().filter(item => !item.payment_method?.endsWith('_brl')).reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
                 </span>
               </div>
 
@@ -2921,6 +2922,7 @@ export default function AdminDashboard() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">入金日</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">通貨</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">入金額</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">顧客</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">支払方法</th>
@@ -2936,7 +2938,7 @@ export default function AdminDashboard() {
                           bank: '銀行',
                           paypal: 'PayPal',
                           usdt: 'USDT',
-                          pix_brl: 'PIX (BRL)',
+                          pix_brl: 'PIX',
                           cash_brl: '現金 (BRL)',
                           cash: '現金',
                           pix: 'PIX'
@@ -2950,6 +2952,9 @@ export default function AdminDashboard() {
                           <tr key={item.id} className="hover:bg-gray-50 transition text-black">
                             <td className="px-4 py-3 whitespace-nowrap text-left font-medium text-gray-700">
                               {dateFormatted}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-bold">
+                              {isBrl ? 'BRL' : 'USD'}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
                               {isBrl ? `R$ ${formatBrl(Number(item.amount))}` : `$${Number(item.amount).toLocaleString('en-US')}`}
