@@ -3457,7 +3457,7 @@ export default function Home() {
 
               const summaryTotal = filteredItemsForSummary.reduce((sum, item) => {
                 const itemPrice = getItemPrice(item);
-                const itemSalePrice = isB001 ? Math.round(itemPrice / 0.4) : itemPrice;
+                const itemSalePrice = itemPrice;
                 return sum + itemSalePrice;
               }, 0);
 
@@ -3467,14 +3467,14 @@ export default function Home() {
                   .reduce((sum, item) => {
                     if (item.paid_brazil) return sum;
                     const itemPrice = getItemPrice(item);
-                    const itemSalePrice = Math.round(itemPrice / 0.4);
+                    const itemSalePrice = itemPrice;
                     return sum + (itemSalePrice * 0.5);
                   }, 0);
                 const unpaidParaguayTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
                     if (item.paid_paraguay) return sum;
                     const itemPrice = getItemPrice(item);
-                    const itemSalePrice = Math.round(itemPrice / 0.4);
+                    const itemSalePrice = itemPrice;
                     return sum + Math.round(itemSalePrice * 0.5);
                   }, 0);
                 const unpaidSummaryTotal = unpaidBrazilTotalDolar + unpaidParaguayTotal;
@@ -3485,7 +3485,7 @@ export default function Home() {
                   .reduce((sum, item) => {
                     if (item.paid_brazil) return sum;
                     const itemPrice = getItemPrice(item);
-                    const itemSalePrice = Math.round(itemPrice / 0.4);
+                    const itemSalePrice = itemPrice;
                     const halfPriceBrl = Math.ceil(((itemSalePrice * 0.5) * brlRate) / 10) * 10;
                     return sum + halfPriceBrl;
                   }, 0);

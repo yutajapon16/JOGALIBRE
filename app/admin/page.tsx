@@ -1864,8 +1864,7 @@ export default function AdminDashboard() {
                 const summaryTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
                     const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
-                    const isB001 = item.agentCustomerId === 'B001' || item.customerId === 'B001';
-                    return sum + (isB001 ? Math.round(cost / 0.4) : cost);
+                    return sum + Math.round(cost);
                   }, 0);
 
                 const unpaidSummaryTotal = filteredItemsForSummary
@@ -1873,7 +1872,7 @@ export default function AdminDashboard() {
                     const isB001 = item.agentCustomerId === 'B001' || item.customerId === 'B001';
                     const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
                     if (isB001) {
-                      const totalSalePrice = Math.round(cost / 0.4);
+                      const totalSalePrice = Math.round(cost);
                       if (item.customerId === 'B001') {
                         return sum + (item.paid_japan ? 0 : totalSalePrice);
                       } else {
@@ -1916,7 +1915,7 @@ export default function AdminDashboard() {
                         .filter(item => !item.paid_brazil)
                         .reduce((sum, item) => {
                           const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
-                          const totalSalePrice = Math.round(cost / 0.4);
+                          const totalSalePrice = Math.round(cost);
                           const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
                           return sum + paidBrazilBrl;
                         }, 0);
@@ -1925,7 +1924,7 @@ export default function AdminDashboard() {
                         .filter(item => !item.paid_paraguay)
                         .reduce((sum, item) => {
                           const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
-                          const totalSalePrice = Math.round(cost / 0.4);
+                          const totalSalePrice = Math.round(cost);
                           return sum + Math.round(totalSalePrice * 0.5);
                         }, 0);
 
@@ -2069,7 +2068,7 @@ export default function AdminDashboard() {
                         {item.agentCustomerId === 'B001' ? (
                           (() => {
                             const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
-                            const totalSalePrice = Math.round(cost / 0.4);
+                            const totalSalePrice = Math.round(cost);
                             const brlRate = exchangeRates['BRL'] || 5.6;
                             const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
                             const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
@@ -2161,7 +2160,7 @@ export default function AdminDashboard() {
                                       </span>
                                     )}
                                   </label>
-                                  <span className={`text-red-400 line-through text-sm ${!item.paid_japan ? 'text-red-600 font-black' : ''}`}>
+                                  <span className={`text-sm ${item.paid_japan ? 'text-red-400 line-through' : 'text-red-600 font-black'}`}>
                                     ${Math.round(japanSendAmount).toLocaleString('en-US')}
                                   </span>
                                 </div>
