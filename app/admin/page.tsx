@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
   const [finalPriceInput, setFinalPriceInput] = useState('');
   const [exchangeRate, setExchangeRate] = useState(150);
+  const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({ JPY: 150, BRL: 5.6, PYG: 7500 });
   const [activeTab, setActiveTab] = useState<'requests' | 'purchased' | 'deposits' | 'shipping' | 'customers' | 'agents'>('requests');
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   const [customersList, setCustomersList] = useState<any[]>([]);
@@ -666,6 +667,9 @@ export default function AdminDashboard() {
       if (data.usdToJpy) {
         setExchangeRate(data.usdToJpy);
       }
+      if (data.rates) {
+        setExchangeRates(data.rates);
+      }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
     }
@@ -709,12 +713,24 @@ export default function AdminDashboard() {
     }
   };
 
+  const calculateJapanSendAmount = (item: BidRequest, totalSalePrice: number) => {
+    if (item.customerId === 'B001') {
+      return totalSalePrice;
+    }
+    const costUsd = totalSalePrice * 0.4;
+    return Math.ceil((costUsd / 0.9) / 10) * 10;
+  };
+
   const getFilteredPurchasedItems = () => {
     let filtered = purchasedItems;
 
     // 顧客IDでフィルタリング
     if (selectedCustomer !== 'all') {
-      filtered = filtered.filter(item => item.customerId === selectedCustomer);
+      if (selectedCustomer === 'B001') {
+        filtered = filtered.filter(item => item.customerId === 'B001' || item.agentCustomerId === 'B001');
+      } else {
+        filtered = filtered.filter(item => item.customerId === selectedCustomer);
+      }
     }
 
     // 年でフィルタリング
@@ -1003,6 +1019,28 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error updating paid status:', error);
+    }
+  };
+
+  const updatePaidSplitStatus = async (id: string, updates: { paid_brazil?: boolean; paid_paraguay?: boolean; paid_japan?: boolean }) => {
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/bid-request', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({ id, ...updates })
+      });
+
+      if (res.ok) {
+        fetchPurchasedItems();
+      }
+    } catch (error) {
+      console.error('Error updating paid split status:', error);
     }
   };
 
@@ -1765,7 +1803,8 @@ export default function AdminDashboard() {
                     className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
                   >
                     <option value="all">すべてのID</option>
-                    {getCustomerIdList().map(id => {
+                    <option value="B001">B001 FFGN</option>
+                    {getCustomerIdList().filter(id => id !== 'B001').map(id => {
                       const firstMatch = purchasedItems.find(item => item.customerId === id);
                       const name = firstMatch ? (firstMatch.customerFullName || firstMatch.customerName) : '';
                       return (
@@ -1816,11 +1855,22 @@ export default function AdminDashboard() {
               {/* 期間集計カード */}
               {purchasedItems.length > 0 && (() => {
                 const filteredItemsForSummary = getFilteredPurchasedItems();
-                const unpaidSummaryTotal = filteredItemsForSummary
-                  .filter(item => !item.paid)
-                  .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
                 const summaryTotal = filteredItemsForSummary
                   .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+
+                const unpaidSummaryTotal = filteredItemsForSummary
+                  .reduce((sum, item) => {
+                    if (item.agentCustomerId === 'B001' && item.customerId !== 'B001') {
+                      if (!item.paid_japan) {
+                        const totalSalePrice = Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0);
+                        const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice);
+                        return sum + japanSendAmount;
+                      }
+                      return sum;
+                    } else {
+                      return sum + (item.paid ? 0 : (item.finalPrice || 0));
+                    }
+                  }, 0);
 
                 return (
                   <div className="flex flex-col gap-3">
@@ -1836,6 +1886,59 @@ export default function AdminDashboard() {
                         ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
                       </span>
                     </div>
+
+                    {/* B001 FFGN選択時、またはB001紐づき顧客の選択時の未入金内訳 */}
+                    {(() => {
+                      const selectedCustInfo = purchasedItems.find(item => item.customerId === selectedCustomer);
+                      const isB001SelectedOrLinked = selectedCustomer === 'B001' || selectedCustInfo?.agentCustomerId === 'B001';
+
+                      if (!isB001SelectedOrLinked) return null;
+
+                      const filteredItemsForB001 = selectedCustomer === 'B001'
+                        ? filteredItemsForSummary.filter(item => item.agentCustomerId === 'B001')
+                        : filteredItemsForSummary.filter(item => item.customerId === selectedCustomer);
+
+                      const unpaidBrazilUsd = filteredItemsForB001
+                        .filter(item => !item.paid_brazil)
+                        .reduce((sum, item) => {
+                          const totalSalePrice = Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0);
+                          const halfPrice = Math.ceil((totalSalePrice * 0.5) / 10) * 10;
+                          return sum + halfPrice;
+                        }, 0);
+                      
+                      const brlRate = exchangeRates['BRL'] || 5.6;
+                      const unpaidBrazilBrl = unpaidBrazilUsd * brlRate;
+
+                      const unpaidParaguayUsd = filteredItemsForB001
+                        .filter(item => !item.paid_paraguay)
+                        .reduce((sum, item) => {
+                          const totalSalePrice = Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0);
+                          const halfPrice = Math.ceil((totalSalePrice * 0.5) / 10) * 10;
+                          return sum + halfPrice;
+                        }, 0);
+
+                      const formatBrl = (amount: number) => {
+                        const rounded = Math.round(amount);
+                        return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                      };
+
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+                          <div className="bg-white border border-green-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
+                            <span className="text-[10px] font-bold text-green-500 font-sans flex items-center gap-1">未入金額 🇧🇷</span>
+                            <span className="text-xs font-black text-green-600 font-sans">
+                              R$ {formatBrl(unpaidBrazilBrl)}
+                            </span>
+                          </div>
+                          <div className="bg-white border border-amber-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
+                            <span className="text-[10px] font-bold text-amber-500 font-sans flex items-center gap-1">未入金額 🇵🇾</span>
+                            <span className="text-xs font-black text-amber-600 font-sans">
+                              ${Math.round(unpaidParaguayUsd).toLocaleString('en-US')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })()}
@@ -1950,28 +2053,136 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                        {/* 支払情報 & 金額ボックス (h-12) */}
-                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <label className="flex items-center cursor-pointer select-none">
-                              <input
-                                type="checkbox"
-                                checked={item.paid}
-                                onChange={(e) => updatePaidStatus(item.id, e.target.checked)}
-                                className="w-5 h-5 mr-2 cursor-pointer text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
-                              />
-                              <span className="text-sm font-semibold text-gray-700">支払済</span>
-                            </label>
-                            {item.paid && item.paidAt && (
-                              <span className="text-xs text-gray-500 whitespace-nowrap">
-                                ({formatDateTime(item.paidAt)})
-                              </span>
-                            )}
+                        {/* 支払情報 & 金額ボックス */}
+                        {item.agentCustomerId === 'B001' ? (
+                          (() => {
+                            const totalSalePrice = Math.round(
+                              item.finalPrice ||
+                              item.customerCounterOffer ||
+                              item.counterOffer ||
+                              item.maxBid ||
+                              0
+                            );
+                            const halfPrice = Math.ceil((totalSalePrice * 0.5) / 10) * 10;
+
+                            const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice);
+                            const brlRate = exchangeRates['BRL'] || 5.6;
+
+                            // BRL表記フォーマット関数
+                            const formatBrl = (amount: number) => {
+                              const rounded = Math.round(amount);
+                              return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                            };
+
+                            return (
+                              <div className="space-y-2 mb-2 bg-gray-50 p-3 rounded-lg border border-gray-100 font-sans text-xs">
+                                {/* 1段目: 合計支払額 */}
+                                <div className="flex items-center justify-between font-bold text-gray-700">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-500">合計支払額:</span>
+                                    {item.paid ? (
+                                      <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] rounded-full whitespace-nowrap">
+                                        ✓ 支払済
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                        未入金
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className={`text-sm ${item.paid ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
+                                    ${totalSalePrice.toLocaleString('en-US')}
+                                  </span>
+                                </div>
+
+                                {/* 2段目: 支払額 🇧🇷 */}
+                                <div className="flex items-center justify-between font-bold text-gray-700 border-t border-gray-200/50 pt-2">
+                                  <label className="flex items-center cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.paid_brazil}
+                                      onChange={(e) => updatePaidSplitStatus(item.id, { paid_brazil: e.target.checked })}
+                                      className="w-4 h-4 mr-1.5 cursor-pointer text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                    />
+                                    <span className="text-gray-500">支払額 🇧🇷:</span>
+                                    {item.paid_brazil && item.paid_brazil_at && (
+                                      <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
+                                        ✓ 支払済 ({formatDateTime(item.paid_brazil_at)})
+                                      </span>
+                                    )}
+                                  </label>
+                                  <span className={`text-sm ${item.paid_brazil ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                    R$ {formatBrl(halfPrice * brlRate)}
+                                  </span>
+                                </div>
+
+                                {/* 3段目: 支払額 🇵🇾 */}
+                                <div className="flex items-center justify-between font-bold text-gray-700 border-t border-gray-200/50 pt-2">
+                                  <label className="flex items-center cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.paid_paraguay}
+                                      onChange={(e) => updatePaidSplitStatus(item.id, { paid_paraguay: e.target.checked })}
+                                      className="w-4 h-4 mr-1.5 cursor-pointer text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                                    />
+                                    <span className="text-gray-500">支払額 🇵🇾:</span>
+                                    {item.paid_paraguay && item.paid_paraguay_at && (
+                                      <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
+                                        ✓ 支払済 ({formatDateTime(item.paid_paraguay_at)})
+                                      </span>
+                                    )}
+                                  </label>
+                                  <span className={`text-sm ${item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
+                                    ${halfPrice.toLocaleString('en-US')}
+                                  </span>
+                                </div>
+
+                                {/* 4段目: 支払額 🇯🇵 */}
+                                <div className="flex items-center justify-between font-bold text-gray-700 border-t border-gray-200/50 pt-2 bg-red-50 -mx-3 -mb-3 p-3 rounded-b-lg">
+                                  <label className="flex items-center cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.paid_japan}
+                                      onChange={(e) => updatePaidSplitStatus(item.id, { paid_japan: e.target.checked })}
+                                      className="w-4 h-4 mr-1.5 cursor-pointer text-red-600 border-gray-300 rounded focus:ring-red-500"
+                                    />
+                                    <span className="text-red-600 font-black">支払額 🇯🇵:</span>
+                                    {item.paid_japan && item.paid_japan_at && (
+                                      <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
+                                        ✓ 支払済 ({formatDateTime(item.paid_japan_at)})
+                                      </span>
+                                    )}
+                                  </label>
+                                  <span className={`text-red-600 font-black text-sm ${item.paid_japan ? 'text-red-400 line-through' : ''}`}>
+                                    ${Math.round(japanSendAmount).toLocaleString('en-US')}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <label className="flex items-center cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={item.paid}
+                                  onChange={(e) => updatePaidStatus(item.id, e.target.checked)}
+                                  className="w-5 h-5 mr-2 cursor-pointer text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                                />
+                                <span className="text-sm font-semibold text-gray-700">支払済</span>
+                              </label>
+                              {item.paid && item.paidAt && (
+                                <span className="text-xs text-gray-500 whitespace-nowrap">
+                                  ({formatDateTime(item.paidAt)})
+                                </span>
+                              )}
+                            </div>
+                            <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
+                              ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
+                            </span>
                           </div>
-                          <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
-                            ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
-                          </span>
-                        </div>
+                        )}
                       </div>
                     ))}
                 </div>

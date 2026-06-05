@@ -8,7 +8,7 @@ import { VAPID_PUBLIC_KEY } from '@/lib/constants';
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
 
 webpush.setVapidDetails(
-    'mailto:export@joga.ltd',
+    'mailto:admin@jogalibre.com',
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
 );

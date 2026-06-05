@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     const emails = Array.from(new Set(orders.map(o => o.customer_email)));
     const { data: users, error: usersError } = await supabaseAdmin
       .from('user_roles')
-      .select('email, customer_id, full_name')
+      .select('email, customer_id, full_name, agent_customer_id')
       .in('email', emails);
 
     if (usersError) throw usersError;
@@ -72,7 +72,16 @@ export async function GET(request: Request) {
       const userInfo = userMap.get(order.customer_email);
       const customerId = userInfo?.customer_id || 'Unknown';
       const customerName = userInfo?.full_name || order.customer_name || '';
-      const profitRate = customerId.startsWith('A') ? 0.2 : 0.4;
+      const agentCustomerId = userInfo?.agent_customer_id;
+
+      let profitRate = 0.4;
+      if (customerId === 'B001') {
+        profitRate = 0.1;
+      } else if (agentCustomerId === 'B001') {
+        profitRate = 0.6;
+      } else if (customerId.startsWith('A')) {
+        profitRate = 0.2;
+      }
       
       const rowIdx = index + 2;
       // ユーザー指定の正確な数式形式（カンマを含まない形式に変更）

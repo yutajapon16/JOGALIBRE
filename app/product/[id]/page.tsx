@@ -296,7 +296,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency) => {
     const FOB_COST = 1500;
     const totalJpyPrice = jpyPrice + FOB_COST;
-    const profitDivisor = currentUser?.customerId?.startsWith('A') ? 0.8 : 0.6;
+    
+    // B001本人は0.9(10%利益)、B001紐づき顧客は0.4(60%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
+    const profitDivisor = (() => {
+      if (currentUser?.customerId === 'B001') return 0.9;
+      if (currentUser?.agentCustomerId === 'B001') return 0.4;
+      if (currentUser?.customerId?.startsWith('A')) return 0.8;
+      return 0.6;
+    })();
+    
     const priceWithProfit = totalJpyPrice / profitDivisor;
     
     const jpyRate = exchangeRates['JPY'] || exchangeRate || 150;
@@ -541,13 +549,53 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </span>
           </div>
 
-          {/* 現在価格 (背景薄い緑、文字緑) */}
-          <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between text-green-700 font-bold">
-            <span className="text-xs">{t.currentPrice}: {selectedCurrency}</span>
-            <span className="text-sm sm:text-base font-extrabold">
-              {getCurrencySymbol(selectedCurrency)} {calculateConvertedPrice(product.currentPrice)}
-            </span>
-          </div>
+          {/* 現在価格表示エリア */}
+          {currentUser?.agentCustomerId === 'B001' ? (
+            // B001 紐づき顧客用の 3段金額表示ボックス (プレミアムUI)
+            (() => {
+              // 180ドル(依頼額) 相当 ＝ 原価 + 手数料5%
+              const bidRequestAmount = parseFloat(calculateConvertedPrice(product.currentPrice, 'USD').replace(/,/g, ''));
+              // 合計売価 = 依頼額 / 0.45
+              const totalSalePrice = Math.round(bidRequestAmount / 0.45);
+              const halfPrice = Math.round(totalSalePrice * 0.5);
+              
+              // BRL への換算
+              const brlRate = exchangeRates['BRL'] || 5.6;
+              const halfPriceBrl = Math.ceil((halfPrice * brlRate) / 10) * 10; // 10の位切り上げ
+
+              const totalStr = totalSalePrice.toLocaleString('en-US');
+              const halfStr = halfPrice.toLocaleString('en-US');
+              const halfBrlStr = halfPriceBrl.toLocaleString('en-US').replace(/,/g, '.');
+
+              return (
+                <div className="space-y-2">
+                  {/* 1段目: 合計支払額 */}
+                  <div className="h-12 px-3 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-between text-indigo-800 font-bold shadow-sm">
+                    <span className="text-xs">Valor Total: USD</span>
+                    <span className="text-sm sm:text-base font-extrabold">${totalStr}</span>
+                  </div>
+                  {/* 2段目: ブラジル国内支払額 */}
+                  <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between text-green-700 font-bold shadow-sm">
+                    <span className="text-xs">Pagamento 🇧🇷: USD</span>
+                    <span className="text-sm sm:text-base font-extrabold">${halfStr} / BRL R$ {halfBrlStr}</span>
+                  </div>
+                  {/* 3段目: パラグアイ現地支払額 */}
+                  <div className="h-12 px-3 bg-amber-50 border border-amber-100 rounded-lg flex items-center justify-between text-amber-700 font-bold shadow-sm">
+                    <span className="text-xs">Pagamento 🇵🇾: USD</span>
+                    <span className="text-sm sm:text-base font-extrabold">${halfStr}</span>
+                  </div>
+                </div>
+              );
+            })()
+          ) : (
+            // 通常の価格表示 (1段)
+            <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between text-green-700 font-bold">
+              <span className="text-xs">{t.currentPrice}: {selectedCurrency}</span>
+              <span className="text-sm sm:text-base font-extrabold">
+                {getCurrencySymbol(selectedCurrency)} {calculateConvertedPrice(product.currentPrice)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 3. AI要約翻訳エリア */}

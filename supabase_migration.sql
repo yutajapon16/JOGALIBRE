@@ -61,7 +61,7 @@ INSERT INTO system_settings (key, value) VALUES
     "qr_url": "/images/usdt_qr.png"
   },
   "paypal": {
-    "account_email": "export@joga.ltd",
+    "account_email": "admin@jogalibre.com",
     "link": "https://paypal.me/joga1225",
     "fee_multiplier": 1.08
   }
@@ -129,3 +129,18 @@ WITH CHECK (bucket_id = 'bid-images');
 
 -- 15. お気に入りテーブルに終了日時(end_time)カラムを追加
 ALTER TABLE favorites ADD COLUMN IF NOT EXISTS end_time TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+
+-- 16. B001紐づき顧客のためのブラジル国内支払いとパラグアイ現地支払いの分割管理用カラムを追加
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_brazil BOOLEAN DEFAULT FALSE;
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_brazil_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_paraguay BOOLEAN DEFAULT FALSE;
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_paraguay_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+
+-- インデックスの作成
+CREATE INDEX IF NOT EXISTS idx_bid_requests_paid_brazil ON bid_requests(paid_brazil);
+CREATE INDEX IF NOT EXISTS idx_bid_requests_paid_paraguay ON bid_requests(paid_paraguay);
+
+-- 17. B001紐づき顧客の日本支払（日本送金）管理用カラムを追加
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_japan BOOLEAN DEFAULT FALSE;
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_japan_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+CREATE INDEX IF NOT EXISTS idx_bid_requests_paid_japan ON bid_requests(paid_japan);

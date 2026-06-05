@@ -177,7 +177,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       }
       if (!user) return null;
 
-      const isExportAdmin = user.email?.toLowerCase() === 'export@joga.ltd';
+      const isExportAdmin = user.email?.toLowerCase() === 'admin@jogalibre.com';
 
       // キャッシュの不整合を防ぐためDB(user_roles)から最新情報を取得する
       const controller = new AbortController();
@@ -324,7 +324,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       return {
         id: alreadyFetchedUser.id,
         email: alreadyFetchedUser.email!,
-        role: alreadyFetchedUser.email?.toLowerCase() === 'export@joga.ltd' ? 'admin' : (metadata.user_role || metadata.role || 'customer'),
+        role: alreadyFetchedUser.email?.toLowerCase() === 'admin@jogalibre.com' ? 'admin' : (metadata.user_role || metadata.role || 'customer'),
         fullName: metadata.full_name,
         whatsapp: metadata.whatsapp,
         address: metadata.address,

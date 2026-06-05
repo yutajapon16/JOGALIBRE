@@ -91,11 +91,13 @@ export async function GET(request: Request) {
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
-      .select('role')
+      .select('role, customer_id')
       .eq('id', effectiveUser.id)
       .single();
 
     const isAdmin = roleData?.role === 'admin';
+    const isAgent = roleData?.role === 'agent';
+    const agentCustomerId = roleData?.customer_id;
     const userEmail = effectiveUser.email;
 
     const { searchParams } = new URL(request.url);
@@ -105,6 +107,19 @@ export async function GET(request: Request) {
     // 顧客の場合は自身のメールアドレスのみを対象にする
     const targetEmail = isAdmin ? emailParam : userEmail;
 
+    // エージェントの場合は配下顧客のメールアドレスも取得してクエリ対象にする
+    let allowedEmails = [userEmail];
+    if (isAgent && agentCustomerId) {
+      const { data: subCustomers } = await supabaseAdmin
+        .from('user_roles')
+        .select('email')
+        .eq('agent_customer_id', agentCustomerId);
+      
+      if (subCustomers && subCustomers.length > 0) {
+        allowedEmails = [userEmail, ...subCustomers.map(c => c.email).filter(Boolean)];
+      }
+    }
+
     if (purchased === 'true') {
       // 購入済み商品を取得（final_status='won'のみ）
       let query;
@@ -113,6 +128,15 @@ export async function GET(request: Request) {
         query = supabaseAdmin
           .from('bid_requests')
           .select('*')
+          .eq('final_status', 'won')
+          .eq('customer_confirmed', true)
+          .order('created_at', { ascending: false });
+      } else if (isAgent && !emailParam) {
+        // エージェントが自分と配下顧客の購入済み商品を見る場合
+        query = supabaseAdmin
+          .from('bid_requests')
+          .select('*')
+          .in('customer_email', allowedEmails)
           .eq('final_status', 'won')
           .eq('customer_confirmed', true)
           .order('created_at', { ascending: false });
@@ -177,6 +201,14 @@ export async function GET(request: Request) {
       requestsQuery = supabaseAdmin
         .from('bid_requests')
         .select('*')
+        .neq('customer_confirmed', true)
+        .order('created_at', { ascending: true });
+    } else if (isAgent && !emailParam) {
+      // エージェントが自分と配下顧客のリクエストを見る場合
+      requestsQuery = supabaseAdmin
+        .from('bid_requests')
+        .select('*')
+        .in('customer_email', allowedEmails)
         .neq('customer_confirmed', true)
         .order('created_at', { ascending: true });
     } else {
@@ -305,7 +337,7 @@ export async function PATCH(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid, stockNumber, invoiceNumber } = body;
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid, paid_brazil, paid_paraguay, paid_japan, stockNumber, invoiceNumber } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -337,11 +369,52 @@ export async function PATCH(request: Request) {
       if (finalStatus !== undefined) updateData.final_status = finalStatus;
       if (stockNumber !== undefined) updateData.stock_number = stockNumber ? stockNumber.trim() : null;
       if (invoiceNumber !== undefined) updateData.invoice_number = invoiceNumber ? invoiceNumber.trim() : null;
+      
+      // ユーザーのロール情報を取得し、B001本人またはB001がエージェントとして紐づいている顧客か判定する
+      const { data: userRole } = await supabaseAdmin
+        .from('user_roles')
+        .select('customer_id, agent_customer_id')
+        .eq('email', currentRequest.customer_email)
+        .single();
+      const isB001Linked = userRole?.agent_customer_id === 'B001' || userRole?.customer_id === 'B001';
+
+      // 分割支払いの処理と全体の paid 連動ロジック
+      let newPaidBrazil = paid_brazil !== undefined ? paid_brazil : currentRequest.paid_brazil;
+      let newPaidParaguay = paid_paraguay !== undefined ? paid_paraguay : currentRequest.paid_paraguay;
+      let newPaidJapan = paid_japan !== undefined ? paid_japan : currentRequest.paid_japan;
+      let newPaid = paid !== undefined ? paid : currentRequest.paid;
+
       if (paid !== undefined) {
-        updateData.paid = paid;
-        if (paid === true && !currentRequest.paid_at) {
+        // 全体支払いが明示的に変更された場合、分割支払いも同期する
+        newPaidBrazil = paid;
+        newPaidParaguay = paid;
+        newPaidJapan = paid;
+      } else if (isB001Linked && (paid_brazil !== undefined || paid_paraguay !== undefined || paid_japan !== undefined)) {
+        // B001関連アイテムの場合、ブラジル、パラグアイ、日本のすべてが支払済なら全体も支払済とする
+        newPaid = (newPaidBrazil === true && newPaidParaguay === true && newPaidJapan === true);
+      } else if (!isB001Linked && (paid_brazil !== undefined || paid_paraguay !== undefined)) {
+        // 通常顧客の場合も、もしブラジルとパラグアイの分割支払いが変更された場合はそれに従う
+        newPaid = (newPaidBrazil === true && newPaidParaguay === true);
+      }
+
+      if (paid_brazil !== undefined || paid !== undefined) {
+        updateData.paid_brazil = newPaidBrazil;
+        updateData.paid_brazil_at = newPaidBrazil ? (currentRequest.paid_brazil_at || new Date().toISOString()) : null;
+      }
+      if (paid_paraguay !== undefined || paid !== undefined) {
+        updateData.paid_paraguay = newPaidParaguay;
+        updateData.paid_paraguay_at = newPaidParaguay ? (currentRequest.paid_paraguay_at || new Date().toISOString()) : null;
+      }
+      if (paid_japan !== undefined || paid !== undefined) {
+        updateData.paid_japan = newPaidJapan;
+        updateData.paid_japan_at = newPaidJapan ? (currentRequest.paid_japan_at || new Date().toISOString()) : null;
+      }
+
+      if (newPaid !== currentRequest.paid || paid !== undefined) {
+        updateData.paid = newPaid;
+        if (newPaid === true && !currentRequest.paid_at) {
           updateData.paid_at = new Date().toISOString();
-        } else if (paid === false) {
+        } else if (newPaid === false) {
           updateData.paid_at = null;
         }
       }

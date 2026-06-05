@@ -54,7 +54,7 @@ export async function GET(request: Request) {
           qr_url: "/images/usdt_qr.png"
         },
         paypal: {
-          account_email: "export@joga.ltd",
+          account_email: "admin@jogalibre.com",
           link: "https://paypal.me/joga1225",
           fee_multiplier: 1.08
         }

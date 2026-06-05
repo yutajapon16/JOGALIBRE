@@ -255,52 +255,433 @@ const bankLabels = {
   }
 };
 
+
 interface Category {
   id: string;
   es: string;
   pt: string;
   url?: string;
   sub?: Category[];
+  brand?: string;
 }
+
+const BRAND_LOGOS: Record<string, React.ReactNode> = {
+  toyota: (
+    <svg viewBox="0 0 24 24" className="w-7 h-7 fill-current text-[#111111] mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 3.848C5.223 3.848 0 7.298 0 12c0 4.702 5.224 8.152 12 8.152S24 16.702 24 12c0-4.702-5.223-8.152-12-8.152zm7.334 3.839c0 1.08-1.725 1.913-4.488 2.246-.26-2.58-1.005-4.279-1.963-4.913 2.948.184 6.45 1.227 6.45 2.667zM12 16.401c-.96 0-1.746-1.5-1.808-4.389.577.047 1.18.072 1.808.072.628 0 1.23-.025 1.807-.072-.061 2.89-.847 4.389-1.807 4.389zm0-6.308c-.59 0-1.155-.019-1.69-.054.261-1.728.92-3.15 1.69-3.15.77 0 1.428 1.422 1.689 3.15-.535.034-1.099.054-1.689.054zm-.882-5.075c-.956.633-1.706 2.333-1.964 4.915C6.391 9.6 4.665 8.767 4.665 7.687c0-1.44 3.504-2.49 6.453-2.669zM2.037 11.68a5.265 5.265 0 011.048-3.164c.27 1.547 2.522 2.881 5.972 3.37V12c0 3.772.879 6.203 2.087 6.97-5.107-.321-9.107-3.48-9.107-7.29zm10.823 7.29c1.207-.767 2.087-3.198 2.087-6.97v-.115c3.447-.488 5.704-1.826 5.972-3.37a5.26 5.26 0 011.049 3.165c-.004 3.81-4.008 6.969-9.109 7.29z"/>
+    </svg>
+  ),
+  nissan: (
+    <svg viewBox="0 0 24 24" className="w-7 h-7 fill-current text-[#111111] mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20.576 14.955l-.01.028c-1.247 3.643-4.685 6.086-8.561 6.086-3.876 0-7.32-2.448-8.562-6.09l-.01-.029H.71v.329l1.133.133c.7.08.847.39 1.038.78l.048.096c1.638 3.495 5.204 5.752 9.08 5.752 3.877 0 7.443-2.257 9.081-5.747l.048-.095c.19-.39.338-.7 1.038-.781l1.134-.134v-.328zM3.443 9.012c1.247-3.643 4.686-6.09 8.562-6.09 3.876 0 7.319 2.447 8.562 6.09l.01.028h2.728v-.328l-1.134-.133c-.7-.081-.847-.39-1.038-.781l-.047-.096C19.448 4.217 15.88 1.96 12.005 1.96c-3.881 0-7.443 2.257-9.081 5.752l-.048.095c-.19.39-.338.7-1.038.781l-1.133.133v.329h2.724zm13.862 1.586l-1.743 2.795h.752l.31-.5h2.033l.31.5h.747l-1.743-2.795zm1.033 1.766h-1.395l.7-1.124zm2.81-1.066l2.071 2.095H24v-2.795h-.614v2.085l-2.062-2.085h-.795v2.795h.619zM0 13.393h.619v-2.095l2.076 2.095h.781v-2.795h-.619v2.085L.795 10.598H0zm4.843-2.795h.619v2.795h-.62zm4.486 2.204c-.02.005-.096.005-.124.005H6.743v.572h2.5c.019 0 .167 0 .195-.005.51-.048.743-.472.743-.843 0-.381-.243-.79-.705-.833-.09-.01-.166-.01-.2-.01H7.643a.83.83 0 0 1-.181-.014c-.129-.034-.176-.148-.176-.243 0-.086.047-.2.18-.238a.68.68 0 0 1 .172-.014h2.357v-.562H7.6c-.1 0-.176.004-.238.014a.792.792 0 0 0-.695.805c0 .343.214.743.685.81.086.009.205.009.258.009H9.2c.029 0 .1 0 .114.005.181.023.243.157.243.276a.262.262 0 0 1-.228.266zm4.657 0c-.02.005-.096.005-.129.005H11.4v.572h2.5c.019 0 .167 0 .195-.005.51-.048.743-.472.743-.843 0-.381-.243-.79-.705-.833-.09-.01-.166-.01-.2-.01H12.3a.83.83 0 0 1-.181-.014c-.129-.034-.176-.148-.176-.243 0-.086.047-.2.18-.238a.68.68 0 0 1 .172-.014h2.357v-.562h-2.395c-.1 0-.176.004-.238.014a.792.792 0 0 0-.695.805c0 .343.214.743.686.81.085.009.204.009.257.009h1.59c.029 0 .1 0 .114.005.181.023.243.157.243.276a.267.267 0 0 1-.228.266Z"/>
+    </svg>
+  ),
+  mitsubishi: (
+    <svg viewBox="0 0 24 24" className="w-7 h-7 fill-current text-[#E60012] mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 22.38H0l4-6.92h8zm8 0h8l-4-6.92h-8zm0-13.84l-4-6.92-4 6.92 4 6.92Z"/>
+    </svg>
+  ),
+  mazda: (
+    <svg viewBox="0 0 24 24" className="w-7 h-7 fill-current text-[#111111] mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11.999 12.876c-.036 0-.105-.046-.222-.26a7.531 7.531 0 00-1.975-2.353A8.255 8.255 0 007.7 9.065a17.945 17.945 0 00-.345-.136c-1.012-.4-2.061-.813-3.035-1.377A8.982 8.982 0 014 7.362c.194-.34.42-.665.67-.962a6.055 6.055 0 011.253-1.131 7.126 7.126 0 011.618-.806c1.218-.434 2.677-.647 4.458-.649 1.783.002 3.241.215 4.459.65a7.097 7.097 0 011.619.805c.471.319.892.699 1.253 1.13.25.298.475.623.67.963-.103.064-.212.129-.32.192-.976.564-2.023.977-3.037 1.376l-.345.136a8.26 8.26 0 00-2.1 1.198 7.519 7.519 0 00-1.975 2.354c-.117.213-.187.259-.224.259m0 7.072c-1.544-.002-2.798-.129-3.83-.387-1.013-.252-1.855-.64-2.576-1.188a5.792 5.792 0 01-1.392-1.537 7.607 7.607 0 01-.81-1.768 10.298 10.298 0 01-.467-2.983c0-.674.047-1.313.135-1.901 1.106.596 2.153.895 3.08 1.16l.215.06c1.29.371 2.314.857 3.135 1.488.475.368.89.793 1.23 1.264.369.508.663 1.088.877 1.725.096.289.2.468.403.468.207 0 .308-.18.405-.468a6.124 6.124 0 012.107-2.988c.82-.632 1.845-1.118 3.135-1.489l.216-.06c.926-.265 1.973-.564 3.078-1.16.09.589.136 1.227.136 1.9 0 .458-.046 1.664-.465 2.984a7.626 7.626 0 01-.809 1.768 5.789 5.789 0 01-1.396 1.537c-.723.548-1.565.936-2.574 1.188-1.035.258-2.288.385-3.833.387m9.692-14.556c-1.909-2.05-4.99-2.99-9.692-2.995-4.7.005-7.781.944-9.69 2.994C.89 6.913 0 9.018 0 11.874c0 1.579.39 5.6 3.564 7.676 1.9 1.242 4.354 2.046 8.435 2.052 4.083-.006 6.536-.81 8.437-2.052C23.609 17.474 24 13.452 24 11.874c0-2.848-.897-4.968-2.31-6.483Z"/>
+    </svg>
+  ),
+  subaru: (
+    <svg viewBox="0 0 24 24" className="w-7 h-7 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+      {/* ブルーのベース楕円 */}
+      <ellipse cx="12" cy="12" rx="11" ry="6.5" fill="#003893" />
+      {/* シルバーのフチと星（公式プレアデス六連星の正確なパス） */}
+      <path fill="#C0C0C0" d="M12 4.983c3.004 0 6.224.612 8.786 2.239C22.451 8.286 24 9.9 24 12.002c0 2.456-2.097 4.242-4.106 5.287-2.391 1.238-5.216 1.728-7.894 1.728-3.003 0-6.217-.605-8.78-2.238C1.556 15.714 0 14.101 0 12.003 0 9.536 2.092 7.757 4.106 6.71 6.504 5.474 9.323 4.983 12 4.983zm-.025.746c-2.793 0-5.802.523-8.225 1.983-1.524.912-3.03 2.347-3.03 4.253 0 2.239 2.04 3.806 3.864 4.706 2.258 1.102 4.897 1.53 7.391 1.53 2.798 0 5.809-.523 8.232-1.983 1.517-.918 3.029-2.346 3.029-4.253 0-2.243-2.035-3.813-3.864-4.705-2.258-1.104-4.898-1.53-7.397-1.53zm-10.54 4.686l4.597-.784 1.384-3.003L8.794 9.63l4.596.784-4.596.792-1.378 3.01-1.384-3.01zm10.106 2.289l2.028-.356.605-1.359.606 1.359 2.028.356-2.028.35-.606 1.36-.605-1.36zm4.196-3.621l2.028-.35.605-1.365.606 1.364 2.028.35-2.028.357-.606 1.36-.606-1.36zM13.57 15.51l2.02-.35.607-1.365.612 1.365 2.027.35-2.027.357-.612 1.36-.606-1.36zm-6.23.491l2.028-.35.612-1.366.605 1.366 2.028.35-2.028.357-.605 1.359-.612-1.359zm10.196-3.353l2.022-.357.605-1.359.612 1.359 2.028.357-2.028.35-.612 1.357-.606-1.357Z" />
+    </svg>
+  ),
+  wrench: (
+    <svg viewBox="0 0 512 512" className="w-7 h-7 fill-current text-[#4B5563] mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+      {/* 斜め45度のソリッドなスパナ（Font Awesome 5 の非常にシンプルで視認性の高いレンチ） */}
+      <path d="M507.73 109.1c-2.24-9.03-13.54-12.09-20.12-5.51l-74.36 74.36-67.88-11.31-11.31-67.88 74.36-74.36c6.62-6.62 3.43-17.9-5.66-20.16-47.38-11.74-99.55.91-136.58 37.93-39.64 39.64-50.55 97.1-34.05 147.2L18.74 402.76c-24.99 24.99-24.99 65.51 0 90.5 24.99 24.99 65.51 24.99 90.5 0l213.21-213.21c50.12 16.71 107.47 5.68 147.37-34.22 37.07-37.07 49.7-89.32 37.91-136.73zM64 472c-13.25 0-24-10.75-24-24 0-13.26 10.75-24 24-24s24 10.74 24 24c0 13.25-10.75 24-24 24z"/>
+    </svg>
+  )
+};
 
 const CATEGORIES: Category[] = [
   {
-    id: 'jdm',
-    es: 'Carros JDM',
-    pt: 'Carros JDM',
+    id: 'vehiculo',
+    es: 'Vehículo',
+    pt: 'Veículo',
+    url: 'https://auctions.yahoo.co.jp/category/list/26360/',
     sub: [
-      { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B9%E3%83%BC%E3%83%97%E3%83%A9&auccat=26360&va=%E3%82%B9%E3%83%BC%E3%83%97%E3%83%A9&b=1&n=50' },
-      { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B9%E3%82%AB%E3%82%A4%E3%83%A9%E3%82%A4%E3%83%B3+GT-R&auccat=26360&va=%E3%82%B9%E3%82%AB%E3%82%A4%E3%83%A9%E3%82%A4%E3%83%B3+GT-R&b=1&n=50' },
-      { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%A9%E3%83%B3%E3%82%B5%E3%83%BC%E3%82%A8%E3%83%9C%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3&auccat=26360&va=%E3%83%A9%E3%83%B3%E3%82%B5%E3%83%BC%E3%82%A8%E3%83%9C%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3&b=1&n=50' },
-      { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', url: 'https://auctions.yahoo.co.jp/search/search?p=RX-7&auccat=26360&va=RX-7&b=1&n=50' },
-      { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B7%E3%83%AB%E3%83%93%E3%82%A2&auccat=26360&va=%E3%82%B7%E3%83%AB%E3%83%93%E3%82%A2&b=1&n=50' },
-      { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%A4%E3%83%B3%E3%83%97%E3%83%AC%E3%83%83%E3%82%B5+STI&auccat=26360&va=%E3%82%A4%E3%83%B3%E3%83%97%E3%83%AC%E3%83%83%E3%82%B5+STI&b=1&n=50' },
-      { id: 'desarme', es: 'Vehiculo Para Desarme', pt: 'Veículo Para Desmanche', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?o1=d&s1=new&exflg=1&b=1&n=50' },
+      {
+        id: 'jdm',
+        es: '🏎️ Carros JDM',
+        pt: '🏎️ Carros JDM',
+        url: 'https://auctions.yahoo.co.jp/category/list/26360/',
+        sub: [
+          { id: 'supra', es: 'TOYOTA SUPRA', pt: 'TOYOTA SUPRA', brand: 'toyota', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B9%E3%83%BC%E3%83%97%E3%83%A9&auccat=26360&va=%E3%82%B9%E3%83%BC%E3%83%97%E3%83%A9&b=1&n=50' },
+          { id: 'skyline', es: 'NISSAN SKYLINE GT-R', pt: 'NISSAN SKYLINE GT-R', brand: 'nissan', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B9%E3%82%AB%E3%82%A4%E3%83%A9%E3%82%A4%E3%83%B3+GT-R&auccat=26360&va=%E3%82%B9%E3%82%AB%E3%82%A4%E3%83%A9%E3%82%A4%E3%83%B3+GT-R&b=1&n=50' },
+          { id: 'lancer', es: 'MITSUBISHI LANCER EVO', pt: 'MITSUBISHI LANCER EVO', brand: 'mitsubishi', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%A9%E3%83%B3%E3%82%B5%E3%83%BC%E3%82%A8%E3%83%9C%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3&auccat=26360&va=%E3%83%A9%E3%83%B3%E3%82%B5%E3%83%BC%E3%82%A8%E3%83%9C%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3&b=1&n=50' },
+          { id: 'rx7', es: 'MAZDA RX-7', pt: 'MAZDA RX-7', brand: 'mazda', url: 'https://auctions.yahoo.co.jp/search/search?p=RX-7&auccat=26360&va=RX-7&b=1&n=50' },
+          { id: 'silvia', es: 'NISSAN SILVIA', pt: 'NISSAN SILVIA', brand: 'nissan', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%B7%E3%83%AB%E3%83%9B%E3%82%A2&auccat=26360&va=%E3%82%B7%E3%83%AB%E3%83%9B%E3%82%A2&b=1&n=50' },
+          { id: 'impreza', es: 'SUBARU IMPREZA', pt: 'SUBARU IMPREZA', brand: 'subaru', url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%A4%E3%83%B3%E3%83%97%E3%83%AC%E3%83%83%E3%82%B5+STI&auccat=26360&va=%E3%82%A4%E3%83%B3%E3%83%97%E3%83%AC%E3%83%83%E3%82%B5+STI&b=1&n=50' },
+          { id: 'desarme', es: 'Vehiculo Para Desarme', pt: 'Veículo Para Desmanche', brand: 'wrench', url: 'https://auctions.yahoo.co.jp/category/list/2084061280/?o1=d&s1=new&exflg=1&b=1&n=50' },
+        ]
+      },
+      { id: 'moto', es: '🏍️ Moto', pt: '🏍️ Moto', url: 'https://auctions.yahoo.co.jp/category/list/26316/?s1=new&o1=d' },
+      { id: 'bicicleta', es: '🚲️ Bicicleta', pt: '🚲️ Bicicleta', url: 'https://auctions.yahoo.co.jp/category/list/26246/?p=%E8%BB%8A%E4%BD%93&auccat=26246&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d' }
     ]
   },
-  { id: 'moto', es: 'Moto', pt: 'Moto', url: 'https://auctions.yahoo.co.jp/category/list/26316/?s1=new&o1=d' },
   {
-    id: 'llantas',
-    es: 'Llantas',
-    pt: 'Rodas',
+    id: 'autopartes',
+    es: 'Autopartes',
+    pt: 'Autopeças',
+    url: 'https://auctions.yahoo.co.jp/category/list/2084005141/',
     sub: [
-      { id: 'll16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200188/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200188&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
-      { id: 'll17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200189/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200189&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
-      { id: 'll18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200190/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200190&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
+      {
+        id: 'motor',
+        es: 'Motor',
+        pt: 'Motor',
+        url: 'https://auctions.yahoo.co.jp/search/search?va=%E3%82%A8%E3%83%B3%E3%82%B8%E3%83%B3%E6%9C%AC%E4%BD%93&ve=%E3%82%BF%E3%83%BC%E3%83%93%E3%83%B3+%E3%82%BF%E3%83%BC%E3%83%9C%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8%E3%83%A3%E3%83%BC+%E3%83%A9%E3%82%B8%E3%82%A8%E3%82%BF+%E7%87%83%E6%96%99%E3%83%9D%E3%83%B3%E3%83%97+%E3%82%BB%E3%83%AB%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC+%E3%82%BF%E3%82%A4%E3%83%9F%E3%83%B3%E3%82%B0%E3%83%81%E3%82%A7%E3%83%BC%E3%83%B3&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&user_type=c&auccat=2084200282&tab_ex=commerce&ei=utf-8&aq=-1&oq=&sc_i=&p=%E3%82%A8%E3%83%B3%E3%82%B8%E3%83%B3%E6%9C%AC%E4%BD%93+-%E3%82%BF%E3%83%BC%E3%83%93%E3%83%B3+-%E3%82%BF%E3%83%BC%E3%83%9C%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8%E3%83%A3%E3%83%BC+-%E3%83%A9%E3%82%B8%E3%82%A8%E3%82%BF+-%E7%87%83%E6%96%99%E3%83%9D%E3%83%B3%E3%83%97+-%E3%82%BB%E3%83%AB%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC+-%E3%82%BF%E3%82%A4%E3%83%9F%E3%83%B3%E3%82%B0%E3%83%81%E3%82%A7%E3%83%BC%E3%83%B3+-%E3%82%A8%E3%82%A2%E3%83%95%E3%83%AD&x=0&y=0'
+      },
+      {
+        id: 'transmision',
+        es: 'Transmisión',
+        pt: 'Transmissão',
+        url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%88%E3%83%A9%E3%83%B3%E3%82%B9%E3%83%9F%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084008426&va=%E3%83%88%E3%83%A9%E3%83%B3%E3%82%B9%E3%83%9F%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d'
+      },
+      {
+        id: 'llantas',
+        es: 'Llantas',
+        pt: 'Rodas',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084008470/',
+        sub: [
+          { id: 'll16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200188/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200188&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
+          { id: 'll17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200189/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200189&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
+          { id: 'll18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200190/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200190&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
+        ]
+      },
+      {
+        id: 'aros',
+        es: 'Aros',
+        pt: 'Aros',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084008474/',
+        sub: [
+          { id: 'ar16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084008474/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084008474&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=118472,118483,118474,119521,118478,118481,115842,102328,120288,119007' },
+          { id: 'ar17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040548/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040548&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=118472%2C118478%2C118474%2C119007%2C119521%2C118481%2C115842%2C159741%2C118483%2C102328' },
+          { id: 'ar18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040547/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040547&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=115842,119007,118474,102328,118472,118483,119521,118478,118481,128485' },
+        ]
+      },
+      { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=128485,103816,105215,103820,119942,119941,119938' },
+      { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=102214,103815,115842,128485,159741,103823' },
+      {
+        id: 'barras',
+        es: 'Barras',
+        pt: 'Barras',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084008461/?p=%E3%82%BF%E3%83%AF%E3%83%BC%E3%83%90%E3%83%BC%E3%80%81%E3%83%AD%E3%83%BC%E3%83%AB%E3%83%90%E3%83%BC&auccat=2084008461&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d'
+      },
+      {
+        id: 'freno',
+        es: 'Freno',
+        pt: 'Freio',
+        url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%96%E3%83%AC%E3%83%B3%E3%83%9C&auccat=2084005259&va=%E3%83%96%E3%83%AC%E3%83%B3%E3%83%9C&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=125435%2C128479%2C128488'
+      },
+      {
+        id: 'caraudio',
+        es: 'Car Audio',
+        pt: 'Som Automotivo',
+        url: 'https://auctions.yahoo.co.jp/category/list/23852/',
+        sub: [
+          {
+            id: 'reproductor',
+            es: 'Reproductor',
+            pt: 'Player',
+            url: 'https://auctions.yahoo.co.jp/search/search?istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&user_type=c&auccat=23852&tab_ex=commerce&ei=utf-8&aq=-1&oq=&sc_i=&p=%E3%83%97%E3%83%AC%E3%83%BC%E3%83%A4%E3%83%BC&x=0&y=0'
+          },
+          {
+            id: 'amplificador',
+            es: 'Amplificador',
+            pt: 'Amplificador',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084005294/?p=%E3%82%A2%E3%83%B3%E3%83%97&auccat=23852&istatus=2%2C1&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d'
+          },
+          {
+            id: 'subwoofer',
+            es: 'Subwoofer',
+            pt: 'Subwoofer',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084048322/?p=%E3%82%A6%E3%83%BC%E3%83%8F%E3%83%BC&auccat=2084048322&istatus=2&is_postage_mode=1&dest_pref_code=8&b=101&n=100&s1=new&o1=d'
+          },
+          {
+            id: 'altavoz',
+            es: 'Altavoces',
+            pt: 'Alto-falantes',
+            url: 'https://auctions.yahoo.co.jp/category/list/23864/?p=%E3%82%B9%E3%83%94%E3%83%BC%E3%82%AB%E3%83%BC&auccat=23852&istatus=2%2C1&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d'
+          }
+        ]
+      }
     ]
   },
   {
-    id: 'aros',
-    es: 'Aros',
-    pt: 'Aros',
+    id: 'fashion',
+    es: 'Moda',
+    pt: 'Moda',
+    url: 'https://auctions.yahoo.co.jp/category/list/23000/',
     sub: [
-      { id: 'ar16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084008474/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084008474&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=118472,118483,118474,119521,118478,118481,115842,102328,120288,119007' },
-      { id: 'ar17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040548/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040548&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=118472%2C118478%2C118474%2C119007%2C119521%2C118481%2C115842%2C159741%2C118483%2C102328' },
-      { id: 'ar18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040547/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040547&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=115842,119007,118474,102328,118472,118483,119521,118478,118481,128485' },
+      {
+        id: 'nike',
+        es: 'NIKE',
+        pt: 'NIKE',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=101319',
+        sub: [
+          { id: 'nike_men', es: 'Zapatos para Hombre', pt: 'Tênis Masculino', url: 'https://auctions.yahoo.co.jp/category/list/23200/?p=%E3%83%A1%E3%83%B3%E3%82%BA%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA&auccat=23200&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101319&nockie=1' },
+          { id: 'nike_women', es: 'Zapatos para Mujer', pt: 'Tênis Feminino', url: 'https://auctions.yahoo.co.jp/category/list/23312/?p=%E3%83%AC%E3%83%87%E3%82%A3%E3%83%BC%E3%82%B9%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA&auccat=23312&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101319&nockie=1' }
+        ]
+      },
+      {
+        id: 'adidas',
+        es: 'adidas',
+        pt: 'adidas',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084005488/?p=%E3%82%A2%E3%83%87%E3%82%A3%E3%83%80%E3%82%B9&auccat=2084005488&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=100149&nockie=1'
+      },
+      {
+        id: 'newbalance',
+        es: 'New Balance',
+        pt: 'New Balance',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=101352',
+        sub: [
+          { id: 'nb_men', es: 'Zapatos para Hombre', pt: 'Tênis Masculino', url: 'https://auctions.yahoo.co.jp/category/list/2084005490/?p=%E3%83%8B%E3%83%A5%E3%83%BC%E3%83%90%E3%83%A9%E3%83%B3%E3%82%B9&auccat=2084005490&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101352&nockie=1' },
+          { id: 'nb_women', es: 'Zapatos para Mujer', pt: 'Tênis Feminino', url: 'https://auctions.yahoo.co.jp/category/list/2084007245/?p=%E3%83%8B%E3%83%A5%E3%83%BC%E3%83%90%E3%83%A9%E3%83%B3%E3%82%B9&auccat=2084007245&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101352&nockie=1' }
+        ]
+      },
+      {
+        id: 'ape',
+        es: 'A BATHING APE',
+        pt: 'A BATHING APE',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=104488&nockie=1'
+      },
+      {
+        id: 'abercrombie',
+        es: 'Abercrombie & Fitch',
+        pt: 'Abercrombie & Fitch',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=100174&nockie=1'
+      },
+      {
+        id: 'converse',
+        es: 'CONVERSE',
+        pt: 'CONVERSE',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=100794&nockie=1'
+      },
+      {
+        id: 'diesel',
+        es: 'DIESEL',
+        pt: 'DIESEL',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101204&nockie=1'
+      },
+      {
+        id: 'gap',
+        es: 'GAP',
+        pt: 'GAP',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=100612&nockie=1'
+      },
+      {
+        id: 'lacoste',
+        es: 'LACOSTE',
+        pt: 'LACOSTE',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=102087&nockie=1'
+      },
+      {
+        id: 'michaelkors',
+        es: 'MICHAEL KORS',
+        pt: 'MICHAEL KORS',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=106286&nockie=1'
+      },
+      {
+        id: 'puma',
+        es: 'PUMA',
+        pt: 'PUMA',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101611&nockie=1'
+      },
+      {
+        id: 'tommyhilfiger',
+        es: 'TOMMY HILFIGER',
+        pt: 'TOMMY HILFIGER',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101297&nockie=1'
+      },
+      {
+        id: 'uniqlo',
+        es: 'UNIQLO',
+        pt: 'UNIQLO',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=102052&nockie=1'
+      },
+      {
+        id: 'vans',
+        es: 'VANS',
+        pt: 'VANS',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101501&nockie=1'
+      },
+      {
+        id: 'zara',
+        es: 'ZARA',
+        pt: 'ZARA',
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=100831&nockie=1'
+      },
     ]
   },
-  { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=128485,103816,105215,103820,119942,119941,119938' },
-  { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=102214,103815,115842,128485,159741,103823' },
+  {
+    id: 'relojes',
+    es: 'Relojes',
+    pt: 'Relógios',
+    url: 'https://auctions.yahoo.co.jp/category/list/23260/',
+    sub: [
+      {
+        id: 'casio',
+        es: 'CASIO',
+        pt: 'CASIO',
+        url: 'https://auctions.yahoo.co.jp/category/list/23260/?p=%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89%E8%85%95%E6%99%82%E8%A8%88&auccat=23260&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1&brand_id=100558'
+      },
+      {
+        id: 'seiko',
+        es: 'SEIKO',
+        pt: 'SEIKO',
+        url: 'https://auctions.yahoo.co.jp/category/list/23260/?p=%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89%E8%85%95%E6%99%82%E8%A8%88&auccat=23260&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1&brand_id=101058'
+      },
+      {
+        id: 'citizen',
+        es: 'CITIZEN',
+        pt: 'CITIZEN',
+        url: 'https://auctions.yahoo.co.jp/category/list/23260/?p=%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89%E8%85%95%E6%99%82%E8%A8%88&auccat=23260&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1&brand_id=100883'
+      }
+    ]
+  },
+  {
+    id: 'deportes',
+    es: 'Deportes',
+    pt: 'Esportes',
+    url: 'https://auctions.yahoo.co.jp/category/list/24698/',
+    sub: [
+      {
+        id: 'futbol',
+        es: 'Fútbol',
+        pt: 'Futebol',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084032296/',
+        sub: [
+          {
+            id: 'spikes',
+            es: 'Botines',
+            pt: 'Chuteiras',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084032296/?p=%E3%82%B9%E3%83%91%E3%82%A4%E3%82%AF&auccat=2084032296&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+          }
+        ]
+      },
+      {
+        id: 'running',
+        es: 'Running',
+        pt: 'Corrida',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084230277/',
+        sub: [
+          {
+            id: 'running_men',
+            es: 'Zapatos para Hombre',
+            pt: 'Tênis Masculino',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084230278/?p=%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA%EF%BC%88%E7%94%B7%E6%80%A7%E7%94%A8%EF%BC%89&auccat=2084230278&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+          },
+          {
+            id: 'running_women',
+            es: 'Zapatos para Mujer',
+            pt: 'Tênis Feminino',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084230279/?p=%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA%EF%BC%88%E5%A5%B3%E6%80%A7%E7%94%A8%EF%BC%89&auccat=2084230279&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+          }
+        ]
+      },
+      {
+        id: 'camping',
+        es: 'Artículos para Camping',
+        pt: 'Equipamentos de Camping',
+        url: 'https://auctions.yahoo.co.jp/category/list/24702/?p=%E3%82%AD%E3%83%A3%E3%83%B3%E3%83%97%E3%80%81%E3%82%A2%E3%82%A6%E3%83%88%E3%83%89%E3%82%A2%E7%94%A8%E5%93%81&auccat=24702&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+      },
+      {
+        id: 'pesca',
+        es: 'Artículos de Pesca',
+        pt: 'Equipamentos de Pesca',
+        url: 'https://auctions.yahoo.co.jp/category/list/25180/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0&auccat=25180&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+      }
+    ]
+  },
+  {
+    id: 'hobby',
+    es: 'Hobby',
+    pt: 'Hobby',
+    url: 'https://auctions.yahoo.co.jp/category/list/24242/',
+    sub: [
+      {
+        id: 'rccar',
+        es: 'Carros RC',
+        pt: 'Carros RC',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084251213/',
+        sub: [
+          {
+            id: 'rc_auto',
+            es: 'Automóviles',
+            pt: 'Automóveis',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084251213/',
+            sub: [
+              {
+                id: 'rc_engine',
+                es: 'Combustión (Engine)',
+                pt: 'Combustão (Engine)',
+                url: 'https://auctions.yahoo.co.jp/category/list/2084251214/?p=%E5%AE%8C%E6%88%90%E5%93%81%EF%BC%88%E3%82%A8%E3%83%B3%E3%82%B8%E3%83%B3%EF%BC%89&auccat=2084251213&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+              },
+              {
+                id: 'rc_electric',
+                es: 'Eléctrico',
+                pt: 'Elétrico',
+                url: 'https://auctions.yahoo.co.jp/category/list/2084251215/?p=%E5%AE%8C%E6%88%90%E5%93%81%EF%BC%88%E9%9B%BB%E5%8B%95%EF%BC%89&auccat=2084251213&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'figure',
+        es: 'Figuras',
+        pt: 'Figuras',
+        url: 'https://auctions.yahoo.co.jp/category/list/25888/',
+        sub: [
+          {
+            id: 'gundam',
+            es: 'Gundam',
+            pt: 'Gundam',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084023728/?p=%E3%82%AC%E3%83%B3%E3%83%80%E3%83%A0&auccat=2084023728&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+          },
+          {
+            id: 'onepiece',
+            es: 'ONE PIECE',
+            pt: 'ONE PIECE',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084040581/?p=ONE+PIECE&auccat=2084040581&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+          },
+          {
+            id: 'miku',
+            es: 'Hatsune Miku',
+            pt: 'Hatsune Miku',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084239888/?p=%E5%88%9D%E9%9F%B3%E3%83%9F%E3%82%AF&auccat=2084239888&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+          },
+          {
+            id: 'madoka',
+            es: 'Madoka Magica',
+            pt: 'Madoka Magica',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084305382/?p=%E9%AD%94%E6%B3%95%E5%B0%91%E5%A5%B3%E3%81%be%E3%81%A9%E3%81%8B%E2%98%86%E3%83%9E%E3%82%AE%E3%82%AB&auccat=2084305382&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+          },
+          {
+            id: 'dragonball',
+            es: 'Dragon Ball',
+            pt: 'Dragon Ball',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084040584/?p=%E3%83%89%E3%83%A9%E3%82%B4%E3%83%B3%E3%83%9C%E3%83%BC%E3%83%AB&auccat=2084040584&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+          },
+          {
+            id: 'nendoroid',
+            es: 'Nendoroid',
+            pt: 'Nendoroid',
+            url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%81%AD%E3%82%93%E3%81%A9%E3%82%8D%E3%81%84%E3%81%A9&auccat=25888&va=%E3%81%AD%E3%82%93%E3%81%A9%E3%82%8D%E3%81%84%E3%81%A9&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1&nockie=1'
+          }
+        ]
+      }
+    ]
+  }
 ];
 
 export default function Home() {
@@ -381,7 +762,8 @@ export default function Home() {
   const [keyword, setKeyword] = useState('');
   const [searchCondition, setSearchCondition] = useState<'all' | 'new' | 'used'>('all');
   const [isSearching, setIsSearching] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
+  const [categoryHistory, setCategoryHistory] = useState<Category[]>([]);
+  const currentCategory = categoryHistory.length > 0 ? categoryHistory[categoryHistory.length - 1] : null;
   const [searchPage, setSearchPage] = useState(1);
   const [nextPageExists, setNextPageExists] = useState(false);
   const [activeCategoryUrl, setActiveCategoryUrl] = useState<string | null>(null);
@@ -389,6 +771,52 @@ export default function Home() {
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   // マイページ用state
   const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '' });
+  
+  // JDM車体およびその他カテゴリ検索ボックス用のキーワード状態
+  const [jdmSearchKeyword, setJdmSearchKeyword] = useState('');
+  const [categorySearchKeyword, setCategorySearchKeyword] = useState('');
+
+  // ヤフオクURLからカテゴリIDを抽出するヘルパー
+  const getYahooCategoryId = (url: string | null): string | null => {
+    if (!url) return null;
+    const auccatMatch = url.match(/[&?]auccat=([0-9]+)/);
+    if (auccatMatch) return auccatMatch[1];
+    const listMatch = url.match(/\/category\/list\/([0-9]+)/);
+    if (listMatch) return listMatch[1];
+    return null;
+  };
+
+  // カテゴリIDに基づいてCATEGORIESからカテゴリ名を取得するヘルパー
+  const getCategoryNameById = (catId: string | null): string => {
+    if (!catId) return '';
+    const findCategory = (cats: Category[]): Category | null => {
+      for (const cat of cats) {
+        const currentId = getYahooCategoryId(cat.url || null);
+        if (cat.id === catId || (currentId && currentId === catId)) {
+          return cat;
+        }
+        if (cat.sub) {
+          const found = findCategory(cat.sub);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    const targetCat = findCategory(CATEGORIES);
+    if (targetCat) {
+      return lang === 'es' ? targetCat.es : targetCat.pt;
+    }
+    return '';
+  };
+
+  // カテゴリやアクティブURLが切り替わったときに入力値をクリア
+  useEffect(() => {
+    setJdmSearchKeyword('');
+    const catId = getYahooCategoryId(activeCategoryUrl);
+    if (!catId || catId === '26360' || catId === '2084061280') {
+      setCategorySearchKeyword('');
+    }
+  }, [categoryHistory, activeCategoryUrl]);
 
   // キャッシュ済みのメタデータから確実に入力欄を初期復元する
   useEffect(() => {
@@ -772,6 +1200,14 @@ export default function Home() {
         const { profile } = await res.json();
 
         if (profile) {
+          // B001紐づき顧客、またはブラジル国籍の顧客はデフォルトでポルトガル語(pt)を設定
+          if (profile.agent_customer_id === 'B001' || profile.country?.trim().toLowerCase() === 'brasil') {
+            const currentLang = localStorage.getItem('lang');
+            if (currentLang !== 'pt') {
+              setLang('pt');
+              localStorage.setItem('lang', 'pt');
+            }
+          }
           setCurrentUser(prev => {
             const nextUser = prev ? {
               ...prev,
@@ -927,10 +1363,13 @@ export default function Home() {
         customerCounterOffer: item.customer_counter_offer,
         customerCounterOfferUsed: item.customer_counter_offer_used,
         paid: item.paid || false,
+        paid_brazil: item.paid_brazil || false,
+        paid_paraguay: item.paid_paraguay || false,
         shippingCostJpy: item.shipping_cost_jpy,
         stockNumber: item.stock_number as string,
         invoiceNumber: item.invoice_number as string,
         productId: item.product_id as string,
+        agentCustomerId: item.agent_customer_id as string | null | undefined,
       }));
 
       // 商品タイトルを選択言語に翻訳
@@ -1425,8 +1864,13 @@ export default function Home() {
     const FOB_COST = 1500;
     // 送料は常に0として計算
     const totalJpyPrice = jpyPrice + FOB_COST;
-    // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
-    const profitDivisor = currentUser?.customerId?.startsWith('A') ? 0.8 : 0.6;
+    // B001本人は0.9(10%利益)、B001紐づき顧客は0.4(60%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
+    const profitDivisor = (() => {
+      if (currentUser?.customerId === 'B001') return 0.9;
+      if (currentUser?.agentCustomerId === 'B001') return 0.4;
+      if (currentUser?.customerId?.startsWith('A')) return 0.8;
+      return 0.6;
+    })();
     const priceWithProfit = totalJpyPrice / profitDivisor;
     const usdPrice = priceWithProfit / exchangeRate;
     const roundedUp = Math.ceil(usdPrice / 10) * 10;
@@ -1465,7 +1909,15 @@ export default function Home() {
   const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency) => {
     const FOB_COST = 1500;
     const totalJpyPrice = jpyPrice + FOB_COST;
-    const profitDivisor = currentUser?.customerId?.startsWith('A') ? 0.8 : 0.6;
+    
+    // B001本人は0.9(10%利益)、B001紐づき顧客は0.4(60%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
+    const profitDivisor = (() => {
+      if (currentUser?.customerId === 'B001') return 0.9;
+      if (currentUser?.agentCustomerId === 'B001') return 0.4;
+      if (currentUser?.customerId?.startsWith('A')) return 0.8;
+      return 0.6;
+    })();
+    
     const priceWithProfit = totalJpyPrice / profitDivisor;
     
     const jpyRate = exchangeRates['JPY'] || exchangeRate || 150;
@@ -1653,6 +2105,20 @@ export default function Home() {
       setIsSearching(false);
       setLoading(false);
     }
+  };
+
+  const handleJdmSearch = () => {
+    if (!jdmSearchKeyword.trim()) return;
+    // ヤフオクの自動車車体(26360)カテゴリ内でのキーワード検索URLを組み立てる
+    const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(jdmSearchKeyword.trim())}&auccat=26360&va=${encodeURIComponent(jdmSearchKeyword.trim())}&b=1&n=50`;
+    fetchCategoryItems(searchUrl, 1);
+  };
+
+  const handleCategorySearch = (catId: string) => {
+    if (!categorySearchKeyword.trim()) return;
+    // 指定されたカテゴリID内でのキーワード検索URLを組み立てる
+    const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(categorySearchKeyword.trim())}&auccat=${catId}&va=${encodeURIComponent(categorySearchKeyword.trim())}&b=1&n=50`;
+    fetchCategoryItems(searchUrl, 1);
   };
 
   const fetchCategoryItems = async (url: string, page: number = 1) => {
@@ -2131,15 +2597,46 @@ export default function Home() {
                   <span className="text-xs font-semibold mr-0.5">
                     {getCurrencySymbol(selectedCurrency)}
                   </span>
-                  {calculateConvertedPrice(product.currentPrice)}
+                  {currentUser?.agentCustomerId === 'B001'
+                    ? calculateConvertedPrice(product.currentPrice, 'USD')
+                    : calculateConvertedPrice(product.currentPrice)}
                 </span>
-                {selectedCurrency === 'USD' && (
+                {selectedCurrency === 'USD' && currentUser?.agentCustomerId !== 'B001' && (
                   <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">
                     APROX<br />FOB
                   </span>
                 )}
               </div>
             </div>
+
+            {/* B001紐づき顧客用の分割金額表示ボックス（🇧🇷/🇵🇾） */}
+            {currentUser?.agentCustomerId === 'B001' && (() => {
+              const usdStr = calculateConvertedPrice(product.currentPrice, 'USD').replace(/,/g, '');
+              const totalUsd = parseFloat(usdStr || '0');
+              const halfUsd = Math.round(totalUsd * 0.5);
+              const brlRate = exchangeRates['BRL'] || 5.6;
+              const halfBrl = Math.ceil((halfUsd * brlRate) / 10) * 10;
+
+              const labelBrl = lang === 'es' ? '50% en 🇧🇷 BRL' : '50% no 🇧🇷 BRL';
+              const labelUsd = lang === 'es' ? '50% en 🇵🇾 USD' : '50% no 🇵🇾 USD';
+
+              return (
+                <div className="flex flex-col justify-center bg-green-50 px-2 sm:px-2.5 py-1.5 rounded text-[9px] sm:text-xs font-bold text-green-700 gap-1 leading-normal font-sans">
+                  <div className="flex justify-between items-center whitespace-nowrap">
+                    <span>{labelBrl}</span>
+                    <span className="font-extrabold text-xs sm:text-sm leading-none tabular-nums tracking-tight ml-2">
+                      R$ {halfBrl.toLocaleString('en-US').replace(/,/g, '.')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-t border-green-200/50 pt-1 whitespace-nowrap">
+                    <span>{labelUsd}</span>
+                    <span className="font-extrabold text-xs sm:text-sm leading-none tabular-nums tracking-tight ml-2">
+                      $ {halfUsd.toLocaleString('en-US')}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             <button
               onClick={() => {
@@ -2247,7 +2744,7 @@ export default function Home() {
           {/* WhatsApp + プッシュ通知 + 通貨選択 + 更新 の2x2グリッド */}
           <div className="grid grid-cols-2 gap-2">
             <a
-              href="https://wa.me/817013476721"
+              href="https://wa.me/5518996686059"
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 bg-[#25D366] text-white px-4 h-12 rounded-lg hover:bg-[#128C7E] transition text-sm sm:text-base flex items-center justify-center gap-2"
@@ -2918,7 +3415,7 @@ export default function Home() {
             {/* WhatsApp 支払い証明書送信ボタン */}
             <div className="mb-6">
               <a
-                href="https://wa.me/817013476721"
+                href="https://wa.me/5518996686059"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
@@ -2942,32 +3439,109 @@ export default function Home() {
             {/* 未払い合計金額サマリー */}
             {purchasedItems.length > 0 && (() => {
               const filteredItemsForSummary = getFilteredPurchasedItems();
-              const unpaidSummaryTotal = filteredItemsForSummary
-                .filter(item => !item.paid)
-                .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
-              const summaryTotal = filteredItemsForSummary
-                .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+              const isB001 = currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001';
 
-              return (
-                <div className="flex flex-col gap-3">
-                  <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                    <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider">
-                      {lang === 'es' ? 'Monto Total' : 'Valor Total'}
-                    </span>
-                    <span className="text-base font-black text-indigo-600">
-                      ${Math.round(summaryTotal).toLocaleString('en-US')}
-                    </span>
+              // 各アイテムの合計売価を算出するヘルパー関数
+              const getItemPrice = (item: any) => {
+                return Math.round(
+                  item.finalPrice ||
+                  (item.customerCounterOffer && !item.customerCounterOfferUsed
+                    ? item.customerCounterOffer
+                    : (item.counterOffer || item.maxBid || 0))
+                );
+              };
+
+              const summaryTotal = filteredItemsForSummary.reduce((sum, item) => sum + getItemPrice(item), 0);
+
+              if (isB001) {
+                // B001関連ユーザーの場合は4つのボックスを表示
+                const unpaidBrazilTotalDolar = filteredItemsForSummary
+                  .reduce((sum, item) => sum + (item.paid_brazil ? 0 : getItemPrice(item) * 0.5), 0);
+                const unpaidParaguayTotal = filteredItemsForSummary
+                  .reduce((sum, item) => sum + (item.paid_paraguay ? 0 : getItemPrice(item) * 0.5), 0);
+                const unpaidSummaryTotal = unpaidBrazilTotalDolar + unpaidParaguayTotal;
+
+                // ブラジル未入金額（BRL換算）の計算
+                const brlRate = exchangeRates['BRL'] || 5.6;
+                const unpaidBrazilTotalBrl = filteredItemsForSummary
+                  .reduce((sum, item) => {
+                    if (item.paid_brazil) return sum;
+                    const itemPrice = getItemPrice(item);
+                    const halfPrice = Math.round(itemPrice * 0.5);
+                    const halfPriceBrl = Math.ceil((halfPrice * brlRate) / 10) * 10;
+                    return sum + halfPriceBrl;
+                  }, 0);
+
+                return (
+                  <div className="flex flex-col gap-2">
+                    {/* 合計金額（青） */}
+                    <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-indigo-500 tracking-wider">
+                        {lang === 'es' ? 'Monto Total' : 'Valor Total'}
+                      </span>
+                      <span className="text-base font-black text-indigo-600">
+                        ${Math.round(summaryTotal).toLocaleString('en-US')}
+                      </span>
+                    </div>
+
+                    {/* 合計未入金額（赤） */}
+                    <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-red-500 tracking-wider text-red-600">
+                        {lang === 'es' ? 'Monto Pendiente Total' : 'Valor Pendente Total'}
+                      </span>
+                      <span className="text-base font-black text-red-600">
+                        ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
+                      </span>
+                    </div>
+
+                    {/* ブラジル未入金額（緑） - 高さをh-8に縮小、R$表示化、フォントサイズ調整 */}
+                    <div className="bg-white border border-green-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-[10px] font-bold text-green-500 tracking-wider">
+                        {lang === 'es' ? 'Monto Pendiente en 🇧🇷' : 'Valor Pendente no 🇧🇷'}
+                      </span>
+                      <span className="text-sm font-extrabold text-green-600">
+                        R$ {unpaidBrazilTotalBrl.toLocaleString('en-US').replace(/,/g, '.')}
+                      </span>
+                    </div>
+
+                    {/* パラグアイ未入金額（オレンジ） - 高さをh-8に縮小、フォントサイズ調整 */}
+                    <div className="bg-white border border-orange-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-[10px] font-bold text-orange-500 tracking-wider">
+                        {lang === 'es' ? 'Monto Pendiente en 🇵🇾' : 'Valor Pendente no 🇵🇾'}
+                      </span>
+                      <span className="text-sm font-extrabold text-orange-600">
+                        ${Math.round(unpaidParaguayTotal).toLocaleString('en-US')}
+                      </span>
+                    </div>
                   </div>
-                  <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                    <span className="text-xs font-bold text-red-500 uppercase tracking-wider">
-                      {lang === 'es' ? 'Monto Pendiente' : 'Valor Pendente'}
-                    </span>
-                    <span className="text-base font-black text-red-600">
-                      ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
-                    </span>
+                );
+              } else {
+                // 通常ユーザーの場合は従来通りの2つのボックスを表示
+                const unpaidSummaryTotal = filteredItemsForSummary
+                  .filter(item => !item.paid)
+                  .reduce((sum, item) => sum + getItemPrice(item), 0);
+
+                return (
+                  <div className="flex flex-col gap-3">
+                    <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider">
+                        {lang === 'es' ? 'Monto Total' : 'Valor Total'}
+                      </span>
+                      <span className="text-base font-black text-indigo-600">
+                        ${Math.round(summaryTotal).toLocaleString('en-US')}
+                      </span>
+                    </div>
+                    <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-red-500 uppercase tracking-wider">
+                        {lang === 'es' ? 'Monto Pendiente' : 'Valor Pendente'}
+                      </span>
+                      <span className="text-base font-black text-red-600">
+                        ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
+                );
+              }
             })()}
             </div>
 
@@ -3049,61 +3623,255 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* 顧客/エージェント情報 & 確認日時のh-12ボックス */}
-                        <div className="mb-2 h-12 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs box-border grid grid-cols-2 gap-2">
-                          <div className="flex flex-col justify-center h-full min-w-0">
-                            <span className="text-gray-500 text-[10px] leading-tight">
-                              {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
-                                lang === 'es' ? 'Tu agente:' : 'Seu agente:'
-                              ) : (
-                                'Cliente:'
-                              )}
-                            </span>
-                            <span className="font-semibold truncate text-black leading-tight">
-                              {item.customerName}
-                            </span>
+                        {/* 顧客/エージェント情報 & 確認日時のボックス */}
+                        {currentUser?.customerId === 'B001' ? (
+                          // B001エージェントログイン時：ID/日時、氏名/エージェント名の表示
+                          <div className="mb-2 space-y-2 bg-gray-50 border border-gray-100 rounded-lg p-3 text-xs">
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-500">ID: <span className="font-bold text-gray-900">{item.customerId || '-'}</span></span>
+                              <span className="text-gray-500">
+                                {lang === 'es' ? 'Confirmado:' : 'Confirmado:'}{' '}
+                                <span className="font-bold text-gray-900">{item.confirmedAt ? formatDateTime(item.confirmedAt, 'customer') : '-'}</span>
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center border-t border-gray-200/50 pt-2">
+                              <span className="text-gray-500">
+                                {lang === 'es' ? 'Cliente:' : 'Cliente:'}{' '}
+                                <span className="font-bold text-gray-900">{item.customerName}</span>
+                              </span>
+                              <span className="text-gray-500">
+                                {lang === 'es' ? 'Agente:' : 'Agente:'}{' '}
+                                <span className="font-bold text-gray-900">B001 (FFGN)</span>
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex flex-col justify-center h-full min-w-0">
-                            <span className="text-gray-500 text-[10px] leading-tight">
-                              {lang === 'es' ? 'Fecha de confirmación:' : 'Data de confirmação:'}
-                            </span>
-                            <span className="font-semibold truncate text-black leading-tight">
-                              {item.confirmedAt ? formatDateTime(item.confirmedAt, 'customer') : '-'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* 支払情報 & 金額ボックス (h-12) */}
-                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                          <div>
-                            {!item.paid ? (
-                              <button
-                                onClick={() => openPaymentModal(item)}
-                                className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 transition shadow-sm font-sans flex items-center justify-center"
-                              >
-                                {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
-                              </button>
-                            ) : (
-                              <div className="flex items-center gap-1.5 shrink-0 font-sans py-1.5">
-                                <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-semibold rounded-full whitespace-nowrap shrink-0">
-                                  ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
-                                </span>
-                                {item.paidAt && (
-                                  <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap">
-                                    {formatDateTime(item.paidAt, 'customer')}
-                                  </span>
+                        ) : (
+                          // 通常表示 (既存のもの)
+                          <div className="mb-2 h-12 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs box-border grid grid-cols-2 gap-2">
+                            <div className="flex flex-col justify-center h-full min-w-0">
+                              <span className="text-gray-500 text-[10px] leading-tight">
+                                {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
+                                  lang === 'es' ? 'Tu agente:' : 'Seu agente:'
+                                ) : (
+                                  'Cliente:'
                                 )}
-                              </div>
-                            )}
+                              </span>
+                              <span className="font-semibold truncate text-black leading-tight">
+                                {item.customerName}
+                              </span>
+                            </div>
+                            <div className="flex flex-col justify-center h-full min-w-0">
+                              <span className="text-gray-500 text-[10px] leading-tight">
+                                {lang === 'es' ? 'Fecha de confirmación:' : 'Data de confirmação:'}
+                              </span>
+                              <span className="font-semibold truncate text-black leading-tight">
+                                {item.confirmedAt ? formatDateTime(item.confirmedAt, 'customer') : '-'}
+                              </span>
+                            </div>
                           </div>
-                          
-                          <span className={`text-base font-bold whitespace-nowrap font-sans ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                            ${Math.round(
+                        )}
+
+                        {/* 支払情報 & 金額ボックス */}
+                        {item.agentCustomerId === 'B001' ? (
+                          (() => {
+                            // finalPrice 等がすでに売価ベースであるため、/ 0.45 の割り戻し計算を撤廃し、DB値をそのまま合計売価とする
+                            const totalSalePrice = Math.round(
                               item.finalPrice ||
-                              (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
-                            ).toLocaleString('en-US')}
-                          </span>
-                        </div>
+                              (item.customerCounterOffer && !item.customerCounterOfferUsed
+                                ? item.customerCounterOffer
+                                : (item.counterOffer || item.maxBid || 0))
+                            );
+                            const halfPrice = Math.round(totalSalePrice * 0.5); // 分割額 (合計売価の50%)
+
+                            // BRL換算
+                            const brlRate = exchangeRates['BRL'] || 5.6;
+                            const halfPriceBrl = Math.ceil((halfPrice * brlRate) / 10) * 10;
+
+                            const totalStr = totalSalePrice.toLocaleString('en-US');
+                            const halfStr = halfPrice.toLocaleString('en-US');
+                            const halfBrlStr = halfPriceBrl.toLocaleString('en-US').replace(/,/g, '.');
+
+                            if (currentUser?.customerId === 'B001') {
+                              // B001自身ログイン時：3つのボックス（合計金額、分割支払、日本送金）
+                              // B001本人の購入なら合計売価の100%、それ以外（紐づき顧客）なら45%を送金額とする
+                              const japanSendAmount = item.customerId === 'B001'
+                                ? totalSalePrice
+                                : Math.round(totalSalePrice * 0.45);
+
+                              return (
+                                <div className="space-y-2 mb-2 font-sans">
+                                  {/* 1段目: 合計支払額ボックス (h-12) */}
+                                  <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
+                                      {item.paid ? (
+                                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] rounded-full whitespace-nowrap">
+                                          ✓ {lang === 'es' ? 'Pago' : 'Pago'}
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                          {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
+                                      ${totalStr}
+                                    </span>
+                                  </div>
+
+                                  {/* 2. 分割支払ボックス (1つのボックスにまとめる) */}
+                                  <div className="p-3 bg-gray-50 border border-gray-100 rounded-lg space-y-2.5">
+                                    {/* ブラジル支払額 */}
+                                    <div className="flex items-center justify-between text-xs font-bold text-gray-700">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇧🇷:' : 'Pagamento no 🇧🇷:'}</span>
+                                        {item.paid_brazil ? (
+                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                            ✓ {lang === 'es' ? 'Pago' : 'Pago'} 🇧🇷
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                            {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className={`text-sm ${item.paid_brazil ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                        R$ {halfBrlStr}
+                                      </span>
+                                    </div>
+
+                                    {/* パラグアイ支払額 */}
+                                    <div className="flex items-center justify-between text-xs font-bold text-gray-700 border-t border-gray-200/50 pt-2.5">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇵🇾:' : 'Pagamento no 🇵🇾:'}</span>
+                                        {item.paid_paraguay ? (
+                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                            ✓ {lang === 'es' ? 'Pago' : 'Pago'} 🇵🇾
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full whitespace-nowrap">
+                                            {lang === 'es' ? 'En Paraguay' : 'No Paraguai'}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className={`text-sm ${item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
+                                        ${halfStr}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* 3. 日本送金ボックス (h-12) */}
+                                  <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
+                                    <span className="text-red-600 font-black text-xs">{lang === 'es' ? 'Envío a Japón' : 'Envio ao Japão'} 🇯🇵:</span>
+                                    <span className="text-red-600 font-black text-base">
+                                      ${japanSendAmount.toLocaleString('en-US')}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            } else {
+                              // B001紐づき顧客：2つのボックス（合計金額ボックス、分割支払集約ボックス）
+                              return (
+                                <div className="space-y-2 mb-2 font-sans">
+                                  {/* 1段目: 合計支払額ボックス (h-12、支払方法選択ボタンを他顧客と同じサイズで配置) */}
+                                  <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
+                                      {item.paid ? (
+                                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] rounded-full whitespace-nowrap">
+                                          ✓ {lang === 'es' ? 'Pago' : 'Pago'}
+                                        </span>
+                                      ) : (
+                                        <button
+                                          onClick={() => openPaymentModal(item)}
+                                          className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 transition shadow-sm font-sans flex items-center justify-center ml-2 whitespace-nowrap shrink-0"
+                                        >
+                                          {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
+                                        </button>
+                                      )}
+                                    </div>
+                                    <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
+                                      ${totalStr}
+                                    </span>
+                                  </div>
+
+                                  {/* 2. 分割支払ボックス (1つのボックスにまとめる) */}
+                                  <div className="p-3 bg-gray-50 border border-gray-100 rounded-lg space-y-2.5">
+                                    {/* ブラジル支払額 */}
+                                    <div className="flex items-center justify-between text-xs font-bold text-gray-700">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇧🇷:' : 'Pagamento no 🇧🇷:'}</span>
+                                        {item.paid_brazil ? (
+                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                            ✓ {lang === 'es' ? 'Pago' : 'Pago'} 🇧🇷
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                            {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className={`text-sm ${item.paid_brazil ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                        R$ {halfBrlStr}
+                                      </span>
+                                    </div>
+
+                                    {/* パラグアイ支払額 */}
+                                    <div className="flex items-center justify-between text-xs font-bold text-gray-700 border-t border-gray-200/50 pt-2.5">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-gray-500">{lang === 'es' ? 'Pago en 🇵🇾:' : 'Pagamento no 🇵🇾:'}</span>
+                                        {item.paid_paraguay ? (
+                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                            ✓ {lang === 'es' ? 'Pago' : 'Pago'} 🇵🇾
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full whitespace-nowrap">
+                                            {lang === 'es' ? 'En Paraguay' : 'No Paraguai'}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className={`text-sm ${item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
+                                        ${halfStr}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                          })()
+                        ) : (
+                          // 通常の表示
+                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                            <div>
+                              {!item.paid ? (
+                                <button
+                                  onClick={() => openPaymentModal(item)}
+                                  className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 transition shadow-sm font-sans flex items-center justify-center"
+                                >
+                                  {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
+                                </button>
+                              ) : (
+                                <div className="flex items-center gap-1.5 shrink-0 font-sans py-1.5">
+                                  <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-semibold rounded-full whitespace-nowrap shrink-0">
+                                    ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
+                                  </span>
+                                  {item.paidAt && (
+                                    <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap">
+                                      {formatDateTime(item.paidAt, 'customer')}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            
+                            <span className={`text-base font-bold whitespace-nowrap font-sans ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                              ${Math.round(
+                                item.finalPrice ||
+                                (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
+                              ).toLocaleString('en-US')}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ))}
                 </div>
@@ -3150,7 +3918,7 @@ export default function Home() {
 
               {/* WhatsApp 支払い証明書送信ボタン */}
               <a
-                href="https://wa.me/817013476721"
+                href="https://wa.me/5518996686059"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full h-12 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
@@ -3171,36 +3939,132 @@ export default function Home() {
               </a>
             </div>
 
-            {/* 抽出合計金額カード */}
-            <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-3">
-              <span className="text-xs font-bold text-indigo-500">
-                {lang === 'es' ? 'Total' : 'Total'}
-              </span>
-              <span className="text-base font-black text-indigo-600">
-                ${Math.round(getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
-              </span>
-            </div>
-
-            {/* 残高ボックス */}
+            {/* 保証金・入金および残高の集計サマリーボックス */}
             {(() => {
+              const isB001 = currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001';
+
+              // 各アイテムの合計売価を算出する共通ヘルパー（購入タブと同様）
+              const getItemPrice = (item: any) => {
+                return Math.round(
+                  item.finalPrice ||
+                  (item.customerCounterOffer && !item.customerCounterOfferUsed
+                    ? item.customerCounterOffer
+                    : (item.counterOffer || item.maxBid || 0))
+                );
+              };
+
+              // デポジットの総額 (B001以外のお客さまも共通)
               const totalDeposits = depositsList.reduce((sum, item) => sum + (item.amount || 0), 0);
-              const totalPurchased = purchasedItems.reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+
+              // フィルターされた入金の合計 (表示用)
+              const filteredDepositsTotal = getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0);
+
+              // 合計購入額の計算 (B001紐づきの場合は売価 getItemPrice を使用)
+              const totalPurchased = purchasedItems.reduce((sum, item) => {
+                if (isB001) {
+                  return sum + getItemPrice(item);
+                }
+                return sum + (item.finalPrice || 0);
+              }, 0);
+
               const balance = totalDeposits - totalPurchased;
               const isNegative = balance < 0;
-              const formattedBalance = isNegative 
-                ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
-                : `$${Math.round(balance).toLocaleString('en-US')}`;
 
-              return (
-                <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-6`}>
-                  <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
-                    {lang === 'es' ? 'Balance' : 'Saldo'}
-                  </span>
-                  <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
-                    {formattedBalance}
-                  </span>
-                </div>
-              );
+              if (isB001) {
+                // B001関連ユーザー：購入タブと同様の構成とデザインの 4段ボックス
+                const brlRate = exchangeRates['BRL'] || 5.6;
+
+                // 残高 🇧🇷 (BRL換算: 全体残高の50%を換算)
+                const balanceBrl = balance * 0.5 * brlRate;
+                const isBrlNegative = balanceBrl < 0;
+                const formattedBrl = isBrlNegative
+                  ? `- R$ ${Math.abs(Math.round(balanceBrl)).toLocaleString('en-US').replace(/,/g, '.')}`
+                  : `R$ ${Math.round(balanceBrl).toLocaleString('en-US').replace(/,/g, '.')}`;
+
+                // 残高 🇵🇾 (パラグアイ米ドル: 全体残高の50%)
+                const balancePy = balance * 0.5;
+                const isPyNegative = balancePy < 0;
+                const formattedPy = isPyNegative
+                  ? `- $${Math.abs(Math.round(balancePy)).toLocaleString('en-US')}`
+                  : `$${Math.round(balancePy).toLocaleString('en-US')}`;
+
+                const formattedBalance = isNegative
+                  ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
+                  : `$${Math.round(balance).toLocaleString('en-US')}`;
+
+                return (
+                  <div className="flex flex-col gap-2 mb-6">
+                    {/* 合計入金額（青） */}
+                    <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-indigo-500 tracking-wider">
+                        {lang === 'es' ? 'Total' : 'Total'}
+                      </span>
+                      <span className="text-base font-black text-indigo-600">
+                        ${Math.round(filteredDepositsTotal).toLocaleString('en-US')}
+                      </span>
+                    </div>
+
+                    {/* 残高合計（Saldo Total）（赤/緑） */}
+                    <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
+                      <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'} tracking-wider`}>
+                        {lang === 'es' ? 'Saldo Total' : 'Saldo Total'}
+                      </span>
+                      <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
+                        {formattedBalance}
+                      </span>
+                    </div>
+
+                    {/* 残高 🇧🇷（Saldo 🇧🇷）（緑） - 高さをh-8に縮小、R$表示、フォントサイズ調整 */}
+                    <div className="bg-white border border-green-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-[10px] font-bold text-green-500 tracking-wider">
+                        {lang === 'es' ? 'Saldo 🇧🇷' : 'Saldo 🇧🇷'}
+                      </span>
+                      <span className="text-sm font-extrabold text-green-600">
+                        {formattedBrl}
+                      </span>
+                    </div>
+
+                    {/* 残高 🇵🇾（Saldo 🇵🇾）（オレンジ） - 高さをh-8に縮小、フォントサイズ調整 */}
+                    <div className="bg-white border border-orange-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-[10px] font-bold text-orange-500 tracking-wider">
+                        {lang === 'es' ? 'Saldo 🇵🇾' : 'Saldo 🇵🇾'}
+                      </span>
+                      <span className="text-sm font-extrabold text-orange-600">
+                        {formattedPy}
+                      </span>
+                    </div>
+                  </div>
+                );
+              } else {
+                // 通常ユーザー：従来通りの2つのボックス
+                const formattedBalance = isNegative
+                  ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
+                  : `$${Math.round(balance).toLocaleString('en-US')}`;
+
+                return (
+                  <div className="flex flex-col gap-3 mb-6">
+                    {/* 合計入金額（青） */}
+                    <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-indigo-500 tracking-wider">
+                        {lang === 'es' ? 'Total' : 'Total'}
+                      </span>
+                      <span className="text-base font-black text-indigo-600">
+                        ${Math.round(filteredDepositsTotal).toLocaleString('en-US')}
+                      </span>
+                    </div>
+
+                    {/* 残高 (Saldo / Balance) */}
+                    <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
+                      <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'} tracking-wider`}>
+                        {lang === 'es' ? 'Balance' : 'Saldo'}
+                      </span>
+                      <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
+                        {formattedBalance}
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
             })()}
 
             {/* 入金履歴一覧リスト */}
@@ -3480,7 +4344,7 @@ export default function Home() {
                   onClick={() => {
                     setSearchType('categories');
                     setProducts([]);
-                    setCurrentCategory(null);
+                    setCategoryHistory([]);
                     setActiveCategoryUrl(null);
                     setKeyword('');
                     setSearchUrl('');
@@ -3493,7 +4357,7 @@ export default function Home() {
                   onClick={() => {
                     setSearchType('keyword');
                     setProducts([]);
-                    setCurrentCategory(null);
+                    setCategoryHistory([]);
                     setActiveCategoryUrl(null);
                     setSearchUrl('');
                   }}
@@ -3505,7 +4369,7 @@ export default function Home() {
                   onClick={() => {
                     setSearchType('url');
                     setProducts([]);
-                    setCurrentCategory(null);
+                    setCategoryHistory([]);
                     setActiveCategoryUrl(null);
                     setKeyword('');
                   }}
@@ -3538,8 +4402,8 @@ export default function Home() {
 
               {searchType === 'categories' && (
                 <div className="animate-in fade-in duration-300">
-                  {/* 商品リスト表示中の「戻る」ボタン */}
-                  {activeCategoryUrl && (
+                  {/* 「戻る」ボタン (商品リスト表示中、またはカテゴリ選択中のどちらか一方のみ表示) */}
+                  {activeCategoryUrl ? (
                     <div className="mb-4">
                       <button
                         onClick={() => {
@@ -3555,25 +4419,95 @@ export default function Home() {
                           if (currentCategory) {
                             catName = lang === 'es' ? currentCategory.es : currentCategory.pt;
                           } else {
-                            const found = CATEGORIES.find(c => c.url && activeCategoryUrl.includes(c.url.split('?')[0]));
-                            if (found) {
-                              catName = lang === 'es' ? found.es : found.pt;
+                            const catId = getYahooCategoryId(activeCategoryUrl);
+                            catName = getCategoryNameById(catId);
+                            if (!catName) {
+                              const found = CATEGORIES.find(c => c.url && activeCategoryUrl.includes(c.url.split('?')[0]));
+                              if (found) {
+                                catName = lang === 'es' ? found.es : found.pt;
+                              }
                             }
                           }
                           return catName ? `${t.back} (${catName})` : t.back;
                         })()}
                       </button>
                     </div>
-                  )}
+                  ) : currentCategory ? (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setCategoryHistory(prev => prev.slice(0, -1))}
+                        className="w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold h-12 bg-indigo-50 rounded px-6 flex items-center justify-center shadow-sm border border-indigo-100 transition-colors font-sans"
+                      >
+                        {(() => {
+                          const parentName = categoryHistory.length <= 1
+                            ? (lang === 'es' ? 'Categorías principales' : 'Categorias principais')
+                            : (lang === 'es' ? categoryHistory[categoryHistory.length - 2].es : categoryHistory[categoryHistory.length - 2].pt);
+                          return `${t.back} (${parentName})`;
+                        })()}
+                      </button>
+                    </div>
+                  ) : null}
 
-                  {/* カテゴリ選択中の「戻る」ボタン (サブカテゴリ内からトップへ戻る) */}
-                  {!activeCategoryUrl && currentCategory && (
-                    <button
-                      onClick={() => setCurrentCategory(null)}
-                      className="mb-4 w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold h-12 bg-indigo-50 rounded px-6 flex items-center justify-center shadow-sm border border-indigo-100 transition-colors font-sans"
-                    >
-                      {t.back} ({lang === 'es' ? 'Categorías principales' : 'Categorias principais'})
-                    </button>
+                  {/* 汎用 カテゴリ内ワード検索ボックス (JDM車種・部品取り車以外のID有効カテゴリ用) */}
+                  {(() => {
+                    const catId = activeCategoryUrl 
+                      ? getYahooCategoryId(activeCategoryUrl) 
+                      : (currentCategory?.url ? getYahooCategoryId(currentCategory.url) : null);
+
+                    // 自動車車体(26360)および部品取り車(2084061280)以外の、有効なカテゴリIDを持つすべてのカテゴリで検索ボックスを表示する
+                    const isSearchable = catId && catId !== '26360' && catId !== '2084061280';
+                    if (!isSearchable) return null;
+
+                    const placeholderText = lang === 'es' 
+                      ? 'Buscar por marca o modelo' 
+                      : 'Buscar por marca ou modelo';
+
+                    return (
+                      <div className="mb-4 flex gap-2 animate-in fade-in duration-300">
+                        <input
+                          type="text"
+                          placeholder={placeholderText}
+                          value={categorySearchKeyword}
+                          onChange={(e) => setCategorySearchKeyword(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleCategorySearch(catId);
+                            }
+                          }}
+                          className="flex-1 px-4 h-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm font-sans"
+                        />
+                        <button
+                          onClick={() => handleCategorySearch(catId)}
+                          className="bg-indigo-600 text-white min-w-[100px] px-6 h-12 rounded-lg font-bold hover:bg-indigo-700 transition text-sm shadow-sm font-sans"
+                        >
+                          {lang === 'es' ? 'Buscar' : 'Buscar'}
+                        </button>
+                      </div>
+                    );
+                  })()}
+
+                  {/* JDM専用 自動車車体カテゴリ内ワード検索ボックス */}
+                  {!activeCategoryUrl && currentCategory?.id === 'jdm' && (
+                    <div className="mb-4 flex gap-2 animate-in fade-in duration-300">
+                      <input
+                        type="text"
+                        placeholder={lang === 'es' ? 'Buscar por marca o modelo' : 'Buscar por marca ou modelo'}
+                        value={jdmSearchKeyword}
+                        onChange={(e) => setJdmSearchKeyword(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleJdmSearch();
+                          }
+                        }}
+                        className="flex-1 px-4 h-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm font-sans"
+                      />
+                      <button
+                        onClick={handleJdmSearch}
+                        className="bg-indigo-600 text-white min-w-[100px] px-6 h-12 rounded-lg font-bold hover:bg-indigo-700 transition text-sm shadow-sm font-sans"
+                      >
+                        {lang === 'es' ? 'Buscar' : 'Buscar'}
+                      </button>
+                    </div>
                   )}
 
                   {/* カテゴリグリッド（商品リスト表示中は非表示にする） */}
@@ -3584,14 +4518,15 @@ export default function Home() {
                           key={cat.id}
                           onClick={async () => {
                             if (cat.sub) {
-                              setCurrentCategory(cat);
+                              setCategoryHistory(prev => [...prev, cat]);
                             } else if (cat.url) {
                               fetchCategoryItems(cat.url, 1);
                             }
                           }}
-                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-white"
+                          className="flex items-center justify-between h-12 px-4 border border-gray-200 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-white"
                         >
-                          <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600">
+                          <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 flex items-center">
+                            {cat.brand && BRAND_LOGOS[cat.brand]}
                             {lang === 'es' ? cat.es : cat.pt}
                           </span>
                           <span className="text-gray-400 group-hover:text-indigo-600 font-bold">
@@ -4119,7 +5054,7 @@ export default function Home() {
                     <div className="space-y-4">
                       {(() => {
                         const paypalData = paymentSettings?.paypal || {
-                          account_email: "export@joga.ltd",
+                          account_email: "admin@jogalibre.com",
                           link: "https://paypal.me/joga1225",
                           fee_multiplier: 1.08
                         };
@@ -4235,7 +5170,7 @@ export default function Home() {
             {/* フッター */}
             <div className="p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
               <a
-                href="https://wa.me/817013476721"
+                href="https://wa.me/5518996686059"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-200 transform hover:scale-[1.02]"

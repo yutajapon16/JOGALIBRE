@@ -54,6 +54,12 @@ export interface BidRequest {
   agentCustomerId?: string | null;
   paidAt?: string | null;
   paid?: boolean;
+  paid_brazil?: boolean;
+  paid_brazil_at?: string | null;
+  paid_paraguay?: boolean;
+  paid_paraguay_at?: string | null;
+  paid_japan?: boolean;
+  paid_japan_at?: string | null;
   stockNumber?: string | null;
   invoiceNumber?: string | null;
 }

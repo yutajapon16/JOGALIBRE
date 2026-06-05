@@ -96,20 +96,20 @@ export async function POST(request: Request) {
               itemData.thumbnail ||
               imageUrl;
 
-            // 説明文の取得
-            if (itemData.description) {
-              if (Array.isArray(itemData.description)) {
-                description = itemData.description.filter(Boolean).join('\n');
-              } else if (typeof itemData.description === 'string') {
-                description = itemData.description;
-              }
-            } else if (itemData.descriptionHtml) {
+            // 説明文の取得：完全な情報を持つ descriptionHtml を最優先で使用する
+            if (itemData.descriptionHtml) {
               description = itemData.descriptionHtml
                 .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
                 .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
                 .replace(/<[^>]*>/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim();
+            } else if (itemData.description) {
+              if (Array.isArray(itemData.description)) {
+                description = itemData.description.filter(Boolean).join('\n');
+              } else if (typeof itemData.description === 'string') {
+                description = itemData.description;
+              }
             }
 
             // 終了時刻を取得（UNIXタイムスタンプまたはISO文字列）
