@@ -835,6 +835,12 @@ export default function AdminDashboard() {
         confirmedAt: item.customer_confirmed_at || item.created_at,  // 顧客が確認ボタンを押した日時
         paidAt: item.paid_at,
         paid: item.paid || false,
+        paid_brazil: item.paid_brazil || false,
+        paid_brazil_at: item.paid_brazil_at as string | null | undefined,
+        paid_paraguay: item.paid_paraguay || false,
+        paid_paraguay_at: item.paid_paraguay_at as string | null | undefined,
+        paid_japan: item.paid_japan || false,
+        paid_japan_at: item.paid_japan_at as string | null | undefined,
         stockNumber: item.stock_number as string,
         invoiceNumber: item.invoice_number as string,
         productId: item.product_id as string,
@@ -1856,19 +1862,26 @@ export default function AdminDashboard() {
               {purchasedItems.length > 0 && (() => {
                 const filteredItemsForSummary = getFilteredPurchasedItems();
                 const summaryTotal = filteredItemsForSummary
-                  .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
+                  .reduce((sum, item) => {
+                    const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
+                    const isB001 = item.agentCustomerId === 'B001' || item.customerId === 'B001';
+                    return sum + (isB001 ? Math.round(cost / 0.4) : cost);
+                  }, 0);
 
                 const unpaidSummaryTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
-                    if (item.agentCustomerId === 'B001' && item.customerId !== 'B001') {
-                      if (!item.paid_japan) {
-                        const totalSalePrice = Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0);
+                    const isB001 = item.agentCustomerId === 'B001' || item.customerId === 'B001';
+                    const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
+                    if (isB001) {
+                      const totalSalePrice = Math.round(cost / 0.4);
+                      if (item.customerId === 'B001') {
+                        return sum + (item.paid_japan ? 0 : totalSalePrice);
+                      } else {
                         const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice);
-                        return sum + japanSendAmount;
+                        return sum + (item.paid_japan ? 0 : japanSendAmount);
                       }
-                      return sum;
                     } else {
-                      return sum + (item.paid ? 0 : (item.finalPrice || 0));
+                      return sum + (item.paid ? 0 : cost);
                     }
                   }, 0);
 
@@ -1898,23 +1911,22 @@ export default function AdminDashboard() {
                         ? filteredItemsForSummary.filter(item => item.agentCustomerId === 'B001')
                         : filteredItemsForSummary.filter(item => item.customerId === selectedCustomer);
 
-                      const unpaidBrazilUsd = filteredItemsForB001
+                      const brlRate = exchangeRates['BRL'] || 5.6;
+                      const unpaidBrazilBrl = filteredItemsForB001
                         .filter(item => !item.paid_brazil)
                         .reduce((sum, item) => {
-                          const totalSalePrice = Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0);
-                          const halfPrice = Math.ceil((totalSalePrice * 0.5) / 10) * 10;
-                          return sum + halfPrice;
+                          const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
+                          const totalSalePrice = Math.round(cost / 0.4);
+                          const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
+                          return sum + paidBrazilBrl;
                         }, 0);
-                      
-                      const brlRate = exchangeRates['BRL'] || 5.6;
-                      const unpaidBrazilBrl = unpaidBrazilUsd * brlRate;
 
                       const unpaidParaguayUsd = filteredItemsForB001
                         .filter(item => !item.paid_paraguay)
                         .reduce((sum, item) => {
-                          const totalSalePrice = Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0);
-                          const halfPrice = Math.ceil((totalSalePrice * 0.5) / 10) * 10;
-                          return sum + halfPrice;
+                          const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
+                          const totalSalePrice = Math.round(cost / 0.4);
+                          return sum + Math.round(totalSalePrice * 0.5);
                         }, 0);
 
                       const formatBrl = (amount: number) => {
@@ -1924,15 +1936,15 @@ export default function AdminDashboard() {
 
                       return (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
-                          <div className="bg-white border border-green-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
-                            <span className="text-[10px] font-bold text-green-500 font-sans flex items-center gap-1">未入金額 🇧🇷</span>
-                            <span className="text-xs font-black text-green-600 font-sans">
+                          <div className="bg-white border border-green-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                            <span className="text-xs font-bold text-green-500 font-sans flex items-center gap-1">未入金額 🇧🇷</span>
+                            <span className="text-base font-black text-green-600 font-sans">
                               R$ {formatBrl(unpaidBrazilBrl)}
                             </span>
                           </div>
-                          <div className="bg-white border border-amber-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
-                            <span className="text-[10px] font-bold text-amber-500 font-sans flex items-center gap-1">未入金額 🇵🇾</span>
-                            <span className="text-xs font-black text-amber-600 font-sans">
+                          <div className="bg-white border border-amber-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                            <span className="text-xs font-bold text-amber-500 font-sans flex items-center gap-1">未入金額 🇵🇾</span>
+                            <span className="text-base font-black text-amber-600 font-sans">
                               ${Math.round(unpaidParaguayUsd).toLocaleString('en-US')}
                             </span>
                           </div>
@@ -2056,17 +2068,13 @@ export default function AdminDashboard() {
                         {/* 支払情報 & 金額ボックス */}
                         {item.agentCustomerId === 'B001' ? (
                           (() => {
-                            const totalSalePrice = Math.round(
-                              item.finalPrice ||
-                              item.customerCounterOffer ||
-                              item.counterOffer ||
-                              item.maxBid ||
-                              0
-                            );
-                            const halfPrice = Math.ceil((totalSalePrice * 0.5) / 10) * 10;
+                            const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
+                            const totalSalePrice = Math.round(cost / 0.4);
+                            const brlRate = exchangeRates['BRL'] || 5.6;
+                            const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
+                            const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
 
                             const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice);
-                            const brlRate = exchangeRates['BRL'] || 5.6;
 
                             // BRL表記フォーマット関数
                             const formatBrl = (amount: number) => {
@@ -2112,7 +2120,7 @@ export default function AdminDashboard() {
                                     )}
                                   </label>
                                   <span className={`text-sm ${item.paid_brazil ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                                    R$ {formatBrl(halfPrice * brlRate)}
+                                    R$ {formatBrl(paidBrazilBrl)}
                                   </span>
                                 </div>
 
@@ -2133,7 +2141,7 @@ export default function AdminDashboard() {
                                     )}
                                   </label>
                                   <span className={`text-sm ${item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
-                                    ${halfPrice.toLocaleString('en-US')}
+                                    ${paidParaguayUsd.toLocaleString('en-US')}
                                   </span>
                                 </div>
 
@@ -2153,7 +2161,7 @@ export default function AdminDashboard() {
                                       </span>
                                     )}
                                   </label>
-                                  <span className={`text-red-600 font-black text-sm ${item.paid_japan ? 'text-red-400 line-through' : ''}`}>
+                                  <span className={`text-red-400 line-through text-sm ${!item.paid_japan ? 'text-red-600 font-black' : ''}`}>
                                     ${Math.round(japanSendAmount).toLocaleString('en-US')}
                                   </span>
                                 </div>

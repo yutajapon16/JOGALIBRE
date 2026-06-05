@@ -1364,7 +1364,11 @@ export default function Home() {
         customerCounterOfferUsed: item.customer_counter_offer_used,
         paid: item.paid || false,
         paid_brazil: item.paid_brazil || false,
+        paid_brazil_at: item.paid_brazil_at as string | null | undefined,
         paid_paraguay: item.paid_paraguay || false,
+        paid_paraguay_at: item.paid_paraguay_at as string | null | undefined,
+        paid_japan: item.paid_japan || false,
+        paid_japan_at: item.paid_japan_at as string | null | undefined,
         shippingCostJpy: item.shipping_cost_jpy,
         stockNumber: item.stock_number as string,
         invoiceNumber: item.invoice_number as string,
@@ -3451,24 +3455,38 @@ export default function Home() {
                 );
               };
 
-              const summaryTotal = filteredItemsForSummary.reduce((sum, item) => sum + getItemPrice(item), 0);
+              const summaryTotal = filteredItemsForSummary.reduce((sum, item) => {
+                const itemPrice = getItemPrice(item);
+                const itemSalePrice = isB001 ? Math.round(itemPrice / 0.4) : itemPrice;
+                return sum + itemSalePrice;
+              }, 0);
 
               if (isB001) {
                 // B001関連ユーザーの場合は4つのボックスを表示
                 const unpaidBrazilTotalDolar = filteredItemsForSummary
-                  .reduce((sum, item) => sum + (item.paid_brazil ? 0 : getItemPrice(item) * 0.5), 0);
+                  .reduce((sum, item) => {
+                    if (item.paid_brazil) return sum;
+                    const itemPrice = getItemPrice(item);
+                    const itemSalePrice = Math.round(itemPrice / 0.4);
+                    return sum + (itemSalePrice * 0.5);
+                  }, 0);
                 const unpaidParaguayTotal = filteredItemsForSummary
-                  .reduce((sum, item) => sum + (item.paid_paraguay ? 0 : getItemPrice(item) * 0.5), 0);
+                  .reduce((sum, item) => {
+                    if (item.paid_paraguay) return sum;
+                    const itemPrice = getItemPrice(item);
+                    const itemSalePrice = Math.round(itemPrice / 0.4);
+                    return sum + Math.round(itemSalePrice * 0.5);
+                  }, 0);
                 const unpaidSummaryTotal = unpaidBrazilTotalDolar + unpaidParaguayTotal;
 
-                // ブラジル未入金額（BRL換算）の計算
+                // ブラジル未入金額（BRL換算）の計算（個々で10の位繰り上げをして合計）
                 const brlRate = exchangeRates['BRL'] || 5.6;
                 const unpaidBrazilTotalBrl = filteredItemsForSummary
                   .reduce((sum, item) => {
                     if (item.paid_brazil) return sum;
                     const itemPrice = getItemPrice(item);
-                    const halfPrice = Math.round(itemPrice * 0.5);
-                    const halfPriceBrl = Math.ceil((halfPrice * brlRate) / 10) * 10;
+                    const itemSalePrice = Math.round(itemPrice / 0.4);
+                    const halfPriceBrl = Math.ceil(((itemSalePrice * 0.5) * brlRate) / 10) * 10;
                     return sum + halfPriceBrl;
                   }, 0);
 
@@ -3494,22 +3512,22 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* ブラジル未入金額（緑） - 高さをh-8に縮小、R$表示化、フォントサイズ調整 */}
-                    <div className="bg-white border border-green-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-[10px] font-bold text-green-500 tracking-wider">
+                    {/* ブラジル未入金額（緑） - 高さをh-12に、テキスト・金額サイズを他と統一 */}
+                    <div className="bg-white border border-green-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-green-500 tracking-wider">
                         {lang === 'es' ? 'Monto Pendiente en 🇧🇷' : 'Valor Pendente no 🇧🇷'}
                       </span>
-                      <span className="text-sm font-extrabold text-green-600">
+                      <span className="text-base font-black text-green-600">
                         R$ {unpaidBrazilTotalBrl.toLocaleString('en-US').replace(/,/g, '.')}
                       </span>
                     </div>
 
-                    {/* パラグアイ未入金額（オレンジ） - 高さをh-8に縮小、フォントサイズ調整 */}
-                    <div className="bg-white border border-orange-100 rounded-lg h-8 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-[10px] font-bold text-orange-500 tracking-wider">
+                    {/* パラグアイ未入金額（オレンジ） - 高さをh-12に、テキスト・金額サイズを他と統一 */}
+                    <div className="bg-white border border-orange-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-orange-500 tracking-wider">
                         {lang === 'es' ? 'Monto Pendiente en 🇵🇾' : 'Valor Pendente no 🇵🇾'}
                       </span>
-                      <span className="text-sm font-extrabold text-orange-600">
+                      <span className="text-base font-black text-orange-600">
                         ${Math.round(unpaidParaguayTotal).toLocaleString('en-US')}
                       </span>
                     </div>
