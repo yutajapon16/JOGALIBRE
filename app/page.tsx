@@ -3796,7 +3796,7 @@ export default function Home() {
                                     <div className="flex items-center gap-1.5">
                                       <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
                                       {item.paid ? (
-                                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] rounded-full whitespace-nowrap">
+                                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] font-bold rounded-full whitespace-nowrap">
                                           ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
                                         </span>
                                       ) : (
