@@ -13,7 +13,8 @@ export async function signUp(
   address?: string,
   zipCode?: string,
   country?: string,
-  agentCustomerId?: string
+  agentCustomerId?: string,
+  cpf?: string
 ) {
   // 1. フロントエンドで標準のsignUpを実行（これでSupabaseから確実に確認メールが飛ぶ）
   const { data, error } = await supabase.auth.signUp({
@@ -38,7 +39,8 @@ export async function signUp(
       address,
       zipCode,
       country,
-      agentCustomerId
+      agentCustomerId,
+      cpf
     })
   });
   
@@ -106,7 +108,7 @@ export async function updatePassword(newPassword: string) {
 }
 
 // プロフィール更新（氏名・WhatsApp・エージェントID）
-export async function updateProfile(fullName: string, whatsapp: string, address?: string, zipCode?: string, agentCustomerId?: string) {
+export async function updateProfile(fullName: string, whatsapp: string, address?: string, zipCode?: string, agentCustomerId?: string, cpf?: string) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
 
@@ -126,7 +128,7 @@ export async function updateProfile(fullName: string, whatsapp: string, address?
       headers,
       credentials: 'include', // cookieベースでも認証させる
       signal: controller.signal,
-      body: JSON.stringify({ fullName, whatsapp, address, zipCode, agentCustomerId }),
+      body: JSON.stringify({ fullName, whatsapp, address, zipCode, agentCustomerId, cpf }),
     });
 
     clearTimeout(timeoutId);
@@ -140,7 +142,7 @@ export async function updateProfile(fullName: string, whatsapp: string, address?
     // Auth Metadata のローカルキャッシュ更新（エラーが起きても全体処理は止めない）
     try {
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { full_name: fullName, whatsapp: whatsapp, address: address, zip_code: zipCode, agent_customer_id: agentCustomerId || null }
+        data: { full_name: fullName, whatsapp: whatsapp, address: address, zip_code: zipCode, agent_customer_id: agentCustomerId || null, cpf: cpf || null }
       });
       if (updateError) {
         console.warn('Non-fatal error updating local auth metadata:', updateError);
@@ -189,7 +191,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       try {
         const { data, error } = await supabase
           .from('user_roles')
-          .select('role, full_name, whatsapp, customer_id, address, zip_code, country, agent_customer_id, deposit_amount, deposit_confirmed_at, terms_accepted_at')
+          .select('role, full_name, whatsapp, customer_id, address, zip_code, country, agent_customer_id, deposit_amount, deposit_confirmed_at, terms_accepted_at, cpf')
           .eq('id', user.id)
           .abortSignal(controller.signal)
           .single();
@@ -243,6 +245,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
         depositAmount: roleData?.deposit_amount !== undefined ? Number(roleData.deposit_amount) : (metadata.deposit_amount !== undefined ? Number(metadata.deposit_amount) : undefined),
         depositConfirmedAt: roleData?.deposit_confirmed_at || metadata.deposit_confirmed_at || undefined,
         termsAcceptedAt: roleData?.terms_accepted_at || metadata.terms_accepted_at || undefined,
+        cpf: roleData?.cpf || metadata.cpf || undefined,
       };
 
       if (typeof localStorage !== 'undefined') {
@@ -260,6 +263,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
           depositAmount: userData.depositAmount,
           depositConfirmedAt: userData.depositConfirmedAt,
           termsAcceptedAt: userData.termsAcceptedAt,
+          cpf: userData.cpf,
         }));
       }
 
@@ -335,6 +339,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
         depositAmount: metadata.deposit_amount !== undefined ? Number(metadata.deposit_amount) : undefined,
         depositConfirmedAt: metadata.deposit_confirmed_at,
         termsAcceptedAt: metadata.terms_accepted_at,
+        cpf: metadata.cpf,
       };
     }
     return null;

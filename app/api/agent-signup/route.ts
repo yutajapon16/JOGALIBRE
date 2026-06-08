@@ -11,7 +11,7 @@ const AGENT_SIGNUP_PASSWORD = 'joga&agent';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password, fullName, whatsapp, accessPassword, address, zipCode, country } = body;
+    const { email, password, fullName, whatsapp, accessPassword, address, zipCode, country, cpf } = body;
 
     // アクセスパスワードの検証
     if (!accessPassword || accessPassword !== AGENT_SIGNUP_PASSWORD) {
@@ -41,7 +41,8 @@ export async function POST(request: Request) {
         user_role: 'agent',
         address: address || null,
         zip_code: zipCode || null,
-        country: country || null
+        country: country || null,
+        cpf: cpf || null
       }
     });
 
@@ -78,7 +79,8 @@ export async function POST(request: Request) {
         address: address || null,
         zip_code: zipCode || null,
         country: country || null,
-        deposit_amount: 500 // エージェントのデフォルト保証金を設定
+        deposit_amount: 500, // エージェントのデフォルト保証金を設定
+        cpf: cpf || null
       }]);
 
     if (roleError) {

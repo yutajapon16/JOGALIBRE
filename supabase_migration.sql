@@ -144,3 +144,7 @@ CREATE INDEX IF NOT EXISTS idx_bid_requests_paid_paraguay ON bid_requests(paid_p
 ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_japan BOOLEAN DEFAULT FALSE;
 ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_japan_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
 CREATE INDEX IF NOT EXISTS idx_bid_requests_paid_japan ON bid_requests(paid_japan);
+
+-- 18. user_roles テーブルに CPF 保存用カラムを追加
+ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS cpf TEXT DEFAULT NULL;
+

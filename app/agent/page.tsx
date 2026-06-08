@@ -17,7 +17,8 @@ export default function AgentRegister() {
     accessPassword: '',
     address: '',
     zipCode: '',
-    country: ''
+    country: '',
+    cpf: ''
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -39,7 +40,8 @@ export default function AgentRegister() {
           accessPassword: form.accessPassword,
           address: form.address,
           zipCode: form.zipCode,
-          country: form.country
+          country: form.country,
+          cpf: form.cpf
         })
       });
 
@@ -50,7 +52,7 @@ export default function AgentRegister() {
       }
 
       setSuccess(true);
-      setForm({ email: '', password: '', fullName: '', whatsapp: '', accessPassword: '', address: '', zipCode: '', country: '' });
+      setForm({ email: '', password: '', fullName: '', whatsapp: '', accessPassword: '', address: '', zipCode: '', country: '', cpf: '' });
     } catch (error) {
       console.error('Agent sign up error:', error);
       alert(lang === 'es'
@@ -187,6 +189,22 @@ export default function AgentRegister() {
               ))}
             </select>
           </div>
+
+          {form.country === 'Brasil' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                CPF
+              </label>
+              <input
+                type="text"
+                value={form.cpf}
+                onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                placeholder="000.000.000-00"
+                required
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium mb-1">

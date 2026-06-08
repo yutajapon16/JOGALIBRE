@@ -703,7 +703,8 @@ export default function Home() {
     address: '',
     zipCode: '',
     country: '',
-    agentCustomerId: ''
+    agentCustomerId: '',
+    cpf: ''
   });
   const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping'>('search');
   const [hasClosedDepositReminder, setHasClosedDepositReminder] = useState(false);
@@ -770,7 +771,7 @@ export default function Home() {
   const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   // マイページ用state
-  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '' });
+  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '', cpf: '' });
   
   // JDM車体およびその他カテゴリ検索ボックス用のキーワード状態
   const [jdmSearchKeyword, setJdmSearchKeyword] = useState('');
@@ -827,6 +828,7 @@ export default function Home() {
         if (!prev.address && currentUser.address) prev.address = currentUser.address;
         if (!prev.zipCode && currentUser.zipCode) prev.zipCode = currentUser.zipCode;
         if (!prev.agentCustomerId && currentUser.agentCustomerId) prev.agentCustomerId = currentUser.agentCustomerId;
+        if (!prev.cpf && currentUser.cpf) prev.cpf = currentUser.cpf;
         return { ...prev };
       });
     }
@@ -1232,7 +1234,8 @@ export default function Home() {
             whatsapp: profile.whatsapp || '',
             address: profile.address || '',
             zipCode: profile.zip_code || '',
-            agentCustomerId: profile.agent_customer_id || ''
+            agentCustomerId: profile.agent_customer_id || '',
+            cpf: profile.cpf || ''
           };
           setProfileForm(newForm);
         } else {
@@ -1698,7 +1701,7 @@ export default function Home() {
     try {
       await signIn(email, password);
       // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '' });
     } catch (error) {
       console.error('Login error:', error);
       alert(lang === 'es'
@@ -1718,16 +1721,17 @@ export default function Home() {
     const zipCode = (formData.get('zipCode') as string) || loginForm.zipCode;
     const country = (formData.get('country') as string) || loginForm.country;
     const agentCustomerId = (formData.get('agentCustomerId') as string) || loginForm.agentCustomerId;
+    const cpf = (formData.get('cpf') as string) || loginForm.cpf;
 
     try {
-      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country, agentCustomerId);
+      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country, agentCustomerId, cpf);
 
       // メール確認が必要な場合は成功メッセージを表示
       alert(lang === 'es'
         ? '¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta.'
         : 'Conta criada! Por favor, verifique seu e-mail para confirmar sua conta.');
 
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '' });
       setShowSignUp(false);
     } catch (error) {
       console.error('Sign up error:', error);
@@ -2374,6 +2378,20 @@ export default function Home() {
                     ))}
                   </select>
                 </div>
+                {loginForm.country === 'Brasil' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">CPF</label>
+                    <input
+                      type="text"
+                      name="cpf"
+                      value={loginForm.cpf}
+                      onChange={(e) => setLoginForm({ ...loginForm, cpf: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                      placeholder="000.000.000-00"
+                      required
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     {lang === 'es' ? 'Código Postal' : 'Código Postal'}
@@ -4268,6 +4286,18 @@ export default function Home() {
                     className="w-full border border-gray-200 rounded-lg px-4 h-12 bg-gray-50 text-gray-500"
                   />
                 </div>
+                {currentUser?.country?.trim().toLowerCase() === 'brasil' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">CPF</label>
+                    <input
+                      type="text"
+                      value={profileForm.cpf}
+                      onChange={(e) => setProfileForm({ ...profileForm, cpf: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                      placeholder="000.000.000-00"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     {lang === 'es' ? 'Código Postal' : 'Código Postal'}
@@ -4309,7 +4339,7 @@ export default function Home() {
                     if (profileSaving) return;
                     setProfileSaving(true);
                     try {
-                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId);
+                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId, profileForm.cpf);
                       const user = await getCurrentUser();
                       setCurrentUser(user);
                       alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');

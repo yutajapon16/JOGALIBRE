@@ -15,6 +15,7 @@ export interface User {
   depositAmount?: number;
   depositConfirmedAt?: string | null;
   termsAcceptedAt?: string | null;
+  cpf?: string;
 }
 
 export type BidStatus = 'pending' | 'approved' | 'rejected' | 'counter_offer';
