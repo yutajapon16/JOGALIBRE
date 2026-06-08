@@ -88,7 +88,8 @@ export default function AgentRegister() {
           country: form.country,
           cpf: form.cpf,
           state: form.state,
-          city: form.city
+          city: form.city,
+          language: lang
         })
       });
 

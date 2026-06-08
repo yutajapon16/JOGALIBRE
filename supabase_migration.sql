@@ -154,5 +154,9 @@ ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS state TEXT DEFAULT NULL;
 -- 20. user_roles テーブルに市名保存用カラムを追加
 ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS city TEXT DEFAULT NULL;
 
+-- 21. user_roles テーブルに言語設定保存用カラムを追加
+ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'es';
+
+
 
 

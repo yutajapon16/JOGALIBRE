@@ -773,7 +773,7 @@ export default function Home() {
   const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   // マイページ用state
-  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '', cpf: '', state: '', city: '' });
+  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '', cpf: '', state: '', city: '', language: '' });
   
   // ブラジルの州別市名取得用ステート
   const [signUpCities, setSignUpCities] = useState<{ id: number; nome: string }[]>([]);
@@ -985,6 +985,10 @@ export default function Home() {
     getCurrentUser().then(user => {
       if (user?.role === 'customer' || user?.role === 'agent') {
         setCurrentUser(user);
+        if (user.language === 'es' || user.language === 'pt') {
+          setLang(user.language);
+          localStorage.setItem('lang', user.language);
+        }
       }
     }).catch(err => {
       console.error('Fast failure in initial getCurrentUser:', err);
@@ -1012,6 +1016,10 @@ export default function Home() {
              }
              return user;
           });
+          if (user.language === 'es' || user.language === 'pt') {
+            setLang(user.language);
+            localStorage.setItem('lang', user.language);
+          }
         }
       }
     });
@@ -1294,8 +1302,15 @@ export default function Home() {
         const { profile } = await res.json();
 
         if (profile) {
-          // B001紐づき顧客、またはブラジル国籍の顧客はデフォルトでポルトガル語(pt)を設定
-          if (profile.agent_customer_id === 'B001' || profile.country?.trim().toLowerCase() === 'brasil') {
+          // アカウントに登録されている言語を優先適用
+          if (profile.language === 'es' || profile.language === 'pt') {
+            const currentLang = localStorage.getItem('lang');
+            if (currentLang !== profile.language) {
+              setLang(profile.language);
+              localStorage.setItem('lang', profile.language);
+            }
+          } else if (profile.agent_customer_id === 'B001' || profile.country?.trim().toLowerCase() === 'brasil') {
+            // B001紐づき顧客、またはブラジル国籍の顧客はデフォルトでポルトガル語(pt)を設定
             const currentLang = localStorage.getItem('lang');
             if (currentLang !== 'pt') {
               setLang('pt');
@@ -1317,6 +1332,7 @@ export default function Home() {
               depositAmount: profile.deposit_amount !== undefined && profile.deposit_amount !== null ? Number(profile.deposit_amount) : prev.depositAmount,
               depositConfirmedAt: profile.deposit_confirmed_at || prev.depositConfirmedAt,
               termsAcceptedAt: profile.terms_accepted_at || prev.termsAcceptedAt,
+              language: profile.language || undefined,
             } : prev;
             return nextUser;
           });
@@ -1329,7 +1345,8 @@ export default function Home() {
             agentCustomerId: profile.agent_customer_id || '',
             cpf: profile.cpf || '',
             state: profile.state || '',
-            city: profile.city || ''
+            city: profile.city || '',
+            language: profile.language || 'es'
           };
           setProfileForm(newForm);
         } else {
@@ -1820,7 +1837,7 @@ export default function Home() {
     const city = (formData.get('city') as string) || loginForm.city;
 
     try {
-      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country, agentCustomerId, cpf, state, city);
+      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country, agentCustomerId, cpf, state, city, lang);
 
       // メール確認が必要な場合は成功メッセージを表示
       alert(lang === 'es'
@@ -4454,6 +4471,19 @@ export default function Home() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
+                    {lang === 'es' ? 'Idioma' : 'Idioma'}
+                  </label>
+                  <select
+                    value={profileForm.language}
+                    onChange={(e) => setProfileForm({ ...profileForm, language: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
+                  >
+                    <option value="es">Español</option>
+                    <option value="pt">Português</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
                     {lang === 'es' ? 'País' : 'País'}
                   </label>
                   <input
@@ -4588,7 +4618,7 @@ export default function Home() {
                     if (profileSaving) return;
                     setProfileSaving(true);
                     try {
-                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId, profileForm.cpf, profileForm.state, profileForm.city);
+                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId, profileForm.cpf, profileForm.state, profileForm.city, profileForm.language);
                       const user = await getCurrentUser();
                       setCurrentUser(user);
                       alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
