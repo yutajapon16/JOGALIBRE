@@ -42,6 +42,7 @@ export default function AdminDashboard() {
   const [finalPriceInput, setFinalPriceInput] = useState('');
   const [exchangeRate, setExchangeRate] = useState(150);
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({ JPY: 150, BRL: 5.6, PYG: 7500 });
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const [activeTab, setActiveTab] = useState<'requests' | 'purchased' | 'deposits' | 'shipping' | 'customers' | 'agents'>('requests');
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   const [customersList, setCustomersList] = useState<any[]>([]);
@@ -704,6 +705,24 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
+    }
+  };
+
+  // 為替レートをフォーマットするヘルパー関数
+  const formatExchangeRate = (value: number, currency: string) => {
+    const fixedValue = value.toFixed(2);
+    const formatted = Number(fixedValue).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    if (currency === 'USD' || currency === 'JPY') {
+      return formatted;
+    } else {
+      return formatted
+        .replace(/,/g, 'TEMP')
+        .replace(/\./g, ',')
+        .replace(/TEMP/g, '.');
     }
   };
 
@@ -1409,20 +1428,39 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            <button
-              onClick={() => {
-                if (activeTab === 'requests') fetchBidRequests();
-                else if (activeTab === 'purchased') fetchPurchasedItems();
-                else if (activeTab === 'deposits') { fetchDeposits(); fetchUsersData(); }
-                else fetchUsersData();
-              }}
-              className="bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-full flex items-center justify-center"
-            >
-              🔁 更新
-            </button>
+            <div className="flex gap-2">
+              <select
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
+                className="w-1/2 h-12 px-3 bg-white border border-gray-300 rounded-lg text-sm sm:text-base font-medium shadow-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="USD">USD 🇺🇸</option>
+                <option value="BRL">BRL 🇧🇷</option>
+                <option value="PYG">PYG 🇵🇾</option>
+                <option value="CLP">CLP 🇨🇱</option>
+                <option value="BOB">BOB 🇧🇴</option>
+                <option value="ARS">ARS 🇦🇷</option>
+              </select>
+              <button
+                onClick={() => {
+                  if (activeTab === 'requests') fetchBidRequests();
+                  else if (activeTab === 'purchased') fetchPurchasedItems();
+                  else if (activeTab === 'deposits') { fetchDeposits(); fetchUsersData(); }
+                  else fetchUsersData();
+                }}
+                className="bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-1/2 flex items-center justify-center"
+              >
+                🔁 更新
+              </button>
+            </div>
 
             <div className="w-full h-12 bg-white border border-gray-300 rounded-lg text-sm sm:text-base flex items-center justify-center font-medium shadow-sm text-gray-700">
-              為替レート: <span className="font-bold text-indigo-600 ml-1.5">USD 1 = JPY {exchangeRate.toFixed(2)}</span>
+              為替レート: <span className="font-bold text-indigo-600 ml-1.5">
+                {selectedCurrency === 'USD'
+                  ? `USD 1 = JPY ${formatExchangeRate(exchangeRates['JPY'] || exchangeRate || 150, 'USD')}`
+                  : `USD 1 = ${selectedCurrency} ${formatExchangeRate(exchangeRates[selectedCurrency] || 0, selectedCurrency)}`
+                }
+              </span>
             </div>
           </div>
         </div>
