@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { COUNTRIES } from '@/lib/constants';
+import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
 // エージェント登録専用ページ
 // サーバーサイドAPI経由でrole='agent'として登録し、customer_idはA001〜が自動付与される
@@ -18,7 +18,8 @@ export default function AgentRegister() {
     address: '',
     zipCode: '',
     country: '',
-    cpf: ''
+    cpf: '',
+    state: ''
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -41,7 +42,8 @@ export default function AgentRegister() {
           address: form.address,
           zipCode: form.zipCode,
           country: form.country,
-          cpf: form.cpf
+          cpf: form.cpf,
+          state: form.state
         })
       });
 
@@ -52,7 +54,7 @@ export default function AgentRegister() {
       }
 
       setSuccess(true);
-      setForm({ email: '', password: '', fullName: '', whatsapp: '', accessPassword: '', address: '', zipCode: '', country: '', cpf: '' });
+      setForm({ email: '', password: '', fullName: '', whatsapp: '', accessPassword: '', address: '', zipCode: '', country: '', cpf: '', state: '' });
     } catch (error) {
       console.error('Agent sign up error:', error);
       alert(lang === 'es'
@@ -191,19 +193,41 @@ export default function AgentRegister() {
           </div>
 
           {form.country === 'Brasil' && (
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                CPF
-              </label>
-              <input
-                type="text"
-                value={form.cpf}
-                onChange={(e) => setForm({ ...form, cpf: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                placeholder="000.000.000-00"
-                required
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  CPF
+                </label>
+                <input
+                  type="text"
+                  value={form.cpf}
+                  onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                  placeholder="000.000.000-00"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  {lang === 'es' ? 'Estado' : 'Estado'}
+                </label>
+                <select
+                  value={form.state}
+                  onChange={(e) => setForm({ ...form, state: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+                  required
+                >
+                  <option value="" disabled>
+                    {lang === 'es' ? 'Seleccionar estado' : 'Selecionar estado'}
+                  </option>
+                  {BRAZIL_STATES.map((s) => (
+                    <option key={s.code} value={s.code}>
+                      {s.code} - {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
           )}
 
           <div>

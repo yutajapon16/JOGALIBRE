@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
 import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
-import { COUNTRIES } from '@/lib/constants';
+import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
 interface AppNotification {
   id: string;
@@ -704,7 +704,8 @@ export default function Home() {
     zipCode: '',
     country: '',
     agentCustomerId: '',
-    cpf: ''
+    cpf: '',
+    state: ''
   });
   const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping'>('search');
   const [hasClosedDepositReminder, setHasClosedDepositReminder] = useState(false);
@@ -771,7 +772,7 @@ export default function Home() {
   const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   // マイページ用state
-  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '', cpf: '' });
+  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '', cpf: '', state: '' });
   
   // JDM車体およびその他カテゴリ検索ボックス用のキーワード状態
   const [jdmSearchKeyword, setJdmSearchKeyword] = useState('');
@@ -829,6 +830,7 @@ export default function Home() {
         if (!prev.zipCode && currentUser.zipCode) prev.zipCode = currentUser.zipCode;
         if (!prev.agentCustomerId && currentUser.agentCustomerId) prev.agentCustomerId = currentUser.agentCustomerId;
         if (!prev.cpf && currentUser.cpf) prev.cpf = currentUser.cpf;
+        if (!prev.state && currentUser.state) prev.state = currentUser.state;
         return { ...prev };
       });
     }
@@ -1235,7 +1237,8 @@ export default function Home() {
             address: profile.address || '',
             zipCode: profile.zip_code || '',
             agentCustomerId: profile.agent_customer_id || '',
-            cpf: profile.cpf || ''
+            cpf: profile.cpf || '',
+            state: profile.state || ''
           };
           setProfileForm(newForm);
         } else {
@@ -1701,7 +1704,7 @@ export default function Home() {
     try {
       await signIn(email, password);
       // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '' });
     } catch (error) {
       console.error('Login error:', error);
       alert(lang === 'es'
@@ -1722,16 +1725,17 @@ export default function Home() {
     const country = (formData.get('country') as string) || loginForm.country;
     const agentCustomerId = (formData.get('agentCustomerId') as string) || loginForm.agentCustomerId;
     const cpf = (formData.get('cpf') as string) || loginForm.cpf;
+    const state = (formData.get('state') as string) || loginForm.state;
 
     try {
-      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country, agentCustomerId, cpf);
+      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country, agentCustomerId, cpf, state);
 
       // メール確認が必要な場合は成功メッセージを表示
       alert(lang === 'es'
         ? '¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta.'
         : 'Conta criada! Por favor, verifique seu e-mail para confirmar sua conta.');
 
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '' });
       setShowSignUp(false);
     } catch (error) {
       console.error('Sign up error:', error);
@@ -2379,18 +2383,41 @@ export default function Home() {
                   </select>
                 </div>
                 {loginForm.country === 'Brasil' && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2">CPF</label>
-                    <input
-                      type="text"
-                      name="cpf"
-                      value={loginForm.cpf}
-                      onChange={(e) => setLoginForm({ ...loginForm, cpf: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                      placeholder="000.000.000-00"
-                      required
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">CPF</label>
+                      <input
+                        type="text"
+                        name="cpf"
+                        value={loginForm.cpf}
+                        onChange={(e) => setLoginForm({ ...loginForm, cpf: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                        placeholder="000.000.000-00"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        {lang === 'es' ? 'Estado' : 'Estado'}
+                      </label>
+                      <select
+                        name="state"
+                        value={loginForm.state}
+                        onChange={(e) => setLoginForm({ ...loginForm, state: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
+                        required
+                      >
+                        <option value="" disabled>
+                          {lang === 'es' ? 'Seleccionar estado' : 'Selecionar estado'}
+                        </option>
+                        {BRAZIL_STATES.map((s) => (
+                          <option key={s.code} value={s.code}>
+                            {s.code} - {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
                 )}
                 <div>
                   <label className="block text-sm font-medium mb-2">
@@ -4287,16 +4314,37 @@ export default function Home() {
                   />
                 </div>
                 {currentUser?.country?.trim().toLowerCase() === 'brasil' && (
-                  <div>
-                    <label className="block text-sm font-medium mb-1">CPF</label>
-                    <input
-                      type="text"
-                      value={profileForm.cpf}
-                      onChange={(e) => setProfileForm({ ...profileForm, cpf: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                      placeholder="000.000.000-00"
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">CPF</label>
+                      <input
+                        type="text"
+                        value={profileForm.cpf}
+                        onChange={(e) => setProfileForm({ ...profileForm, cpf: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                        placeholder="000.000.000-00"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        {lang === 'es' ? 'Estado' : 'Estado'}
+                      </label>
+                      <select
+                        value={profileForm.state}
+                        onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
+                      >
+                        <option value="" disabled>
+                          {lang === 'es' ? 'Seleccionar estado' : 'Selecionar estado'}
+                        </option>
+                        {BRAZIL_STATES.map((s) => (
+                          <option key={s.code} value={s.code}>
+                            {s.code} - {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
                 )}
                 <div>
                   <label className="block text-sm font-medium mb-1">
@@ -4339,7 +4387,7 @@ export default function Home() {
                     if (profileSaving) return;
                     setProfileSaving(true);
                     try {
-                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId, profileForm.cpf);
+                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId, profileForm.cpf, profileForm.state);
                       const user = await getCurrentUser();
                       setCurrentUser(user);
                       alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');

@@ -148,3 +148,7 @@ CREATE INDEX IF NOT EXISTS idx_bid_requests_paid_japan ON bid_requests(paid_japa
 -- 18. user_roles テーブルに CPF 保存用カラムを追加
 ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS cpf TEXT DEFAULT NULL;
 
+-- 19. user_roles テーブルにブラジルの州コード（省略コード）保存用カラムを追加
+ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS state TEXT DEFAULT NULL;
+
+
