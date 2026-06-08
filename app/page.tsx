@@ -2814,10 +2814,10 @@ export default function Home() {
                     {getCurrencySymbol(selectedCurrency)}
                   </span>
                   {currentUser?.agentCustomerId === 'B001'
-                    ? calculateConvertedPrice(product.currentPrice, 'USD')
+                    ? calculateConvertedPrice(product.currentPrice, selectedCurrency)
                     : calculateConvertedPrice(product.currentPrice)}
                 </span>
-                {selectedCurrency === 'USD' && currentUser?.agentCustomerId !== 'B001' && (
+                {selectedCurrency === 'USD' && (
                   <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">
                     APROX<br />FOB
                   </span>
