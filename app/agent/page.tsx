@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
@@ -19,8 +19,52 @@ export default function AgentRegister() {
     zipCode: '',
     country: '',
     cpf: '',
-    state: ''
+    state: '',
+    city: ''
   });
+  const [cities, setCities] = useState<{ id: number; nome: string }[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+
+  // 州変更時に市名を取得
+  useEffect(() => {
+    if (form.country === 'Brasil' && form.state) {
+      setCitiesLoading(true);
+      fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${form.state}/municipios`)
+        .then(res => res.json())
+        .then(data => {
+          setCities(data || []);
+          setCitiesLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setCitiesLoading(false);
+        });
+    } else {
+      setCities([]);
+    }
+  }, [form.state, form.country]);
+
+  // CEP自動補完処理
+  const handleCepChange = async (cepVal: string) => {
+    const cleanCep = cepVal.replace(/\D/g, '');
+    setForm(prev => ({ ...prev, zipCode: cepVal }));
+    if (cleanCep.length === 8 && form.country === 'Brasil') {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setForm(prev => ({
+            ...prev,
+            state: data.uf,
+            city: data.localidade,
+            address: `${data.logradouro || ''}${data.logradouro && data.bairro ? ', ' : ''}${data.bairro || ''}`
+          }));
+        }
+      } catch (e) {
+        console.error('Error fetching ViaCEP:', e);
+      }
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -43,7 +87,8 @@ export default function AgentRegister() {
           zipCode: form.zipCode,
           country: form.country,
           cpf: form.cpf,
-          state: form.state
+          state: form.state,
+          city: form.city
         })
       });
 
@@ -54,7 +99,7 @@ export default function AgentRegister() {
       }
 
       setSuccess(true);
-      setForm({ email: '', password: '', fullName: '', whatsapp: '', accessPassword: '', address: '', zipCode: '', country: '', cpf: '', state: '' });
+      setForm({ email: '', password: '', fullName: '', whatsapp: '', accessPassword: '', address: '', zipCode: '', country: '', cpf: '', state: '', city: '' });
     } catch (error) {
       console.error('Agent sign up error:', error);
       alert(lang === 'es'
@@ -177,7 +222,7 @@ export default function AgentRegister() {
             </label>
             <select
               value={form.country}
-              onChange={(e) => setForm({ ...form, country: e.target.value })}
+              onChange={(e) => setForm({ ...form, country: e.target.value, state: '', city: '', zipCode: '', address: '', cpf: '' })}
               className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
               required
             >
@@ -193,55 +238,107 @@ export default function AgentRegister() {
           </div>
 
           {form.country === 'Brasil' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  CPF
-                </label>
-                <input
-                  type="text"
-                  value={form.cpf}
-                  onChange={(e) => setForm({ ...form, cpf: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
-                  placeholder="000.000.000-00"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  {lang === 'es' ? 'Estado' : 'Estado'}
-                </label>
-                <select
-                  value={form.state}
-                  onChange={(e) => setForm({ ...form, state: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
-                  required
-                >
-                  <option value="" disabled>
-                    {lang === 'es' ? 'Seleccionar estado' : 'Selecionar estado'}
-                  </option>
-                  {BRAZIL_STATES.map((s) => (
-                    <option key={s.code} value={s.code}>
-                      {s.code} - {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                CPF
+              </label>
+              <input
+                type="text"
+                value={form.cpf}
+                onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                placeholder="000.000.000-00"
+                required
+              />
+            </div>
           )}
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              {lang === 'es' ? 'Código Postal' : 'Código Postal'}
+              {form.country === 'Brasil' ? 'CEP' : (lang === 'es' ? 'Código Postal' : 'Código Postal')}
             </label>
             <input
               type="text"
               value={form.zipCode}
-              onChange={(e) => setForm({ ...form, zipCode: e.target.value })}
+              onChange={(e) => {
+                if (form.country === 'Brasil') {
+                  handleCepChange(e.target.value);
+                } else {
+                  setForm({ ...form, zipCode: e.target.value });
+                }
+              }}
               className="w-full border border-gray-300 rounded-lg px-4 py-2"
-              placeholder="12345-678"
+              placeholder={form.country === 'Brasil' ? '00000-000' : '12345-678'}
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              {lang === 'es' ? 'Estado' : 'Estado'}
+            </label>
+            {form.country === 'Brasil' ? (
+              <select
+                value={form.state}
+                onChange={(e) => setForm({ ...form, state: e.target.value, city: '' })}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+                required
+              >
+                <option value="" disabled>
+                  {lang === 'es' ? 'Seleccionar estado' : 'Selecionar estado'}
+                </option>
+                {BRAZIL_STATES.map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {s.code} - {s.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={form.state || ''}
+                onChange={(e) => setForm({ ...form, state: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                placeholder={lang === 'es' ? 'Provincia / Estado' : 'Província / Estado'}
+              />
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              {lang === 'es' ? 'Ciudad' : 'Cidade'}
+            </label>
+            {form.country === 'Brasil' ? (
+              <select
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+                required
+                disabled={citiesLoading}
+              >
+                <option value="" disabled>
+                  {citiesLoading 
+                    ? (lang === 'es' ? 'Cargando...' : 'Carregando...') 
+                    : (lang === 'es' ? 'Seleccionar ciudad' : 'Selecionar cidade')}
+                </option>
+                {cities.find(c => c.nome === form.city) === undefined && form.city && (
+                  <option value={form.city}>{form.city}</option>
+                )}
+                {cities.map((c) => (
+                  <option key={c.id} value={c.nome}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={form.city || ''}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                placeholder={lang === 'es' ? 'Ciudad' : 'Cidade'}
+              />
+            )}
           </div>
 
           <div>
@@ -253,7 +350,7 @@ export default function AgentRegister() {
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-4 py-2"
-              placeholder={lang === 'es' ? 'Calle, Número, Ciudad' : 'Rua, Número, Cidade'}
+              placeholder={lang === 'es' ? 'Calle, Número, Barrio' : 'Rua, Número, Bairro'}
               required
             />
           </div>

@@ -151,4 +151,8 @@ ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS cpf TEXT DEFAULT NULL;
 -- 19. user_roles テーブルにブラジルの州コード（省略コード）保存用カラムを追加
 ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS state TEXT DEFAULT NULL;
 
+-- 20. user_roles テーブルに市名保存用カラムを追加
+ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS city TEXT DEFAULT NULL;
+
+
 

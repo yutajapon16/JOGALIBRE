@@ -705,7 +705,8 @@ export default function Home() {
     country: '',
     agentCustomerId: '',
     cpf: '',
-    state: ''
+    state: '',
+    city: ''
   });
   const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping'>('search');
   const [hasClosedDepositReminder, setHasClosedDepositReminder] = useState(false);
@@ -772,7 +773,95 @@ export default function Home() {
   const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   // マイページ用state
-  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '', cpf: '', state: '' });
+  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '', cpf: '', state: '', city: '' });
+  
+  // ブラジルの州別市名取得用ステート
+  const [signUpCities, setSignUpCities] = useState<{ id: number; nome: string }[]>([]);
+  const [signUpCitiesLoading, setSignUpCitiesLoading] = useState(false);
+  const [myPageCities, setMyPageCities] = useState<{ id: number; nome: string }[]>([]);
+  const [myPageCitiesLoading, setMyPageCitiesLoading] = useState(false);
+
+  // 登録画面の州変更時に市名を取得
+  useEffect(() => {
+    if (loginForm.country === 'Brasil' && loginForm.state) {
+      setSignUpCitiesLoading(true);
+      fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${loginForm.state}/municipios`)
+        .then(res => res.json())
+        .then(data => {
+          setSignUpCities(data || []);
+          setSignUpCitiesLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setSignUpCitiesLoading(false);
+        });
+    } else {
+      setSignUpCities([]);
+    }
+  }, [loginForm.state, loginForm.country]);
+
+  // マイページの州変更時に市名を取得
+  useEffect(() => {
+    if (currentUser?.country?.trim().toLowerCase() === 'brasil' && profileForm.state) {
+      setMyPageCitiesLoading(true);
+      fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${profileForm.state}/municipios`)
+        .then(res => res.json())
+        .then(data => {
+          setMyPageCities(data || []);
+          setMyPageCitiesLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setMyPageCitiesLoading(false);
+        });
+    } else {
+      setMyPageCities([]);
+    }
+  }, [profileForm.state, currentUser?.country]);
+
+  // CEP自動補完処理（登録画面）
+  const handleCepChange = async (cepVal: string) => {
+    const cleanCep = cepVal.replace(/\D/g, '');
+    setLoginForm(prev => ({ ...prev, zipCode: cepVal }));
+    if (cleanCep.length === 8 && loginForm.country === 'Brasil') {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setLoginForm(prev => ({
+            ...prev,
+            state: data.uf,
+            city: data.localidade,
+            address: `${data.logradouro || ''}${data.logradouro && data.bairro ? ', ' : ''}${data.bairro || ''}`
+          }));
+        }
+      } catch (e) {
+        console.error('Error fetching ViaCEP:', e);
+      }
+    }
+  };
+
+  // CEP自動補完処理（マイページ）
+  const handleMyPageCepChange = async (cepVal: string) => {
+    const cleanCep = cepVal.replace(/\D/g, '');
+    setProfileForm(prev => ({ ...prev, zipCode: cepVal }));
+    if (cleanCep.length === 8 && currentUser?.country?.trim().toLowerCase() === 'brasil') {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setProfileForm(prev => ({
+            ...prev,
+            state: data.uf,
+            city: data.localidade,
+            address: `${data.logradouro || ''}${data.logradouro && data.bairro ? ', ' : ''}${data.bairro || ''}`
+          }));
+        }
+      } catch (e) {
+        console.error('Error fetching ViaCEP:', e);
+      }
+    }
+  };
   
   // JDM車体およびその他カテゴリ検索ボックス用のキーワード状態
   const [jdmSearchKeyword, setJdmSearchKeyword] = useState('');
@@ -831,6 +920,7 @@ export default function Home() {
         if (!prev.agentCustomerId && currentUser.agentCustomerId) prev.agentCustomerId = currentUser.agentCustomerId;
         if (!prev.cpf && currentUser.cpf) prev.cpf = currentUser.cpf;
         if (!prev.state && currentUser.state) prev.state = currentUser.state;
+        if (!prev.city && currentUser.city) prev.city = currentUser.city;
         return { ...prev };
       });
     }
@@ -1238,7 +1328,8 @@ export default function Home() {
             zipCode: profile.zip_code || '',
             agentCustomerId: profile.agent_customer_id || '',
             cpf: profile.cpf || '',
-            state: profile.state || ''
+            state: profile.state || '',
+            city: profile.city || ''
           };
           setProfileForm(newForm);
         } else {
@@ -1704,7 +1795,7 @@ export default function Home() {
     try {
       await signIn(email, password);
       // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '', city: '' });
     } catch (error) {
       console.error('Login error:', error);
       alert(lang === 'es'
@@ -1726,16 +1817,17 @@ export default function Home() {
     const agentCustomerId = (formData.get('agentCustomerId') as string) || loginForm.agentCustomerId;
     const cpf = (formData.get('cpf') as string) || loginForm.cpf;
     const state = (formData.get('state') as string) || loginForm.state;
+    const city = (formData.get('city') as string) || loginForm.city;
 
     try {
-      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country, agentCustomerId, cpf, state);
+      await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country, agentCustomerId, cpf, state, city);
 
       // メール確認が必要な場合は成功メッセージを表示
       alert(lang === 'es'
         ? '¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta.'
         : 'Conta criada! Por favor, verifique seu e-mail para confirmar sua conta.');
 
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '', city: '' });
       setShowSignUp(false);
     } catch (error) {
       console.error('Sign up error:', error);
@@ -2368,7 +2460,7 @@ export default function Home() {
                   <select
                     name="country"
                     value={loginForm.country}
-                    onChange={(e) => setLoginForm({ ...loginForm, country: e.target.value })}
+                    onChange={(e) => setLoginForm({ ...loginForm, country: e.target.value, state: '', city: '', zipCode: '', address: '', cpf: '' })}
                     className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
                     required
                   >
@@ -2382,57 +2474,115 @@ export default function Home() {
                     ))}
                   </select>
                 </div>
+
                 {loginForm.country === 'Brasil' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">CPF</label>
-                      <input
-                        type="text"
-                        name="cpf"
-                        value={loginForm.cpf}
-                        onChange={(e) => setLoginForm({ ...loginForm, cpf: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                        placeholder="000.000.000-00"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        {lang === 'es' ? 'Estado' : 'Estado'}
-                      </label>
-                      <select
-                        name="state"
-                        value={loginForm.state}
-                        onChange={(e) => setLoginForm({ ...loginForm, state: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
-                        required
-                      >
-                        <option value="" disabled>
-                          {lang === 'es' ? 'Seleccionar estado' : 'Selecionar estado'}
-                        </option>
-                        {BRAZIL_STATES.map((s) => (
-                          <option key={s.code} value={s.code}>
-                            {s.code} - {s.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">CPF</label>
+                    <input
+                      type="text"
+                      name="cpf"
+                      value={loginForm.cpf}
+                      onChange={(e) => setLoginForm({ ...loginForm, cpf: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                      placeholder="000.000.000-00"
+                      required
+                    />
+                  </div>
                 )}
+
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    {lang === 'es' ? 'Código Postal' : 'Código Postal'}
+                    {loginForm.country === 'Brasil' ? 'CEP' : (lang === 'es' ? 'Código Postal' : 'Código Postal')}
                   </label>
                   <input
                     type="text"
                     name="zipCode"
                     value={loginForm.zipCode}
-                    onChange={(e) => setLoginForm({ ...loginForm, zipCode: e.target.value })}
+                    onChange={(e) => {
+                      if (loginForm.country === 'Brasil') {
+                        handleCepChange(e.target.value);
+                      } else {
+                        setLoginForm({ ...loginForm, zipCode: e.target.value });
+                      }
+                    }}
                     className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                    placeholder="12345-678"
+                    placeholder={loginForm.country === 'Brasil' ? '00000-000' : '12345-678'}
                     required
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {lang === 'es' ? 'Estado' : 'Estado'}
+                  </label>
+                  {loginForm.country === 'Brasil' ? (
+                    <select
+                      name="state"
+                      value={loginForm.state}
+                      onChange={(e) => setLoginForm({ ...loginForm, state: e.target.value, city: '' })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
+                      required
+                    >
+                      <option value="" disabled>
+                        {lang === 'es' ? 'Seleccionar estado' : 'Selecionar estado'}
+                      </option>
+                      {BRAZIL_STATES.map((s) => (
+                        <option key={s.code} value={s.code}>
+                          {s.code} - {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      name="state"
+                      value={loginForm.state || ''}
+                      onChange={(e) => setLoginForm({ ...loginForm, state: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                      placeholder={lang === 'es' ? 'Provincia / Estado' : 'Província / Estado'}
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {lang === 'es' ? 'Ciudad' : 'Cidade'}
+                  </label>
+                  {loginForm.country === 'Brasil' ? (
+                    <select
+                      name="city"
+                      value={loginForm.city}
+                      onChange={(e) => setLoginForm({ ...loginForm, city: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
+                      required
+                      disabled={signUpCitiesLoading}
+                    >
+                      <option value="" disabled>
+                        {signUpCitiesLoading 
+                          ? (lang === 'es' ? 'Cargando...' : 'Carregando...') 
+                          : (lang === 'es' ? 'Seleccionar ciudad' : 'Selecionar cidade')}
+                      </option>
+                      {signUpCities.find(c => c.nome === loginForm.city) === undefined && loginForm.city && (
+                        <option value={loginForm.city}>{loginForm.city}</option>
+                      )}
+                      {signUpCities.map((c) => (
+                        <option key={c.id} value={c.nome}>
+                          {c.nome}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      name="city"
+                      value={loginForm.city || ''}
+                      onChange={(e) => setLoginForm({ ...loginForm, city: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                      placeholder={lang === 'es' ? 'Ciudad' : 'Cidade'}
+                    />
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     {lang === 'es' ? 'Dirección' : 'Endereço'}
@@ -2443,7 +2593,7 @@ export default function Home() {
                     value={loginForm.address}
                     onChange={(e) => setLoginForm({ ...loginForm, address: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                    placeholder={lang === 'es' ? 'Calle, Número, Ciudad' : 'Rua, Número, Cidade'}
+                    placeholder={lang === 'es' ? 'Calle, Número, Barrio' : 'Rua, Número, Bairro'}
                     required
                   />
                 </div>
@@ -4314,48 +4464,98 @@ export default function Home() {
                   />
                 </div>
                 {currentUser?.country?.trim().toLowerCase() === 'brasil' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">CPF</label>
-                      <input
-                        type="text"
-                        value={profileForm.cpf}
-                        onChange={(e) => setProfileForm({ ...profileForm, cpf: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                        placeholder="000.000.000-00"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        {lang === 'es' ? 'Estado' : 'Estado'}
-                      </label>
-                      <select
-                        value={profileForm.state}
-                        onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
-                      >
-                        <option value="" disabled>
-                          {lang === 'es' ? 'Seleccionar estado' : 'Selecionar estado'}
-                        </option>
-                        {BRAZIL_STATES.map((s) => (
-                          <option key={s.code} value={s.code}>
-                            {s.code} - {s.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">CPF</label>
+                    <input
+                      type="text"
+                      value={profileForm.cpf}
+                      onChange={(e) => setProfileForm({ ...profileForm, cpf: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                      placeholder="000.000.000-00"
+                    />
+                  </div>
                 )}
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    {lang === 'es' ? 'Código Postal' : 'Código Postal'}
+                    {currentUser?.country?.trim().toLowerCase() === 'brasil' ? 'CEP' : (lang === 'es' ? 'Código Postal' : 'Código Postal')}
                   </label>
                   <input
                     type="text"
                     value={profileForm.zipCode}
-                    onChange={(e) => setProfileForm({ ...profileForm, zipCode: e.target.value })}
+                    onChange={(e) => {
+                      if (currentUser?.country?.trim().toLowerCase() === 'brasil') {
+                        handleMyPageCepChange(e.target.value);
+                      } else {
+                        setProfileForm({ ...profileForm, zipCode: e.target.value });
+                      }
+                    }}
                     className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                    placeholder={currentUser?.country?.trim().toLowerCase() === 'brasil' ? '00000-000' : '12345-678'}
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    {lang === 'es' ? 'Estado' : 'Estado'}
+                  </label>
+                  {currentUser?.country?.trim().toLowerCase() === 'brasil' ? (
+                    <select
+                      value={profileForm.state}
+                      onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value, city: '' })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
+                    >
+                      <option value="" disabled>
+                        {lang === 'es' ? 'Seleccionar estado' : 'Selecionar estado'}
+                      </option>
+                      {BRAZIL_STATES.map((s) => (
+                        <option key={s.code} value={s.code}>
+                          {s.code} - {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={profileForm.state || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                      placeholder={lang === 'es' ? 'Provincia / Estado' : 'Província / Estado'}
+                    />
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    {lang === 'es' ? 'Ciudad' : 'Cidade'}
+                  </label>
+                  {currentUser?.country?.trim().toLowerCase() === 'brasil' ? (
+                    <select
+                      value={profileForm.city}
+                      onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
+                      disabled={myPageCitiesLoading}
+                    >
+                      <option value="" disabled>
+                        {myPageCitiesLoading 
+                          ? (lang === 'es' ? 'Cargando...' : 'Carregando...') 
+                          : (lang === 'es' ? 'Seleccionar ciudad' : 'Selecionar cidade')}
+                      </option>
+                      {myPageCities.find(c => c.nome === profileForm.city) === undefined && profileForm.city && (
+                        <option value={profileForm.city}>{profileForm.city}</option>
+                      )}
+                      {myPageCities.map((c) => (
+                        <option key={c.id} value={c.nome}>
+                          {c.nome}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={profileForm.city || ''}
+                      onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                      placeholder={lang === 'es' ? 'Ciudad' : 'Cidade'}
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
@@ -4366,6 +4566,7 @@ export default function Home() {
                     value={profileForm.address}
                     onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                    placeholder={lang === 'es' ? 'Calle, Número, Barrio' : 'Rua, Número, Bairro'}
                   />
                 </div>
                 {currentUser?.role === 'customer' && (
@@ -4387,7 +4588,7 @@ export default function Home() {
                     if (profileSaving) return;
                     setProfileSaving(true);
                     try {
-                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId, profileForm.cpf, profileForm.state);
+                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId, profileForm.cpf, profileForm.state, profileForm.city);
                       const user = await getCurrentUser();
                       setCurrentUser(user);
                       alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');

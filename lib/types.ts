@@ -17,6 +17,7 @@ export interface User {
   termsAcceptedAt?: string | null;
   cpf?: string;
   state?: string;
+  city?: string;
 }
 
 export type BidStatus = 'pending' | 'approved' | 'rejected' | 'counter_offer';

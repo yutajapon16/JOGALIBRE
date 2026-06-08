@@ -108,7 +108,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { fullName, whatsapp, address, zipCode, agentCustomerId, cpf, state } = body;
+        const { fullName, whatsapp, address, zipCode, agentCustomerId, cpf, state, city } = body;
         const cleanAgentCustomerId = agentCustomerId ? agentCustomerId.trim().toUpperCase() : null;
 
         // 既存のロールと国名を取得（国名は更新しないため、引き継ぐ）
@@ -135,7 +135,8 @@ export async function POST(request: Request) {
                 role: currentRole, // 既存のロールを引き継ぐ、無い場合はcustomer
                 agent_customer_id: cleanAgentCustomerId,
                 cpf: cpf || null,
-                state: state || null
+                state: state || null,
+                city: city || null
             }, {
                 onConflict: 'id'
             })
@@ -150,7 +151,7 @@ export async function POST(request: Request) {
         // ついでに User Metadata の方も更新しておく (supabaseAdminなら可能)
         const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(
             user.id,
-            { user_metadata: { full_name: fullName, whatsapp: whatsapp, address: address, zip_code: zipCode, agent_customer_id: cleanAgentCustomerId, cpf: cpf || null, state: state || null } }
+            { user_metadata: { full_name: fullName, whatsapp: whatsapp, address: address, zip_code: zipCode, agent_customer_id: cleanAgentCustomerId, cpf: cpf || null, state: state || null, city: city || null } }
         );
 
         if (updateAuthError) {
