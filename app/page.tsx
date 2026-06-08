@@ -4621,7 +4621,11 @@ export default function Home() {
                       await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId, profileForm.cpf, profileForm.state, profileForm.city, profileForm.language);
                       const user = await getCurrentUser();
                       setCurrentUser(user);
-                      alert(lang === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
+                      if (user?.language === 'es' || user?.language === 'pt') {
+                        setLang(user.language);
+                        localStorage.setItem('lang', user.language);
+                      }
+                      alert((user?.language || lang) === 'es' ? '¡Perfil actualizado!' : 'Perfil atualizado!');
                     } catch (error) {
                       console.error('Profile update error:', error);
                       alert(lang === 'es' ? 'Error al actualizar perfil.' : 'Erro ao atualizar perfil.');
@@ -5742,13 +5746,13 @@ export default function Home() {
                 ⚠️
               </span>
               <h2 className="text-lg sm:text-xl font-black text-gray-900">
-                {lang === 'es' ? 'Depósito de Garantía Requerido' : 'Depósito de Garantia Necessário'}
+                {(currentUser?.language || lang) === 'es' ? 'Depósito de Garantía Requerido' : 'Depósito de Garantia Necessário'}
               </h2>
             </div>
 
             {/* 説明文 */}
             <p className="text-sm text-gray-600 text-center mb-6 leading-relaxed">
-              {lang === 'es' 
+              {(currentUser?.language || lang) === 'es' 
                 ? 'Para comenzar a realizar ofertas en las subastas de Yahoo Japón, es necesario completar el pago del depósito de garantía.' 
                 : 'Para começar a realizar lances nos leilões do Yahoo Japão, é necessário concluir o pagamento do depósito de garantia.'}
             </p>
@@ -5757,7 +5761,7 @@ export default function Home() {
             <div className="h-14 px-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/80 shadow-sm flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
-                  {lang === 'es' ? 'Garantía' : 'Garantia'}:
+                  {(currentUser?.language || lang) === 'es' ? 'Garantía' : 'Garantia'}:
                 </span>
                 <span className="text-base sm:text-lg font-bold text-gray-800 leading-none">
                   ${(currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null) ? currentUser.depositAmount : (currentUser?.role === 'agent' ? 500 : 100)}
@@ -5768,7 +5772,7 @@ export default function Home() {
                   onClick={() => {
                     const depositItem = {
                       id: 'deposit',
-                      productTitle: lang === 'es' ? 'Depósito de garantía' : 'Depósito de garantia',
+                      productTitle: (currentUser?.language || lang) === 'es' ? 'Depósito de garantía' : 'Depósito de garantia',
                       finalPrice: (currentUser?.depositAmount !== undefined && currentUser?.depositAmount !== null)
                         ? currentUser.depositAmount
                         : (currentUser?.role === 'agent' ? 500 : 100),
@@ -5779,7 +5783,7 @@ export default function Home() {
                   }}
                   className="text-center text-xs text-white font-bold h-9 bg-green-600 hover:bg-green-700 rounded-lg px-3 shadow-sm transition whitespace-nowrap flex items-center justify-center"
                 >
-                  {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
+                  {(currentUser?.language || lang) === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
                 </button>
               </div>
             </div>
