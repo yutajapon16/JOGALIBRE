@@ -690,6 +690,7 @@ export default function Home() {
   const [products, setProducts] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SearchItem | null>(null);
+  const [isOfferUpdating, setIsOfferUpdating] = useState(false);
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showSignUp, setShowSignUp] = useState(false);
@@ -2117,8 +2118,8 @@ export default function Home() {
     }
   };
 
-  const fetchProductDetailForOffer = async (url: string) => {
-    setLoading(true);
+  const fetchProductDetailForOfferSilent = async (url: string) => {
+    setIsOfferUpdating(true);
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -2134,12 +2135,11 @@ export default function Home() {
       const data = await res.json();
       if (data.product) {
         const detail = data.product;
-        setSelectedProduct(detail);
-        setBidForm({ 
-          name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
-            ? (currentUser?.agentFullName || '')
-            : (currentUser?.fullName || ''),
-          maxBid: '' 
+        setSelectedProduct(prev => {
+          if (prev && prev.url === detail.url) {
+            return { ...prev, ...detail, images: detail.images || prev.images || [detail.imageUrl] };
+          }
+          return prev;
         });
 
         // 商品リスト(products)を同期更新
@@ -2153,9 +2153,9 @@ export default function Home() {
         ));
       }
     } catch (error) {
-      console.error('Error fetching product for offer:', error);
+      console.error('Error fetching product for offer silent:', error);
     } finally {
-      setLoading(false);
+      setIsOfferUpdating(false);
     }
   };
 
@@ -2856,16 +2856,15 @@ export default function Home() {
 
             <button
               onClick={() => {
+                setSelectedProduct(product);
+                setBidForm({ 
+                  name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
+                    ? (currentUser?.agentFullName || '')
+                    : (currentUser?.fullName || ''),
+                  maxBid: '' 
+                });
                 if (product.url) {
-                  fetchProductDetailForOffer(product.url);
-                } else {
-                  setSelectedProduct(product);
-                  setBidForm({ 
-                    name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
-                      ? (currentUser?.agentFullName || '')
-                      : (currentUser?.fullName || ''),
-                    maxBid: '' 
-                  });
+                  fetchProductDetailForOfferSilent(product.url);
                 }
               }}
               className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold rounded-lg transition shadow-sm hover:shadow flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
@@ -5037,8 +5036,13 @@ export default function Home() {
                     </div>
                   )}
                   <div className="text-[10px] sm:text-xs h-7 flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-1.5 w-full whitespace-nowrap overflow-hidden text-ellipsis">
-                    <span className="text-gray-500 font-medium">{t.currentPrice}: USD</span>
-                    <span className="font-extrabold text-sm text-indigo-700">
+                    <span className="text-gray-500 font-medium flex items-center gap-1">
+                      {t.currentPrice}: USD
+                      {isOfferUpdating && (
+                        <span className="inline-block animate-spin rounded-full h-3 w-3 border-2 border-indigo-600 border-t-transparent"></span>
+                      )}
+                    </span>
+                    <span className={`font-extrabold text-sm text-indigo-700 transition-opacity duration-200 ${isOfferUpdating ? 'opacity-50' : ''}`}>
                       $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD')}
                     </span>
                   </div>
