@@ -1432,7 +1432,7 @@ export default function AdminDashboard() {
               <select
                 value={selectedCurrency}
                 onChange={(e) => setSelectedCurrency(e.target.value)}
-                className="w-1/2 h-12 px-3 bg-white border border-gray-300 rounded-lg text-sm sm:text-base font-medium shadow-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-1/2 h-12 px-3 bg-white border border-gray-300 rounded-lg text-sm sm:text-base font-medium shadow-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center"
               >
                 <option value="USD">USD 🇺🇸</option>
                 <option value="BRL">BRL 🇧🇷</option>
