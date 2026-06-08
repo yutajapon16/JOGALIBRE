@@ -2129,7 +2129,7 @@ export default function Home() {
           'Content-Type': 'application/json',
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         },
-        body: JSON.stringify({ url, lang })
+        body: JSON.stringify({ url, lang, skipDescription: true, skipAiSummary: true })
       });
       const data = await res.json();
       if (data.product) {
@@ -2173,7 +2173,7 @@ export default function Home() {
           'Content-Type': 'application/json',
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         },
-        body: JSON.stringify({ url: searchUrl, lang })
+        body: JSON.stringify({ url: searchUrl, lang, skipDescription: true, skipAiSummary: true })
       });
 
       const data = await res.json();
@@ -5050,16 +5050,6 @@ export default function Home() {
                   </a>
                 </div>
               </div>
-
-              {/* 商品説明の追加 */}
-              {selectedProduct.translatedDescription && (
-                <div className="mt-4 mb-4 p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto border border-gray-100">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t.description}</h4>
-                  <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
-                    {selectedProduct.translatedDescription}
-                  </p>
-                </div>
-              )}
 
               <form onSubmit={handleBidRequest} className="space-y-3">
                 <div>

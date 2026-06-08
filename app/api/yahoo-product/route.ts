@@ -6,6 +6,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const url = body.url;
     const lang = body.lang || 'ja';
+    const skipDescription = body.skipDescription || false;
+    const skipAiSummary = body.skipAiSummary || false;
 
     if (!url || !url.includes('auctions.yahoo.co.jp')) {
       return NextResponse.json(
@@ -216,7 +218,7 @@ export async function POST(request: Request) {
 
     // iframeによる商品説明の取得（ヤフオクストア等の「もっと読む」対応）
     let iframeUrl = '';
-    const iframeMatches = html.match(/<iframe[\s\S]*?>/gi);
+    const iframeMatches = !skipDescription ? html.match(/<iframe[\s\S]*?>/gi) : null;
     if (iframeMatches) {
       for (const iframeTag of iframeMatches) {
         const srcMatch = iframeTag.match(/src\s*=\s*["']([^"']*)["']/i);
@@ -268,7 +270,7 @@ export async function POST(request: Request) {
     }
 
     // 商品の説明文を抽出
-    if (!description) {
+    if (!description && !skipDescription) {
       const descriptionMatch = html.match(/<div[^>]*class="ProductDescription__body"[^>]*>([\s\S]*?)<\/div>/i);
       if (descriptionMatch) {
         // タグを除去してテキストのみ抽出（または簡易HTMLとして保持）
@@ -282,52 +284,65 @@ export async function POST(request: Request) {
       }
     }
 
-    // 説明文の翻訳 (オプション: パラメータで言語が指定されている場合)
+    // タイトルと説明文の翻訳を並列実行
     let translatedDescription = '';
-    // ここで lang を再宣言しない
-
-    if (description && lang !== 'ja') {
-      const controllerTranslate = new AbortController();
-      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
-      try {
-        // 長文の場合は分割が必要だが、まずはシンプルに試行
-        const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2000); // 2000文字制限
-        const transRes = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(cleanDesc)}`,
-          { signal: controllerTranslate.signal }
-        );
-        const transData = await transRes.json();
-        translatedDescription = transData?.[0]?.map((x: string[]) => x[0]).join('') || '';
-      } catch (e) {
-        console.error('Description translation error:', e);
-      } finally {
-        clearTimeout(timeoutTranslate);
-      }
-    }
-
-    // タイトルの翻訳
     let translatedTitle = title;
-    if (title && lang !== 'ja') {
-      const controllerTranslate = new AbortController();
-      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
-      try {
-        const transRes = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(title)}`,
-          { signal: controllerTranslate.signal }
-        );
-        const transData = await transRes.json();
-        translatedTitle = transData?.[0]?.[0]?.[0] || title;
-      } catch (e) {
-        console.error('Title translation error:', e);
-      } finally {
-        clearTimeout(timeoutTranslate);
+
+    if (lang !== 'ja') {
+      const translatePromises: Promise<void>[] = [];
+
+      // 説明文の翻訳
+      if (description && !skipDescription) {
+        const translateDesc = async () => {
+          const controllerTranslate = new AbortController();
+          const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
+          try {
+            const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2000); // 2000文字制限
+            const transRes = await fetch(
+              `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(cleanDesc)}`,
+              { signal: controllerTranslate.signal }
+            );
+            const transData = await transRes.json();
+            translatedDescription = transData?.[0]?.map((x: string[]) => x[0]).join('') || '';
+          } catch (e) {
+            console.error('Description translation error:', e);
+          } finally {
+            clearTimeout(timeoutTranslate);
+          }
+        };
+        translatePromises.push(translateDesc());
+      }
+
+      // タイトルの翻訳
+      if (title) {
+        const translateTitle = async () => {
+          const controllerTranslate = new AbortController();
+          const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
+          try {
+            const transRes = await fetch(
+              `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(title)}`,
+              { signal: controllerTranslate.signal }
+            );
+            const transData = await transRes.json();
+            translatedTitle = transData?.[0]?.[0]?.[0] || title;
+          } catch (e) {
+            console.error('Title translation error:', e);
+          } finally {
+            clearTimeout(timeoutTranslate);
+          }
+        };
+        translatePromises.push(translateTitle());
+      }
+
+      if (translatePromises.length > 0) {
+        await Promise.all(translatePromises);
       }
     }
     // AIによる要約翻訳の生成
     let aiSummaryEs = '';
     let aiSummaryPt = '';
 
-    if (description && process.env.GEMINI_API_KEY) {
+    if (description && process.env.GEMINI_API_KEY && !skipAiSummary) {
       const controllerAi = new AbortController();
       const timeoutAi = setTimeout(() => controllerAi.abort(), 6000);
       try {
