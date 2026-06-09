@@ -4877,7 +4877,7 @@ export default function Home() {
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full">
                           <button
                             onClick={() => {
                               setSearchCondition('all');
@@ -4885,13 +4885,13 @@ export default function Home() {
                                 handleCategorySearch(catId, 'all');
                               }
                             }}
-                            className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
                               searchCondition === 'all'
-                                ? 'bg-indigo-900 text-white shadow-sm'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
+                                : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                             }`}
                           >
-                            {t.condAll}
+                            <span>🌐</span> {t.condAll}
                           </button>
                           <button
                             onClick={() => {
@@ -4900,13 +4900,13 @@ export default function Home() {
                                 handleCategorySearch(catId, 'new');
                               }
                             }}
-                            className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
                               searchCondition === 'new'
-                                ? 'bg-indigo-900 text-white shadow-sm'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
+                                : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                             }`}
                           >
-                            {t.condNew}
+                            <span>✨</span> {t.condNew}
                           </button>
                           <button
                             onClick={() => {
@@ -4915,13 +4915,13 @@ export default function Home() {
                                 handleCategorySearch(catId, 'used');
                               }
                             }}
-                            className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
                               searchCondition === 'used'
-                                ? 'bg-indigo-900 text-white shadow-sm'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
+                                : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                             }`}
                           >
-                            {t.condUsed}
+                            <span>🔄</span> {t.condUsed}
                           </button>
                         </div>
                       </div>
@@ -4952,7 +4952,7 @@ export default function Home() {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full">
                         <button
                           onClick={() => {
                             setSearchCondition('all');
@@ -4960,13 +4960,13 @@ export default function Home() {
                               handleJdmSearch('all');
                             }
                           }}
-                          className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
                             searchCondition === 'all'
-                              ? 'bg-indigo-900 text-white shadow-sm'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
+                              : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                           }`}
                         >
-                          {t.condAll}
+                          <span>🌐</span> {t.condAll}
                         </button>
                         <button
                           onClick={() => {
@@ -4975,13 +4975,13 @@ export default function Home() {
                               handleJdmSearch('new');
                             }
                           }}
-                          className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
                             searchCondition === 'new'
-                              ? 'bg-indigo-900 text-white shadow-sm'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
+                              : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                           }`}
                         >
-                          {t.condNew}
+                          <span>✨</span> {t.condNew}
                         </button>
                         <button
                           onClick={() => {
@@ -4990,13 +4990,13 @@ export default function Home() {
                               handleJdmSearch('used');
                             }
                           }}
-                          className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
                             searchCondition === 'used'
-                              ? 'bg-indigo-900 text-white shadow-sm'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
+                              : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                           }`}
                         >
-                          {t.condUsed}
+                          <span>🔄</span> {t.condUsed}
                         </button>
                       </div>
                     </div>
@@ -5051,45 +5051,45 @@ export default function Home() {
                     </button>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full max-w-md mx-auto">
                     <button
                       onClick={() => {
                         setSearchCondition('all');
                         handleKeywordSearch(undefined, 1, 'all');
                       }}
-                      className={`h-12 flex items-center justify-center rounded-full font-bold text-sm transition text-center ${
+                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center gap-1.5 ${
                         searchCondition === 'all'
-                          ? 'bg-indigo-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200 transform scale-[1.02]'
+                          : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                       }`}
                     >
-                      {t.condAll}
+                      <span>🌐</span> {t.condAll}
                     </button>
                     <button
                       onClick={() => {
                         setSearchCondition('new');
                         handleKeywordSearch(undefined, 1, 'new');
                       }}
-                      className={`h-12 flex items-center justify-center rounded-full font-bold text-sm transition text-center ${
+                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center gap-1.5 ${
                         searchCondition === 'new'
-                          ? 'bg-indigo-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200 transform scale-[1.02]'
+                          : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                       }`}
                     >
-                      {t.condNew}
+                      <span>✨</span> {t.condNew}
                     </button>
                     <button
                       onClick={() => {
                         setSearchCondition('used');
                         handleKeywordSearch(undefined, 1, 'used');
                       }}
-                      className={`h-12 flex items-center justify-center rounded-full font-bold text-sm transition text-center ${
+                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center gap-1.5 ${
                         searchCondition === 'used'
-                          ? 'bg-indigo-900 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200 transform scale-[1.02]'
+                          : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                       }`}
                     >
-                      {t.condUsed}
+                      <span>🔄</span> {t.condUsed}
                     </button>
                   </div>
                 </div>
