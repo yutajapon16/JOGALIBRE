@@ -684,6 +684,55 @@ const CATEGORIES: Category[] = [
   }
 ];
 
+// URLのコンディションパラメータ(istatus)を更新するヘルパー関数
+const updateUrlCondition = (url: string, condition: 'all' | 'new' | 'used'): string => {
+  try {
+    const urlObj = new URL(url);
+    if (condition === 'new') {
+      urlObj.searchParams.set('istatus', '1');
+    } else if (condition === 'used') {
+      urlObj.searchParams.set('istatus', '2');
+    } else {
+      urlObj.searchParams.delete('istatus');
+    }
+    // ページングパラメータ(b=1)をリセットして1ページ目に戻す
+    if (urlObj.searchParams.has('b')) {
+      urlObj.searchParams.set('b', '1');
+    }
+    return urlObj.toString();
+  } catch (e) {
+    let target = url;
+    target = target.replace(/([?&])istatus=[^&]*/g, '');
+    target = target.replace(/([?&])b=[^&]*/g, '');
+    target = target.replace(/&&+/g, '&').replace(/\?&/g, '?').replace(/[?&]$/g, '');
+    
+    const connector = target.includes('?') ? '&' : '?';
+    if (condition === 'new') {
+      target += `${connector}istatus=1&b=1`;
+    } else if (condition === 'used') {
+      target += `${connector}istatus=2&b=1`;
+    } else {
+      target += `${connector}b=1`;
+    }
+    return target;
+  }
+};
+
+// URLから現在のコンディションを判定するヘルパー関数
+const determineConditionFromUrl = (url: string): 'all' | 'new' | 'used' => {
+  try {
+    const urlObj = new URL(url);
+    const istatus = urlObj.searchParams.get('istatus');
+    if (istatus === '1') return 'new';
+    if (istatus === '2') return 'used';
+    return 'all';
+  } catch (e) {
+    if (url.includes('istatus=1')) return 'new';
+    if (url.includes('istatus=2')) return 'used';
+    return 'all';
+  }
+};
+
 export default function Home() {
   const [lang, setLang] = useState<'es' | 'pt'>('es');
   const [searchUrl, setSearchUrl] = useState('');
@@ -2237,7 +2286,6 @@ export default function Home() {
   };
 
   const handleJdmSearch = (forceCond?: 'all' | 'new' | 'used') => {
-    if (!jdmSearchKeyword.trim()) return;
     const condToUse = forceCond || searchCondition;
     let condParam = '';
     if (condToUse === 'new') {
@@ -2245,19 +2293,42 @@ export default function Home() {
     } else if (condToUse === 'used') {
       condParam = '&istatus=2';
     }
+
+    if (!jdmSearchKeyword.trim()) {
+      // キーワードが空でも現在のアクティブURLがあればコンディションを反映して再フェッチする
+      if (activeCategoryUrl) {
+        const updatedUrl = updateUrlCondition(activeCategoryUrl, condToUse);
+        fetchCategoryItems(updatedUrl, 1);
+      }
+      return;
+    }
     // ヤフオクの自動車車体(26360)カテゴリ内でのキーワード検索URLを組み立てる
     const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(jdmSearchKeyword.trim())}&auccat=26360&va=${encodeURIComponent(jdmSearchKeyword.trim())}&b=1&n=50${condParam}`;
     fetchCategoryItems(searchUrl, 1);
   };
 
   const handleCategorySearch = (catId: string, forceCond?: 'all' | 'new' | 'used') => {
-    if (!categorySearchKeyword.trim()) return;
     const condToUse = forceCond || searchCondition;
     let condParam = '';
     if (condToUse === 'new') {
       condParam = '&istatus=1';
     } else if (condToUse === 'used') {
       condParam = '&istatus=2';
+    }
+
+    if (!categorySearchKeyword.trim()) {
+      // キーワードが空でもアクティブURLまたはカテゴリURLがあればコンディションを反映して再フェッチする
+      if (activeCategoryUrl) {
+        const updatedUrl = updateUrlCondition(activeCategoryUrl, condToUse);
+        fetchCategoryItems(updatedUrl, 1);
+      } else {
+        const initialUrl = currentCategory?.url;
+        if (initialUrl) {
+          const updatedUrl = updateUrlCondition(initialUrl, condToUse);
+          fetchCategoryItems(updatedUrl, 1);
+        }
+      }
+      return;
     }
     // 指定されたカテゴリID内でのキーワード検索URLを組み立てる
     const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(categorySearchKeyword.trim())}&auccat=${catId}&va=${encodeURIComponent(categorySearchKeyword.trim())}&b=1&n=50${condParam}`;
@@ -4881,9 +4952,7 @@ export default function Home() {
                           <button
                             onClick={() => {
                               setSearchCondition('all');
-                              if (categorySearchKeyword.trim()) {
-                                handleCategorySearch(catId, 'all');
-                              }
+                              handleCategorySearch(catId, 'all');
                             }}
                             className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                               searchCondition === 'all'
@@ -4896,9 +4965,7 @@ export default function Home() {
                           <button
                             onClick={() => {
                               setSearchCondition('new');
-                              if (categorySearchKeyword.trim()) {
-                                handleCategorySearch(catId, 'new');
-                              }
+                              handleCategorySearch(catId, 'new');
                             }}
                             className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                               searchCondition === 'new'
@@ -4911,9 +4978,7 @@ export default function Home() {
                           <button
                             onClick={() => {
                               setSearchCondition('used');
-                              if (categorySearchKeyword.trim()) {
-                                handleCategorySearch(catId, 'used');
-                              }
+                              handleCategorySearch(catId, 'used');
                             }}
                             className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                               searchCondition === 'used'
@@ -4956,9 +5021,7 @@ export default function Home() {
                         <button
                           onClick={() => {
                             setSearchCondition('all');
-                            if (jdmSearchKeyword.trim()) {
-                              handleJdmSearch('all');
-                            }
+                            handleJdmSearch('all');
                           }}
                           className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                             searchCondition === 'all'
@@ -4971,9 +5034,7 @@ export default function Home() {
                         <button
                           onClick={() => {
                             setSearchCondition('new');
-                            if (jdmSearchKeyword.trim()) {
-                              handleJdmSearch('new');
-                            }
+                            handleJdmSearch('new');
                           }}
                           className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                             searchCondition === 'new'
@@ -4986,9 +5047,7 @@ export default function Home() {
                         <button
                           onClick={() => {
                             setSearchCondition('used');
-                            if (jdmSearchKeyword.trim()) {
-                              handleJdmSearch('used');
-                            }
+                            handleJdmSearch('used');
                           }}
                           className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                             searchCondition === 'used'
@@ -5012,6 +5071,12 @@ export default function Home() {
                             if (cat.sub) {
                               setCategoryHistory(prev => [...prev, cat]);
                             } else if (cat.url) {
+                              // 以前の検索文字をクリアする
+                              setCategorySearchKeyword('');
+                              setJdmSearchKeyword('');
+                              // URLに含まれる istatus パラメータを読み取ってコンディション選択状態を同期する
+                              const cond = determineConditionFromUrl(cat.url);
+                              setSearchCondition(cond);
                               fetchCategoryItems(cat.url, 1);
                             }
                           }}
