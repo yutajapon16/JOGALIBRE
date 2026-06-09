@@ -2228,17 +2228,31 @@ export default function Home() {
     }
   };
 
-  const handleJdmSearch = () => {
+  const handleJdmSearch = (forceCond?: 'all' | 'new' | 'used') => {
     if (!jdmSearchKeyword.trim()) return;
+    const condToUse = forceCond || searchCondition;
+    let condParam = '';
+    if (condToUse === 'new') {
+      condParam = '&istatus=1';
+    } else if (condToUse === 'used') {
+      condParam = '&istatus=2';
+    }
     // ヤフオクの自動車車体(26360)カテゴリ内でのキーワード検索URLを組み立てる
-    const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(jdmSearchKeyword.trim())}&auccat=26360&va=${encodeURIComponent(jdmSearchKeyword.trim())}&b=1&n=50`;
+    const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(jdmSearchKeyword.trim())}&auccat=26360&va=${encodeURIComponent(jdmSearchKeyword.trim())}&b=1&n=50${condParam}`;
     fetchCategoryItems(searchUrl, 1);
   };
 
-  const handleCategorySearch = (catId: string) => {
+  const handleCategorySearch = (catId: string, forceCond?: 'all' | 'new' | 'used') => {
     if (!categorySearchKeyword.trim()) return;
+    const condToUse = forceCond || searchCondition;
+    let condParam = '';
+    if (condToUse === 'new') {
+      condParam = '&istatus=1';
+    } else if (condToUse === 'used') {
+      condParam = '&istatus=2';
+    }
     // 指定されたカテゴリID内でのキーワード検索URLを組み立てる
-    const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(categorySearchKeyword.trim())}&auccat=${catId}&va=${encodeURIComponent(categorySearchKeyword.trim())}&b=1&n=50`;
+    const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(categorySearchKeyword.trim())}&auccat=${catId}&va=${encodeURIComponent(categorySearchKeyword.trim())}&b=1&n=50${condParam}`;
     fetchCategoryItems(searchUrl, 1);
   };
 
@@ -4833,50 +4847,150 @@ export default function Home() {
                       : 'Buscar por marca ou modelo';
 
                     return (
-                      <div className="mb-4 flex gap-2 animate-in fade-in duration-300">
-                        <input
-                          type="text"
-                          placeholder={placeholderText}
-                          value={categorySearchKeyword}
-                          onChange={(e) => setCategorySearchKeyword(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleCategorySearch(catId);
-                            }
-                          }}
-                          className="flex-1 px-4 h-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm font-sans"
-                        />
-                        <button
-                          onClick={() => handleCategorySearch(catId)}
-                          className="bg-indigo-600 text-white min-w-[100px] px-6 h-12 rounded-lg font-bold hover:bg-indigo-700 transition text-sm shadow-sm font-sans"
-                        >
-                          {lang === 'es' ? 'Buscar' : 'Buscar'}
-                        </button>
+                      <div className="mb-4 animate-in fade-in duration-300 space-y-2">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder={placeholderText}
+                            value={categorySearchKeyword}
+                            onChange={(e) => setCategorySearchKeyword(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleCategorySearch(catId);
+                              }
+                            }}
+                            className="flex-1 px-4 h-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm font-sans"
+                          />
+                          <button
+                            onClick={() => handleCategorySearch(catId)}
+                            className="bg-indigo-600 text-white min-w-[100px] px-6 h-12 rounded-lg font-bold hover:bg-indigo-700 transition text-sm shadow-sm font-sans"
+                          >
+                            {lang === 'es' ? 'Buscar' : 'Buscar'}
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            onClick={() => {
+                              setSearchCondition('all');
+                              if (categorySearchKeyword.trim()) {
+                                handleCategorySearch(catId, 'all');
+                              }
+                            }}
+                            className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                              searchCondition === 'all'
+                                ? 'bg-indigo-900 text-white shadow-sm'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {t.condAll}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSearchCondition('new');
+                              if (categorySearchKeyword.trim()) {
+                                handleCategorySearch(catId, 'new');
+                              }
+                            }}
+                            className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                              searchCondition === 'new'
+                                ? 'bg-indigo-900 text-white shadow-sm'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {t.condNew}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSearchCondition('used');
+                              if (categorySearchKeyword.trim()) {
+                                handleCategorySearch(catId, 'used');
+                              }
+                            }}
+                            className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                              searchCondition === 'used'
+                                ? 'bg-indigo-900 text-white shadow-sm'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {t.condUsed}
+                          </button>
+                        </div>
                       </div>
                     );
                   })()}
 
                   {/* JDM専用 自動車車体カテゴリ内ワード検索ボックス */}
                   {!activeCategoryUrl && currentCategory?.id === 'jdm' && (
-                    <div className="mb-4 flex gap-2 animate-in fade-in duration-300">
-                      <input
-                        type="text"
-                        placeholder={lang === 'es' ? 'Buscar por marca o modelo' : 'Buscar por marca ou modelo'}
-                        value={jdmSearchKeyword}
-                        onChange={(e) => setJdmSearchKeyword(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            handleJdmSearch();
-                          }
-                        }}
-                        className="flex-1 px-4 h-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm font-sans"
-                      />
-                      <button
-                        onClick={handleJdmSearch}
-                        className="bg-indigo-600 text-white min-w-[100px] px-6 h-12 rounded-lg font-bold hover:bg-indigo-700 transition text-sm shadow-sm font-sans"
-                      >
-                        {lang === 'es' ? 'Buscar' : 'Buscar'}
-                      </button>
+                    <div className="mb-4 animate-in fade-in duration-300 space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder={lang === 'es' ? 'Buscar por marca o modelo' : 'Buscar por marca ou modelo'}
+                          value={jdmSearchKeyword}
+                          onChange={(e) => setJdmSearchKeyword(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleJdmSearch();
+                            }
+                          }}
+                          className="flex-1 px-4 h-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm font-sans"
+                        />
+                        <button
+                          onClick={() => handleJdmSearch()}
+                          className="bg-indigo-600 text-white min-w-[100px] px-6 h-12 rounded-lg font-bold hover:bg-indigo-700 transition text-sm shadow-sm font-sans"
+                        >
+                          {lang === 'es' ? 'Buscar' : 'Buscar'}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          onClick={() => {
+                            setSearchCondition('all');
+                            if (jdmSearchKeyword.trim()) {
+                              handleJdmSearch('all');
+                            }
+                          }}
+                          className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                            searchCondition === 'all'
+                              ? 'bg-indigo-900 text-white shadow-sm'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {t.condAll}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSearchCondition('new');
+                            if (jdmSearchKeyword.trim()) {
+                              handleJdmSearch('new');
+                            }
+                          }}
+                          className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                            searchCondition === 'new'
+                              ? 'bg-indigo-900 text-white shadow-sm'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {t.condNew}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSearchCondition('used');
+                            if (jdmSearchKeyword.trim()) {
+                              handleJdmSearch('used');
+                            }
+                          }}
+                          className={`h-10 flex items-center justify-center rounded-full font-bold text-xs transition text-center ${
+                            searchCondition === 'used'
+                              ? 'bg-indigo-900 text-white shadow-sm'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {t.condUsed}
+                        </button>
+                      </div>
                     </div>
                   )}
 
