@@ -1002,6 +1002,10 @@ export default function Home() {
         if (typeof localStorage !== 'undefined') localStorage.removeItem('joga_user_cache');
       } else if (session?.user) {
         // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
+        if (event === 'SIGNED_IN') {
+          // ログイン直後はSupabaseクライアントへのトークン伝播に遅延があるため、500ms待ってからDB（user_roles）を取得する
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
         const user = await getCurrentUser(session.user);
         if (user?.role === 'customer' || user?.role === 'agent') {
           setCurrentUser(prev => {
@@ -1286,7 +1290,7 @@ export default function Home() {
   };
 
   // プロフィール取得（fetchMyRequestsと同じ実証済みパターン）
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = async (retryCount = 0) => {
     if (!currentUser) return;
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
@@ -1353,6 +1357,10 @@ export default function Home() {
         } else {
           console.warn('Profile API returned null or undefined profile object');
         }
+      } else if (res.status === 401 && retryCount < 2) {
+        // ログイン直後のアクセストークン反映タイムラグ対策として、800ms待ってからリトライする
+        await new Promise(resolve => setTimeout(resolve, 800));
+        fetchUserProfile(retryCount + 1);
       } else {
         const errText = await res.text();
         console.error('Profile API HTTP status NOT OK:', res.status, errText);
