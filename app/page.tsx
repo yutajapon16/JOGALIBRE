@@ -332,55 +332,55 @@ const CATEGORIES: Category[] = [
     id: 'autopartes',
     es: 'Autopartes',
     pt: 'Autopeças',
-    url: 'https://auctions.yahoo.co.jp/category/list/2084005141/',
+    url: 'https://auctions.yahoo.co.jp/list1/26322-category.html',
     sub: [
       {
         id: 'motor',
         es: 'Motor',
         pt: 'Motor',
-        url: 'https://auctions.yahoo.co.jp/search/search?va=%E3%82%A8%E3%83%B3%E3%82%B8%E3%83%B3%E6%9C%AC%E4%BD%93&ve=%E3%82%BF%E3%83%BC%E3%83%93%E3%83%B3+%E3%82%BF%E3%83%BC%E3%83%9C%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8%E3%83%A3%E3%83%BC+%E3%83%A9%E3%82%B8%E3%82%A8%E3%82%BF+%E7%87%83%E6%96%99%E3%83%9D%E3%83%B3%E3%83%97+%E3%82%BB%E3%83%AB%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC+%E3%82%BF%E3%82%A4%E3%83%9F%E3%83%B3%E3%82%B0%E3%83%81%E3%82%A7%E3%83%BC%E3%83%B3&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&user_type=c&auccat=2084200282&tab_ex=commerce&ei=utf-8&aq=-1&oq=&sc_i=&p=%E3%82%A8%E3%83%B3%E3%82%B8%E3%83%B3%E6%9C%AC%E4%BD%93+-%E3%82%BF%E3%83%BC%E3%83%93%E3%83%B3+-%E3%82%BF%E3%83%BC%E3%83%9C%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8%E3%83%A3%E3%83%BC+-%E3%83%A9%E3%82%B8%E3%82%A8%E3%82%BF+-%E7%87%83%E6%96%99%E3%83%9D%E3%83%B3%E3%83%97+-%E3%82%BB%E3%83%AB%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC+-%E3%82%BF%E3%82%A4%E3%83%9F%E3%83%B3%E3%82%B0%E3%83%81%E3%82%A7%E3%83%BC%E3%83%B3+-%E3%82%A8%E3%82%A2%E3%83%95%E3%83%AD&x=0&y=0'
+        url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%82%A8%E3%83%B3%E3%82%B8%E3%83%B3%E6%9C%AC%E4%BD%93+-%E3%82%BF%E3%83%BC%E3%83%93%E3%83%B3+-%E3%82%BF%E3%83%BC%E3%83%9C%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8%E3%83%A3%E3%83%BC+-%E3%83%A9%E3%82%B8%E3%82%A8%E3%82%BF+-%E7%87%83%E6%96%99%E3%83%9D%E3%83%B3%E3%83%97+-%E3%82%BB%E3%83%AB%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC+-%E3%82%BF%E3%82%A4%E3%83%9F%E3%83%B3%E3%82%B0%E3%83%81%E3%82%A7%E3%83%BC%E3%83%B3+-%E3%82%A8%E3%82%A2%E3%83%95%E3%83%AD&auccat=2084200282&va=%E3%82%A8%E3%83%B3%E3%82%B8%E3%83%B3%E6%9C%AC%E4%BD%93&ve=%E3%82%BF%E3%83%BC%E3%83%93%E3%83%B3+%E3%82%BF%E3%83%BC%E3%83%9C%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8%E3%83%A3%E3%83%BC+%E3%83%A9%E3%82%B8%E3%82%A8%E3%82%BF+%E7%87%83%E6%96%99%E3%83%9D%E3%83%B3%E3%83%97+%E3%82%BB%E3%83%AB%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC+%E3%82%BF%E3%82%A4%E3%83%9F%E3%83%B3%E3%82%B0%E3%83%81%E3%82%A7%E3%83%BC%E3%83%B3+%E3%82%A8%E3%82%A2%E3%83%95%E3%83%AD&istatus=1%2C4%2C5%2C6&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=score2&o1=d&mode=1'
       },
       {
         id: 'transmision',
         es: 'Transmisión',
         pt: 'Transmissão',
-        url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%88%E3%83%A9%E3%83%B3%E3%82%B9%E3%83%9F%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084008426&va=%E3%83%88%E3%83%A9%E3%83%B3%E3%82%B9%E3%83%9F%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d'
+        url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%88%E3%83%A9%E3%83%B3%E3%82%B9%E3%83%9F%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084008426&va=%E3%83%88%E3%83%A9%E3%83%B3%E3%82%B9%E3%83%9F%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=score2&o1=d&mode=1&rc_ng=1'
       },
       {
         id: 'llantas',
         es: 'Llantas',
         pt: 'Rodas',
-        url: 'https://auctions.yahoo.co.jp/category/list/2084008470/',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084200183/',
         sub: [
-          { id: 'll16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200188/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200188&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
-          { id: 'll17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200189/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200189&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
-          { id: 'll18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200190/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200190&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d' },
+          { id: 'll16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200188/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200183&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=featured&mode=1' },
+          { id: 'll17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200189/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200183&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=featured&mode=1' },
+          { id: 'll18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084200190/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084200183&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=featured&mode=1' },
         ]
       },
       {
         id: 'aros',
         es: 'Aros',
         pt: 'Aros',
-        url: 'https://auctions.yahoo.co.jp/category/list/2084008474/',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084005140/',
         sub: [
-          { id: 'ar16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084008474/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084008474&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=118472,118483,118474,119521,118478,118481,115842,102328,120288,119007' },
-          { id: 'ar17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040548/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040548&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=118472%2C118478%2C118474%2C119007%2C119521%2C118481%2C115842%2C159741%2C118483%2C102328' },
-          { id: 'ar18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040547/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040547&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=115842,119007,118474,102328,118472,118483,119521,118478,118481,128485' },
+          { id: 'ar16', es: '16 pulgadas', pt: '16 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084008474/?p=16%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084008474&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=featured&o1=d&mode=1&brand_id=118472%2C118483%2C118474%2C119521%2C118478%2C118481%2C115842%2C102328%2C120288%2C119007' },
+          { id: 'ar17', es: '17 pulgadas', pt: '17 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040548/?p=17%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040548&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=featured&o1=d&mode=1&brand_id=118472%2C118478%2C118474%2C119007%2C119521%2C118481%2C115842%2C159741%2C118483%2C102328' },
+          { id: 'ar18', es: '18 pulgadas', pt: '18 polegadas', url: 'https://auctions.yahoo.co.jp/category/list/2084040547/?p=18%E3%82%A4%E3%83%B3%E3%83%81&auccat=2084040547&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=featured&o1=d&mode=1&brand_id=115842%2C119007%2C118474%2C102328%2C118472%2C118483%2C119521%2C118478%2C118481%2C128485' },
         ]
       },
-      { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=128485,103816,105215,103820,119942,119941,119938' },
-      { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=new&o1=d&brand_id=102214,103815,115842,128485,159741,103823' },
+      { id: 'suspension', es: 'Suspensión', pt: 'Suspensão', url: 'https://auctions.yahoo.co.jp/category/list/2084005257/?p=%E3%82%B5%E3%82%B9%E3%83%9A%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%B3&auccat=2084005257&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=featured&o1=d&mode=1&brand_id=128485%2C103816%2C105215%2C103820%2C119942%2C119941%2C119938' },
+      { id: 'asiento', es: 'Asiento', pt: 'Assento', url: 'https://auctions.yahoo.co.jp/category/list/2084005258/?p=%E3%82%B7%E3%83%BC%E3%83%88&auccat=2084005258&is_postage_mode=1&dest_pref_code=8&b=1&n=50&s1=featured&o1=d&mode=1&brand_id=102214%2C103815%2C115842%2C128485%2C159741%2C103823' },
       {
         id: 'barras',
         es: 'Barras',
         pt: 'Barras',
-        url: 'https://auctions.yahoo.co.jp/category/list/2084008461/?p=%E3%82%BF%E3%83%AF%E3%83%BC%E3%83%90%E3%83%BC%E3%80%81%E3%83%AD%E3%83%BC%E3%83%AB%E3%83%90%E3%83%BC&auccat=2084008461&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d'
+        url: 'https://auctions.yahoo.co.jp/category/list/2084008461/?p=%E3%82%BF%E3%83%AF%E3%83%BC%E3%83%90%E3%83%BC%E3%80%81%E3%83%AD%E3%83%BC%E3%83%AB%E3%83%90%E3%83%BC&auccat=2084008461&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&o1=d&mode=1'
       },
       {
         id: 'freno',
         es: 'Freno',
         pt: 'Freio',
-        url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%96%E3%83%AC%E3%83%B3%E3%83%9C&auccat=2084005259&va=%E3%83%96%E3%83%AC%E3%83%B3%E3%83%9C&istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=125435%2C128479%2C128488'
+        url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%96%E3%83%AC%E3%83%B3%E3%83%9C&auccat=2084005259&va=%E3%83%96%E3%83%AC%E3%83%B3%E3%83%9C&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&o1=d&mode=1&brand_id=125435%2C128479%2C128488'
       },
       {
         id: 'caraudio',
@@ -392,25 +392,25 @@ const CATEGORIES: Category[] = [
             id: 'reproductor',
             es: 'Reproductor',
             pt: 'Player',
-            url: 'https://auctions.yahoo.co.jp/search/search?istatus=2&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&user_type=c&auccat=23852&tab_ex=commerce&ei=utf-8&aq=-1&oq=&sc_i=&p=%E3%83%97%E3%83%AC%E3%83%BC%E3%83%A4%E3%83%BC&x=0&y=0'
+            url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%83%97%E3%83%AC%E3%83%BC%E3%83%A4%E3%83%BC&auccat=23852&va=%E3%83%97%E3%83%AC%E3%83%BC%E3%83%A4%E3%83%BC&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&o1=d&mode=1'
           },
           {
             id: 'amplificador',
             es: 'Amplificador',
             pt: 'Amplificador',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084005294/?p=%E3%82%A2%E3%83%B3%E3%83%97&auccat=23852&istatus=2%2C1&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d'
+            url: 'https://auctions.yahoo.co.jp/category/list/2084005294/?p=%E3%82%A2%E3%83%B3%E3%83%97&auccat=23852&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&mode=1'
           },
           {
             id: 'subwoofer',
             es: 'Subwoofer',
             pt: 'Subwoofer',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084048322/?p=%E3%82%A6%E3%83%BC%E3%83%8F%E3%83%BC&auccat=2084048322&istatus=2&is_postage_mode=1&dest_pref_code=8&b=101&n=100&s1=new&o1=d'
+            url: 'https://auctions.yahoo.co.jp/category/list/2084048322/'
           },
           {
             id: 'altavoz',
             es: 'Altavoces',
             pt: 'Alto-falantes',
-            url: 'https://auctions.yahoo.co.jp/category/list/23864/?p=%E3%82%B9%E3%83%94%E3%83%BC%E3%82%AB%E3%83%BC&auccat=23852&istatus=2%2C1&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d'
+            url: 'https://auctions.yahoo.co.jp/category/list/23864/'
           }
         ]
       }
@@ -428,15 +428,23 @@ const CATEGORIES: Category[] = [
         pt: 'NIKE',
         url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=101319',
         sub: [
-          { id: 'nike_men', es: 'Zapatos para Hombre', pt: 'Tênis Masculino', url: 'https://auctions.yahoo.co.jp/category/list/23200/?p=%E3%83%A1%E3%83%B3%E3%82%BA%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA&auccat=23200&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101319&nockie=1' },
-          { id: 'nike_women', es: 'Zapatos para Mujer', pt: 'Tênis Feminino', url: 'https://auctions.yahoo.co.jp/category/list/23312/?p=%E3%83%AC%E3%83%87%E3%82%A3%E3%83%BC%E3%82%B9%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA&auccat=23312&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101319&nockie=1' }
+          { id: 'nike_men_shoes', es: 'Zapatos para Hombre', pt: 'Tênis Masculino', url: 'https://auctions.yahoo.co.jp/category/list/23200/?brand_id=101319' },
+          { id: 'nike_men_clothing', es: 'Ropa para Hombre', pt: 'Roupas Masculinas', url: 'https://auctions.yahoo.co.jp/category/list/2084030289/?brand_id=101319' },
+          { id: 'nike_women_shoes', es: 'Zapatos para Mujer', pt: 'Tênis Feminino', url: 'https://auctions.yahoo.co.jp/category/list/23312/?brand_id=101319' },
+          { id: 'nike_women_clothing', es: 'Ropa para Mujer', pt: 'Roupas Femininas', url: 'https://auctions.yahoo.co.jp/category/list/2084292283/?brand_id=101319' }
         ]
       },
       {
         id: 'adidas',
         es: 'adidas',
         pt: 'adidas',
-        url: 'https://auctions.yahoo.co.jp/category/list/2084005488/?p=%E3%82%A2%E3%83%87%E3%82%A3%E3%83%80%E3%82%B9&auccat=2084005488&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=100149&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/2084048648/?brand_id=100149',
+        sub: [
+          { id: 'adidas_men_shoes', es: 'Zapatos para Hombre', pt: 'Tênis Masculino', url: 'https://auctions.yahoo.co.jp/category/list/2084005488/?brand_id=100149' },
+          { id: 'adidas_men_clothing', es: 'Ropa para Hombre', pt: 'Roupas Masculinas', url: 'https://auctions.yahoo.co.jp/category/list/2084030308/?brand_id=100149' },
+          { id: 'adidas_women_shoes', es: 'Zapatos para Mujer', pt: 'Tênis Feminino', url: 'https://auctions.yahoo.co.jp/category/list/2084007243/?brand_id=100149' },
+          { id: 'adidas_women_clothing', es: 'Ropa para Mujer', pt: 'Roupas Femininas', url: 'https://auctions.yahoo.co.jp/category/list/2084242607/?brand_id=100149' }
+        ]
       },
       {
         id: 'newbalance',
@@ -444,81 +452,83 @@ const CATEGORIES: Category[] = [
         pt: 'New Balance',
         url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=101352',
         sub: [
-          { id: 'nb_men', es: 'Zapatos para Hombre', pt: 'Tênis Masculino', url: 'https://auctions.yahoo.co.jp/category/list/2084005490/?p=%E3%83%8B%E3%83%A5%E3%83%BC%E3%83%90%E3%83%A9%E3%83%B3%E3%82%B9&auccat=2084005490&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101352&nockie=1' },
-          { id: 'nb_women', es: 'Zapatos para Mujer', pt: 'Tênis Feminino', url: 'https://auctions.yahoo.co.jp/category/list/2084007245/?p=%E3%83%8B%E3%83%A5%E3%83%BC%E3%83%90%E3%83%A9%E3%83%B3%E3%82%B9&auccat=2084007245&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101352&nockie=1' }
+          { id: 'nb_men_shoes', es: 'Zapatos para Hombre', pt: 'Tênis Masculino', url: 'https://auctions.yahoo.co.jp/category/list/2084005490/?brand_id=101352' },
+          { id: 'nb_men_clothing', es: 'Ropa para Hombre', pt: 'Roupas Masculinas', url: 'https://auctions.yahoo.co.jp/category/list/23176/?brand_id=101352' },
+          { id: 'nb_women_shoes', es: 'Zapatos para Mujer', pt: 'Tênis Feminino', url: 'https://auctions.yahoo.co.jp/category/list/2084007245/?brand_id=101352' },
+          { id: 'nb_women_clothing', es: 'Ropa para Mujer', pt: 'Roupas Femininas', url: 'https://auctions.yahoo.co.jp/category/list/23288/?brand_id=101352' }
         ]
       },
       {
         id: 'ape',
         es: 'A BATHING APE',
         pt: 'A BATHING APE',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=104488&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=104488'
       },
       {
         id: 'abercrombie',
         es: 'Abercrombie & Fitch',
         pt: 'Abercrombie & Fitch',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=100174&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=100174'
       },
       {
         id: 'converse',
         es: 'CONVERSE',
         pt: 'CONVERSE',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=100794&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=100794'
       },
       {
         id: 'diesel',
         es: 'DIESEL',
         pt: 'DIESEL',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101204&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=101204'
       },
       {
         id: 'gap',
         es: 'GAP',
         pt: 'GAP',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=100612&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=100612'
       },
       {
         id: 'lacoste',
         es: 'LACOSTE',
         pt: 'LACOSTE',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=102087&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=102087'
       },
       {
         id: 'michaelkors',
         es: 'MICHAEL KORS',
         pt: 'MICHAEL KORS',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=106286&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=106286'
       },
       {
         id: 'puma',
         es: 'PUMA',
         pt: 'PUMA',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101611&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=101611'
       },
       {
         id: 'tommyhilfiger',
         es: 'TOMMY HILFIGER',
         pt: 'TOMMY HILFIGER',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101297&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=101297'
       },
       {
         id: 'uniqlo',
         es: 'UNIQLO',
         pt: 'UNIQLO',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=102052&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=102052'
       },
       {
         id: 'vans',
         es: 'VANS',
         pt: 'VANS',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=101501&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=101501'
       },
       {
         id: 'zara',
         es: 'ZARA',
         pt: 'ZARA',
-        url: 'https://auctions.yahoo.co.jp/category/list/23000/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3&auccat=23000&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&brand_id=100831&nockie=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23000/?brand_id=100831'
       },
     ]
   },
@@ -532,19 +542,19 @@ const CATEGORIES: Category[] = [
         id: 'casio',
         es: 'CASIO',
         pt: 'CASIO',
-        url: 'https://auctions.yahoo.co.jp/category/list/23260/?p=%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89%E8%85%95%E6%99%82%E8%A8%88&auccat=23260&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1&brand_id=100558'
+        url: 'https://auctions.yahoo.co.jp/category/list/2084032114/'
       },
       {
         id: 'seiko',
         es: 'SEIKO',
         pt: 'SEIKO',
-        url: 'https://auctions.yahoo.co.jp/category/list/23260/?p=%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89%E8%85%95%E6%99%82%E8%A8%88&auccat=23260&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1&brand_id=101058'
+        url: 'https://auctions.yahoo.co.jp/category/list/2084024503/'
       },
       {
         id: 'citizen',
         es: 'CITIZEN',
         pt: 'CITIZEN',
-        url: 'https://auctions.yahoo.co.jp/category/list/23260/?p=%E3%83%96%E3%83%A9%E3%83%B3%E3%83%89%E8%85%95%E6%99%82%E8%A8%88&auccat=23260&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1&brand_id=100883'
+        url: 'https://auctions.yahoo.co.jp/category/list/2084024505/'
       }
     ]
   },
@@ -558,13 +568,33 @@ const CATEGORIES: Category[] = [
         id: 'futbol',
         es: 'Fútbol',
         pt: 'Futebol',
-        url: 'https://auctions.yahoo.co.jp/category/list/2084032296/',
+        url: 'https://auctions.yahoo.co.jp/category/list/25344/',
         sub: [
           {
-            id: 'spikes',
-            es: 'Botines',
+            id: 'zapatos_futbol',
+            es: 'Zapatos de Fútbol',
             pt: 'Chuteiras',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084032296/?p=%E3%82%B9%E3%83%91%E3%82%A4%E3%82%AF&auccat=2084032296&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+            url: 'https://auctions.yahoo.co.jp/category/list/2084032296/',
+            sub: [
+              {
+                id: 'spikes',
+                es: 'Botines (Spikes)',
+                pt: 'Chuteiras (Spikes)',
+                url: 'https://auctions.yahoo.co.jp/category/list/2084062860/'
+              },
+              {
+                id: 'training',
+                es: 'Zapatillas de Entrenamiento',
+                pt: 'Tênis de Treino',
+                url: 'https://auctions.yahoo.co.jp/category/list/2084062862/'
+              },
+              {
+                id: 'futsal',
+                es: 'Zapatillas de Futsal',
+                pt: 'Chuteiras de Futsal',
+                url: 'https://auctions.yahoo.co.jp/category/list/2084062861/'
+              }
+            ]
           }
         ]
       },
@@ -575,16 +605,28 @@ const CATEGORIES: Category[] = [
         url: 'https://auctions.yahoo.co.jp/category/list/2084230277/',
         sub: [
           {
-            id: 'running_men',
+            id: 'running_men_shoes',
             es: 'Zapatos para Hombre',
             pt: 'Tênis Masculino',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084230278/?p=%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA%EF%BC%88%E7%94%B7%E6%80%A7%E7%94%A8%EF%BC%89&auccat=2084230278&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+            url: 'https://auctions.yahoo.co.jp/category/list/2084230278/'
           },
           {
-            id: 'running_women',
+            id: 'running_men_clothing',
+            es: 'Ropa de Running para Hombre',
+            pt: 'Roupas de Corrida Masculinas',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084285323/'
+          },
+          {
+            id: 'running_women_shoes',
             es: 'Zapatos para Mujer',
             pt: 'Tênis Feminino',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084230279/?p=%E3%82%B7%E3%83%A5%E3%83%BC%E3%82%BA%EF%BC%88%E5%A5%B3%E6%80%A7%E7%94%A8%EF%BC%89&auccat=2084230279&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+            url: 'https://auctions.yahoo.co.jp/category/list/2084230279/'
+          },
+          {
+            id: 'running_women_clothing',
+            es: 'Ropa de Running para Mujer',
+            pt: 'Roupas de Corrida Femininas',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084285330/'
           }
         ]
       },
@@ -592,13 +634,13 @@ const CATEGORIES: Category[] = [
         id: 'camping',
         es: 'Artículos para Camping',
         pt: 'Equipamentos de Camping',
-        url: 'https://auctions.yahoo.co.jp/category/list/24702/?p=%E3%82%AD%E3%83%A3%E3%83%B3%E3%83%97%E3%80%81%E3%82%A2%E3%82%A6%E3%83%88%E3%83%89%E3%82%A2%E7%94%A8%E5%93%81&auccat=24702&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/24702/'
       },
       {
         id: 'pesca',
         es: 'Artículos de Pesca',
         pt: 'Equipamentos de Pesca',
-        url: 'https://auctions.yahoo.co.jp/category/list/25180/?p=%E3%83%95%E3%82%A1%E3%83%83%E3%82%B7%E3%83%B3%E3%82%B0&auccat=25180&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/25180/'
       }
     ]
   },
@@ -612,27 +654,19 @@ const CATEGORIES: Category[] = [
         id: 'rccar',
         es: 'Carros RC',
         pt: 'Carros RC',
-        url: 'https://auctions.yahoo.co.jp/category/list/2084251213/',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084251212/',
         sub: [
           {
-            id: 'rc_auto',
-            es: 'Automóviles',
-            pt: 'Automóveis',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084251213/',
-            sub: [
-              {
-                id: 'rc_engine',
-                es: 'Combustión (Engine)',
-                pt: 'Combustão (Engine)',
-                url: 'https://auctions.yahoo.co.jp/category/list/2084251214/?p=%E5%AE%8C%E6%88%90%E5%93%81%EF%BC%88%E3%82%A8%E3%83%B3%E3%82%B8%E3%83%B3%EF%BC%89&auccat=2084251213&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
-              },
-              {
-                id: 'rc_electric',
-                es: 'Eléctrico',
-                pt: 'Elétrico',
-                url: 'https://auctions.yahoo.co.jp/category/list/2084251215/?p=%E5%AE%8C%E6%88%90%E5%93%81%EF%BC%88%E9%9B%BB%E5%8B%95%EF%BC%89&auccat=2084251213&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
-              }
-            ]
+            id: 'rc_engine',
+            es: 'Combustión (Engine)',
+            pt: 'Combustão (Engine)',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084251214/'
+          },
+          {
+            id: 'rc_electric',
+            es: 'Eléctrico',
+            pt: 'Elétrico',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084251215/'
           }
         ]
       },
@@ -646,37 +680,37 @@ const CATEGORIES: Category[] = [
             id: 'gundam',
             es: 'Gundam',
             pt: 'Gundam',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084023728/?p=%E3%82%AC%E3%83%B3%E3%83%80%E3%83%A0&auccat=2084023728&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+            url: 'https://auctions.yahoo.co.jp/category/list/2084023728/'
           },
           {
             id: 'onepiece',
             es: 'ONE PIECE',
             pt: 'ONE PIECE',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084040581/?p=ONE+PIECE&auccat=2084040581&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+            url: 'https://auctions.yahoo.co.jp/category/list/2084040581/'
           },
           {
             id: 'miku',
             es: 'Hatsune Miku',
             pt: 'Hatsune Miku',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084239888/?p=%E5%88%9D%E9%9F%B3%E3%83%9F%E3%82%AF&auccat=2084239888&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+            url: 'https://auctions.yahoo.co.jp/category/list/2084239888/'
           },
           {
             id: 'madoka',
             es: 'Madoka Magica',
             pt: 'Madoka Magica',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084305382/?p=%E9%AD%94%E6%B3%95%E5%B0%91%E5%A5%B3%E3%81%be%E3%81%A9%E3%81%8B%E2%98%86%E3%83%9E%E3%82%AE%E3%82%AB&auccat=2084305382&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+            url: 'https://auctions.yahoo.co.jp/category/list/2084305382/'
           },
           {
             id: 'dragonball',
             es: 'Dragon Ball',
             pt: 'Dragon Ball',
-            url: 'https://auctions.yahoo.co.jp/category/list/2084040584/?p=%E3%83%89%E3%83%A9%E3%82%B4%E3%83%B3%E3%83%9C%E3%83%BC%E3%83%AB&auccat=2084040584&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1'
+            url: 'https://auctions.yahoo.co.jp/category/list/2084040584/'
           },
           {
             id: 'nendoroid',
             es: 'Nendoroid',
             pt: 'Nendoroid',
-            url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%81%AD%E3%82%93%E3%81%A9%E3%82%8D%E3%81%84%E3%81%A9&auccat=25888&va=%E3%81%AD%E3%82%93%E3%81%A9%E3%82%8D%E3%81%84%E3%81%A9&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=new&o1=d&mode=1&nockie=1'
+            url: 'https://auctions.yahoo.co.jp/search/search?p=%E3%81%AD%E3%82%93%E3%81%A9%E3%82%8D%E3%81%84%E3%81%A9&auccat=25888&va=%E3%81%AD%E3%82%93%E3%81%A9%E3%82%8D%E3%81%84%E3%81%A9&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&o1=d&mode=1&nockie=1'
           }
         ]
       }
@@ -686,24 +720,25 @@ const CATEGORIES: Category[] = [
     id: 'pc_parts',
     es: 'Componentes de PC',
     pt: 'Componentes de PC',
+    url: 'https://auctions.yahoo.co.jp/list3/2084039480-category.html',
     sub: [
       {
         id: 'cpu',
         es: 'CPU',
         pt: 'CPU',
-        url: 'https://auctions.yahoo.co.jp/category/list/23400/?p=CPU&auccat=23400&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&o1=d&mode=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23400/'
       },
       {
         id: 'memory',
         es: 'Memoria RAM',
         pt: 'Memória RAM',
-        url: 'https://auctions.yahoo.co.jp/category/list/2084039543/?p=%E3%83%A1%E3%83%A2%E3%83%AA&auccat=2084039543&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&o1=d&mode=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/2084039543/'
       },
       {
         id: 'gpu',
         es: 'Tarjeta Gráfica (GPU)',
         pt: 'Placa de Vídeo (GPU)',
-        url: 'https://auctions.yahoo.co.jp/category/list/23461/?p=%E3%82%B0%E3%83%A9%E3%83%95%E3%82%A3%E3%83%83%E3%82%AF%E3%82%AB%E3%83%BC%E3%83%89&auccat=23461&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&o1=d&mode=1'
+        url: 'https://auctions.yahoo.co.jp/category/list/23461/'
       }
     ]
   },
@@ -711,6 +746,7 @@ const CATEGORIES: Category[] = [
     id: 'instrumentos',
     es: 'Instrumentos Musicales',
     pt: 'Instrumentos Musicais',
+    url: 'https://auctions.yahoo.co.jp/category/list/22436/',
     sub: [
       {
         id: 'guitarra',
@@ -742,6 +778,7 @@ const CATEGORIES: Category[] = [
     id: 'home_equipment',
     es: 'Equipamiento del Hogar',
     pt: 'Equipamentos Residenciais',
+    url: 'https://auctions.yahoo.co.jp/category/list/24198/',
     sub: [
       {
         id: 'washlet',
