@@ -4855,7 +4855,7 @@ export default function Home() {
                       : 'Buscar por marca ou modelo';
 
                     return (
-                      <div className="mb-4 animate-in fade-in duration-300 space-y-2">
+                      <div className="mb-4 animate-in fade-in duration-300 space-y-4">
                         <div className="flex gap-2">
                           <input
                             type="text"
@@ -4877,7 +4877,7 @@ export default function Home() {
                           </button>
                         </div>
 
-                        <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full">
+                        <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full max-w-md mx-auto h-11">
                           <button
                             onClick={() => {
                               setSearchCondition('all');
@@ -4885,7 +4885,7 @@ export default function Home() {
                                 handleCategorySearch(catId, 'all');
                               }
                             }}
-                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
+                            className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                               searchCondition === 'all'
                                 ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                                 : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
@@ -4900,7 +4900,7 @@ export default function Home() {
                                 handleCategorySearch(catId, 'new');
                               }
                             }}
-                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
+                            className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                               searchCondition === 'new'
                                 ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                                 : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
@@ -4915,7 +4915,7 @@ export default function Home() {
                                 handleCategorySearch(catId, 'used');
                               }
                             }}
-                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
+                            className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                               searchCondition === 'used'
                                 ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                                 : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
@@ -4930,7 +4930,7 @@ export default function Home() {
 
                   {/* JDM専用 自動車車体カテゴリ内ワード検索ボックス */}
                   {!activeCategoryUrl && currentCategory?.id === 'jdm' && (
-                    <div className="mb-4 animate-in fade-in duration-300 space-y-2">
+                    <div className="mb-4 animate-in fade-in duration-300 space-y-4">
                       <div className="flex gap-2">
                         <input
                           type="text"
@@ -4952,7 +4952,7 @@ export default function Home() {
                         </button>
                       </div>
 
-                      <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full">
+                      <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full max-w-md mx-auto h-11">
                         <button
                           onClick={() => {
                             setSearchCondition('all');
@@ -4960,7 +4960,7 @@ export default function Home() {
                               handleJdmSearch('all');
                             }
                           }}
-                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
+                          className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                             searchCondition === 'all'
                               ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                               : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
@@ -4975,7 +4975,7 @@ export default function Home() {
                               handleJdmSearch('new');
                             }
                           }}
-                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
+                          className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                             searchCondition === 'new'
                               ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                               : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
@@ -4990,7 +4990,7 @@ export default function Home() {
                               handleJdmSearch('used');
                             }
                           }}
-                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
+                          className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                             searchCondition === 'used'
                               ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                               : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
@@ -5051,13 +5051,13 @@ export default function Home() {
                     </button>
                   </div>
                   
-                  <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full max-w-md mx-auto">
+                  <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full max-w-md mx-auto h-11">
                     <button
                       onClick={() => {
                         setSearchCondition('all');
                         handleKeywordSearch(undefined, 1, 'all');
                       }}
-                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
+                      className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                         searchCondition === 'all'
                           ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200 transform scale-[1.02]'
                           : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
@@ -5070,7 +5070,7 @@ export default function Home() {
                         setSearchCondition('new');
                         handleKeywordSearch(undefined, 1, 'new');
                       }}
-                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
+                      className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                         searchCondition === 'new'
                           ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200 transform scale-[1.02]'
                           : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
@@ -5083,7 +5083,7 @@ export default function Home() {
                         setSearchCondition('used');
                         handleKeywordSearch(undefined, 1, 'used');
                       }}
-                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
+                      className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                         searchCondition === 'used'
                           ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200 transform scale-[1.02]'
                           : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
