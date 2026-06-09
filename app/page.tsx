@@ -681,6 +681,75 @@ const CATEGORIES: Category[] = [
         ]
       }
     ]
+  },
+  {
+    id: 'pc_parts',
+    es: 'Componentes de PC',
+    pt: 'Componentes de PC',
+    sub: [
+      {
+        id: 'cpu',
+        es: 'CPU',
+        pt: 'CPU',
+        url: 'https://auctions.yahoo.co.jp/category/list/23400/?p=CPU&auccat=23400&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&o1=d&mode=1'
+      },
+      {
+        id: 'memory',
+        es: 'Memoria RAM',
+        pt: 'Memória RAM',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084039543/?p=%E3%83%A1%E3%83%A2%E3%83%AA&auccat=2084039543&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&o1=d&mode=1'
+      },
+      {
+        id: 'gpu',
+        es: 'Tarjeta Gráfica (GPU)',
+        pt: 'Placa de Vídeo (GPU)',
+        url: 'https://auctions.yahoo.co.jp/category/list/23461/?p=%E3%82%B0%E3%83%A9%E3%83%95%E3%82%A3%E3%83%83%E3%82%AF%E3%82%AB%E3%83%BC%E3%83%89&auccat=23461&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&o1=d&mode=1'
+      }
+    ]
+  },
+  {
+    id: 'instrumentos',
+    es: 'Instrumentos Musicales',
+    pt: 'Instrumentos Musicais',
+    sub: [
+      {
+        id: 'guitarra',
+        es: 'Guitarras',
+        pt: 'Guitarras',
+        url: 'https://auctions.yahoo.co.jp/category/list/22476/'
+      },
+      {
+        id: 'bajo',
+        es: 'Bajos',
+        pt: 'Baixos',
+        url: 'https://auctions.yahoo.co.jp/category/list/22480/'
+      },
+      {
+        id: 'viento',
+        es: 'Instrumentos de Viento',
+        pt: 'Instrumentos de Sopro',
+        url: 'https://auctions.yahoo.co.jp/category/list/22440/'
+      },
+      {
+        id: 'dj',
+        es: 'Equipos de DJ',
+        pt: 'Equipamentos de DJ',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084261081/'
+      }
+    ]
+  },
+  {
+    id: 'home_equipment',
+    es: 'Equipamiento del Hogar',
+    pt: 'Equipamentos Residenciais',
+    sub: [
+      {
+        id: 'washlet',
+        es: 'Bidet Electrónico (Washlet)',
+        pt: 'Assento Sanitário Eletrônico (Washlet)',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084304456/'
+      }
+    ]
   }
 ];
 
