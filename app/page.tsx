@@ -729,6 +729,32 @@ const CATEGORIES: Category[] = [
     ]
   },
   {
+    id: 'electronics',
+    es: 'Electrónicos',
+    pt: 'Eletrônicos',
+    url: 'https://auctions.yahoo.co.jp/list3/23336-category.html',
+    sub: [
+      {
+        id: 'iphone',
+        es: 'iPhone',
+        pt: 'iPhone',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084317599/?p=iPhone&auccat=2084317599&shp_spec_id=S_C%3A29231%3A186373&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&mode=1'
+      },
+      {
+        id: 'ipad',
+        es: 'iPad',
+        pt: 'iPad',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084259337/'
+      },
+      {
+        id: 'smartwatch',
+        es: 'Smartwatch',
+        pt: 'Smartwatch',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084316075/?p=%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%82%A6%E3%82%A9%E3%83%83%E3%83%81%E6%9C%AC%E4%BD%93&auccat=2084316075&is_postage_mode=1&dest_pref_code=8&b=1&n=100&s1=featured&mode=1&brand_id=100011,116064,115831,100061,117584,116183,135431,104487'
+      }
+    ]
+  },
+  {
     id: 'pc_parts',
     es: 'Componentes de PC',
     pt: 'Componentes de PC',
@@ -751,6 +777,46 @@ const CATEGORIES: Category[] = [
         es: 'Tarjeta Gráfica (GPU)',
         pt: 'Placa de Vídeo (GPU)',
         url: 'https://auctions.yahoo.co.jp/category/list/23461/'
+      }
+    ]
+  },
+  {
+    id: 'camera',
+    es: 'Cámaras',
+    pt: 'Câmeras',
+    url: 'https://auctions.yahoo.co.jp/category/list/23636/',
+    sub: [
+      {
+        id: 'digital_camera',
+        es: 'Cámaras Digitales',
+        pt: 'Câmeras Digitais',
+        url: 'https://auctions.yahoo.co.jp/category/list/2084261633/',
+        sub: [
+          {
+            id: 'dslr',
+            es: 'Réflex Digital (DSLR)',
+            pt: 'Reflex Digital (DSLR)',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084261634/'
+          },
+          {
+            id: 'mirrorless',
+            es: 'Cámaras Mirrorless',
+            pt: 'Câmeras Mirrorless',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084305443/'
+          },
+          {
+            id: 'compact_digital',
+            es: 'Cámaras Compactas',
+            pt: 'Câmeras Compactas',
+            url: 'https://auctions.yahoo.co.jp/category/list/2084261642/'
+          }
+        ]
+      },
+      {
+        id: 'lens',
+        es: 'Lentes',
+        pt: 'Lentes',
+        url: 'https://auctions.yahoo.co.jp/category/list/23684/'
       }
     ]
   },
