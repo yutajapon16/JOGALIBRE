@@ -123,6 +123,12 @@ const translations = {
     condUsed: 'Usado',
     depositsTab: 'Depósitos',
     shippingTab: 'Envíos',
+    deliveryLocationLabel: 'Lugar de entrega',
+    deliveryFob: 'Japón 🇯🇵',
+    deliveryAsuncion: 'Asunción 🇵🇾',
+    deliveryEncarnacion: 'Encarnación 🇵🇾',
+    deliveryPjc: '🇵🇾 PJC | Ponta Porã 🇧🇷',
+    localCostLabel: 'Costo Local',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -225,6 +231,12 @@ const translations = {
     condUsed: 'Usado',
     depositsTab: 'Depósitos',
     shippingTab: 'Envios',
+    deliveryLocationLabel: 'Local de entrega',
+    deliveryFob: 'Japão 🇯🇵',
+    deliveryAsuncion: 'Assunção 🇵🇾',
+    deliveryEncarnacion: 'Encarnación 🇵🇾',
+    deliveryPjc: '🇵🇾 PJC | Ponta Porã 🇧🇷',
+    localCostLabel: 'Custo Local',
   }
 };
 
@@ -841,6 +853,7 @@ const determineConditionFromUrl = (url: string): 'all' | 'new' | 'used' => {
 
 export default function Home() {
   const [lang, setLang] = useState<'es' | 'pt'>('es');
+  const [deliveryLocation, setDeliveryLocation] = useState<'fob' | 'asuncion' | 'encarnacion' | 'pjc'>('fob');
   const [searchUrl, setSearchUrl] = useState('');
   const [products, setProducts] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -2228,6 +2241,12 @@ export default function Home() {
     }
   };
 
+  // 引渡し場所に応じた現地費用（USD）を返す関数（暫定で一律200ドル）
+  const getLocalCost = (productUrl: string | null): number => {
+    if (deliveryLocation === 'fob') return 0;
+    return 200;
+  };
+
   const fetchMyRequests = async () => {
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
@@ -3023,6 +3042,20 @@ export default function Home() {
                 )}
               </div>
             </div>
+
+            {deliveryLocation !== 'fob' && (
+              <div className="h-9 flex items-center justify-between bg-green-50 px-2.5 sm:px-3 rounded">
+                <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">
+                  {t.localCostLabel} (USD)
+                </span>
+                <div className="flex items-center">
+                  <span className="font-extrabold text-green-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
+                    <span className="text-xs font-semibold mr-0.5">$</span>
+                    {getLocalCost(product.url)}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* B001紐づき顧客用の分割金額表示ボックス（🇧🇷/🇵🇾） */}
             {currentUser?.agentCustomerId === 'B001' && (() => {
@@ -5095,6 +5128,23 @@ export default function Home() {
                             {t.condUsed}
                           </button>
                         </div>
+
+                        {/* 引渡し場所選択ドロップダウン */}
+                        <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                            {t.deliveryLocationLabel}
+                          </label>
+                          <select
+                            value={deliveryLocation}
+                            onChange={(e) => setDeliveryLocation(e.target.value as any)}
+                            className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition"
+                          >
+                            <option value="fob">{t.deliveryFob}</option>
+                            <option value="asuncion">{t.deliveryAsuncion}</option>
+                            <option value="encarnacion">{t.deliveryEncarnacion}</option>
+                            <option value="pjc">{t.deliveryPjc}</option>
+                          </select>
+                        </div>
                       </div>
                     );
                   })()}
@@ -5163,6 +5213,23 @@ export default function Home() {
                         >
                           {t.condUsed}
                         </button>
+                      </div>
+
+                      {/* 引渡し場所選択ドロップダウン */}
+                      <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                          {t.deliveryLocationLabel}
+                        </label>
+                        <select
+                          value={deliveryLocation}
+                          onChange={(e) => setDeliveryLocation(e.target.value as any)}
+                          className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition"
+                        >
+                          <option value="fob">{t.deliveryFob}</option>
+                          <option value="asuncion">{t.deliveryAsuncion}</option>
+                          <option value="encarnacion">{t.deliveryEncarnacion}</option>
+                          <option value="pjc">{t.deliveryPjc}</option>
+                        </select>
                       </div>
                     </div>
                   )}
@@ -5263,6 +5330,23 @@ export default function Home() {
                       {t.condUsed}
                     </button>
                   </div>
+
+                  {/* 引渡し場所選択ドロップダウン */}
+                  <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                      {t.deliveryLocationLabel}
+                    </label>
+                    <select
+                      value={deliveryLocation}
+                      onChange={(e) => setDeliveryLocation(e.target.value as any)}
+                      className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition"
+                    >
+                      <option value="fob">{t.deliveryFob}</option>
+                      <option value="asuncion">{t.deliveryAsuncion}</option>
+                      <option value="encarnacion">{t.deliveryEncarnacion}</option>
+                      <option value="pjc">{t.deliveryPjc}</option>
+                    </select>
+                  </div>
                 </div>
               )}
             </div>
@@ -5320,7 +5404,7 @@ export default function Home() {
                     sizes="128px"
                   />
                 </div>
-                <div className="flex-1 flex flex-col justify-between h-32 overflow-hidden">
+                <div className="flex-1 flex flex-col justify-between min-h-[8rem] h-auto gap-1">
                   <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight">{selectedProduct.title}</h3>
                   {selectedProduct.endTime && (
                     <div className="text-left text-[10px] sm:text-xs h-7 flex items-center bg-gray-50 border border-gray-100 rounded px-1.5 w-full whitespace-nowrap overflow-hidden text-ellipsis">
@@ -5339,6 +5423,16 @@ export default function Home() {
                       $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD')}
                     </span>
                   </div>
+                  {deliveryLocation !== 'fob' && (
+                    <div className="text-[10px] sm:text-xs h-7 flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-1.5 w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                      <span className="text-gray-500 font-medium flex items-center gap-1">
+                        {t.localCostLabel}: USD
+                      </span>
+                      <span className="font-extrabold text-sm text-indigo-700">
+                        $ {getLocalCost(selectedProduct.url)}
+                      </span>
+                    </div>
+                  )}
                   <a
                     href={`/product/${selectedProduct.id}?url=${encodeURIComponent(selectedProduct.url || '')}&lang=${lang}`}
                     className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
