@@ -4885,13 +4885,13 @@ export default function Home() {
                                 handleCategorySearch(catId, 'all');
                               }
                             }}
-                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
+                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
                               searchCondition === 'all'
                                 ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                                 : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                             }`}
                           >
-                            <span>🌐</span> {t.condAll}
+                            {t.condAll}
                           </button>
                           <button
                             onClick={() => {
@@ -4900,13 +4900,13 @@ export default function Home() {
                                 handleCategorySearch(catId, 'new');
                               }
                             }}
-                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
+                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
                               searchCondition === 'new'
                                 ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                                 : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                             }`}
                           >
-                            <span>✨</span> {t.condNew}
+                            {t.condNew}
                           </button>
                           <button
                             onClick={() => {
@@ -4915,13 +4915,13 @@ export default function Home() {
                                 handleCategorySearch(catId, 'used');
                               }
                             }}
-                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
+                            className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
                               searchCondition === 'used'
                                 ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                                 : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                             }`}
                           >
-                            <span>🔄</span> {t.condUsed}
+                            {t.condUsed}
                           </button>
                         </div>
                       </div>
@@ -4960,13 +4960,13 @@ export default function Home() {
                               handleJdmSearch('all');
                             }
                           }}
-                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
+                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
                             searchCondition === 'all'
                               ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                               : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                           }`}
                         >
-                          <span>🌐</span> {t.condAll}
+                          {t.condAll}
                         </button>
                         <button
                           onClick={() => {
@@ -4975,13 +4975,13 @@ export default function Home() {
                               handleJdmSearch('new');
                             }
                           }}
-                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
+                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
                             searchCondition === 'new'
                               ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                               : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                           }`}
                         >
-                          <span>✨</span> {t.condNew}
+                          {t.condNew}
                         </button>
                         <button
                           onClick={() => {
@@ -4990,13 +4990,13 @@ export default function Home() {
                               handleJdmSearch('used');
                             }
                           }}
-                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center gap-1 ${
+                          className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs transition-all duration-300 text-center flex items-center justify-center ${
                             searchCondition === 'used'
                               ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
                               : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                           }`}
                         >
-                          <span>🔄</span> {t.condUsed}
+                          {t.condUsed}
                         </button>
                       </div>
                     </div>
@@ -5057,39 +5057,39 @@ export default function Home() {
                         setSearchCondition('all');
                         handleKeywordSearch(undefined, 1, 'all');
                       }}
-                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center gap-1.5 ${
+                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                         searchCondition === 'all'
                           ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200 transform scale-[1.02]'
                           : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                       }`}
                     >
-                      <span>🌐</span> {t.condAll}
+                      {t.condAll}
                     </button>
                     <button
                       onClick={() => {
                         setSearchCondition('new');
                         handleKeywordSearch(undefined, 1, 'new');
                       }}
-                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center gap-1.5 ${
+                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                         searchCondition === 'new'
                           ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200 transform scale-[1.02]'
                           : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                       }`}
                     >
-                      <span>✨</span> {t.condNew}
+                      {t.condNew}
                     </button>
                     <button
                       onClick={() => {
                         setSearchCondition('used');
                         handleKeywordSearch(undefined, 1, 'used');
                       }}
-                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center gap-1.5 ${
+                      className={`flex-1 py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
                         searchCondition === 'used'
                           ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200 transform scale-[1.02]'
                           : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                       }`}
                     >
-                      <span>🔄</span> {t.condUsed}
+                      {t.condUsed}
                     </button>
                   </div>
                 </div>
