@@ -127,7 +127,7 @@ const translations = {
     deliveryFob: 'Japón 🇯🇵',
     deliveryAsuncion: 'Asunción 🇵🇾',
     deliveryEncarnacion: 'Encarnación 🇵🇾',
-    deliveryPjc: '🇵🇾 PJC | Ponta Porã 🇧🇷',
+    deliveryPjc: 'PJC 🇵🇾 | Ponta Porã 🇧🇷',
     localCostLabel: 'Costo Local',
   },
   pt: {
@@ -235,7 +235,7 @@ const translations = {
     deliveryFob: 'Japão 🇯🇵',
     deliveryAsuncion: 'Assunção 🇵🇾',
     deliveryEncarnacion: 'Encarnación 🇵🇾',
-    deliveryPjc: '🇵🇾 PJC | Ponta Porã 🇧🇷',
+    deliveryPjc: 'PJC 🇵🇾 | Ponta Porã 🇧🇷',
     localCostLabel: 'Custo Local',
   }
 };
@@ -3045,8 +3045,8 @@ export default function Home() {
 
             {deliveryLocation !== 'fob' && (
               <div className="h-9 flex items-center justify-between bg-green-50 px-2.5 sm:px-3 rounded">
-                <span className="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-widest leading-none">
-                  {t.localCostLabel} (USD)
+                <span className="text-[10px] sm:text-xs font-bold text-green-700 tracking-widest leading-none">
+                  {t.localCostLabel}
                 </span>
                 <div className="flex items-center">
                   <span className="font-extrabold text-green-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
@@ -5426,7 +5426,7 @@ export default function Home() {
                   {deliveryLocation !== 'fob' && (
                     <div className="text-[10px] sm:text-xs h-7 flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-1.5 w-full whitespace-nowrap overflow-hidden text-ellipsis">
                       <span className="text-gray-500 font-medium flex items-center gap-1">
-                        {t.localCostLabel}: USD
+                        {t.localCostLabel}
                       </span>
                       <span className="font-extrabold text-sm text-indigo-700">
                         $ {getLocalCost(selectedProduct.url)}
