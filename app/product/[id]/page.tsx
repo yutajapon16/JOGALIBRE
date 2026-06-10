@@ -34,6 +34,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   
   // 選択された通貨のState (デフォルトはUSD)
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  // 引渡し場所のState (デフォルトはfob)
+  const [deliveryLocation, setDeliveryLocation] = useState<'fob' | 'asuncion' | 'encarnacion' | 'pjc'>('fob');
   // 為替レート関連のState
   const [exchangeRate, setExchangeRate] = useState(150);
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({});
@@ -73,7 +75,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       currentPrice: 'Precio actual',
       bids: 'Ofertas:',
       endsIn: 'Termina en:',
-      yourName: 'Nombre completo'
+      yourName: 'Nombre completo',
+      deliveryLocationLabel: 'Lugar de entrega',
+      deliveryFob: 'Japón 🇯🇵',
+      deliveryAsuncion: 'Asunción 🇵🇾',
+      deliveryEncarnacion: 'Encarnación 🇵🇾',
+      deliveryPjc: 'Pedro Juan Caballero 🇵🇾 Ponta Porã 🇧🇷',
+      localCostLabel: 'Costo Local'
     },
     pt: {
       title: 'Visualização de Produto com IA',
@@ -100,7 +108,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       currentPrice: 'Preço atual',
       bids: 'Lances:',
       endsIn: 'Termina em:',
-      yourName: 'Nome completo'
+      yourName: 'Nome completo',
+      deliveryLocationLabel: 'Local de entrega',
+      deliveryFob: 'Japão 🇯🇵',
+      deliveryAsuncion: 'Assunção 🇵🇾',
+      deliveryEncarnacion: 'Encarnación 🇵🇾',
+      deliveryPjc: 'Pedro Juan Caballero 🇵🇾 Ponta Porã 🇧🇷',
+      localCostLabel: 'Custo Local'
     }
   };
 
@@ -330,6 +344,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  // 引渡し場所に応じた現地費用（USD）を返す関数（暫定で一律200ドル）
+  const getLocalCost = (productUrl: string | null): number => {
+    if (deliveryLocation === 'fob') return 0;
+    return 200;
+  };
+
   // オファー送信処理
   const handleOfferSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -469,6 +489,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <option value="pt">Português</option>
           </select>
         </div>
+        <div className="max-w-3xl mx-auto px-4 pb-2">
+          <select
+            value={deliveryLocation}
+            onChange={(e) => setDeliveryLocation(e.target.value as any)}
+            className="w-full h-12 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+          >
+            <option value="fob">{t.deliveryFob}</option>
+            <option value="asuncion">{t.deliveryAsuncion}</option>
+            <option value="encarnacion">{t.deliveryEncarnacion}</option>
+            <option value="pjc">{t.deliveryPjc}</option>
+          </select>
+        </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
@@ -554,45 +586,74 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             // B001 紐づき顧客用の 3段金額表示ボックス (プレミアムUI)
             (() => {
               const usdStr = calculateConvertedPrice(product.currentPrice, 'USD').replace(/,/g, '');
-              const totalSalePrice = parseFloat(usdStr || '0');
-              const halfPrice = Math.round(totalSalePrice * 0.5);
+              const totalSalePriceUsd = parseFloat(usdStr || '0');
+              const halfPriceUsd = Math.round(totalSalePriceUsd * 0.5);
+              
+              // 画面に表示する合計金額（ヘッダーの選択通貨に従う）
+              const displayedTotal = calculateConvertedPrice(product.currentPrice, selectedCurrency);
               
               // BRL への換算
               const brlRate = exchangeRates['BRL'] || 5.6;
-              const halfPriceBrl = Math.ceil((halfPrice * brlRate) / 10) * 10; // 10の位切り上げ
+              const halfPriceBrl = Math.ceil((halfPriceUsd * brlRate) / 10) * 10; // 10の位切り上げ
 
-              const totalStr = totalSalePrice.toLocaleString('en-US');
-              const halfStr = halfPrice.toLocaleString('en-US');
+              const totalStr = displayedTotal;
+              const halfStr = halfPriceUsd.toLocaleString('en-US');
               const halfBrlStr = halfPriceBrl.toLocaleString('en-US').replace(/,/g, '.');
 
               return (
                 <div className="space-y-2">
                   {/* 1段目: 合計支払額 */}
                   <div className="h-12 px-3 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-between text-indigo-800 font-bold shadow-sm">
-                    <span className="text-xs">Valor Total: USD</span>
-                    <span className="text-sm sm:text-base font-extrabold">${totalStr}</span>
+                    <span className="text-xs">Valor Total: {selectedCurrency}</span>
+                    <span className="text-sm sm:text-base font-extrabold">
+                      {getCurrencySymbol(selectedCurrency)} {totalStr}
+                    </span>
                   </div>
                   {/* 2段目: ブラジル国内支払額 */}
                   <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between text-green-700 font-bold shadow-sm">
-                    <span className="text-xs">Pagamento 🇧🇷: USD</span>
-                    <span className="text-sm sm:text-base font-extrabold">${halfStr} / BRL R$ {halfBrlStr}</span>
+                    <span className="text-xs">
+                      {lang === 'es' ? 'Pago 🇧🇷: BRL' : 'Pagamento 🇧🇷: BRL'}
+                    </span>
+                    <span className="text-sm sm:text-base font-extrabold">R$ {halfBrlStr}</span>
                   </div>
                   {/* 3段目: パラグアイ現地支払額 */}
                   <div className="h-12 px-3 bg-amber-50 border border-amber-100 rounded-lg flex items-center justify-between text-amber-700 font-bold shadow-sm">
                     <span className="text-xs">Pagamento 🇵🇾: USD</span>
                     <span className="text-sm sm:text-base font-extrabold">${halfStr}</span>
                   </div>
+                  
+                  {/* B001用現地費用ボックス（パラグアイ支払額の下） */}
+                  {deliveryLocation !== 'fob' && (
+                    <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
+                      <span className="text-xs">{t.localCostLabel}</span>
+                      <span className="text-sm sm:text-base font-extrabold">
+                        $ {getLocalCost(product.url)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })()
           ) : (
-            // 通常の価格表示 (1段)
-            <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between text-green-700 font-bold">
-              <span className="text-xs">{t.currentPrice}: {selectedCurrency}</span>
-              <span className="text-sm sm:text-base font-extrabold">
-                {getCurrencySymbol(selectedCurrency)} {calculateConvertedPrice(product.currentPrice)}
-              </span>
-            </div>
+            <>
+              {/* 通常の価格表示 (1段) */}
+              <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between text-green-700 font-bold">
+                <span className="text-xs">{t.currentPrice}: {selectedCurrency}</span>
+                <span className="text-sm sm:text-base font-extrabold">
+                  {getCurrencySymbol(selectedCurrency)} {calculateConvertedPrice(product.currentPrice)}
+                </span>
+              </div>
+              
+              {/* 通常ユーザー用現地費用ボックス（現在価格の下） */}
+              {deliveryLocation !== 'fob' && (
+                <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
+                  <span className="text-xs">{t.localCostLabel}</span>
+                  <span className="text-sm sm:text-base font-extrabold">
+                    $ {getLocalCost(product.url)}
+                  </span>
+                </div>
+              )}
+            </>
           )}
         </div>
 
