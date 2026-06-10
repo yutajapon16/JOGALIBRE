@@ -5203,7 +5203,7 @@ export default function Home() {
                           <select
                             value={deliveryLocation}
                             onChange={(e) => setDeliveryLocation(e.target.value as any)}
-                            className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-xs font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                            className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
                           >
                             <option value="fob">{t.deliveryFob}</option>
                             <option value="asuncion">{t.deliveryAsuncion}</option>
@@ -5289,7 +5289,7 @@ export default function Home() {
                         <select
                           value={deliveryLocation}
                           onChange={(e) => setDeliveryLocation(e.target.value as any)}
-                          className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-xs font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                          className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
                         >
                           <option value="fob">{t.deliveryFob}</option>
                           <option value="asuncion">{t.deliveryAsuncion}</option>
@@ -5405,7 +5405,7 @@ export default function Home() {
                     <select
                       value={deliveryLocation}
                       onChange={(e) => setDeliveryLocation(e.target.value as any)}
-                      className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-xs font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                      className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
                     >
                       <option value="fob">{t.deliveryFob}</option>
                       <option value="asuncion">{t.deliveryAsuncion}</option>
