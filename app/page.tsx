@@ -127,7 +127,7 @@ const translations = {
     deliveryFob: 'Japón 🇯🇵',
     deliveryAsuncion: 'Asunción 🇵🇾',
     deliveryEncarnacion: 'Encarnación 🇵🇾',
-    deliveryPjc: 'Pedro Juan Caballero 🇵🇾 | Ponta Porã 🇧🇷',
+    deliveryPjc: 'Pedro Juan Caballero 🇵🇾 Ponta Porã 🇧🇷',
     localCostLabel: 'Costo Local',
   },
   pt: {
@@ -235,7 +235,7 @@ const translations = {
     deliveryFob: 'Japão 🇯🇵',
     deliveryAsuncion: 'Assunção 🇵🇾',
     deliveryEncarnacion: 'Encarnación 🇵🇾',
-    deliveryPjc: 'Pedro Juan Caballero 🇵🇾 | Ponta Porã 🇧🇷',
+    deliveryPjc: 'Pedro Juan Caballero 🇵🇾 Ponta Porã 🇧🇷',
     localCostLabel: 'Custo Local',
   }
 };
