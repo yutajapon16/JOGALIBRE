@@ -620,7 +620,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     <span className="text-xs">
                       {lang === 'es' ? 'Pago 50% en 🇵🇾: USD' : 'Pagamento 50% no 🇵🇾: USD'}
                     </span>
-                    <span className="text-sm sm:text-base font-extrabold">${halfStr}</span>
+                    <span className="text-sm sm:text-base font-extrabold">$ {halfStr}</span>
                   </div>
                   
                   {/* B001用現地費用ボックス（パラグアイ支払額の下） */}

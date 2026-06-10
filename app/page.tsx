@@ -1233,7 +1233,10 @@ export default function Home() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
-        if (typeof localStorage !== 'undefined') localStorage.removeItem('joga_user_cache');
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('joga_user_cache');
+          localStorage.removeItem('joga_terms_accepted');
+        }
       } else if (session?.user) {
         // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
         if (event === 'SIGNED_IN') {
@@ -1324,11 +1327,24 @@ export default function Home() {
   }, [currentUser?.id]);
 
   useEffect(() => {
+    if (currentUser) {
+      if (currentUser.termsAcceptedAt !== null && currentUser.termsAcceptedAt !== undefined) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('joga_terms_accepted', 'true');
+        }
+      }
+    }
+  }, [currentUser?.termsAcceptedAt]);
+
+  useEffect(() => {
     if (currentUser && isProfileLoaded) {
-      if (currentUser.termsAcceptedAt === null || currentUser.termsAcceptedAt === undefined) {
-        setShowTermsModal(true);
-      } else {
+      const hasAcceptedLocal = typeof localStorage !== 'undefined' && localStorage.getItem('joga_terms_accepted') === 'true';
+      const hasAcceptedDb = currentUser.termsAcceptedAt !== null && currentUser.termsAcceptedAt !== undefined;
+
+      if (hasAcceptedDb || hasAcceptedLocal) {
         setShowTermsModal(false);
+      } else {
+        setShowTermsModal(true);
       }
     } else {
       setShowTermsModal(false);
@@ -1635,6 +1651,7 @@ export default function Home() {
           };
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('joga_user_cache', JSON.stringify(updated));
+            localStorage.setItem('joga_terms_accepted', 'true');
           }
           return updated;
         });
@@ -2109,6 +2126,9 @@ export default function Home() {
       } catch (err) {
         console.error('Push subscription cleanup error:', err);
       }
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('joga_terms_accepted');
     }
     await signOut();
     // cookieベースセッションのため、ページリロードで確実にクリア

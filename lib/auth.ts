@@ -19,24 +19,13 @@ export async function signUp(
   city?: string,
   language?: string
 ) {
-  // 1. フロントエンドで標準 of signUpを実行（これでSupabaseから確実に確認メールが飛ぶ）
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-
-  if (error) throw error;
-  if (!data.user) throw new Error('User creation failed');
-
-  // 2. サーバーサイドAPIを叩いて、管理者権限(Service Role)でuser_rolesに安全にINSERTする
-  // (クライアントサイドから直接INSERTすると、メール未確認状態のためRLSに弾かれてしまう)
-  const res = await fetch('/api/save-user-role', {
+  // サーバーサイドの新規登録APIを呼び出して、Auth作成とuser_rolesへの登録をアトミックに実行する
+  const res = await fetch('/api/signup-customer', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
-      id: data.user.id,
       email, 
-      role, 
+      password,
       fullName, 
       whatsapp,
       address,
@@ -52,10 +41,11 @@ export async function signUp(
   
   if (!res.ok) {
     const errorData = await res.json();
-    throw new Error(errorData.error || 'Role saving failed');
+    throw new Error(errorData.error || '登録処理に失敗しました');
   }
 
-  return data;
+  // 呼び出し元との互換性のためにダミーデータを返す
+  return { user: { email } };
 }
 
 export async function signIn(email: string, password: string) {
@@ -84,6 +74,7 @@ export async function signOut() {
   // キャッシュクリア
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem('joga_user_cache');
+    localStorage.removeItem('joga_terms_accepted');
   }
   // cookieベースセッションの場合、Supabase関連cookieを手動クリア
   if (typeof document !== 'undefined') {

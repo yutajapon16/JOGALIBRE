@@ -1,0 +1,103 @@
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+/**
+ * 顧客用新規アカウント登録API
+ * サーバー側で認証ユーザー作成（確認メール送信）とDB登録（user_roles）をアトミックに実行します。
+ * DB登録でエラーが発生した場合は作成した認証ユーザーを自動削除（ロールバック）します。
+ */
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { email, password, fullName, whatsapp, address, zipCode, country, agentCustomerId, cpf, state, city, language } = body;
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'メールアドレスとパスワードは必須です' },
+        { status: 400 }
+      );
+    }
+
+    // 1. Supabase Admin APIを用いて認証ユーザーを作成
+    // email_confirm: false に設定して、登録確認用のメールを送信する
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: false,
+      user_metadata: {
+        full_name: fullName || null,
+        whatsapp: whatsapp || null,
+        role: 'customer',
+        user_role: 'customer',
+        address: address || null,
+        zip_code: zipCode || null,
+        country: country || null,
+        agent_customer_id: agentCustomerId || null,
+        cpf: cpf || null,
+        state: state || null,
+        city: city || null,
+        language: language || 'es'
+      }
+    });
+
+    if (authError) {
+      console.error('Auth customer creation error:', authError);
+      if (authError.message?.includes('already') || authError.message?.includes('exists')) {
+        return NextResponse.json(
+          { error: 'このメールアドレスは既に使用されています' },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'ユーザー作成に失敗しました: ' + authError.message },
+        { status: 500 }
+      );
+    }
+
+    if (!authData.user) {
+      return NextResponse.json(
+        { error: 'ユーザー作成に失敗しました' },
+        { status: 500 }
+      );
+    }
+
+    // 2. 作成したユーザーIDを用いて user_roles テーブルに設定情報を保存する
+    const { error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .insert([{
+        id: authData.user.id,
+        email: email,
+        role: 'customer',
+        full_name: fullName || null,
+        whatsapp: whatsapp || null,
+        address: address || null,
+        zip_code: zipCode || null,
+        country: country || null,
+        agent_customer_id: agentCustomerId || null,
+        deposit_amount: 100, // 顧客のデフォルト保証金
+        cpf: cpf || null,
+        state: state || null,
+        city: city || null,
+        language: language || 'es'
+      }]);
+
+    if (roleError) {
+      console.error('user_roles insert error:', roleError);
+      // ロールバック処理：user_rolesへの登録が失敗した場合は作成された認証ユーザーも削除する
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      return NextResponse.json(
+        { error: 'ロール設定に失敗しました: ' + roleError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+
+  } catch (error) {
+    console.error('Critical error in POST /api/signup-customer:', error);
+    return NextResponse.json(
+      { error: '予期しないエラーが発生しました' },
+      { status: 500 }
+    );
+  }
+}
