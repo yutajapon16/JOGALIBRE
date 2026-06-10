@@ -3109,20 +3109,6 @@ export default function Home() {
               </div>
             </div>
 
-            {deliveryLocation !== 'fob' && (
-              <div className="h-9 flex items-center justify-between bg-green-50 px-2.5 sm:px-3 rounded">
-                <span className="text-[10px] sm:text-xs font-bold text-green-700 tracking-widest leading-none">
-                  {t.localCostLabel}
-                </span>
-                <div className="flex items-center">
-                  <span className="font-extrabold text-green-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
-                    <span className="text-xs font-semibold mr-0.5">$</span>
-                    {getLocalCost(product.url)}
-                  </span>
-                </div>
-              </div>
-            )}
-
             {/* B001紐づき顧客用の分割金額表示ボックス（🇧🇷/🇵🇾） */}
             {currentUser?.agentCustomerId === 'B001' && (() => {
               const usdStr = calculateConvertedPrice(product.currentPrice, 'USD').replace(/,/g, '');
@@ -3151,6 +3137,20 @@ export default function Home() {
                 </div>
               );
             })()}
+
+            {deliveryLocation !== 'fob' && (
+              <div className="h-9 flex items-center justify-between bg-orange-50 px-2.5 sm:px-3 rounded">
+                <span className="text-[10px] sm:text-xs font-bold text-orange-700 tracking-widest leading-none">
+                  {t.localCostLabel}
+                </span>
+                <div className="flex items-center">
+                  <span className="font-extrabold text-orange-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
+                    <span className="text-xs font-semibold mr-0.5">$</span>
+                    {getLocalCost(product.url)}
+                  </span>
+                </div>
+              </div>
+            )}
 
             <button
               onClick={() => {
