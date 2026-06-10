@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+
+// アノンキーを使用した通常のクライアントを作成（確認メールの自動送信を有効にするため）
+const supabaseAnon = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 /**
  * 顧客用新規アカウント登録API
@@ -18,25 +25,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Supabase Admin APIを用いて認証ユーザーを作成
-    // email_confirm: false に設定して、登録確認用のメールを送信する
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    // 1. Supabase Anon Clientを用いてユーザー登録を実行（これで自動的に確認メールが送信されます）
+    const { data: authData, error: authError } = await supabaseAnon.auth.signUp({
       email,
       password,
-      email_confirm: false,
-      user_metadata: {
-        full_name: fullName || null,
-        whatsapp: whatsapp || null,
-        role: 'customer',
-        user_role: 'customer',
-        address: address || null,
-        zip_code: zipCode || null,
-        country: country || null,
-        agent_customer_id: agentCustomerId || null,
-        cpf: cpf || null,
-        state: state || null,
-        city: city || null,
-        language: language || 'es'
+      options: {
+        data: {
+          full_name: fullName || null,
+          whatsapp: whatsapp || null,
+          role: 'customer',
+          user_role: 'customer',
+          address: address || null,
+          zip_code: zipCode || null,
+          country: country || null,
+          agent_customer_id: agentCustomerId || null,
+          cpf: cpf || null,
+          state: state || null,
+          city: city || null,
+          language: language || 'es'
+        }
       }
     });
 
