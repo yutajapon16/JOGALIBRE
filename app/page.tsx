@@ -2778,7 +2778,7 @@ export default function Home() {
 
                 {loginForm.country === 'Brasil' && (
                   <div>
-                    <label className="block text-sm font-medium mb-2">CPF</label>
+                    <label className="block text-sm font-medium mb-2">CPF / CNPJ</label>
                     <input
                       type="text"
                       name="cpf"
@@ -4633,16 +4633,16 @@ export default function Home() {
                 <table className="min-w-full divide-y divide-gray-200 text-sm table-fixed">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="w-1/4 px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="w-[28%] px-2.5 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {t.date}
                       </th>
-                      <th className="w-1/4 px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="w-[12%] px-1 sm:px-2 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {lang === 'es' ? 'Moneda' : 'Moeda'}
                       </th>
-                      <th className="w-1/4 px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="w-[30%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {lang === 'es' ? 'Monto' : 'Valor'}
                       </th>
-                      <th className="w-1/4 px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="w-[30%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {lang === 'es' ? 'Método' : 'Método'}
                       </th>
                     </tr>
@@ -4667,16 +4667,16 @@ export default function Home() {
                       };
                       return (
                         <tr key={item.id} className="hover:bg-gray-50 transition text-black">
-                          <td className="w-1/4 px-4 py-3 whitespace-nowrap text-center font-medium text-gray-700">
+                          <td className="w-[28%] px-2.5 sm:px-4 py-3 whitespace-nowrap text-center font-medium text-gray-700">
                             {dateFormatted}
                           </td>
-                          <td className="w-1/4 px-4 py-3 whitespace-nowrap text-center text-gray-700 font-bold">
+                          <td className="w-[12%] px-1 sm:px-2 py-3 whitespace-nowrap text-center text-gray-700 font-bold">
                             {isBrl ? 'BRL' : 'USD'}
                           </td>
-                          <td className="w-1/4 px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
+                          <td className="w-[30%] px-2 sm:px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
                             {isBrl ? `R$ ${formatBrl(Number(item.amount))}` : `$${Number(item.amount).toLocaleString('en-US')}`}
                           </td>
-                          <td className="w-1/4 px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
+                          <td className="w-[30%] px-2 sm:px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
                             {paymentMethodNames[item.payment_method] || item.payment_method}
                           </td>
                         </tr>
@@ -4792,7 +4792,7 @@ export default function Home() {
                 </div>
                 {currentUser?.country?.trim().toLowerCase() === 'brasil' && (
                   <div>
-                    <label className="block text-sm font-medium mb-1">CPF</label>
+                    <label className="block text-sm font-medium mb-1">CPF / CNPJ</label>
                     <input
                       type="text"
                       value={profileForm.cpf}

@@ -157,7 +157,7 @@ export default function AgentRegister() {
             <select
               value={lang}
               onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+              className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
             >
               <option value="es">Español</option>
               <option value="pt">Português</option>
@@ -172,7 +172,7 @@ export default function AgentRegister() {
               type="text"
               value={form.fullName}
               onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              className="w-full border border-gray-300 rounded-lg px-4 h-12"
               required
             />
           </div>
@@ -185,7 +185,7 @@ export default function AgentRegister() {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              className="w-full border border-gray-300 rounded-lg px-4 h-12"
               required
             />
           </div>
@@ -198,7 +198,7 @@ export default function AgentRegister() {
               type="password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              className="w-full border border-gray-300 rounded-lg px-4 h-12"
               required
               minLength={6}
             />
@@ -212,7 +212,7 @@ export default function AgentRegister() {
               type="text"
               value={form.whatsapp}
               onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              className="w-full border border-gray-300 rounded-lg px-4 h-12"
               placeholder="+55..."
             />
           </div>
@@ -224,7 +224,7 @@ export default function AgentRegister() {
             <select
               value={form.country}
               onChange={(e) => setForm({ ...form, country: e.target.value, state: '', city: '', zipCode: '', address: '', cpf: '' })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+              className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
               required
             >
               <option value="" disabled>
@@ -241,13 +241,13 @@ export default function AgentRegister() {
           {form.country === 'Brasil' && (
             <div>
               <label className="block text-sm font-medium mb-1">
-                CPF
+                CPF / CNPJ
               </label>
               <input
                 type="text"
                 value={form.cpf}
                 onChange={(e) => setForm({ ...form, cpf: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-4 h-12"
                 placeholder="000.000.000-00"
                 required
               />
@@ -268,7 +268,7 @@ export default function AgentRegister() {
                   setForm({ ...form, zipCode: e.target.value });
                 }
               }}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              className="w-full border border-gray-300 rounded-lg px-4 h-12"
               placeholder={form.country === 'Brasil' ? '00000-000' : '12345-678'}
               required
             />
@@ -282,7 +282,7 @@ export default function AgentRegister() {
               <select
                 value={form.state}
                 onChange={(e) => setForm({ ...form, state: e.target.value, city: '' })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+                className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
                 required
               >
                 <option value="" disabled>
@@ -299,7 +299,7 @@ export default function AgentRegister() {
                 type="text"
                 value={form.state || ''}
                 onChange={(e) => setForm({ ...form, state: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-4 h-12"
                 placeholder={lang === 'es' ? 'Provincia / Estado' : 'Província / Estado'}
               />
             )}
@@ -313,7 +313,7 @@ export default function AgentRegister() {
               <select
                 value={form.city}
                 onChange={(e) => setForm({ ...form, city: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+                className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
                 required
                 disabled={citiesLoading}
               >
@@ -336,7 +336,7 @@ export default function AgentRegister() {
                 type="text"
                 value={form.city || ''}
                 onChange={(e) => setForm({ ...form, city: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-gray-300 rounded-lg px-4 h-12"
                 placeholder={lang === 'es' ? 'Ciudad' : 'Cidade'}
               />
             )}
@@ -350,7 +350,7 @@ export default function AgentRegister() {
               type="text"
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              className="w-full border border-gray-300 rounded-lg px-4 h-12"
               placeholder={lang === 'es' ? 'Calle, Número, Barrio' : 'Rua, Número, Bairro'}
               required
             />
@@ -364,7 +364,7 @@ export default function AgentRegister() {
               type="password"
               value={form.accessPassword}
               onChange={(e) => setForm({ ...form, accessPassword: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              className="w-full border border-gray-300 rounded-lg px-4 h-12"
               placeholder={lang === 'es' ? 'Contraseña de acceso' : 'Senha de acesso'}
               required
             />
@@ -373,7 +373,7 @@ export default function AgentRegister() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Registrando...' : (lang === 'es' ? 'Registrar como Agente' : 'Registrar como Agente')}
           </button>

@@ -284,7 +284,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }
       } catch (err) {
         console.error('Error fetching product details:', err);
-        setMessage({ type: 'error', text: t.errorFetch });
       } finally {
         setLoading(false);
       }
@@ -442,7 +441,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-6 rounded-xl shadow text-center max-w-md w-full">
-          <p className="text-red-500 font-bold mb-4">{message?.text || t.errorFetch}</p>
+          <p className="text-red-500 font-bold mb-4">{t.errorFetch}</p>
           <button onClick={() => router.back()} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg w-full">{t.back}</button>
         </div>
       </div>
