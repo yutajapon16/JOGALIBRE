@@ -553,10 +553,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           {currentUser?.agentCustomerId === 'B001' ? (
             // B001 紐づき顧客用の 3段金額表示ボックス (プレミアムUI)
             (() => {
-              // 180ドル(依頼額) 相当 ＝ 原価 + 手数料5%
-              const bidRequestAmount = parseFloat(calculateConvertedPrice(product.currentPrice, 'USD').replace(/,/g, ''));
-              // 合計売価 = 依頼額 / 0.45
-              const totalSalePrice = Math.round(bidRequestAmount / 0.45);
+              const usdStr = calculateConvertedPrice(product.currentPrice, 'USD').replace(/,/g, '');
+              const totalSalePrice = parseFloat(usdStr || '0');
               const halfPrice = Math.round(totalSalePrice * 0.5);
               
               // BRL への換算
