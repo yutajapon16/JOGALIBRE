@@ -2340,6 +2340,25 @@ export default function Home() {
     }
   };
 
+  const convertUSDToSelectedCurrency = (usdAmount: number, targetCurrency: string = selectedCurrency) => {
+    if (targetCurrency === 'USD') {
+      return `${getCurrencySymbol(targetCurrency)}${Math.round(usdAmount).toLocaleString('en-US')}`;
+    }
+    const rate = exchangeRates[targetCurrency] || 1;
+    const rawConverted = usdAmount * rate;
+    
+    let finalConverted = rawConverted;
+    if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
+      finalConverted = Math.ceil(rawConverted / 10) * 10;
+    } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
+      finalConverted = Math.ceil(rawConverted / 1000) * 1000;
+    } else {
+      finalConverted = Math.ceil(rawConverted);
+    }
+    
+    return `${getCurrencySymbol(targetCurrency)} ${finalConverted.toLocaleString('en-US').replace(/,/g, '.')}`;
+  };
+
   // 引渡し場所に応じた現地費用（USD）を返す関数（暫定で一律200ドル）
   const getLocalCost = (productUrl: string | null): number => {
     if (deliveryLocation === 'fob') return 0;
@@ -3593,7 +3612,7 @@ export default function Home() {
                       <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                         <span className="text-xs text-gray-500 font-medium">{t.maxBid}:</span>
                         <span className="text-base font-bold text-indigo-600">
-                          ${Math.round(request.maxBid || 0).toLocaleString('en-US')}
+                          {convertUSDToSelectedCurrency(request.maxBid || 0)}
                         </span>
                       </div>
 
@@ -3642,7 +3661,7 @@ export default function Home() {
                           <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
                             <span className="text-base font-bold text-blue-700">
-                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
                             </span>
                           </div>
                           <div className="flex flex-col gap-2 w-full">
@@ -3677,13 +3696,13 @@ export default function Home() {
                           <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
                             <span className="text-base font-bold text-blue-700">
-                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
                             </span>
                           </div>
                           <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
                             <span className="text-base font-bold text-purple-700">
-                              ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                              {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
                             </span>
                           </div>
                         </div>
@@ -3695,7 +3714,7 @@ export default function Home() {
                           <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
                             <span className="text-base font-bold text-purple-700">
-                              ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                              {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
                             </span>
                           </div>
                           <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center">
@@ -3714,7 +3733,7 @@ export default function Home() {
                           <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
                             <span className="text-base font-bold text-blue-700">
-                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
                             </span>
                           </div>
                           <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center">
@@ -3731,7 +3750,7 @@ export default function Home() {
                           <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
                             <span className="text-base font-bold text-blue-700">
-                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
                             </span>
                           </div>
                           <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center">
@@ -3757,7 +3776,7 @@ export default function Home() {
                           <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
                             <span className="text-base font-bold text-blue-700">
-                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
                             </span>
                           </div>
                           <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center shadow-sm">
@@ -3784,7 +3803,7 @@ export default function Home() {
                                 {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
                               </span>
                               <span className="text-base font-bold text-gray-400">
-                                ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                                {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
                               </span>
                             </div>
                           </div>
@@ -3804,7 +3823,7 @@ export default function Home() {
                           <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
                             <span className="text-base font-bold text-blue-700">
-                              ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
                             </span>
                           </div>
                           <div className="flex flex-col gap-2 w-full">
@@ -3834,10 +3853,10 @@ export default function Home() {
                               {lang === 'es' ? 'Precio de adjudicación:' : 'Valor de arremate:'}
                             </span>
                             <span className="text-base font-bold text-green-800">
-                              ${Math.round(
+                              {convertUSDToSelectedCurrency(
                                 request.finalPrice ||
                                 (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
-                              ).toLocaleString('en-US')}
+                              )}
                             </span>
                           </div>
                           {/* 確認ボタンボックス */}
@@ -3857,7 +3876,7 @@ export default function Home() {
                             <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
                               <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
                               <span className="text-base font-bold text-blue-700">
-                                ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                                {convertUSDToSelectedCurrency(request.counterOffer || 0)}
                               </span>
                             </div>
                           )}
@@ -3867,7 +3886,7 @@ export default function Home() {
                             <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
                               <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
                               <span className="text-base font-bold text-purple-700">
-                                ${Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                                {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
                               </span>
                             </div>
                           )}
@@ -4023,7 +4042,7 @@ export default function Home() {
                         {lang === 'es' ? 'Monto Total' : 'Valor Total'}
                       </span>
                       <span className="text-base font-black text-indigo-600">
-                        ${Math.round(summaryTotal).toLocaleString('en-US')}
+                        {convertUSDToSelectedCurrency(summaryTotal)}
                       </span>
                     </div>
 
@@ -4033,7 +4052,7 @@ export default function Home() {
                         {lang === 'es' ? 'Monto Pendiente Total' : 'Valor Pendente Total'}
                       </span>
                       <span className="text-base font-black text-red-600">
-                        ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
+                        {convertUSDToSelectedCurrency(unpaidSummaryTotal)}
                       </span>
                     </div>
 
@@ -4053,7 +4072,7 @@ export default function Home() {
                         {lang === 'es' ? 'Monto Pendiente en 🇵🇾' : 'Valor Pendente no 🇵🇾'}
                       </span>
                       <span className="text-base font-black text-orange-600">
-                        ${Math.round(unpaidParaguayTotal).toLocaleString('en-US')}
+                        {convertUSDToSelectedCurrency(unpaidParaguayTotal)}
                       </span>
                     </div>
                   </div>
@@ -4071,7 +4090,7 @@ export default function Home() {
                         {lang === 'es' ? 'Monto Total' : 'Valor Total'}
                       </span>
                       <span className="text-base font-black text-indigo-600">
-                        ${Math.round(summaryTotal).toLocaleString('en-US')}
+                        {convertUSDToSelectedCurrency(summaryTotal)}
                       </span>
                     </div>
                     <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
@@ -4079,7 +4098,7 @@ export default function Home() {
                         {lang === 'es' ? 'Monto Pendiente' : 'Valor Pendente'}
                       </span>
                       <span className="text-base font-black text-red-600">
-                        ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
+                        {convertUSDToSelectedCurrency(unpaidSummaryTotal)}
                       </span>
                     </div>
                   </div>
@@ -4255,7 +4274,7 @@ export default function Home() {
                                     )}
                                   </div>
                                   <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
-                                    ${totalStr}
+                                    {convertUSDToSelectedCurrency(totalSalePrice)}
                                   </span>
                                 </div>
 
@@ -4295,7 +4314,7 @@ export default function Home() {
                                       )}
                                     </div>
                                     <span className={`text-sm ${item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
-                                      ${halfStr}
+                                      {convertUSDToSelectedCurrency(halfPrice)}
                                     </span>
                                   </div>
                                 </div>
@@ -4304,7 +4323,7 @@ export default function Home() {
                                 <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
                                   <span className="text-red-600 font-black text-xs">{lang === 'es' ? 'Envío a Japón' : 'Envio ao Japão'} 🇯🇵:</span>
                                   <span className="text-red-600 font-black text-base">
-                                    ${japanSendAmount.toLocaleString('en-US')}
+                                    {convertUSDToSelectedCurrency(japanSendAmount)}
                                   </span>
                                 </div>
                               </div>
@@ -4336,10 +4355,10 @@ export default function Home() {
                             </div>
                             
                             <span className={`text-base font-bold whitespace-nowrap font-sans ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                              ${Math.round(
+                              {convertUSDToSelectedCurrency(
                                 item.finalPrice ||
                                 (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
-                              ).toLocaleString('en-US')}
+                              )}
                             </span>
                           </div>
                         )}
