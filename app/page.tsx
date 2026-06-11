@@ -3601,7 +3601,7 @@ export default function Home() {
                       {currentUser?.customerId?.startsWith('A') && 
                         (currentUser.country?.trim().toLowerCase() === 'brasil' || currentUser.country?.trim().toLowerCase() === 'brazil') && (() => {
                           const cost = request.customerCounterOffer || request.counterOffer || request.maxBid || 0;
-                          const japanAmount = Math.ceil(((cost * 0.8) / 0.9) / 10) * 10;
+                          const japanAmount = Math.ceil(((cost * 0.7) / 0.8) / 10) * 10;
                           return (
                             <div className="mb-2 h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
                               <span className="text-xs text-red-600 font-black">{lang === 'es' ? 'Envío a Japón' : 'Envio ao Japão'} 🇯🇵:</span>

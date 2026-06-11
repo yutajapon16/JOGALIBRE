@@ -768,14 +768,23 @@ export default function AdminDashboard() {
     if (item.customerId === 'B001') {
       return totalSalePrice;
     }
-    let costFactor = 0.4;
+    let ownDivisor = 0.6; // デフォルト: 一般顧客 (利益率40%＝除数0.6)
+    let targetDivisor = 0.9; // デフォルト: B001本人の仕入れ割合 (利益率10%＝除数0.9)
+    
     if (item.agentCustomerId === 'B001') {
-      costFactor = 0.6;
+      ownDivisor = 0.5; // B001紐づき (利益率50%＝除数0.5)
+      targetDivisor = 0.6; // 一般顧客 (利益率40%＝除数0.6)
     } else if (item.customerId?.startsWith('A')) {
-      costFactor = 0.8;
+      const countryLower = item.customerCountry?.trim().toLowerCase();
+      if (countryLower === 'brasil' || countryLower === 'brazil') {
+        ownDivisor = 0.7; // ブラジルエージェント (利益率30%＝除数0.7)
+        targetDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
+      } else {
+        ownDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
+        targetDivisor = 0.9; // B001本人 (利益率10%＝除数0.9)
+      }
     }
-    const costUsd = totalSalePrice * costFactor;
-    return Math.ceil((costUsd / 0.9) / 10) * 10;
+    return Math.ceil(((totalSalePrice * ownDivisor) / targetDivisor) / 10) * 10;
   };
 
   const getFilteredPurchasedItems = () => {
@@ -1712,8 +1721,12 @@ export default function AdminDashboard() {
                       if (!isB001Linked && !isBrasilAgent) return null;
 
                       const cost = request.customerCounterOffer || request.counterOffer || request.maxBid || 0;
-                      const costFactor = isB001Linked ? 0.6 : 0.8;
-                      const japanAmount = Math.ceil(((cost * costFactor) / 0.9) / 10) * 10;
+                      let japanAmount = 0;
+                      if (isB001Linked) {
+                        japanAmount = Math.ceil(((cost * 0.5) / 0.6) / 10) * 10;
+                      } else if (isBrasilAgent) {
+                        japanAmount = Math.ceil(((cost * 0.7) / 0.8) / 10) * 10;
+                      }
 
                       return (
                         <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
