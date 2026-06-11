@@ -3651,75 +3651,23 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* 商品渡し場所 (Lugar de Entrega / Local de Entrega) */}
-                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
-                        <span className="text-xs text-gray-500 font-medium">
-                          {lang === 'es' ? 'Lugar de Entrega' : 'Local de Entrega'}
-                        </span>
-                        <span className="text-sm font-semibold text-black">
-                          {getDeliveryLocationName(request.delivery_location)}
-                        </span>
-                      </div>
-
-                      {/* 現地費用 (Costo Local / Custo Local) */}
-                      {request.delivery_location !== 'JP' && (
-                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
-                          <span className="text-xs text-gray-500 font-medium">
-                            {lang === 'es' ? 'Costo Local' : 'Custo Local'}
-                          </span>
-                          <span className="text-sm font-bold text-gray-800">
-                            {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
-                          </span>
-                        </div>
-                      )}
-
-                      {request.status === 'rejected' && !request.customerCounterOffer && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs gap-1.5 shadow-sm">
-                            <span className="text-xs text-gray-500 font-medium">{t.rejectReason}:</span>
-                            <span className="text-xs text-red-800 font-semibold truncate">{request.rejectReason || '-'}</span>
-                          </div>
-                          <button
-                            onClick={() => confirmRejection(request.id)}
-                            className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
-                          >
-                            {t.confirm}
-                          </button>
+                      {/* --- 1. 金額ボックス ＋ ステータスメッセージの表示 --- */}
+                      
+                      {/* 却下理由のみ（ケース4A, 4B以外の純粋な却下） */}
+                      {request.status === 'rejected' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
+                        <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs gap-1.5 shadow-sm mb-2">
+                          <span className="text-xs text-gray-500 font-medium">{t.rejectReason}:</span>
+                          <span className="text-xs text-red-800 font-semibold truncate">{request.rejectReason || '-'}</span>
                         </div>
                       )}
 
                       {/* ケース1: 最初の管理者カウンターオファー（顧客未返答） */}
                       {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                            <span className="text-base font-bold text-blue-700">
-                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
-                            </span>
-                          </div>
-                          <div className="flex flex-col gap-2 w-full">
-                            <button
-                              onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                              className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
-                            >
-                              {t.accept}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedRequestForCounter(request);
-                                setShowCounterModal(true);
-                              }}
-                              className="w-full bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center"
-                            >
-                              {t.counterOfferAction}
-                            </button>
-                            <button
-                              onClick={() => handleCounterOfferResponse(request.id, 'reject')}
-                              className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center"
-                            >
-                              {t.reject}
-                            </button>
-                          </div>
+                        <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between mb-2">
+                          <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                          <span className="text-base font-bold text-blue-700">
+                            {convertUSDToSelectedCurrency(request.counterOffer || 0)}
+                          </span>
                         </div>
                       )}
 
@@ -3803,7 +3751,7 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 削除確認待ち */}
+                      {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 金額・メッセージ */}
                       {request.adminNeedsConfirm && !request.customerCounterOffer && (
                         <div className="flex flex-col gap-2 mb-2 w-full">
                           <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
@@ -3817,16 +3765,10 @@ export default function Home() {
                               {lang === 'es' ? 'Rechazaste la contraoferta.' : 'Você rejeitou a contraoferta.'}
                             </p>
                           </div>
-                          <button
-                            onClick={() => confirmRejection(request.id)}
-                            className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
-                          >
-                            {t.confirm}
-                          </button>
                         </div>
                       )}
 
-                      {/* ケース4B: 管理者が顧客カウンターオファーを却下 → 最初のオファー承諾可能 */}
+                      {/* ケース4B: 管理者が顧客カウンターオファーを却下 */}
                       {request.status === 'rejected' && request.customerCounterOffer && (
                         <div className="flex flex-col gap-2 mb-2 w-full">
                           <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
@@ -3859,20 +3801,99 @@ export default function Home() {
                               {convertUSDToSelectedCurrency(request.counterOffer || 0)}
                             </span>
                           </div>
-                          <div className="flex flex-col gap-2 w-full">
-                            <button
-                              onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                              className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
-                            >
-                              {t.accept}
-                            </button>
-                            <button
-                              onClick={() => confirmRejection(request.id)}
-                              className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
-                            >
-                              {t.reject}
-                            </button>
-                          </div>
+                        </div>
+                      )}
+
+
+                      {/* --- 2. 商品渡し場所 ＋ 現地費用 (JP以外) の表示 --- */}
+
+                      {/* 商品渡し場所 (Lugar de Entrega / Local de Entrega) */}
+                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
+                        <span className="text-xs text-gray-500 font-medium">
+                          {lang === 'es' ? 'Lugar de Entrega:' : 'Local de Entrega:'}
+                        </span>
+                        <span className="text-sm font-semibold text-black">
+                          {getDeliveryLocationName(request.delivery_location)}
+                        </span>
+                      </div>
+
+                      {/* 現地費用 (Costo Local / Custo Local) */}
+                      {request.delivery_location !== 'JP' && (
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
+                          <span className="text-xs text-gray-500 font-medium">
+                            {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
+                          </span>
+                          <span className="text-sm font-bold text-gray-800">
+                            {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
+                          </span>
+                        </div>
+                      )}
+
+
+                      {/* --- 3. アクションボタンの表示 --- */}
+
+                      {/* 却下状態（ケース4A, 4B以外の純粋な却下）の確認ボタン */}
+                      {request.status === 'rejected' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
+                        <button
+                          onClick={() => confirmRejection(request.id)}
+                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
+                        >
+                          {t.confirm}
+                        </button>
+                      )}
+
+                      {/* ケース1の承認・カウンター・却下ボタン */}
+                      {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
+                        <div className="flex flex-col gap-2 w-full mb-2">
+                          <button
+                            onClick={() => handleCounterOfferResponse(request.id, 'accept')}
+                            className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                          >
+                            {t.accept}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedRequestForCounter(request);
+                              setShowCounterModal(true);
+                            }}
+                            className="w-full bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                          >
+                            {t.counterOfferAction}
+                          </button>
+                          <button
+                            onClick={() => handleCounterOfferResponse(request.id, 'reject')}
+                            className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                          >
+                            {t.reject}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* ケース4Aの却下確認ボタン */}
+                      {request.adminNeedsConfirm && !request.customerCounterOffer && (
+                        <button
+                          onClick={() => confirmRejection(request.id)}
+                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
+                        >
+                          {t.confirm}
+                        </button>
+                      )}
+
+                      {/* ケース4Bのアクションボタン */}
+                      {request.status === 'rejected' && request.customerCounterOffer && (
+                        <div className="flex flex-col gap-2 w-full mb-2">
+                          <button
+                            onClick={() => handleCounterOfferResponse(request.id, 'accept')}
+                            className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                          >
+                            {t.accept}
+                          </button>
+                          <button
+                            onClick={() => confirmRejection(request.id)}
+                            className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                          >
+                            {t.reject}
+                          </button>
                         </div>
                       )}
 
@@ -4414,7 +4435,7 @@ export default function Home() {
 
                                 {/* 商品渡し場所 */}
                                 <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                                  <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Lugar de Entrega' : 'Local de Entrega'}</span>
+                                  <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Lugar de Entrega:' : 'Local de Entrega:'}</span>
                                   <span className="text-sm font-semibold text-black">
                                     {getDeliveryLocationName(item.delivery_location)}
                                   </span>
@@ -4424,7 +4445,7 @@ export default function Home() {
                                 {item.delivery_location !== 'JP' && (
                                   <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                                     <div className="flex items-center gap-1.5">
-                                      <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local' : 'Custo Local'}</span>
+                                      <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
                                       {item.paid_local ? (
                                         <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
                                           ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
@@ -4479,7 +4500,7 @@ export default function Home() {
 
                             {/* 商品渡し場所 */}
                             <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
-                              <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Lugar de Entrega' : 'Local de Entrega'}</span>
+                              <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Lugar de Entrega:' : 'Local de Entrega:'}</span>
                               <span className="text-sm font-semibold text-black">
                                 {getDeliveryLocationName(item.delivery_location)}
                               </span>
@@ -4489,7 +4510,7 @@ export default function Home() {
                             {item.delivery_location !== 'JP' && (
                               <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local' : 'Custo Local'}</span>
+                                  <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
                                   {item.paid_local ? (
                                     <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
                                       ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
