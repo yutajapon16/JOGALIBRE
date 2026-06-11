@@ -1522,20 +1522,27 @@ export default function AdminDashboard() {
                   const timeA = a.productEndTime ? new Date(a.productEndTime).getTime() : Infinity;
                   const timeB = b.productEndTime ? new Date(b.productEndTime).getTime() : Infinity;
 
-                  const isEndedA = timeA <= now;
-                  const isEndedB = timeB <= now;
+                  const isEndedA = timeA <= now || a.finalStatus !== null;
+                  const isEndedB = timeB <= now || b.finalStatus !== null;
 
                   // 1. 終了済みを優先的に上に表示
                   if (isEndedA && !isEndedB) return -1;
                   if (!isEndedA && isEndedB) return 1;
 
-                  // 2. 両方が「終了済み」または「未終了」の場合、終了時間が早い順に並べる
+                  // 2. 両方が「終了済み」の場合、作成日時（リクエスト日時）が新しい順に並べる
+                  if (isEndedA && isEndedB) {
+                    const dateA = new Date(a.createdAt || '').getTime();
+                    const dateB = new Date(b.createdAt || '').getTime();
+                    return dateB - dateA;
+                  }
+
+                  // 3. 両方が「未終了」の場合、終了時間が早い順に並べる
                   if (timeA !== timeB) {
                     return timeA - timeB;
                   }
                   
-                  // 3. 終了時間が同じ（または両方なし）場合は作成日時順
-                  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                  // 4. 終了時間が同じ（または両方なし）の場合は作成日時順
+                  return new Date(a.createdAt || '').getTime() - new Date(b.createdAt || '').getTime();
                 })
                 .map((request) => (
                   <div key={request.id} className="bg-white rounded-lg shadow-md p-3 sm:p-4">

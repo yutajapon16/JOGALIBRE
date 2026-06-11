@@ -93,6 +93,22 @@ export async function POST(request: Request) {
 
     const recordId = Date.now().toString() + Math.floor(1000 + Math.random() * 9000).toString();
 
+    // フォームの日付 (createdAt = "YYYY-MM-DD") と現在時刻の時・分・秒・ミリ秒をマージする
+    let finalCreatedAt: string;
+    try {
+      const now = new Date();
+      const timePart = now.toISOString().split('T')[1]; // 例: "15:20:30.123Z"
+      const mergedDateTimeStr = `${createdAt}T${timePart}`;
+      const parsedDate = new Date(mergedDateTimeStr);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Invalid merged date');
+      }
+      finalCreatedAt = parsedDate.toISOString();
+    } catch (err) {
+      console.warn('Failed to merge date and time, using fallback:', err);
+      finalCreatedAt = new Date().toISOString();
+    }
+
     // 5. bid_requests に手動追加レコードを登録
     const bidRequest = {
       id: recordId,
@@ -106,8 +122,8 @@ export async function POST(request: Request) {
       customer_email: customerRoleData.email,
       language: 'es', // デフォルト言語
       status: 'approved',
-      created_at: new Date(createdAt).toISOString(),
-      approved_at: new Date(createdAt).toISOString(),
+      created_at: finalCreatedAt,
+      approved_at: finalCreatedAt,
       reject_reason: null,
       counter_offer: null,
       shipping_cost_jpy: null,
