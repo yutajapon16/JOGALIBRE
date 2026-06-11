@@ -2326,14 +2326,15 @@ export default function Home() {
     } else {
       const rate = exchangeRates[targetCurrency] || 1;
       const rawConverted = roundedUp * rate;
+      const rounded = Math.round(rawConverted);
       
-      let finalConverted = rawConverted;
+      let finalConverted = rounded;
       if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
-        finalConverted = Math.ceil(rawConverted / 10) * 10;
+        finalConverted = Math.ceil(rounded / 10) * 10;
       } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
-        finalConverted = Math.ceil(rawConverted / 1000) * 1000;
+        finalConverted = Math.ceil(rounded / 1000) * 1000;
       } else {
-        finalConverted = Math.ceil(rawConverted);
+        finalConverted = Math.ceil(rounded);
       }
       
       return finalConverted.toLocaleString('en-US').replace(/,/g, '.');
@@ -2346,14 +2347,15 @@ export default function Home() {
     }
     const rate = exchangeRates[targetCurrency] || 1;
     const rawConverted = usdAmount * rate;
+    const rounded = Math.round(rawConverted);
     
-    let finalConverted = rawConverted;
+    let finalConverted = rounded;
     if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
-      finalConverted = Math.ceil(rawConverted / 10) * 10;
+      finalConverted = Math.ceil(rounded / 10) * 10;
     } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
-      finalConverted = Math.ceil(rawConverted / 1000) * 1000;
+      finalConverted = Math.ceil(rounded / 1000) * 1000;
     } else {
-      finalConverted = Math.ceil(rawConverted);
+      finalConverted = Math.ceil(rounded);
     }
     
     return `${getCurrencySymbol(targetCurrency)} ${finalConverted.toLocaleString('en-US').replace(/,/g, '.')}`;
