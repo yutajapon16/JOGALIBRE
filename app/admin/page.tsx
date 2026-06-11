@@ -3204,9 +3204,18 @@ export default function AdminDashboard() {
                 const fob = parseFloat(fobCostJpy.replace(/,/g, '') || '0');
                 const shipping = parseFloat(shippingCostJpy.replace(/,/g, '') || '0');
                 const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
-                let profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
-                if (selectedRequest.agentCustomerId === 'B001') {
-                  profitDivisor = 0.4;
+                let profitDivisor = 0.6; // デフォルト: 一般顧客 (利益率40%＝除数0.6)
+                if (selectedRequest.customerId === 'B001') {
+                  profitDivisor = 0.9;
+                } else if (selectedRequest.agentCustomerId === 'B001') {
+                  profitDivisor = 0.5; // B001紐づき (利益率50%＝除数0.5)
+                } else if (selectedRequest.customerId?.startsWith('A')) {
+                  const countryLower = selectedRequest.customerCountry?.trim().toLowerCase();
+                  if (countryLower === 'brasil' || countryLower === 'brazil') {
+                    profitDivisor = 0.7; // ブラジルエージェント (利益率30%＝除数0.7)
+                  } else {
+                    profitDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
+                  }
                 }
                 const priceWithProfit = totalJpy / profitDivisor;
                 const profitJpy = priceWithProfit - totalJpy;
@@ -3227,9 +3236,18 @@ export default function AdminDashboard() {
                     const fob = parseFloat(fobCostJpy.replace(/,/g, '') || '0');
                     const shipping = parseFloat(shippingCostJpy.replace(/,/g, '') || '0');
                     const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
-                    let profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
-                    if (selectedRequest.agentCustomerId === 'B001') {
-                      profitDivisor = 0.4;
+                    let profitDivisor = 0.6; // デフォルト: 一般顧客 (利益率40%＝除数0.6)
+                    if (selectedRequest.customerId === 'B001') {
+                      profitDivisor = 0.9;
+                    } else if (selectedRequest.agentCustomerId === 'B001') {
+                      profitDivisor = 0.5; // B001紐づき (利益率50%＝除数0.5)
+                    } else if (selectedRequest.customerId?.startsWith('A')) {
+                      const countryLower = selectedRequest.customerCountry?.trim().toLowerCase();
+                      if (countryLower === 'brasil' || countryLower === 'brazil') {
+                        profitDivisor = 0.7; // ブラジルエージェント (利益率30%＝除数0.7)
+                      } else {
+                        profitDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
+                      }
                     }
                     const priceWithProfit = totalJpy / profitDivisor;
                     const usdPrice = priceWithProfit / exchangeRate;
