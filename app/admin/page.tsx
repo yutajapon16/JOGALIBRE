@@ -1786,11 +1786,6 @@ export default function AdminDashboard() {
                           <span className="text-base font-bold text-blue-700">
                             ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                           </span>
-                          {(request.shippingCostJpy || 0) > 0 && (
-                            <span className="text-xs text-gray-500 font-normal whitespace-nowrap">
-                              (送料: ¥{(request.shippingCostJpy || 0).toLocaleString()})
-                            </span>
-                          )}
                         </div>
                       </div>
                     )}
