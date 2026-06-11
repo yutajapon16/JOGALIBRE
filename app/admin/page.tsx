@@ -1801,25 +1801,6 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    {/* 商品渡し場所 (Lugar de Entrega / Local de Entrega) */}
-                    <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans text-xs">
-                      <span className="text-gray-500 font-medium">
-                        Lugar de Entrega / Local de Entrega:
-                      </span>
-                      <span className="font-semibold text-black">
-                        {getDeliveryLocationName(request.delivery_location)}
-                      </span>
-                    </div>
-
-                    {/* 現地費用 (Costo Local / Custo Local) */}
-                    <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans text-xs">
-                      <span className="text-gray-500 font-medium">
-                        現地費用:
-                      </span>
-                      <span className="font-bold text-gray-800">
-                        {request.delivery_location === 'JP' ? '-' : convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
-                      </span>
-                    </div>
                     {request.status === 'rejected' && request.rejectReason && !request.customerCounterOffer && (
                       <div className="h-12 px-3 bg-red-50 rounded-lg flex items-center text-xs mb-2 gap-1.5">
                         <span className="text-xs text-gray-500 font-medium">却下理由:</span>
@@ -1847,6 +1828,44 @@ export default function AdminDashboard() {
                       </div>
                     )}
 
+                    {request.customerCounterOffer && !request.customerCounterOfferUsed && request.finalStatus !== 'won' && (
+                      <div className="mb-2 h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between w-full">
+                        <span className="text-xs text-gray-500 font-medium">顧客からのカウンターオファー:</span>
+                        <span className="text-base font-bold text-purple-700">
+                          ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
+                        </span>
+                      </div>
+                    )}
+
+                    {request.adminNeedsConfirm && !request.customerCounterOffer && (
+                      <div className="mb-2 p-3 bg-red-50 rounded-lg">
+                        <p className="text-sm text-red-800 font-semibold">顧客がカウンターオファーを拒否しました</p>
+                      </div>
+                    )}
+
+                    {/* 商品渡し場所 (引渡場所) */}
+                    <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans text-xs">
+                      <span className="text-gray-500 font-medium">
+                        引渡場所:
+                      </span>
+                      <span className="font-semibold text-black">
+                        {getDeliveryLocationName(request.delivery_location)}
+                      </span>
+                    </div>
+
+                    {/* 現地費用 */}
+                    {request.delivery_location !== 'JP' && (
+                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans text-xs">
+                        <span className="text-gray-500 font-medium">
+                          現地費用:
+                        </span>
+                        <span className="font-bold text-gray-800">
+                          {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* 各種アクションボタン */}
                     {request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
                       <button
                         onClick={() => {
@@ -1859,48 +1878,30 @@ export default function AdminDashboard() {
                       </button>
                     )}
 
-                    {request.customerCounterOffer && !request.customerCounterOfferUsed && request.finalStatus !== 'won' && (
-                      <div className="flex flex-col gap-2 mb-2 w-full">
-                        <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between w-full">
-                          <span className="text-xs text-gray-500 font-medium">顧客からのカウンターオファー:</span>
-                          <span className="text-base font-bold text-purple-700">
-                            ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
-                          </span>
-                        </div>
-
-                        {!request.customerCounterOfferUsed && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
-                          <div className="flex flex-col gap-2 w-full">
-                            <button
-                              onClick={() => updateStatus(request.id, 'approved')}
-                              className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center text-sm sm:text-base"
-                            >
-                              承認
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedRequest(request);
-                                setActionType('reject');
-                              }}
-                              className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center text-sm sm:text-base"
-                            >
-                              却下
-                            </button>
-                          </div>
-                        )}
-
-                        {request.status === 'rejected' && request.rejectReason && (
-                          <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-1.5 shadow-sm">
-                            <span className="text-xs text-gray-500 font-medium shrink-0">却下理由:</span>
-                            <span className="text-xs font-semibold text-red-600 truncate">{request.rejectReason}</span>
-                          </div>
-                        )}
+                    {request.customerCounterOffer && !request.customerCounterOfferUsed && request.finalStatus !== 'won' && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
+                      <div className="flex flex-col gap-2 w-full mb-2">
+                        <button
+                          onClick={() => updateStatus(request.id, 'approved')}
+                          className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center text-sm sm:text-base"
+                        >
+                          承認
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setActionType('reject');
+                          }}
+                          className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center text-sm sm:text-base"
+                        >
+                          却下
+                        </button>
                       </div>
                     )}
 
-
-                    {request.adminNeedsConfirm && !request.customerCounterOffer && (
-                      <div className="mb-2 p-3 bg-red-50 rounded-lg">
-                        <p className="text-sm text-red-800 font-semibold">顧客がカウンターオファーを拒否しました</p>
+                    {request.customerCounterOffer && !request.customerCounterOfferUsed && request.finalStatus !== 'won' && request.status === 'rejected' && request.rejectReason && (
+                      <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-1.5 shadow-sm mb-2">
+                        <span className="text-xs text-gray-500 font-medium shrink-0">却下理由:</span>
+                        <span className="text-xs font-semibold text-red-600 truncate">{request.rejectReason}</span>
                       </div>
                     )}
 
@@ -2324,7 +2325,9 @@ export default function AdminDashboard() {
                                   </div>
 
                                   {/* 4段目: 支払額 🇯🇵 */}
-                                  <div className="flex items-center justify-between font-bold text-gray-700 border-t border-gray-200/50 pt-2 bg-red-50 -mx-3 p-3">
+                                  <div className={`flex items-center justify-between font-bold text-gray-700 border-t border-gray-200/50 pt-2 bg-red-50 -mx-3 p-3 ${
+                                    item.delivery_location === 'JP' ? 'rounded-b-lg -mb-3' : ''
+                                  }`}>
                                     <label className="flex items-center cursor-pointer select-none">
                                       <input
                                         type="checkbox"
@@ -2345,32 +2348,32 @@ export default function AdminDashboard() {
                                   </div>
 
                                   {/* 5段目: 現地費用 (管理画面・B001用チェックボックス付) */}
-                                  <div className="flex items-center justify-between font-bold text-gray-700 border-t border-gray-200/50 pt-2 bg-green-50 -mx-3 -mb-3 p-3 rounded-b-lg">
-                                    <label className="flex items-center cursor-pointer select-none">
-                                      {item.delivery_location !== 'JP' && (
+                                  {item.delivery_location !== 'JP' && (
+                                    <div className="flex items-center justify-between font-bold text-gray-700 border-t border-gray-200/50 pt-2 bg-green-50 -mx-3 -mb-3 p-3 rounded-b-lg">
+                                      <label className="flex items-center cursor-pointer select-none">
                                         <input
                                           type="checkbox"
                                           checked={item.paid_local}
                                           onChange={(e) => updatePaidSplitStatus(item.id, { paid_local: e.target.checked })}
                                           className="w-4 h-4 mr-1.5 cursor-pointer text-green-600 border-gray-300 rounded focus:ring-green-500"
                                         />
-                                      )}
-                                      <span className="text-green-600 font-black">現地費用:</span>
-                                      {item.delivery_location !== 'JP' && item.paid_local && item.paid_local_at && (
-                                        <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
-                                          ✓ 支払済 ({formatDateTime(item.paid_local_at)})
-                                        </span>
-                                      )}
-                                    </label>
-                                    <span className={`text-sm ${item.delivery_location !== 'JP' && item.paid_local ? 'text-green-400 line-through' : 'text-green-600 font-black'}`}>
-                                      {item.delivery_location === 'JP' ? '-' : convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
-                                    </span>
-                                  </div>
+                                        <span className="text-green-600 font-black">現地費用:</span>
+                                        {item.paid_local && item.paid_local_at && (
+                                          <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
+                                            ✓ 支払済 ({formatDateTime(item.paid_local_at)})
+                                          </span>
+                                        )}
+                                      </label>
+                                      <span className={`text-sm ${item.paid_local ? 'text-green-400 line-through' : 'text-green-600 font-black'}`}>
+                                        {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
 
                                 {/* 商品渡し場所 (B001用) */}
                                 <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
-                                  <span className="text-gray-500 font-medium">Lugar de Entrega / Local de Entrega:</span>
+                                  <span className="text-gray-500 font-medium">引渡場所:</span>
                                   <span className="font-semibold text-black">{getDeliveryLocationName(item.delivery_location)}</span>
                                 </div>
                               </>
@@ -2404,32 +2407,32 @@ export default function AdminDashboard() {
 
                             {/* 商品渡し場所 (通常顧客用) */}
                             <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
-                              <span className="text-gray-500 font-medium">Lugar de Entrega / Local de Entrega:</span>
+                              <span className="text-gray-500 font-medium">引渡場所:</span>
                               <span className="font-semibold text-black">{getDeliveryLocationName(item.delivery_location)}</span>
                             </div>
 
                             {/* 現地費用 (通常顧客用・チェックボックス付) */}
-                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
-                              <label className="flex items-center cursor-pointer select-none">
-                                {item.delivery_location !== 'JP' && (
+                            {item.delivery_location !== 'JP' && (
+                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                                <label className="flex items-center cursor-pointer select-none">
                                   <input
                                     type="checkbox"
                                     checked={item.paid_local}
                                     onChange={(e) => updatePaidSplitStatus(item.id, { paid_local: e.target.checked })}
                                     className="w-4 h-4 mr-1.5 cursor-pointer text-green-600 border-gray-300 rounded focus:ring-green-500"
                                   />
-                                )}
-                                <span className="text-gray-500">現地費用:</span>
-                                {item.delivery_location !== 'JP' && item.paid_local && item.paid_local_at && (
-                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
-                                    ✓ 支払済 ({formatDateTime(item.paid_local_at)})
-                                  </span>
-                                )}
-                              </label>
-                              <span className={`text-sm font-bold ${item.delivery_location !== 'JP' && item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                                {item.delivery_location === 'JP' ? '-' : convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
-                              </span>
-                            </div>
+                                  <span className="text-gray-500">現地費用:</span>
+                                  {item.paid_local && item.paid_local_at && (
+                                    <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
+                                      ✓ 支払済 ({formatDateTime(item.paid_local_at)})
+                                    </span>
+                                  )}
+                                </label>
+                                <span className={`text-sm font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                  {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
+                                </span>
+                              </div>
+                            )}
                           </>
                         )}
                       </div>
