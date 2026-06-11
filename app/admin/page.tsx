@@ -1720,7 +1720,9 @@ export default function AdminDashboard() {
 
                       if (!isB001Linked && !isBrasilAgent) return null;
 
-                      const cost = request.customerCounterOffer || request.counterOffer || request.maxBid || 0;
+                      const cost = request.customerCounterOffer && !request.customerCounterOfferUsed
+                        ? request.customerCounterOffer
+                        : (request.counterOffer || request.maxBid || 0);
                       let japanAmount = 0;
                       if (isB001Linked) {
                         japanAmount = Math.ceil(((cost * 0.5) / 0.8) / 10) * 10;
@@ -2000,14 +2002,18 @@ export default function AdminDashboard() {
                 const filteredItemsForSummary = getFilteredPurchasedItems();
                 const summaryTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
-                    const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
+                    const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
+                      ? item.customerCounterOffer
+                      : (item.counterOffer || item.maxBid || 0));
                     return sum + Math.round(cost);
                   }, 0);
 
                 const unpaidSummaryTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
                     const isB001 = item.agentCustomerId === 'B001' || item.customerId === 'B001';
-                    const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
+                    const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
+                      ? item.customerCounterOffer
+                      : (item.counterOffer || item.maxBid || 0));
                     if (isB001) {
                       const totalSalePrice = Math.round(cost);
                       if (item.customerId === 'B001') {
@@ -2204,7 +2210,9 @@ export default function AdminDashboard() {
                         {/* 支払情報 & 金額ボックス */}
                         {item.customerId === 'B001' ? (
                           (() => {
-                            const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
+                            const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
+                              ? item.customerCounterOffer
+                              : (item.counterOffer || item.maxBid || 0));
                             const totalSalePrice = Math.round(cost);
                             const brlRate = exchangeRates['BRL'] || 5.6;
                             const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
@@ -2323,7 +2331,9 @@ export default function AdminDashboard() {
                               )}
                             </div>
                             <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
-                              ${Math.round(item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0).toLocaleString('en-US')}
+                              ${Math.round(item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
+                                ? item.customerCounterOffer
+                                : (item.counterOffer || item.maxBid || 0))).toLocaleString('en-US')}
                             </span>
                           </div>
                         )}
@@ -2923,7 +2933,9 @@ export default function AdminDashboard() {
                   });
 
                   targetPurchased.forEach(item => {
-                    const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
+                    const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
+                      ? item.customerCounterOffer
+                      : (item.counterOffer || item.maxBid || 0));
                     const totalSalePrice = Math.round(cost);
 
                     if (item.customerId === 'B001') {
