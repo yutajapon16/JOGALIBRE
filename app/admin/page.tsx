@@ -773,7 +773,7 @@ export default function AdminDashboard() {
     
     if (item.agentCustomerId === 'B001') {
       ownDivisor = 0.5; // B001紐づき (利益率50%＝除数0.5)
-      targetDivisor = 0.6; // 一般顧客 (利益率40%＝除数0.6)
+      targetDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
     } else if (item.customerId?.startsWith('A')) {
       const countryLower = item.customerCountry?.trim().toLowerCase();
       if (countryLower === 'brasil' || countryLower === 'brazil') {
@@ -1723,7 +1723,7 @@ export default function AdminDashboard() {
                       const cost = request.customerCounterOffer || request.counterOffer || request.maxBid || 0;
                       let japanAmount = 0;
                       if (isB001Linked) {
-                        japanAmount = Math.ceil(((cost * 0.5) / 0.6) / 10) * 10;
+                        japanAmount = Math.ceil(((cost * 0.5) / 0.8) / 10) * 10;
                       } else if (isBrasilAgent) {
                         japanAmount = Math.ceil(((cost * 0.7) / 0.8) / 10) * 10;
                       }
