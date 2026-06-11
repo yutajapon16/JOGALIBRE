@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { productId, productTitle, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language } = body;
+    const { productId, productTitle, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language, deliveryLocation } = body;
 
     // 顧客の場合は自身のメールアドレスを強制使用
     const finalEmail = isAdmin ? customerEmail : effectiveUser.email;
@@ -51,7 +51,8 @@ export async function POST(request: Request) {
       final_price: null,
       customer_confirmed: false,
       customer_message: null,
-      admin_needs_confirm: false
+      admin_needs_confirm: false,
+      delivery_location: deliveryLocation || 'JP'
     };
 
     const { data, error } = await supabaseAdmin
@@ -339,7 +340,7 @@ export async function PATCH(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid, paid_brazil, paid_paraguay, paid_japan, stockNumber, invoiceNumber } = body;
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -410,6 +411,10 @@ export async function PATCH(request: Request) {
       if (paid_japan !== undefined || paid !== undefined) {
         updateData.paid_japan = newPaidJapan;
         updateData.paid_japan_at = newPaidJapan ? (currentRequest.paid_japan_at || new Date().toISOString()) : null;
+      }
+      if (paid_local !== undefined) {
+        updateData.paid_local = paid_local;
+        updateData.paid_local_at = paid_local ? (currentRequest.paid_local_at || new Date().toISOString()) : null;
       }
 
       if (newPaid !== currentRequest.paid || paid !== undefined) {

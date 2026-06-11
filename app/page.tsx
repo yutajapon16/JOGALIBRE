@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, calculateLocalCost } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
@@ -2209,7 +2209,8 @@ export default function Home() {
           maxBid: parseFloat(bidForm.maxBid),
           customerName: finalCustomerName,
           customerEmail: currentUser?.email,
-          language: lang
+          language: lang,
+          deliveryLocation: deliveryLocation === 'fob' ? 'JP' : (deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC'))
         })
       });
 
@@ -2359,6 +2360,14 @@ export default function Home() {
     }
     
     return `${getCurrencySymbol(targetCurrency)} ${finalConverted.toLocaleString('en-US').replace(/,/g, '.')}`;
+  };
+
+  const getDeliveryLocationName = (loc?: string) => {
+    if (loc === 'JP') return lang === 'es' ? 'Japón' : 'Japão';
+    if (loc === 'ASU') return 'Asunción';
+    if (loc === 'ENC') return 'Encarnación';
+    if (loc === 'PJC') return 'Pedro Juan Caballero';
+    return loc || '-';
   };
 
   // 引渡し場所に応じた現地費用（USD）を返す関数（暫定で一律200ドル）
@@ -3642,6 +3651,26 @@ export default function Home() {
                         </div>
                       </div>
 
+                      {/* 商品渡し場所 (Lugar de Entrega / Local de Entrega) */}
+                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
+                        <span className="text-xs text-gray-500 font-medium">
+                          {lang === 'es' ? 'Lugar de Entrega:' : 'Local de Entrega:'}
+                        </span>
+                        <span className="text-sm font-semibold text-black">
+                          {getDeliveryLocationName(request.delivery_location)}
+                        </span>
+                      </div>
+
+                      {/* 現地費用 (Costo Local / Custo Local) */}
+                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
+                        <span className="text-xs text-gray-500 font-medium">
+                          {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
+                        </span>
+                        <span className="text-sm font-bold text-gray-800">
+                          {request.delivery_location === 'JP' ? '-' : convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
+                        </span>
+                      </div>
+
                       {request.status === 'rejected' && !request.customerCounterOffer && (
                         <div className="flex flex-col gap-2 mb-2 w-full">
                           <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs gap-1.5 shadow-sm">
@@ -4007,8 +4036,22 @@ export default function Home() {
                 return sum + itemSalePrice;
               }, 0);
 
+              const localCostTotal = filteredItemsForSummary
+                .reduce((sum, item) => {
+                  if (item.delivery_location === 'JP') return sum;
+                  const localCost = calculateLocalCost(item.delivery_location, item);
+                  return sum + localCost;
+                }, 0);
+
+              const unpaidLocalCostTotal = filteredItemsForSummary
+                .reduce((sum, item) => {
+                  if (item.delivery_location === 'JP') return sum;
+                  const localCost = calculateLocalCost(item.delivery_location, item);
+                  return sum + (item.paid_local ? 0 : localCost);
+                }, 0);
+
               if (isB001) {
-                // B001関連ユーザーの場合は4つのボックスを表示
+                // B001関連ユーザーの場合はボックスを表示
                 const unpaidBrazilTotalDolar = filteredItemsForSummary
                   .reduce((sum, item) => {
                     if (item.paid_brazil) return sum;
@@ -4077,6 +4120,26 @@ export default function Home() {
                         {convertUSDToSelectedCurrency(unpaidParaguayTotal)}
                       </span>
                     </div>
+
+                    {/* 現地費用合計金額 */}
+                    <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-green-600 tracking-wider font-sans">
+                        {lang === 'es' ? 'Costo Local Total' : 'Custo Local Total'}
+                      </span>
+                      <span className="text-base font-black text-green-700 font-sans">
+                        {convertUSDToSelectedCurrency(localCostTotal)}
+                      </span>
+                    </div>
+
+                    {/* 現地費用未入金額 */}
+                    <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-emerald-600 tracking-wider font-sans">
+                        {lang === 'es' ? 'Costo Local Pendiente' : 'Custo Local Pendente'}
+                      </span>
+                      <span className="text-base font-black text-emerald-700 font-sans">
+                        {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
+                      </span>
+                    </div>
                   </div>
                 );
               } else {
@@ -4101,6 +4164,24 @@ export default function Home() {
                       </span>
                       <span className="text-base font-black text-red-600">
                         {convertUSDToSelectedCurrency(unpaidSummaryTotal)}
+                      </span>
+                    </div>
+                    {/* 現地費用合計金額 */}
+                    <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-green-600 tracking-wider font-sans">
+                        {lang === 'es' ? 'Costo Local Total' : 'Custo Local Total'}
+                      </span>
+                      <span className="text-base font-black text-green-700 font-sans">
+                        {convertUSDToSelectedCurrency(localCostTotal)}
+                      </span>
+                    </div>
+                    {/* 現地費用未入金額 */}
+                    <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-emerald-600 tracking-wider font-sans">
+                        {lang === 'es' ? 'Costo Local Pendiente' : 'Custo Local Pendente'}
+                      </span>
+                      <span className="text-base font-black text-emerald-700 font-sans">
+                        {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
                       </span>
                     </div>
                   </div>
@@ -4328,41 +4409,101 @@ export default function Home() {
                                     {convertUSDToSelectedCurrency(japanSendAmount)}
                                   </span>
                                 </div>
+
+                                {/* 商品渡し場所 */}
+                                <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                  <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Lugar de Entrega:' : 'Local de Entrega:'}</span>
+                                  <span className="text-sm font-semibold text-black">
+                                    {getDeliveryLocationName(item.delivery_location)}
+                                  </span>
+                                </div>
+
+                                {/* 現地費用 */}
+                                <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                    {item.delivery_location !== 'JP' && (
+                                      item.paid_local ? (
+                                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                          ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                          {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                        </span>
+                                      )
+                                    )}
+                                  </div>
+                                  <span className={`text-sm font-bold ${item.delivery_location !== 'JP' && item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                    {item.delivery_location === 'JP' ? '-' : convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
+                                  </span>
+                                </div>
                               </div>
                             );
                           })()
                         ) : (
                           // 通常の表示
-                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                            <div>
-                              {!item.paid ? (
-                                <button
-                                  onClick={() => openPaymentModal(item)}
-                                  className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 transition shadow-sm font-sans flex items-center justify-center"
-                                >
-                                  {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
-                                </button>
-                              ) : (
-                                <div className="flex items-center gap-1.5 shrink-0 font-sans py-1.5">
-                                  <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-semibold rounded-full whitespace-nowrap shrink-0">
-                                    ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
-                                  </span>
-                                  {item.paidAt && (
-                                    <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap">
-                                      {formatDateTime(item.paidAt, 'customer')}
+                          <>
+                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                              <div>
+                                {!item.paid ? (
+                                  <button
+                                    onClick={() => openPaymentModal(item)}
+                                    className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 transition shadow-sm font-sans flex items-center justify-center"
+                                  >
+                                    {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
+                                  </button>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 shrink-0 font-sans py-1.5">
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-semibold rounded-full whitespace-nowrap shrink-0">
+                                      ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
                                     </span>
-                                  )}
-                                </div>
-                              )}
+                                    {item.paidAt && (
+                                      <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap">
+                                        {formatDateTime(item.paidAt, 'customer')}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              
+                               <span className={`text-base font-bold whitespace-nowrap font-sans ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                {convertUSDToSelectedCurrency(
+                                  item.finalPrice ||
+                                  (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
+                                )}
+                              </span>
                             </div>
-                            
-                            <span className={`text-base font-bold whitespace-nowrap font-sans ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                              {convertUSDToSelectedCurrency(
-                                item.finalPrice ||
-                                (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
-                              )}
-                            </span>
-                          </div>
+
+                            {/* 商品渡し場所 */}
+                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                              <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Lugar de Entrega:' : 'Local de Entrega:'}</span>
+                              <span className="text-sm font-semibold text-black">
+                                {getDeliveryLocationName(item.delivery_location)}
+                              </span>
+                            </div>
+
+                            {/* 現地費用 */}
+                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                {item.delivery_location !== 'JP' && (
+                                  item.paid_local ? (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                      ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                      {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                              <span className={`text-sm font-bold ${item.delivery_location !== 'JP' && item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                {item.delivery_location === 'JP' ? '-' : convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
+                              </span>
+                            </div>
+                          </>
                         )}
                       </div>
                     ))}

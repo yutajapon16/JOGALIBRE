@@ -207,3 +207,22 @@ export const getTimeRemaining = (endTime: string, lang: 'ja' | 'es' | 'pt', time
     return parts.join(' ') || (lang === 'es' ? 'Menos de 1m' : 'Menos de 1m');
   }
 };
+
+/**
+ * 商品渡し場所と商品カテゴリ（将来拡張用）に基づいて現地費用（USD）を計算して返す関数
+ * @param deliveryLocation 商品渡し場所 ('JP', 'ASU', 'ENC', 'PJC')
+ * @param item 商品情報 (将来的にカテゴリ判定に使用)
+ * @returns 現地費用 (USD建ての数値、日本渡しは0)
+ */
+export const calculateLocalCost = (deliveryLocation?: string, item?: any): number => {
+  if (!deliveryLocation || deliveryLocation === 'JP') return 0;
+  
+  // 【将来的な変更用】渡し場所やカテゴリによる分岐をここで一元管理できます。
+  // 例:
+  // if (deliveryLocation === 'ASU') {
+  //   if (item?.category === 'car') return 500;
+  //   return 200;
+  // }
+  
+  return 200; // 現在は仮として一律 $200
+};

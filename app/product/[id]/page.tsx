@@ -388,11 +388,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           productId: product.id,
           productTitle: product.title,
           productUrl: product.url,
-          imageUrl: product.imageUrl,
-          currentPriceJpy: product.currentPrice,
-          maxBidUsd: Number(bidForm.maxBid),
+          productImage: product.imageUrl,
+          productPrice: product.currentPrice,
+          maxBid: Number(bidForm.maxBid),
           customerName: finalCustomerName,
-          language: lang
+          language: lang,
+          deliveryLocation: deliveryLocation === 'fob' ? 'JP' : (deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC'))
         })
       });
 

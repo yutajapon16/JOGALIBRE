@@ -157,6 +157,11 @@ ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS city TEXT DEFAULT NULL;
 -- 21. user_roles テーブルに言語設定保存用カラムを追加
 ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'es';
 
+-- 22. 渡し場所（delivery_location）と現地費用支払い（paid_local）のカラムを追加
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS delivery_location TEXT DEFAULT 'JP';
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_local BOOLEAN DEFAULT FALSE;
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_local_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
 
-
-
+-- インデックスの作成
+CREATE INDEX IF NOT EXISTS idx_bid_requests_delivery_location ON bid_requests(delivery_location);
+CREATE INDEX IF NOT EXISTS idx_bid_requests_paid_local ON bid_requests(paid_local);

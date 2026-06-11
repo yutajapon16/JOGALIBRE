@@ -67,6 +67,9 @@ export interface BidRequest {
   stockNumber?: string | null;
   invoiceNumber?: string | null;
   customerCountry?: string | null;
+  delivery_location?: string;
+  paid_local?: boolean;
+  paid_local_at?: string | null;
 }
 
 export interface SearchItem {

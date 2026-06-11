@@ -133,7 +133,8 @@ export async function POST(request: Request) {
       final_price: finalPrice,
       customer_confirmed: false,
       customer_message: null,
-      admin_needs_confirm: false
+      admin_needs_confirm: false,
+      delivery_location: 'JP'
     };
 
     const { data: insertedData, error: insertError } = await supabaseAdmin
