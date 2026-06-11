@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     const emails = Array.from(new Set(orders.map(o => o.customer_email)));
     const { data: users, error: usersError } = await supabaseAdmin
       .from('user_roles')
-      .select('email, customer_id, full_name, agent_customer_id')
+      .select('email, customer_id, full_name, agent_customer_id, country')
       .in('email', emails);
 
     if (usersError) throw usersError;
@@ -78,9 +78,14 @@ export async function GET(request: Request) {
       if (customerId === 'B001') {
         profitRate = 0.1;
       } else if (agentCustomerId === 'B001') {
-        profitRate = 0.6;
+        profitRate = 0.5;
       } else if (customerId.startsWith('A')) {
-        profitRate = 0.2;
+        const countryLower = userInfo?.country?.trim().toLowerCase();
+        if (countryLower === 'brasil' || countryLower === 'brazil') {
+          profitRate = 0.3;
+        } else {
+          profitRate = 0.2;
+        }
       }
       
       const rowIdx = index + 2;

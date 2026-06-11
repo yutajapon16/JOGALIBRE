@@ -1748,6 +1748,7 @@ export default function Home() {
         invoiceNumber: item.invoice_number as string,
         productId: item.product_id as string,
         agentCustomerId: item.agent_customer_id as string | null | undefined,
+        customerCountry: item.customer_country as string | null | undefined,
       }));
 
       // 商品タイトルを選択言語に翻訳
@@ -2248,11 +2249,17 @@ export default function Home() {
     const FOB_COST = 1500;
     // 送料は常に0として計算
     const totalJpyPrice = jpyPrice + FOB_COST;
-    // B001本人は0.9(10%利益)、B001紐づき顧客は0.4(60%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
+    // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
     const profitDivisor = (() => {
       if (currentUser?.customerId === 'B001') return 0.9;
-      if (currentUser?.agentCustomerId === 'B001') return 0.4;
-      if (currentUser?.customerId?.startsWith('A')) return 0.8;
+      if (currentUser?.agentCustomerId === 'B001') return 0.5;
+      if (currentUser?.customerId?.startsWith('A')) {
+        const countryLower = currentUser.country?.trim().toLowerCase();
+        if (countryLower === 'brasil' || countryLower === 'brazil') {
+          return 0.7; // ブラジルエージェント: 30%利益率
+        }
+        return 0.8; // 通常エージェント: 20%利益率
+      }
       return 0.6;
     })();
     const priceWithProfit = totalJpyPrice / profitDivisor;
@@ -2294,11 +2301,17 @@ export default function Home() {
     const FOB_COST = 1500;
     const totalJpyPrice = jpyPrice + FOB_COST;
     
-    // B001本人は0.9(10%利益)、B001紐づき顧客は0.4(60%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
+    // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
     const profitDivisor = (() => {
       if (currentUser?.customerId === 'B001') return 0.9;
-      if (currentUser?.agentCustomerId === 'B001') return 0.4;
-      if (currentUser?.customerId?.startsWith('A')) return 0.8;
+      if (currentUser?.agentCustomerId === 'B001') return 0.5;
+      if (currentUser?.customerId?.startsWith('A')) {
+        const countryLower = currentUser.country?.trim().toLowerCase();
+        if (countryLower === 'brasil' || countryLower === 'brazil') {
+          return 0.7; // ブラジルエージェント: 30%利益率
+        }
+        return 0.8; // 通常エージェント: 20%利益率
+      }
       return 0.6;
     })();
     
@@ -2369,7 +2382,10 @@ export default function Home() {
         finalPrice: req.final_price,
         customerConfirmed: req.customer_confirmed,
         customerMessage: req.customer_message,
-        adminNeedsConfirm: req.admin_needs_confirm
+        adminNeedsConfirm: req.admin_needs_confirm,
+        customerId: req.customer_id as string,
+        agentCustomerId: req.agent_customer_id as string | null | undefined,
+        customerCountry: req.customer_country as string | null | undefined,
       }));
 
       // 商品タイトルを選択言語に翻訳
@@ -3129,34 +3145,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* B001紐づき顧客用の分割金額表示ボックス（🇧🇷/🇵🇾） */}
-            {currentUser?.agentCustomerId === 'B001' && (() => {
-              const usdStr = calculateConvertedPrice(product.currentPrice, 'USD').replace(/,/g, '');
-              const totalUsd = parseFloat(usdStr || '0');
-              const halfUsd = Math.round(totalUsd * 0.5);
-              const brlRate = exchangeRates['BRL'] || 5.6;
-              const halfBrl = Math.ceil((halfUsd * brlRate) / 10) * 10;
 
-              const labelBrl = lang === 'es' ? '50% en 🇧🇷 BRL' : '50% no 🇧🇷 BRL';
-              const labelUsd = lang === 'es' ? '50% en 🇵🇾 USD' : '50% no 🇵🇾 USD';
-
-              return (
-                <div className="flex flex-col justify-center bg-green-50 px-2 sm:px-2.5 py-1.5 rounded text-[9px] sm:text-xs font-bold text-green-700 gap-1 leading-normal font-sans">
-                  <div className="flex justify-between items-center whitespace-nowrap">
-                    <span>{labelBrl}</span>
-                    <span className="font-extrabold text-xs sm:text-sm leading-none tabular-nums tracking-tight ml-2">
-                      R$ {halfBrl.toLocaleString('en-US').replace(/,/g, '.')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center border-t border-green-200/50 pt-1 whitespace-nowrap">
-                    <span>{labelUsd}</span>
-                    <span className="font-extrabold text-xs sm:text-sm leading-none tabular-nums tracking-tight ml-2">
-                      $ {halfUsd.toLocaleString('en-US')}
-                    </span>
-                  </div>
-                </div>
-              );
-            })()}
 
             {deliveryLocation !== 'fob' && (
               <div className="h-9 flex items-center justify-between bg-orange-50 px-2.5 sm:px-3 rounded">
@@ -3608,6 +3597,21 @@ export default function Home() {
                         </span>
                       </div>
 
+                      {/* ブラジルエージェント（A始まり、国名ブラジル）ログイン時の日本支払額表示 */}
+                      {currentUser?.customerId?.startsWith('A') && 
+                        (currentUser.country?.trim().toLowerCase() === 'brasil' || currentUser.country?.trim().toLowerCase() === 'brazil') && (() => {
+                          const cost = request.customerCounterOffer || request.counterOffer || request.maxBid || 0;
+                          const japanAmount = Math.ceil(((cost * 0.8) / 0.9) / 10) * 10;
+                          return (
+                            <div className="mb-2 h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
+                              <span className="text-xs text-red-600 font-black">{lang === 'es' ? 'Envío a Japón' : 'Envio ao Japão'} 🇯🇵:</span>
+                              <span className="text-base font-black text-red-600">
+                                ${japanAmount.toLocaleString('en-US')}
+                              </span>
+                            </div>
+                          );
+                        })()}
+
                       {/* 申請詳細情報のh-12ボックス化 */}
                       <div className="mb-2 h-12 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs box-border grid grid-cols-2 gap-2">
                         <div className="flex flex-col justify-center h-full min-w-0">
@@ -3979,7 +3983,7 @@ export default function Home() {
             {/* 未払い合計金額サマリー */}
             {purchasedItems.length > 0 && (() => {
               const filteredItemsForSummary = getFilteredPurchasedItems();
-              const isB001 = currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001';
+              const isB001 = currentUser?.customerId === 'B001';
 
               // 各アイテムの合計売価を算出するヘルパー関数
               const getItemPrice = (item: any) => {
@@ -4226,7 +4230,7 @@ export default function Home() {
                         )}
 
                         {/* 支払情報 & 金額ボックス */}
-                        {item.agentCustomerId === 'B001' ? (
+                        {item.customerId === 'B001' && currentUser?.customerId === 'B001' ? (
                           (() => {
                             // finalPrice 等がすでに売価ベースであるため、/ 0.45 の割り戻し計算を撤廃し、DB値をそのまま合計売価とする
                             const totalSalePrice = Math.round(
@@ -4235,7 +4239,7 @@ export default function Home() {
                                 ? item.customerCounterOffer
                                 : (item.counterOffer || item.maxBid || 0))
                             );
-                            const halfPrice = Math.round(totalSalePrice * 0.5); // 分割額 (合計売価の50%)
+                            const halfPrice = Math.round(totalSalePrice * 0.5); // 分割額 (合計売価 of の50%)
 
                             // BRL換算
                             const brlRate = exchangeRates['BRL'] || 5.6;
@@ -4245,22 +4249,40 @@ export default function Home() {
                             const halfStr = halfPrice.toLocaleString('en-US');
                             const halfBrlStr = halfPriceBrl.toLocaleString('en-US').replace(/,/g, '.');
 
-                            if (currentUser?.customerId === 'B001') {
-                              // B001自身ログイン時：3つのボックス（合計金額、分割支払、日本送金）
-                              // B001本人の購入なら合計売価の100%、それ以外（紐づき顧客）なら45%を送金額とする
-                              const japanSendAmount = item.customerId === 'B001'
-                                ? totalSalePrice
-                                : Math.round(totalSalePrice * 0.45);
+                            // B001自身ログイン時：3つのボックス（合計金額、分割支払、日本送金）
+                            // B001本人の購入なら合計売価の100%を送金額とする
+                            const japanSendAmount = totalSalePrice;
 
-                              return (
-                                <div className="space-y-2 mb-2 font-sans">
-                                  {/* 1段目: 合計支払額ボックス (h-12) */}
-                                  <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                            return (
+                              <div className="space-y-2 mb-2 font-sans">
+                                {/* 1段目: 合計支払額ボックス (h-12) */}
+                                <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
+                                    {item.paid ? (
+                                      <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] rounded-full whitespace-nowrap">
+                                        ✓ {lang === 'es' ? 'Pago' : 'Pago'}
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                        {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
+                                    ${totalStr}
+                                  </span>
+                                </div>
+
+                                {/* 2. 分割支払ボックス (1つのボックスにまとめる) */}
+                                <div className="p-3 bg-gray-50 border border-gray-100 rounded-lg space-y-2.5">
+                                  {/* ブラジル支払額 */}
+                                  <div className="flex items-center justify-between text-xs font-bold text-gray-700">
                                     <div className="flex items-center gap-1.5">
-                                      <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
-                                      {item.paid ? (
-                                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] rounded-full whitespace-nowrap">
-                                          ✓ {lang === 'es' ? 'Pago' : 'Pago'}
+                                      <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇧🇷:' : 'Valor no 🇧🇷:'}</span>
+                                      {item.paid_brazil ? (
+                                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                          ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_brazil_at ? ` ${formatDateTime(item.paid_brazil_at, 'customer')}` : ''}
                                         </span>
                                       ) : (
                                         <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
@@ -4268,130 +4290,40 @@ export default function Home() {
                                         </span>
                                       )}
                                     </div>
-                                    <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
-                                      ${totalStr}
+                                    <span className={`text-sm ${item.paid_brazil ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                      R$ {halfBrlStr}
                                     </span>
                                   </div>
 
-                                  {/* 2. 分割支払ボックス (1つのボックスにまとめる) */}
-                                  <div className="p-3 bg-gray-50 border border-gray-100 rounded-lg space-y-2.5">
-                                    {/* ブラジル支払額 */}
-                                    <div className="flex items-center justify-between text-xs font-bold text-gray-700">
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇧🇷:' : 'Valor no 🇧🇷:'}</span>
-                                        {item.paid_brazil ? (
-                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_brazil_at ? ` ${formatDateTime(item.paid_brazil_at, 'customer')}` : ''}
-                                          </span>
-                                        ) : (
-                                          <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                            {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <span className={`text-sm ${item.paid_brazil ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                                        R$ {halfBrlStr}
-                                      </span>
-                                    </div>
-
-                                    {/* パラグアイ支払額 */}
-                                    <div className="flex items-center justify-between text-xs font-bold text-gray-700 border-t border-gray-200/50 pt-2.5">
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇵🇾:' : 'Valor no 🇵🇾:'}</span>
-                                        {item.paid_paraguay ? (
-                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_paraguay_at ? ` ${formatDateTime(item.paid_paraguay_at, 'customer')}` : ''}
-                                          </span>
-                                        ) : (
-                                          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full whitespace-nowrap">
-                                            {lang === 'es' ? 'En Paraguay' : 'No Paraguai'}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <span className={`text-sm ${item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
-                                        ${halfStr}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* 3. 日本送金ボックス (h-12) */}
-                                  <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
-                                    <span className="text-red-600 font-black text-xs">{lang === 'es' ? 'Envío a Japón' : 'Envio ao Japão'} 🇯🇵:</span>
-                                    <span className="text-red-600 font-black text-base">
-                                      ${japanSendAmount.toLocaleString('en-US')}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            } else {
-                              // B001紐づき顧客：2つのボックス（合計金額ボックス、分割支払集約ボックス）
-                              return (
-                                <div className="space-y-2 mb-2 font-sans">
-                                  {/* 1段目: 合計支払額ボックス (h-12、支払方法選択ボタンを他顧客と同じサイズで配置) */}
-                                  <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                  {/* パラグアイ支払額 */}
+                                  <div className="flex items-center justify-between text-xs font-bold text-gray-700 border-t border-gray-200/50 pt-2.5">
                                     <div className="flex items-center gap-1.5">
-                                      <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
-                                      {item.paid ? (
-                                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] font-bold rounded-full whitespace-nowrap">
-                                          ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
+                                      <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇵🇾:' : 'Valor no 🇵🇾:'}</span>
+                                      {item.paid_paraguay ? (
+                                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                          ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_paraguay_at ? ` ${formatDateTime(item.paid_paraguay_at, 'customer')}` : ''}
                                         </span>
                                       ) : (
-                                        <button
-                                          onClick={() => openPaymentModal(item)}
-                                          className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 transition shadow-sm font-sans flex items-center justify-center ml-2 whitespace-nowrap shrink-0"
-                                        >
-                                          {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
-                                        </button>
+                                        <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full whitespace-nowrap">
+                                          {lang === 'es' ? 'En Paraguay' : 'No Paraguai'}
+                                        </span>
                                       )}
                                     </div>
-                                    <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
-                                      ${totalStr}
+                                    <span className={`text-sm ${item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
+                                      ${halfStr}
                                     </span>
                                   </div>
-
-                                  {/* 2. 分割支払ボックス (1つのボックスにまとめる) */}
-                                  <div className="p-3 bg-gray-50 border border-gray-100 rounded-lg space-y-2.5">
-                                    {/* ブラジル支払額 */}
-                                    <div className="flex items-center justify-between text-xs font-bold text-gray-700">
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇧🇷:' : 'Valor no 🇧🇷:'}</span>
-                                        {item.paid_brazil ? (
-                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_brazil_at ? ` ${formatDateTime(item.paid_brazil_at, 'customer')}` : ''}
-                                          </span>
-                                        ) : (
-                                          <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                            {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <span className={`text-sm ${item.paid_brazil ? 'text-gray-400 line-through' : 'text-green-600'}`}>
-                                        R$ {halfBrlStr}
-                                      </span>
-                                    </div>
-
-                                    {/* パラグアイ支払額 */}
-                                    <div className="flex items-center justify-between text-xs font-bold text-gray-700 border-t border-gray-200/50 pt-2.5">
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇵🇾:' : 'Valor no 🇵🇾:'}</span>
-                                        {item.paid_paraguay ? (
-                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_paraguay_at ? ` ${formatDateTime(item.paid_paraguay_at, 'customer')}` : ''}
-                                          </span>
-                                        ) : (
-                                          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full whitespace-nowrap">
-                                            {lang === 'es' ? 'En Paraguay' : 'No Paraguai'}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <span className={`text-sm ${item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
-                                        ${halfStr}
-                                      </span>
-                                    </div>
-                                  </div>
                                 </div>
-                              );
-                            }
+
+                                {/* 3. 日本送金ボックス (h-12) */}
+                                <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
+                                  <span className="text-red-600 font-black text-xs">{lang === 'es' ? 'Envío a Japón' : 'Envio ao Japão'} 🇯🇵:</span>
+                                  <span className="text-red-600 font-black text-base">
+                                    ${japanSendAmount.toLocaleString('en-US')}
+                                  </span>
+                                </div>
+                              </div>
+                            );
                           })()
                         ) : (
                           // 通常の表示

@@ -162,7 +162,7 @@ export async function GET(request: Request) {
       if (uniqueEmails.length > 0) {
         const { data: usersData, error: usersError } = await supabaseAdmin
           .from('user_roles')
-          .select('email, full_name, whatsapp, customer_id, role, agent_customer_id')
+          .select('email, full_name, whatsapp, customer_id, role, agent_customer_id, country')
           .in('email', uniqueEmails);
           
         if (!usersError && usersData) {
@@ -182,6 +182,7 @@ export async function GET(request: Request) {
           customer_id: userInfo?.customer_id,
           customer_role: userInfo?.role,
           agent_customer_id: userInfo?.agent_customer_id,
+          customer_country: userInfo?.country,
         };
       });
 
@@ -232,7 +233,7 @@ export async function GET(request: Request) {
     if (uniqueEmails.length > 0) {
       const { data: usersData, error: usersError } = await supabaseAdmin
         .from('user_roles')
-        .select('email, full_name, whatsapp, customer_id, role, agent_customer_id')
+        .select('email, full_name, whatsapp, customer_id, role, agent_customer_id, country')
         .in('email', uniqueEmails);
         
       if (!usersError && usersData) {
@@ -252,6 +253,7 @@ export async function GET(request: Request) {
         customer_id: userInfo?.customer_id,
         customer_role: userInfo?.role,
         agent_customer_id: userInfo?.agent_customer_id,
+        customer_country: userInfo?.country,
       };
     });
 

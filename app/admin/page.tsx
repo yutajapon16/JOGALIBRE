@@ -768,7 +768,13 @@ export default function AdminDashboard() {
     if (item.customerId === 'B001') {
       return totalSalePrice;
     }
-    const costUsd = totalSalePrice * 0.4;
+    let costFactor = 0.4;
+    if (item.agentCustomerId === 'B001') {
+      costFactor = 0.6;
+    } else if (item.customerId?.startsWith('A')) {
+      costFactor = 0.8;
+    }
+    const costUsd = totalSalePrice * costFactor;
     return Math.ceil((costUsd / 0.9) / 10) * 10;
   };
 
@@ -848,7 +854,8 @@ export default function AdminDashboard() {
         adminNeedsConfirm: req.admin_needs_confirm,
         customerId: req.customer_id,
         customerRole: req.customer_role,
-        agentCustomerId: req.agent_customer_id as string | null | undefined
+        agentCustomerId: req.agent_customer_id as string | null | undefined,
+        customerCountry: req.customer_country as string | null | undefined
       }));
 
       setBidRequests(convertedRequests);
@@ -896,7 +903,8 @@ export default function AdminDashboard() {
         invoiceNumber: item.invoice_number as string,
         productId: item.product_id as string,
         customerId: item.customer_id as string,
-        agentCustomerId: item.agent_customer_id as string | null | undefined
+        agentCustomerId: item.agent_customer_id as string | null | undefined,
+        customerCountry: item.customer_country as string | null | undefined
       }));
 
       setPurchasedItems(convertedItems);
@@ -1179,11 +1187,22 @@ export default function AdminDashboard() {
       const shipping = shippingCostJpy.replace(/,/g, '').trim() ? parseFloat(shippingCostJpy.replace(/,/g, '')) : 0;
 
       const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
-      // エージェント(A始まり)は利益率20%、顧客(C始まり)は利益率40%
-      // ただし、B001に紐づく顧客の場合は利益率60%を設定 (除数 0.4)
-      let profitDivisor = selectedRequest.customerId?.startsWith('A') ? 0.8 : 0.6;
-      if (selectedRequest.agentCustomerId === 'B001') {
-        profitDivisor = 0.4;
+      // エージェント(A始まり)は利益率20% (除数 0.8)
+      // ただし、国名ブラジルのエージェントは利益率30% (除数 0.7)
+      // B001に紐づく顧客は利益率50% (除数 0.5)
+      // 一般顧客(C始まりなど)は利益率40% (除数 0.6)
+      let profitDivisor = 0.6;
+      if (selectedRequest.customerId === 'B001') {
+        profitDivisor = 0.9;
+      } else if (selectedRequest.agentCustomerId === 'B001') {
+        profitDivisor = 0.5;
+      } else if (selectedRequest.customerId?.startsWith('A')) {
+        const countryLower = selectedRequest.customerCountry?.trim().toLowerCase();
+        if (countryLower === 'brasil' || countryLower === 'brazil') {
+          profitDivisor = 0.7;
+        } else {
+          profitDivisor = 0.8;
+        }
       }
       const priceWithProfit = totalJpy / profitDivisor;
       const usdPrice = priceWithProfit / exchangeRate;
@@ -1685,9 +1704,17 @@ export default function AdminDashboard() {
                       </button>
                     </div>
 
-                    {request.agentCustomerId === 'B001' && (() => {
+                    {(() => {
+                      const isB001Linked = request.agentCustomerId === 'B001';
+                      const countryLower = request.customerCountry?.trim().toLowerCase();
+                      const isBrasilAgent = request.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
+
+                      if (!isB001Linked && !isBrasilAgent) return null;
+
                       const cost = request.customerCounterOffer || request.counterOffer || request.maxBid || 0;
-                      const japanAmount = Math.ceil(((cost * 0.4) / 0.9) / 10) * 10;
+                      const costFactor = isB001Linked ? 0.6 : 0.8;
+                      const japanAmount = Math.ceil(((cost * costFactor) / 0.9) / 10) * 10;
+
                       return (
                         <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                           <div className="flex items-center gap-1">
@@ -2162,7 +2189,7 @@ export default function AdminDashboard() {
                         </div>
 
                         {/* 支払情報 & 金額ボックス */}
-                        {item.agentCustomerId === 'B001' ? (
+                        {item.customerId === 'B001' ? (
                           (() => {
                             const cost = item.finalPrice || item.customerCounterOffer || item.counterOffer || item.maxBid || 0;
                             const totalSalePrice = Math.round(cost);

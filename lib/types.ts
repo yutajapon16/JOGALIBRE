@@ -66,6 +66,7 @@ export interface BidRequest {
   paid_japan_at?: string | null;
   stockNumber?: string | null;
   invoiceNumber?: string | null;
+  customerCountry?: string | null;
 }
 
 export interface SearchItem {
