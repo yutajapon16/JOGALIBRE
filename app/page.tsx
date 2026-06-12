@@ -4134,25 +4134,7 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* ブラジル未入金額（緑） - 高さをh-12に、テキスト・金額サイズを他と統一 */}
-                    <div className="bg-white border border-green-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-green-500 tracking-wider">
-                        {lang === 'es' ? 'Monto Pendiente en 🇧🇷' : 'Valor Pendente no 🇧🇷'}
-                      </span>
-                      <span className="text-base font-black text-green-600">
-                        R$ {unpaidBrazilTotalBrl.toLocaleString('en-US').replace(/,/g, '.')}
-                      </span>
-                    </div>
 
-                    {/* パラグアイ未入金額（オレンジ） - 高さをh-12に、テキスト・金額サイズを他と統一 */}
-                    <div className="bg-white border border-orange-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-orange-500 tracking-wider">
-                        {lang === 'es' ? 'Monto Pendiente en 🇵🇾' : 'Valor Pendente no 🇵🇾'}
-                      </span>
-                      <span className="text-base font-black text-orange-600">
-                        {convertUSDToSelectedCurrency(unpaidParaguayTotal)}
-                      </span>
-                    </div>
 
                     {/* 現地費用合計金額 */}
                     <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
@@ -4302,14 +4284,14 @@ export default function Home() {
                         </div>
 
                         {/* 顧客/エージェント情報 & 確認日時のボックス */}
-                        {currentUser?.customerId === 'B001' ? (
+                        {false ? ( // B001エージェント特別表示は廃止し通常表示に統一
                           // B001エージェントログイン時：ID/日時、氏名/エージェント名の表示
                           <div className="mb-2 space-y-2 bg-gray-50 border border-gray-100 rounded-lg p-3 text-xs">
                             <div className="flex justify-between items-center">
                               <span className="text-gray-500">ID: <span className="font-bold text-gray-900">{item.customerId || '-'}</span></span>
                               <span className="text-gray-500">
                                 {lang === 'es' ? 'Confirmado:' : 'Confirmado:'}{' '}
-                                <span className="font-bold text-gray-900">{item.confirmedAt ? formatDateTime(item.confirmedAt, 'customer') : '-'}</span>
+                                <span className="font-bold text-gray-900">{item.confirmedAt ? formatDateTime(item.confirmedAt || '', 'customer') : '-'}</span>
                               </span>
                             </div>
                             <div className="flex justify-between items-center border-t border-gray-200/50 pt-2">

@@ -2275,12 +2275,12 @@ export default function AdminDashboard() {
                         </div>
 
                         {/* 支払情報 & 金額ボックス */}
-                        {item.customerId === 'B001' ? (
+                        {item.customerId === 'B001' && false ? ( // B001用特別金額ボックスは廃止し他顧客と統一
                           (() => {
                             const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
                               ? item.customerCounterOffer
                               : (item.counterOffer || item.maxBid || 0));
-                            const totalSalePrice = Math.round(cost);
+                            const totalSalePrice = Math.round(cost || 0);
                             const brlRate = exchangeRates['BRL'] || 5.6;
                             const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
                             const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
@@ -2327,7 +2327,7 @@ export default function AdminDashboard() {
                                       <span className="text-gray-500">支払額 🇧🇷:</span>
                                       {item.paid_brazil && item.paid_brazil_at && (
                                         <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
-                                          ✓ 支払済 ({formatDateTime(item.paid_brazil_at)})
+                                          ✓ 支払済 ({formatDateTime(item.paid_brazil_at || '')})
                                         </span>
                                       )}
                                     </label>
@@ -2348,7 +2348,7 @@ export default function AdminDashboard() {
                                       <span className="text-gray-500">支払額 🇵🇾:</span>
                                       {item.paid_paraguay && item.paid_paraguay_at && (
                                         <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
-                                          ✓ 支払済 ({formatDateTime(item.paid_paraguay_at)})
+                                          ✓ 支払済 ({formatDateTime(item.paid_paraguay_at || '')})
                                         </span>
                                       )}
                                     </label>
@@ -2369,7 +2369,7 @@ export default function AdminDashboard() {
                                       <span className="text-red-600 font-black">支払額 🇯🇵:</span>
                                       {item.paid_japan && item.paid_japan_at && (
                                         <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
-                                          ✓ 支払済 ({formatDateTime(item.paid_japan_at)})
+                                          ✓ 支払済 ({formatDateTime(item.paid_japan_at || '')})
                                         </span>
                                       )}
                                     </label>
@@ -2391,7 +2391,7 @@ export default function AdminDashboard() {
                                         <span className="text-black font-black">現地費用:</span>
                                         {item.paid_local && item.paid_local_at && (
                                           <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
-                                            ✓ 支払済 ({formatDateTime(item.paid_local_at)})
+                                            ✓ 支払済 ({formatDateTime(item.paid_local_at || '')})
                                           </span>
                                         )}
                                       </label>
