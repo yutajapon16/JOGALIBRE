@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
   const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
   const [finalPriceInput, setFinalPriceInput] = useState('');
+  const [totalJpyInput, setTotalJpyInput] = useState('');
   const [exchangeRate, setExchangeRate] = useState(150);
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({ JPY: 150, BRL: 5.6, PYG: 7500 });
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
@@ -1004,7 +1005,7 @@ export default function AdminDashboard() {
       .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
   };
 
-  const updateStatus = async (id: string, status: string, reason?: string, counterOfferAmount?: number, shippingJpy?: number) => {
+  const updateStatus = async (id: string, status: string, reason?: string, counterOfferAmount?: number, shippingJpy?: number, totalJpy?: number) => {
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -1020,7 +1021,8 @@ export default function AdminDashboard() {
           status,
           rejectReason: reason,
           counterOffer: counterOfferAmount,
-          shippingCostJpy: shippingJpy
+          shippingCostJpy: shippingJpy,
+          totalJpy: totalJpy
         })
       });
 
@@ -1061,7 +1063,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateFinalStatus = async (id: string, finalStatus: string, finalPrice?: number) => {
+  const updateFinalStatus = async (id: string, finalStatus: string, finalPrice?: number, totalJpy?: number) => {
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -1072,7 +1074,7 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         },
-        body: JSON.stringify({ id, finalStatus, finalPrice })
+        body: JSON.stringify({ id, finalStatus, finalPrice, totalJpy })
       });
 
       if (res.ok) {
@@ -1283,7 +1285,7 @@ export default function AdminDashboard() {
       const usdPrice = priceWithProfit / exchangeRate;
       const roundedUsd = Math.ceil(usdPrice / 10) * 10;
 
-      updateStatus(selectedRequest.id, 'counter_offer', undefined, roundedUsd, shipping);
+      updateStatus(selectedRequest.id, 'counter_offer', undefined, roundedUsd, shipping, totalJpy);
     }
   };
 
@@ -1972,6 +1974,7 @@ export default function AdminDashboard() {
                               ? (request.counterOffer || request.maxBid || 0)
                               : (request.customerCounterOffer || request.counterOffer || request.maxBid || 0);
                             setFinalPriceInput(Math.round(suggestedPrice).toString());
+                            setTotalJpyInput((request.total_jpy || '').toString());
                             setActionType('won');
                           }}
                           className="w-full sm:flex-1 bg-green-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
@@ -2092,7 +2095,7 @@ export default function AdminDashboard() {
                     const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
 
                     if (isB001Self || isB001Linked || isBrasilAgent) {
-                      const japanSendAmount = calculateJapanSendAmount(item, Math.round(cost));
+                      const japanSendAmount = calculateJapanSendAmount(item, Math.round(cost), exchangeRates['JPY'] || exchangeRate || 150);
                       return sum + japanSendAmount;
                     }
                     return sum + Math.round(cost);
@@ -2109,7 +2112,7 @@ export default function AdminDashboard() {
                     const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
 
                     if (isB001Self || isB001Linked || isBrasilAgent) {
-                      const japanSendAmount = calculateJapanSendAmount(item, Math.round(cost));
+                      const japanSendAmount = calculateJapanSendAmount(item, Math.round(cost), exchangeRates['JPY'] || exchangeRate || 150);
                       return sum + (item.paid_japan ? 0 : japanSendAmount);
                     }
                     return sum + (item.paid ? 0 : cost);
@@ -2280,7 +2283,7 @@ export default function AdminDashboard() {
                             const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
                             const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
 
-                            const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice);
+                            const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice, exchangeRates['JPY'] || exchangeRate || 150);
 
                             // BRL表記フォーマット関数
                             const formatBrl = (amount: number) => {
@@ -2436,7 +2439,7 @@ export default function AdminDashboard() {
                               const totalSalePrice = Math.round(item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
                                 ? item.customerCounterOffer
                                 : (item.counterOffer || item.maxBid || 0)));
-                              const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice);
+                              const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice, exchangeRates['JPY'] || exchangeRate || 150);
 
                               return (
                                 <div className="mb-2 h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between font-sans text-xs">
@@ -3527,22 +3530,35 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold mb-4 text-indigo-600">落札金額の確定</h2>
             <p className="text-gray-600 mb-2 font-semibold">{selectedRequest.productTitle}</p>
             
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-gray-600">確定落札金額 (USD):</span>
+            <div className="bg-gray-50 rounded-lg p-4 mb-4 flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 font-semibold">確定落札金額 (USD):</span>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
                   <input
                     type="number"
                     value={finalPriceInput}
                     onChange={(e) => setFinalPriceInput(e.target.value)}
-                    className="w-32 h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-bold text-indigo-600 text-right focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white"
+                    className="w-36 h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-bold text-indigo-600 text-right focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white"
                     autoFocus
                   />
                 </div>
               </div>
-              <p className="text-[10px] text-gray-500 text-right italic">
-                ※この金額が顧客の支払い金額として確定されます
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 font-semibold">落札合計金額 (日本円 JPY):</span>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">¥</span>
+                  <input
+                    type="number"
+                    value={totalJpyInput}
+                    onChange={(e) => setTotalJpyInput(e.target.value)}
+                    className="w-36 h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-bold text-indigo-600 text-right focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white"
+                    placeholder="111500"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-500 text-right italic leading-relaxed">
+                ※入力された日本円金額は、B001紐づき顧客やブラジルエージェントの正確な日本支払額（送金額）の計算に利用されます。
               </p>
             </div>
 
@@ -3552,6 +3568,7 @@ export default function AdminDashboard() {
                   setSelectedRequest(null);
                   setActionType(null);
                   setFinalPriceInput('');
+                  setTotalJpyInput('');
                 }}
                 className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
               >
@@ -3561,11 +3578,12 @@ export default function AdminDashboard() {
                 onClick={() => {
                   if (selectedRequest) {
                     const price = parseFloat(finalPriceInput);
+                    const totalJpy = totalJpyInput.trim() ? parseFloat(totalJpyInput) : undefined;
                     if (isNaN(price)) {
                       alert('有効な金額を入力してください');
                       return;
                     }
-                    updateFinalStatus(selectedRequest.id, 'won', price);
+                    updateFinalStatus(selectedRequest.id, 'won', price, totalJpy);
                   }
                 }}
                 className="flex-1 bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center"

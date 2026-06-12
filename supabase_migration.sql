@@ -172,3 +172,7 @@ ALTER TABLE deposits ADD COLUMN IF NOT EXISTS usd_amount NUMERIC DEFAULT NULL;
 -- 24. deposits テーブルに入金内容（商品代金、現地費用）を記録するカラムを追加
 ALTER TABLE deposits ADD COLUMN IF NOT EXISTS deposit_type TEXT DEFAULT '商品代金';
 
+-- 25. B001紐づき顧客およびブラジルエージェントの正確な日本支払額（日本送金額）計算用に、元の日本円合計金額（オファー/落札価格）を記録するカラムを追加
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS total_jpy NUMERIC DEFAULT NULL;
+
+

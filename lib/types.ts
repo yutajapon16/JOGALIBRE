@@ -70,6 +70,7 @@ export interface BidRequest {
   delivery_location?: string;
   paid_local?: boolean;
   paid_local_at?: string | null;
+  total_jpy?: number | null;
 }
 
 export interface SearchItem {

@@ -233,7 +233,7 @@ export const calculateLocalCost = (deliveryLocation?: string, item?: any): numbe
  * @param totalSalePrice 合計売価
  * @returns 日本支払額 (USD)
  */
-export const calculateJapanSendAmount = (item: any, totalSalePrice: number): number => {
+export const calculateJapanSendAmount = (item: any, totalSalePrice: number, exchangeRate: number = 150): number => {
   if (item.customerId === 'B001' || item.customer_id === 'B001') {
     return totalSalePrice;
   }
@@ -241,18 +241,32 @@ export const calculateJapanSendAmount = (item: any, totalSalePrice: number): num
   let targetDivisor = 0.9; // デフォルト: B001本人の仕入れ割合 (利益率10%＝除数0.9)
   
   if (item.agentCustomerId === 'B001' || item.agent_customer_id === 'B001') {
-    ownDivisor = 0.5; // B001紐づき (利益率50%＝除数0.5)
-    targetDivisor = 0.6; // 一般顧客 (利益率40%＝除数0.6)
+    ownDivisor = 0.5; // B001紐づき
+    targetDivisor = 0.6; // 一般顧客 (＝B001紐づき顧客の日本支払額は「一般顧客売価」相当)
   } else if (item.customerId?.startsWith('A') || item.customer_id?.startsWith('A')) {
     const country = (item.customerCountry || item.country || '').trim().toLowerCase();
     if (country === 'brasil' || country === 'brazil') {
-      ownDivisor = 0.7; // ブラジルエージェント (利益率30%＝除数0.7)
-      targetDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
+      ownDivisor = 0.7; // ブラジルエージェント
+      targetDivisor = 0.8; // 通常エージェント (＝ブラジルエージェントの日本支払額は「一般エージェント売価」相当)
     } else {
-      ownDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
-      targetDivisor = 0.9; // B001本人 (利益率10%＝除数0.9)
+      ownDivisor = 0.8; // 通常エージェント
+      targetDivisor = 0.9; // B001本人
     }
   }
-  return Math.ceil(((totalSalePrice * ownDivisor) / targetDivisor) / 10) * 10;
+
+  // 1. もし元の日本円合計金額（total_jpy）が保存されている場合は、日本円から正確に計算します。
+  const totalJpy = item.total_jpy || item.totalJpy;
+  if (totalJpy && Number(totalJpy) > 0) {
+    // 円建て日本支払額の計算 (円金額 / 目標除数)
+    const jpySendAmount = Number(totalJpy) / targetDivisor;
+    // 1,000円未満切り上げ
+    const jpySendAmountRounded = Math.ceil(jpySendAmount / 1000) * 1000;
+    // ドル換算 ＋ 10ドル単位で四捨五入 (Math.round)
+    return Math.round((jpySendAmountRounded / exchangeRate) / 10) * 10;
+  }
+
+  // 2. 元の日本円合計金額がない場合は、10ドル切り上げ済みのドル売価から逆算（-5 近似式）します。
+  const estimatedBasePrice = totalSalePrice - 5;
+  return Math.ceil(((estimatedBasePrice * ownDivisor) / targetDivisor) / 10) * 10;
 };
 

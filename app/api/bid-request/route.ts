@@ -340,7 +340,7 @@ export async function PATCH(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber } = body;
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber, totalJpy } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -370,6 +370,7 @@ export async function PATCH(request: Request) {
       if (counterOffer !== undefined) updateData.counter_offer = counterOffer;
       if (shippingCostJpy !== undefined) updateData.shipping_cost_jpy = shippingCostJpy;
       if (finalStatus !== undefined) updateData.final_status = finalStatus;
+      if (totalJpy !== undefined) updateData.total_jpy = totalJpy ? Number(totalJpy) : null;
       if (stockNumber !== undefined) updateData.stock_number = stockNumber ? stockNumber.trim() : null;
       if (invoiceNumber !== undefined) updateData.invoice_number = invoiceNumber ? invoiceNumber.trim() : null;
       
