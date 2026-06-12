@@ -2363,10 +2363,10 @@ export default function Home() {
   };
 
   const getDeliveryLocationName = (loc?: string) => {
-    if (loc === 'JP') return lang === 'es' ? 'Japón' : 'Japão';
-    if (loc === 'ASU') return 'Asunción';
-    if (loc === 'ENC') return 'Encarnación';
-    if (loc === 'PJC') return 'Pedro Juan Caballero';
+    if (loc === 'JP') return lang === 'es' ? 'Japón 🇯🇵' : 'Japão 🇯🇵';
+    if (loc === 'ASU') return lang === 'es' ? 'Asunción 🇵🇾' : 'Assunção 🇵🇾';
+    if (loc === 'ENC') return lang === 'es' ? 'Encarnación 🇵🇾' : 'Encarnação 🇵🇾';
+    if (loc === 'PJC') return 'Pedro Juan Caballero 🇵🇾';
     return loc || '-';
   };
 

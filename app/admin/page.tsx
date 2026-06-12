@@ -96,10 +96,10 @@ export default function AdminDashboard() {
   };
 
   const getDeliveryLocationName = (loc?: string) => {
-    if (loc === 'JP') return 'JP (Japón)';
-    if (loc === 'ASU') return 'ASU (Asunción)';
-    if (loc === 'ENC') return 'ENC (Encarnación)';
-    if (loc === 'PJC') return 'PJC (Pedro Juan Caballero)';
+    if (loc === 'JP') return '日本 🇯🇵';
+    if (loc === 'ASU') return 'アスンシオン 🇵🇾';
+    if (loc === 'ENC') return 'エンカルナシオン 🇵🇾';
+    if (loc === 'PJC') return 'ペドロフアンカバジェロ 🇵🇾';
     return loc || '-';
   };
 
