@@ -1892,7 +1892,7 @@ export default function AdminDashboard() {
                           現地費用:
                         </span>
                         <span className="text-base font-bold text-gray-800">
-                          {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request), 'USD')}
+                          Consultar
                         </span>
                       </div>
                     )}

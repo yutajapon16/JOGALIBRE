@@ -3874,7 +3874,7 @@ export default function Home() {
                             {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
                           </span>
                           <span className="text-base font-bold text-gray-800">
-                            {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
+                            Consultar
                           </span>
                         </div>
                       )}
