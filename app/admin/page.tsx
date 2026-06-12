@@ -3067,8 +3067,17 @@ export default function AdminDashboard() {
 
               {/* 抽出合計金額カード & 集計ボックス */}
               {(() => {
-                // 期間・顧客フィルターを適用した USD 入金合計（d.usd_amount があればそれ、なければ d.amount を足す）
+                // 期間・顧客フィルターを適用した商品代金の USD 入金合計
                 const currentFilteredTotalUsd = getFilteredDeposits()
+                  .filter(item => item.deposit_type === '商品代金' || !item.deposit_type)
+                  .reduce((sum, item) => {
+                    const isBrl = item.payment_method?.endsWith('_brl');
+                    return sum + (isBrl ? (item.usd_amount || 0) : (item.amount || 0));
+                  }, 0);
+
+                // 期間・顧客フィルターを適用した現地費用の USD 入金合計
+                const currentFilteredTotalLocalCostUsd = getFilteredDeposits()
+                  .filter(item => item.deposit_type === '現地費用')
                   .reduce((sum, item) => {
                     const isBrl = item.payment_method?.endsWith('_brl');
                     return sum + (isBrl ? (item.usd_amount || 0) : (item.amount || 0));
@@ -3110,12 +3119,6 @@ export default function AdminDashboard() {
                   return sum + calculateLocalCost(item.delivery_location, item);
                 }, 0);
 
-                const unpaidLocalCostTotal = targetPurchasedForLocalCost.reduce((sum, item) => {
-                  if (item.delivery_location === 'JP') return sum;
-                  const localCost = calculateLocalCost(item.delivery_location, item);
-                  return sum + (item.paid_local ? 0 : localCost);
-                }, 0);
-
                 if (depositFilterCustomer === 'all') {
                   // すべてのIDのとき
                   return (
@@ -3127,9 +3130,9 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                       <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                        <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額</span>
+                        <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額 USD</span>
                         <span className="text-base font-black text-black font-sans">
-                          ${Math.round(localCostTotal).toLocaleString('en-US')}
+                          ${Math.round(currentFilteredTotalLocalCostUsd).toLocaleString('en-US')}
                         </span>
                       </div>
                     </div>
@@ -3146,13 +3149,28 @@ export default function AdminDashboard() {
                     ...agentsList.filter(a => a.customerId?.startsWith('A') && (a.country?.trim().toLowerCase() === 'brasil' || a.country?.trim().toLowerCase() === 'brazil')).map(a => a.customerId)
                   ];
 
-                  // 通算入金 (BRL入金ならusd_amount、USD入金ならamount)
+                  // 通算入金 (商品代金のみ)
                   const totalDeposits = depositsList.filter(d => {
                     if (isB001_FFGN) {
                       return d.customer_id === 'B001' || linkedCustomerIds.includes(d.customer_id) || brasilAgentIds.includes(d.customer_id);
                     }
                     return d.customer_id === depositFilterCustomer;
-                  }).reduce((sum, d) => {
+                  })
+                  .filter(d => d.deposit_type === '商品代金' || !d.deposit_type)
+                  .reduce((sum, d) => {
+                    const isBrl = d.payment_method?.endsWith('_brl');
+                    return sum + (isBrl ? (d.usd_amount || 0) : (d.amount || 0));
+                  }, 0);
+
+                  // 通算入金 (現地費用のみ)
+                  const totalLocalCostDeposits = depositsList.filter(d => {
+                    if (isB001_FFGN) {
+                      return d.customer_id === 'B001' || linkedCustomerIds.includes(d.customer_id) || brasilAgentIds.includes(d.customer_id);
+                    }
+                    return d.customer_id === depositFilterCustomer;
+                  })
+                  .filter(d => d.deposit_type === '現地費用')
+                  .reduce((sum, d) => {
                     const isBrl = d.payment_method?.endsWith('_brl');
                     return sum + (isBrl ? (d.usd_amount || 0) : (d.amount || 0));
                   }, 0);
@@ -3177,6 +3195,12 @@ export default function AdminDashboard() {
                     ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
                     : `$${Math.round(balance).toLocaleString('en-US')}`;
 
+                  const localCostBalance = totalLocalCostDeposits - localCostTotal;
+                  const isLocalCostNegative = localCostBalance < 0;
+                  const formattedLocalCostBalance = isLocalCostNegative 
+                    ? `- $${Math.abs(Math.round(localCostBalance)).toLocaleString('en-US')}`
+                    : `$${Math.round(localCostBalance).toLocaleString('en-US')}`;
+
                   return (
                     <div className="flex flex-col gap-3 mb-6">
                       <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
@@ -3196,13 +3220,15 @@ export default function AdminDashboard() {
                       <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                         <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額 USD</span>
                         <span className="text-base font-black text-black font-sans">
-                          ${Math.round(localCostTotal).toLocaleString('en-US')}
+                          ${Math.round(currentFilteredTotalLocalCostUsd).toLocaleString('en-US')}
                         </span>
                       </div>
-                      <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                        <span className="text-xs font-bold text-gray-500 font-sans">現地費用未入金額 USD</span>
-                        <span className="text-base font-black text-black font-sans">
-                          ${Math.round(unpaidLocalCostTotal).toLocaleString('en-US')}
+                      <div className={`bg-white border ${isLocalCostNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
+                        <span className={`text-xs font-bold ${isLocalCostNegative ? 'text-red-500' : 'text-green-500'} font-sans`}>
+                          現地費用残高 USD
+                        </span>
+                        <span className={`text-base font-black ${isLocalCostNegative ? 'text-red-600' : 'text-green-600'} font-sans`}>
+                          {formattedLocalCostBalance}
                         </span>
                       </div>
                     </div>

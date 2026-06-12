@@ -4622,8 +4622,17 @@ export default function Home() {
                 );
               };
 
-              // 通算入金USD (BRL入金ならusd_amount、USD入金ならamount)
+              // 通算入金USD (商品代金のみ)
               const totalDepositsUsd = depositsList
+                .filter(item => item.deposit_type === '商品代金' || !item.deposit_type)
+                .reduce((sum, item) => {
+                  const isBrl = item.payment_method?.endsWith('_brl');
+                  return sum + (isBrl ? (item.usd_amount || 0) : (item.amount || 0));
+                }, 0);
+
+              // 通算入金USD (現地費用のみ)
+              const totalLocalCostDepositsUsd = depositsList
+                .filter(item => item.deposit_type === '現地費用')
                 .reduce((sum, item) => {
                   const isBrl = item.payment_method?.endsWith('_brl');
                   return sum + (isBrl ? (item.usd_amount || 0) : (item.amount || 0));
@@ -4640,8 +4649,17 @@ export default function Home() {
               const balanceUsd = totalDepositsUsd - totalPurchasedUsd;
               const isNegativeUsd = balanceUsd < 0;
 
-              // フィルターされた入金の合計 (表示用)
+              // フィルターされた入金の合計 (商品代金のみ)
               const filteredDepositsTotalUsd = getFilteredDeposits()
+                .filter(item => item.deposit_type === '商品代金' || !item.deposit_type)
+                .reduce((sum, item) => {
+                  const isBrl = item.payment_method?.endsWith('_brl');
+                  return sum + (isBrl ? (item.usd_amount || 0) : (item.amount || 0));
+                }, 0);
+
+              // フィルターされた入金の合計 (現地費用のみ)
+              const filteredDepositsTotalLocalCostUsd = getFilteredDeposits()
+                .filter(item => item.deposit_type === '現地費用')
                 .reduce((sum, item) => {
                   const isBrl = item.payment_method?.endsWith('_brl');
                   return sum + (isBrl ? (item.usd_amount || 0) : (item.amount || 0));
@@ -4667,15 +4685,15 @@ export default function Home() {
                 return sum + calculateLocalCost(item.delivery_location, item);
               }, 0);
 
-              const unpaidLocalCostTotal = targetPurchasedForLocalCost.reduce((sum, item) => {
-                if (item.delivery_location === 'JP') return sum;
-                const localCost = calculateLocalCost(item.delivery_location, item);
-                return sum + (item.paid_local ? 0 : localCost);
-              }, 0);
-
               const formattedBalanceUsd = isNegativeUsd
                 ? `- $${Math.abs(Math.round(balanceUsd)).toLocaleString('en-US')}`
                 : `$${Math.round(balanceUsd).toLocaleString('en-US')}`;
+
+              const localCostBalanceUsd = totalLocalCostDepositsUsd - localCostTotal;
+              const isLocalCostNegativeUsd = localCostBalanceUsd < 0;
+              const formattedLocalCostBalanceUsd = isLocalCostNegativeUsd
+                ? `- $${Math.abs(Math.round(localCostBalanceUsd)).toLocaleString('en-US')}`
+                : `$${Math.round(localCostBalanceUsd).toLocaleString('en-US')}`;
 
               return (
                 <div className="flex flex-col gap-3 mb-6 font-sans">
@@ -4705,17 +4723,17 @@ export default function Home() {
                       {lang === 'es' ? 'Costo Local Total USD' : 'Custo Local Total USD'}
                     </span>
                     <span className="text-base font-black text-black font-sans">
-                      ${Math.round(localCostTotal).toLocaleString('en-US')}
+                      ${Math.round(filteredDepositsTotalLocalCostUsd).toLocaleString('en-US')}
                     </span>
                   </div>
 
-                  {/* 現地費用未入金額 USD */}
-                  <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                    <span className="text-xs font-bold text-gray-500 tracking-wider">
-                      {lang === 'es' ? 'Costo Local Pendiente USD' : 'Custo Local Pendente USD'}
+                  {/* 現地費用残高 USD */}
+                  <div className={`bg-white border ${isLocalCostNegativeUsd ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
+                    <span className={`text-xs font-bold ${isLocalCostNegativeUsd ? 'text-red-500' : 'text-green-500'} tracking-wider`}>
+                      {lang === 'es' ? 'Saldo Costo Local USD' : 'Saldo Custo Local USD'}
                     </span>
-                    <span className="text-base font-black text-black font-sans">
-                      ${Math.round(unpaidLocalCostTotal).toLocaleString('en-US')}
+                    <span className={`text-base font-black ${isLocalCostNegativeUsd ? 'text-red-600' : 'text-green-600'}`}>
+                      {formattedLocalCostBalanceUsd}
                     </span>
                   </div>
                 </div>
