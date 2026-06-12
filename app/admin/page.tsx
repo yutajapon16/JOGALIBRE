@@ -199,7 +199,8 @@ export default function AdminDashboard() {
     amount: '',
     paymentMethod: 'bank',
     currency: 'USD',
-    usdAmount: ''
+    usdAmount: '',
+    depositType: '商品代金'
   });
   const [editingDeposit, setEditingDeposit] = useState<any | null>(null);
   const [editDepositForm, setEditDepositForm] = useState({
@@ -207,7 +208,8 @@ export default function AdminDashboard() {
     amount: '',
     paymentMethod: 'bank',
     currency: 'USD',
-    usdAmount: ''
+    usdAmount: '',
+    depositType: '商品代金'
   });
   const [depositFilterCustomer, setDepositFilterCustomer] = useState<string>('all');
   const [depositFilterYear, setDepositFilterYear] = useState<string>('all');
@@ -370,7 +372,8 @@ export default function AdminDashboard() {
           depositDate: depositForm.depositDate,
           amount: parseFloat(depositForm.amount),
           paymentMethod: actualPaymentMethod,
-          usdAmount: usdAmount
+          usdAmount: usdAmount,
+          depositType: depositForm.depositType
         })
       });
 
@@ -382,7 +385,8 @@ export default function AdminDashboard() {
           amount: '',
           currency: 'USD',
           paymentMethod: 'bank',
-          usdAmount: ''
+          usdAmount: '',
+          depositType: '商品代金'
         });
         fetchDeposits();
       } else {
@@ -424,7 +428,8 @@ export default function AdminDashboard() {
           depositDate: editDepositForm.depositDate,
           amount: parseFloat(editDepositForm.amount),
           paymentMethod: actualPaymentMethod,
-          usdAmount: usdAmount
+          usdAmount: usdAmount,
+          depositType: editDepositForm.depositType
         })
       });
 
@@ -2934,6 +2939,18 @@ export default function AdminDashboard() {
                     </div>
                   )}
                   <div className="min-w-0">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">内容</label>
+                    <select
+                      value={depositForm.depositType}
+                      onChange={(e) => setDepositForm({ ...depositForm, depositType: e.target.value })}
+                      className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
+                      required
+                    >
+                      <option value="商品代金">商品代金</option>
+                      <option value="現地費用">現地費用</option>
+                    </select>
+                  </div>
+                  <div className="min-w-0">
                     <label className="block text-sm font-semibold text-gray-700 mb-1">入金方法</label>
                     <select
                       value={depositForm.paymentMethod}
@@ -3151,16 +3168,6 @@ export default function AdminDashboard() {
                       ? item.customerCounterOffer
                       : (item.counterOffer || item.maxBid || 0));
                     const totalSalePrice = Math.round(cost);
-
-                    const isB001Linked = item.agentCustomerId === 'B001';
-                    const isB001Self = item.customerId === 'B001';
-                    const countryLower = item.customerCountry?.trim().toLowerCase();
-                    const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
-
-                    if (isB001Self || isB001Linked || isBrasilAgent) {
-                      const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice);
-                      return sum + japanSendAmount;
-                    }
                     return sum + totalSalePrice;
                   }, 0);
 
@@ -3217,6 +3224,7 @@ export default function AdminDashboard() {
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">入金日</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">通貨</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">入金額</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">内容</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">顧客</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">支払方法</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">USD</th>
@@ -3253,6 +3261,9 @@ export default function AdminDashboard() {
                             <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
                               {isBrl ? `R$ ${formatBrl(Number(item.amount))}` : `$${Number(item.amount).toLocaleString('en-US')}`}
                             </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
+                              {item.deposit_type || '商品代金'}
+                            </td>
                             <td className="px-4 py-3 whitespace-nowrap text-left">
                               <span className="font-bold text-gray-900">{item.customer_id}</span>{' '}
                               <span className="text-gray-500 text-xs">{name}</span>
@@ -3274,7 +3285,8 @@ export default function AdminDashboard() {
                                     amount: item.amount.toString(),
                                     paymentMethod: rawMethod,
                                     currency: isBrlVal ? 'BRL' : 'USD',
-                                    usdAmount: item.usd_amount ? item.usd_amount.toString() : ''
+                                    usdAmount: item.usd_amount ? item.usd_amount.toString() : '',
+                                    depositType: item.deposit_type || '商品代金'
                                   });
                                 }}
                                 className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-700 transition"
@@ -3804,6 +3816,18 @@ export default function AdminDashboard() {
                 </div>
               )}
 
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">内容</label>
+                <select
+                  value={editDepositForm.depositType}
+                  onChange={(e) => setEditDepositForm({ ...editDepositForm, depositType: e.target.value })}
+                  className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
+                  required
+                >
+                  <option value="商品代金">商品代金</option>
+                  <option value="現地費用">現地費用</option>
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">入金方法</label>
                 <select

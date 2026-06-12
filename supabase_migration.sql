@@ -168,3 +168,7 @@ CREATE INDEX IF NOT EXISTS idx_bid_requests_paid_local ON bid_requests(paid_loca
 
 -- 23. deposits テーブルに USD 換算額を記録するカラムを追加
 ALTER TABLE deposits ADD COLUMN IF NOT EXISTS usd_amount NUMERIC DEFAULT NULL;
+
+-- 24. deposits テーブルに入金内容（商品代金、現地費用）を記録するカラムを追加
+ALTER TABLE deposits ADD COLUMN IF NOT EXISTS deposit_type TEXT DEFAULT '商品代金';
+

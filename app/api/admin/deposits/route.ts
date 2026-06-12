@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { customerId, depositDate, amount, paymentMethod, usdAmount } = body;
+    const { customerId, depositDate, amount, paymentMethod, usdAmount, depositType } = body;
 
     if (!customerId || !depositDate || amount === undefined || !paymentMethod) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -105,6 +105,7 @@ export async function POST(request: Request) {
         amount: Number(amount),
         payment_method: paymentMethod,
         usd_amount: usdAmount !== undefined && usdAmount !== null ? Number(usdAmount) : null,
+        deposit_type: depositType || '商品代金',
       })
       .select()
       .single();
@@ -129,7 +130,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { id, depositDate, amount, paymentMethod, usdAmount } = body;
+    const { id, depositDate, amount, paymentMethod, usdAmount, depositType } = body;
 
     if (!id || !depositDate || amount === undefined || !paymentMethod) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -142,6 +143,7 @@ export async function PATCH(request: Request) {
         amount: Number(amount),
         payment_method: paymentMethod,
         usd_amount: usdAmount !== undefined && usdAmount !== null ? Number(usdAmount) : null,
+        deposit_type: depositType,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
