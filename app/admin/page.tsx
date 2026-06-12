@@ -928,7 +928,8 @@ export default function AdminDashboard() {
         customerCountry: req.customer_country as string | null | undefined,
         delivery_location: req.delivery_location as string | undefined,
         paid_local: req.paid_local || false,
-        paid_local_at: req.paid_local_at as string | null | undefined
+        paid_local_at: req.paid_local_at as string | null | undefined,
+        totalJpy: req.total_jpy
       }));
 
       setBidRequests(convertedRequests);
@@ -980,7 +981,8 @@ export default function AdminDashboard() {
         customerCountry: item.customer_country as string | null | undefined,
         delivery_location: item.delivery_location as string | undefined,
         paid_local: item.paid_local || false,
-        paid_local_at: item.paid_local_at as string | null | undefined
+        paid_local_at: item.paid_local_at as string | null | undefined,
+        totalJpy: item.total_jpy
       }));
 
       setPurchasedItems(convertedItems);
