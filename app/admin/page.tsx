@@ -1888,7 +1888,7 @@ export default function AdminDashboard() {
                           現地費用:
                         </span>
                         <span className="text-base font-bold text-gray-800">
-                          {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
+                          {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request), 'USD')}
                         </span>
                       </div>
                     )}
@@ -2391,7 +2391,7 @@ export default function AdminDashboard() {
                                         )}
                                       </label>
                                       <span className={`text-base ${item.paid_local ? 'text-gray-400 line-through' : 'text-black font-black'}`}>
-                                        {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
+                                        {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item), 'USD')}
                                       </span>
                                     </div>
                                   )}
@@ -2485,7 +2485,7 @@ export default function AdminDashboard() {
                                   )}
                                 </label>
                                 <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                  {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
+                                  {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item), 'USD')}
                                 </span>
                               </div>
                             )}
