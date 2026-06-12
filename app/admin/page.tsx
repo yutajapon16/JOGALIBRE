@@ -2395,8 +2395,8 @@ export default function AdminDashboard() {
                                           </span>
                                         )}
                                       </label>
-                                      <span className={`text-base ${item.paid_local ? 'text-gray-400 line-through' : 'text-black font-black'}`}>
-                                        {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item), 'USD')}
+                                      <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black font-black'}`}>
+                                        Consultar
                                       </span>
                                     </div>
                                   )}
@@ -2488,7 +2488,7 @@ export default function AdminDashboard() {
                                   )}
                                 </label>
                                 <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                  {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item), 'USD')}
+                                  Consultar
                                 </span>
                               </div>
                             )}

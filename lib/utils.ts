@@ -215,16 +215,9 @@ export const getTimeRemaining = (endTime: string, lang: 'ja' | 'es' | 'pt', time
  * @returns 現地費用 (USD建ての数値、日本渡しは0)
  */
 export const calculateLocalCost = (deliveryLocation?: string, item?: any): number => {
-  if (!deliveryLocation || deliveryLocation === 'JP') return 0;
-  
-  // 【将来的な変更用】渡し場所やカテゴリによる分岐をここで一元管理できます。
-  // 例:
-  // if (deliveryLocation === 'ASU') {
-  //   if (item?.category === 'car') return 500;
-  //   return 200;
-  // }
-  
-  return 200; // 現在は仮として一律 $200
+  // 現在は個別相談（Consultar）のため、計算上は0を返します。
+  // 将来的にカテゴリ・引渡場所ごとの金額設定をここに実装します。
+  return 0;
 };
 
 /**

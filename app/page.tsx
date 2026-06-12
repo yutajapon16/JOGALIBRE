@@ -4449,7 +4449,7 @@ export default function Home() {
                                       )}
                                     </div>
                                     <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                      {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
+                                      Consultar
                                     </span>
                                   </div>
                                 )}
@@ -4507,7 +4507,7 @@ export default function Home() {
                                   )}
                                 </div>
                                 <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                  {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
+                                  Consultar
                                 </span>
                               </div>
                             )}
