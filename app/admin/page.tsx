@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, calculateLocalCost } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, calculateLocalCost, calculateJapanSendAmount } from '@/lib/utils';
 import { BidRequest } from '@/lib/types';
 
 // 管理者画面用のPWA manifest差し替え
@@ -198,24 +198,35 @@ export default function AdminDashboard() {
     depositDate: new Date().toISOString().split('T')[0],
     amount: '',
     paymentMethod: 'bank',
-    currency: 'USD'
+    currency: 'USD',
+    usdAmount: ''
   });
   const [editingDeposit, setEditingDeposit] = useState<any | null>(null);
   const [editDepositForm, setEditDepositForm] = useState({
     depositDate: '',
     amount: '',
     paymentMethod: 'bank',
-    currency: 'USD'
+    currency: 'USD',
+    usdAmount: ''
   });
   const [depositFilterCustomer, setDepositFilterCustomer] = useState<string>('all');
   const [depositFilterYear, setDepositFilterYear] = useState<string>('all');
   const [depositFilterMonth, setDepositFilterMonth] = useState<string>('all');
 
-  // 入金登録フォーム用および編集モーダル用のB001紐づき顧客判定
+  // 入金登録フォーム用および編集モーダル用のB001紐づき・ブラジルAGT判定
   const selectedCustInfoForForm = customersList.find(c => c.customerId === depositForm.customerId);
   const isB001LinkedForForm = selectedCustInfoForForm?.agentCustomerId === 'B001';
+  const isBrasilAgentForForm = selectedCustInfoForForm?.customerId?.startsWith('A') && 
+    ((selectedCustInfoForForm?.country || '').trim().toLowerCase() === 'brasil' || 
+     (selectedCustInfoForForm?.country || '').trim().toLowerCase() === 'brazil');
+  const isB001LinkedOrBrasilForForm = isB001LinkedForForm || isBrasilAgentForForm;
+
   const selectedCustInfoForEdit = editingDeposit ? customersList.find(c => c.customerId === editingDeposit.customer_id) : null;
   const isB001LinkedForEdit = selectedCustInfoForEdit?.agentCustomerId === 'B001';
+  const isBrasilAgentForEdit = selectedCustInfoForEdit?.customerId?.startsWith('A') && 
+    ((selectedCustInfoForEdit?.country || '').trim().toLowerCase() === 'brasil' || 
+     (selectedCustInfoForEdit?.country || '').trim().toLowerCase() === 'brazil');
+  const isB001LinkedOrBrasilForEdit = isB001LinkedForEdit || isBrasilAgentForEdit;
 
   // ヤフオク最新情報を同期・復旧する処理
   const handleSyncYahooProduct = async (requestItem: BidRequest) => {
@@ -338,8 +349,15 @@ export default function AdminDashboard() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
-      const isBRL = isB001LinkedForForm && depositForm.currency === 'BRL';
+      const isBRL = isB001LinkedOrBrasilForForm && depositForm.currency === 'BRL';
       const actualPaymentMethod = isBRL ? `${depositForm.paymentMethod}_brl` : depositForm.paymentMethod;
+      const usdAmount = isBRL && depositForm.usdAmount ? parseFloat(depositForm.usdAmount) : null;
+
+      // BRL入金時のUSD換算額は必須
+      if (isBRL && !depositForm.usdAmount) {
+        alert('BRL入金の場合はUSD換算額を入力してください');
+        return;
+      }
 
       const res = await fetch('/api/admin/deposits', {
         method: 'POST',
@@ -351,7 +369,8 @@ export default function AdminDashboard() {
           customerId: depositForm.customerId,
           depositDate: depositForm.depositDate,
           amount: parseFloat(depositForm.amount),
-          paymentMethod: actualPaymentMethod
+          paymentMethod: actualPaymentMethod,
+          usdAmount: usdAmount
         })
       });
 
@@ -362,7 +381,8 @@ export default function AdminDashboard() {
           customerId: '',
           amount: '',
           currency: 'USD',
-          paymentMethod: 'bank'
+          paymentMethod: 'bank',
+          usdAmount: ''
         });
         fetchDeposits();
       } else {
@@ -383,8 +403,15 @@ export default function AdminDashboard() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
-      const isBRL = isB001LinkedForEdit && editDepositForm.currency === 'BRL';
+      const isBRL = isB001LinkedOrBrasilForEdit && editDepositForm.currency === 'BRL';
       const actualPaymentMethod = isBRL ? `${editDepositForm.paymentMethod}_brl` : editDepositForm.paymentMethod;
+      const usdAmount = isBRL && editDepositForm.usdAmount ? parseFloat(editDepositForm.usdAmount) : null;
+
+      // BRL入金時のUSD換算額は必須
+      if (isBRL && !editDepositForm.usdAmount) {
+        alert('BRL入金の場合はUSD換算額を入力してください');
+        return;
+      }
 
       const res = await fetch('/api/admin/deposits', {
         method: 'PATCH',
@@ -396,7 +423,8 @@ export default function AdminDashboard() {
           id: editingDeposit.id,
           depositDate: editDepositForm.depositDate,
           amount: parseFloat(editDepositForm.amount),
-          paymentMethod: actualPaymentMethod
+          paymentMethod: actualPaymentMethod,
+          usdAmount: usdAmount
         })
       });
 
@@ -450,8 +478,12 @@ export default function AdminDashboard() {
         const linkedCustomerIds = customersList
           .filter(c => c.agentCustomerId === 'B001')
           .map(c => c.customerId);
+        const brasilAgentIds = [
+          ...customersList.filter(c => c.customerId?.startsWith('A') && (c.country?.trim().toLowerCase() === 'brasil' || c.country?.trim().toLowerCase() === 'brazil')).map(c => c.customerId),
+          ...agentsList.filter(a => a.customerId?.startsWith('A') && (a.country?.trim().toLowerCase() === 'brasil' || a.country?.trim().toLowerCase() === 'brazil')).map(a => a.customerId)
+        ];
         filtered = filtered.filter(item => 
-          item.customer_id === 'B001' || linkedCustomerIds.includes(item.customer_id)
+          item.customer_id === 'B001' || linkedCustomerIds.includes(item.customer_id) || brasilAgentIds.includes(item.customer_id)
         );
       } else {
         filtered = filtered.filter(item => item.customer_id === depositFilterCustomer);
@@ -802,28 +834,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const calculateJapanSendAmount = (item: BidRequest, totalSalePrice: number) => {
-    if (item.customerId === 'B001') {
-      return totalSalePrice;
-    }
-    let ownDivisor = 0.6; // デフォルト: 一般顧客 (利益率40%＝除数0.6)
-    let targetDivisor = 0.9; // デフォルト: B001本人の仕入れ割合 (利益率10%＝除数0.9)
-    
-    if (item.agentCustomerId === 'B001') {
-      ownDivisor = 0.5; // B001紐づき (利益率50%＝除数0.5)
-      targetDivisor = 0.6; // 一般顧客 (利益率40%＝除数0.6)
-    } else if (item.customerId?.startsWith('A')) {
-      const countryLower = item.customerCountry?.trim().toLowerCase();
-      if (countryLower === 'brasil' || countryLower === 'brazil') {
-        ownDivisor = 0.7; // ブラジルエージェント (利益率30%＝除数0.7)
-        targetDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
-      } else {
-        ownDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
-        targetDivisor = 0.9; // B001本人 (利益率10%＝除数0.9)
-      }
-    }
-    return Math.ceil(((totalSalePrice * ownDivisor) / targetDivisor) / 10) * 10;
-  };
+
 
   const getFilteredPurchasedItems = () => {
     let filtered = purchasedItems;
@@ -831,7 +842,13 @@ export default function AdminDashboard() {
     // 顧客IDでフィルタリング
     if (selectedCustomer !== 'all') {
       if (selectedCustomer === 'B001') {
-        filtered = filtered.filter(item => item.customerId === 'B001' || item.agentCustomerId === 'B001');
+        filtered = filtered.filter(item => {
+          const isB001 = item.customerId === 'B001';
+          const isB001Linked = item.agentCustomerId === 'B001';
+          const countryLower = item.customerCountry?.trim().toLowerCase();
+          const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
+          return isB001 || isB001Linked || isBrasilAgent;
+        });
       } else {
         filtered = filtered.filter(item => item.customerId === selectedCustomer);
       }
@@ -2124,13 +2141,13 @@ export default function AdminDashboard() {
                     <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                       <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額</span>
                       <span className="text-base font-black text-black font-sans">
-                        {convertUSDToSelectedCurrency(localCostTotal)}
+                        ${Math.round(localCostTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                     <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                       <span className="text-xs font-bold text-gray-500 font-sans">現地費用未入金額</span>
                       <span className="text-base font-black text-black font-sans">
-                        {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
+                        ${Math.round(unpaidLocalCostTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                   </div>
@@ -2462,7 +2479,7 @@ export default function AdminDashboard() {
                                     </span>
                                   )}
                                 </label>
-                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
                                   {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
                                 </span>
                               </div>
@@ -2848,9 +2865,9 @@ export default function AdminDashboard() {
                   </div>
                   <div className="min-w-0">
                     <label className="block text-sm font-semibold text-gray-700 mb-1">
-                      {isB001LinkedForForm ? '通貨 / 入金額' : '入金額 (USD)'}
+                      {isB001LinkedOrBrasilForForm ? '通貨 / 入金額' : '入金額 (USD)'}
                     </label>
-                    {isB001LinkedForForm ? (
+                    {isB001LinkedOrBrasilForForm ? (
                       <div className="flex gap-2">
                         <select
                           value={depositForm.currency}
@@ -2899,6 +2916,23 @@ export default function AdminDashboard() {
                       </div>
                     )}
                   </div>
+                  {isB001LinkedOrBrasilForForm && depositForm.currency === 'BRL' && (
+                    <div className="min-w-0">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">USD 換算</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                        <input
+                          type="number"
+                          step="any"
+                          placeholder="0.00"
+                          value={depositForm.usdAmount}
+                          onChange={(e) => setDepositForm({ ...depositForm, usdAmount: e.target.value })}
+                          className="w-full h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-black box-border"
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
                   <div className="min-w-0">
                     <label className="block text-sm font-semibold text-gray-700 mb-1">入金方法</label>
                     <select
@@ -2908,7 +2942,7 @@ export default function AdminDashboard() {
                       required
                     >
                       {(() => {
-                        if (isB001LinkedForForm) {
+                        if (isB001LinkedOrBrasilForForm) {
                           if (depositForm.currency === 'BRL') {
                             return (
                               <>
@@ -3014,130 +3048,159 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* 抽出合計金額カード */}
-              <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm mb-3">
-                <span className="text-xs font-bold text-indigo-500">合計金額 USD</span>
-                <span className="text-base font-black text-indigo-600">
-                  ${Math.round(getFilteredDeposits().filter(item => !item.payment_method?.endsWith('_brl')).reduce((sum, item) => sum + (item.amount || 0), 0)).toLocaleString('en-US')}
-                </span>
-              </div>
+              {/* 抽出合計金額カード & 集計ボックス */}
+              {(() => {
+                // 期間・顧客フィルターを適用した USD 入金合計（d.usd_amount があればそれ、なければ d.amount を足す）
+                const currentFilteredTotalUsd = getFilteredDeposits()
+                  .reduce((sum, item) => {
+                    const isBrl = item.payment_method?.endsWith('_brl');
+                    return sum + (isBrl ? (item.usd_amount || 0) : (item.amount || 0));
+                  }, 0);
 
-              {depositFilterCustomer && depositFilterCustomer !== 'all' && (() => {
-                const isB001_FFGN = depositFilterCustomer === 'B001_FFGN';
-                const isB001 = depositFilterCustomer === 'B001';
-                const linkedCustomerIds = customersList
-                  .filter(c => c.agentCustomerId === 'B001')
-                  .map(c => c.customerId);
-                const isLinked = linkedCustomerIds.includes(depositFilterCustomer);
-                const isB001OrLinked = isB001_FFGN || isB001 || isLinked;
-
-                let totalDeposits = 0;
-                let totalPurchased = 0;
-                let totalDepositsBrl = 0;
-                let totalPurchasedBrl = 0;
-
-                const brlRate = exchangeRates['BRL'] || 5.6;
-
-                if (isB001OrLinked) {
-                  const targetDeposits = depositsList.filter(d => {
-                    if (isB001_FFGN) {
-                      return d.customer_id === 'B001' || linkedCustomerIds.includes(d.customer_id);
-                    } else {
-                      return d.customer_id === depositFilterCustomer;
+                // 現地費用合計・未入金の計算用
+                // 入金タブ側の顧客・期間（年・月）フィルターを適用した購入商品リスト
+                const targetPurchasedForLocalCost = purchasedItems.filter(item => {
+                  if (depositFilterCustomer !== 'all') {
+                    if (depositFilterCustomer === 'B001_FFGN') {
+                      const linkedCustomerIds = customersList
+                        .filter(c => c.agentCustomerId === 'B001')
+                        .map(c => c.customerId);
+                      const brasilAgentIds = [
+                        ...customersList.filter(c => c.customerId?.startsWith('A') && (c.country?.trim().toLowerCase() === 'brasil' || c.country?.trim().toLowerCase() === 'brazil')).map(c => c.customerId),
+                        ...agentsList.filter(a => a.customerId?.startsWith('A') && (a.country?.trim().toLowerCase() === 'brasil' || a.country?.trim().toLowerCase() === 'brazil')).map(a => a.customerId)
+                      ];
+                      return item.customerId === 'B001' || linkedCustomerIds.includes(item.customerId) || brasilAgentIds.includes(item.customerId);
                     }
-                  });
+                    return item.customerId === depositFilterCustomer;
+                  }
+                  return true;
+                }).filter(item => {
+                  if (depositFilterYear !== 'all') {
+                    if (!item.confirmedAt) return false;
+                    const date = new Date(item.confirmedAt);
+                    if (date.getFullYear().toString() !== depositFilterYear) return false;
+                  }
+                  if (depositFilterMonth !== 'all') {
+                    if (!item.confirmedAt) return false;
+                    const date = new Date(item.confirmedAt);
+                    if ((date.getMonth() + 1).toString() !== depositFilterMonth) return false;
+                  }
+                  return true;
+                });
 
-                  targetDeposits.forEach(d => {
+                const localCostTotal = targetPurchasedForLocalCost.reduce((sum, item) => {
+                  if (item.delivery_location === 'JP') return sum;
+                  return sum + calculateLocalCost(item.delivery_location, item);
+                }, 0);
+
+                const unpaidLocalCostTotal = targetPurchasedForLocalCost.reduce((sum, item) => {
+                  if (item.delivery_location === 'JP') return sum;
+                  const localCost = calculateLocalCost(item.delivery_location, item);
+                  return sum + (item.paid_local ? 0 : localCost);
+                }, 0);
+
+                if (depositFilterCustomer === 'all') {
+                  // すべてのIDのとき
+                  return (
+                    <div className="flex flex-col gap-3 mb-6">
+                      <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                        <span className="text-xs font-bold text-indigo-500">合計金額 USD</span>
+                        <span className="text-base font-black text-indigo-600">
+                          ${Math.round(currentFilteredTotalUsd).toLocaleString('en-US')}
+                        </span>
+                      </div>
+                      <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                        <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額</span>
+                        <span className="text-base font-black text-black font-sans">
+                          ${Math.round(localCostTotal).toLocaleString('en-US')}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  // 特定のIDを選択しているとき (全顧客・エージェント)
+                  // 残高 USD の計算
+                  const isB001_FFGN = depositFilterCustomer === 'B001_FFGN';
+                  const linkedCustomerIds = customersList
+                    .filter(c => c.agentCustomerId === 'B001')
+                    .map(c => c.customerId);
+                  const brasilAgentIds = [
+                    ...customersList.filter(c => c.customerId?.startsWith('A') && (c.country?.trim().toLowerCase() === 'brasil' || c.country?.trim().toLowerCase() === 'brazil')).map(c => c.customerId),
+                    ...agentsList.filter(a => a.customerId?.startsWith('A') && (a.country?.trim().toLowerCase() === 'brasil' || a.country?.trim().toLowerCase() === 'brazil')).map(a => a.customerId)
+                  ];
+
+                  // 通算入金 (BRL入金ならusd_amount、USD入金ならamount)
+                  const totalDeposits = depositsList.filter(d => {
+                    if (isB001_FFGN) {
+                      return d.customer_id === 'B001' || linkedCustomerIds.includes(d.customer_id) || brasilAgentIds.includes(d.customer_id);
+                    }
+                    return d.customer_id === depositFilterCustomer;
+                  }).reduce((sum, d) => {
                     const isBrl = d.payment_method?.endsWith('_brl');
-                    if (isBrl) {
-                      totalDepositsBrl += (d.amount || 0);
-                    } else {
-                      totalDeposits += (d.amount || 0);
-                    }
-                  });
+                    return sum + (isBrl ? (d.usd_amount || 0) : (d.amount || 0));
+                  }, 0);
 
-                  const targetPurchased = purchasedItems.filter(item => {
+                  // 通算購入
+                  const totalPurchased = purchasedItems.filter(item => {
                     if (isB001_FFGN) {
-                      return item.customerId === 'B001' || item.agentCustomerId === 'B001';
-                    } else {
-                      return item.customerId === depositFilterCustomer;
+                      return item.customerId === 'B001' || item.agentCustomerId === 'B001' || (item.customerId?.startsWith('A') && ((item.customerCountry || '').trim().toLowerCase() === 'brasil' || (item.customerCountry || '').trim().toLowerCase() === 'brazil'));
                     }
-                  });
-
-                  targetPurchased.forEach(item => {
+                    return item.customerId === depositFilterCustomer;
+                  }).reduce((sum, item) => {
                     const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
                       ? item.customerCounterOffer
                       : (item.counterOffer || item.maxBid || 0));
                     const totalSalePrice = Math.round(cost);
 
-                    if (item.customerId === 'B001') {
-                      totalPurchased += totalSalePrice;
-                    } else if (item.agentCustomerId === 'B001') {
-                      const paraguayUsd = Math.round(totalSalePrice * 0.5);
-                      totalPurchased += paraguayUsd;
+                    const isB001Linked = item.agentCustomerId === 'B001';
+                    const isB001Self = item.customerId === 'B001';
+                    const countryLower = item.customerCountry?.trim().toLowerCase();
+                    const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
 
-                      const brazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
-                      totalPurchasedBrl += brazilBrl;
+                    if (isB001Self || isB001Linked || isBrasilAgent) {
+                      const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice);
+                      return sum + japanSendAmount;
                     }
-                  });
-                } else {
-                  totalDeposits = depositsList
-                    .filter(d => d.customer_id === depositFilterCustomer)
-                    .reduce((sum, item) => sum + (item.amount || 0), 0);
-                  totalPurchased = purchasedItems
-                    .filter(item => item.customerId === depositFilterCustomer)
-                    .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
-                }
+                    return sum + totalSalePrice;
+                  }, 0);
 
-                const balance = totalDeposits - totalPurchased;
-                const isNegative = balance < 0;
-                const formattedBalance = isNegative 
-                  ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
-                  : `$${Math.round(balance).toLocaleString('en-US')}`;
+                  const balance = totalDeposits - totalPurchased;
+                  const isNegative = balance < 0;
+                  const formattedBalance = isNegative 
+                    ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
+                    : `$${Math.round(balance).toLocaleString('en-US')}`;
 
-                const balanceBrl = totalDepositsBrl - totalPurchasedBrl;
-                const isNegativeBrl = balanceBrl < 0;
-                const formatBrl = (amount: number) => {
-                  const rounded = Math.round(amount);
-                  return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                };
-                const formattedBalanceBrl = isNegativeBrl
-                  ? `- R$ ${formatBrl(Math.abs(balanceBrl))}`
-                  : `R$ ${formatBrl(balanceBrl)}`;
-
-                return (
-                  <div className="flex flex-col gap-3 mb-6">
-                    <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
-                      <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
-                        残高 USD
-                      </span>
-                      <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
-                        {formattedBalance}
-                      </span>
+                  return (
+                    <div className="flex flex-col gap-3 mb-6">
+                      <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                        <span className="text-xs font-bold text-indigo-500">合計金額 USD</span>
+                        <span className="text-base font-black text-indigo-600">
+                          ${Math.round(currentFilteredTotalUsd).toLocaleString('en-US')}
+                        </span>
+                      </div>
+                      <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
+                        <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'}`}>
+                          残高 USD
+                        </span>
+                        <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
+                          {formattedBalance}
+                        </span>
+                      </div>
+                      <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                        <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額 USD</span>
+                        <span className="text-base font-black text-black font-sans">
+                          ${Math.round(localCostTotal).toLocaleString('en-US')}
+                        </span>
+                      </div>
+                      <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                        <span className="text-xs font-bold text-gray-500 font-sans">現地費用未入金額 USD</span>
+                        <span className="text-base font-black text-black font-sans">
+                          ${Math.round(unpaidLocalCostTotal).toLocaleString('en-US')}
+                        </span>
+                      </div>
                     </div>
-
-                    {isB001OrLinked && (
-                      <>
-                        <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                          <span className="text-xs font-bold text-green-500">
-                            合計金額 BRL
-                          </span>
-                          <span className="text-base font-black text-green-600">
-                            R$ {formatBrl(totalDepositsBrl)}
-                          </span>
-                        </div>
-                        <div className={`bg-white border ${isNegativeBrl ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
-                          <span className={`text-xs font-bold ${isNegativeBrl ? 'text-red-500' : 'text-green-500'}`}>
-                            残高 BRL
-                          </span>
-                          <span className={`text-base font-black ${isNegativeBrl ? 'text-red-600' : 'text-green-600'}`}>
-                            {formattedBalanceBrl}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
+                  );
+                }
               })()}
 
               {/* 入金履歴一覧リスト */}
@@ -3156,6 +3219,7 @@ export default function AdminDashboard() {
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">入金額</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">顧客</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">支払方法</th>
+                        <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">USD</th>
                         <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">操作</th>
                       </tr>
                     </thead>
@@ -3196,6 +3260,9 @@ export default function AdminDashboard() {
                             <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
                               {paymentMethodNames[item.payment_method] || item.payment_method}
                             </td>
+                            <td className={`px-4 py-3 whitespace-nowrap font-bold text-indigo-600 ${(!isBrl || !item.usd_amount) ? 'text-center' : 'text-right'}`}>
+                              {isBrl ? (item.usd_amount ? `$${Number(item.usd_amount).toLocaleString('en-US')}` : '-') : '-'}
+                            </td>
                             <td className="px-4 py-3 whitespace-nowrap text-center">
                               <button
                                 onClick={() => {
@@ -3206,7 +3273,8 @@ export default function AdminDashboard() {
                                     depositDate: item.deposit_date,
                                     amount: item.amount.toString(),
                                     paymentMethod: rawMethod,
-                                    currency: isBrlVal ? 'BRL' : 'USD'
+                                    currency: isBrlVal ? 'BRL' : 'USD',
+                                    usdAmount: item.usd_amount ? item.usd_amount.toString() : ''
                                   });
                                 }}
                                 className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-700 transition"
@@ -3668,9 +3736,9 @@ export default function AdminDashboard() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  {isB001LinkedForEdit ? '通貨 / 入金額' : '入金額 (USD)'}
+                  {isB001LinkedOrBrasilForEdit ? '通貨 / 入金額' : '入金額 (USD)'}
                 </label>
-                {isB001LinkedForEdit ? (
+                {isB001LinkedOrBrasilForEdit ? (
                   <div className="flex gap-2">
                     <select
                       value={editDepositForm.currency}
@@ -3718,6 +3786,24 @@ export default function AdminDashboard() {
                 )}
               </div>
 
+              {isB001LinkedOrBrasilForEdit && editDepositForm.currency === 'BRL' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">USD 換算</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                    <input
+                      type="number"
+                      step="any"
+                      placeholder="0.00"
+                      value={editDepositForm.usdAmount}
+                      onChange={(e) => setEditDepositForm({ ...editDepositForm, usdAmount: e.target.value })}
+                      className="w-full h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white font-semibold text-black box-border"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">入金方法</label>
                 <select
@@ -3727,7 +3813,7 @@ export default function AdminDashboard() {
                   required
                 >
                   {(() => {
-                    if (isB001LinkedForEdit) {
+                    if (isB001LinkedOrBrasilForEdit) {
                       if (editDepositForm.currency === 'BRL') {
                         return (
                           <>

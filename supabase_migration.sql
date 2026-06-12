@@ -165,3 +165,6 @@ ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS paid_local_at TIMESTAMP WITH T
 -- インデックスの作成
 CREATE INDEX IF NOT EXISTS idx_bid_requests_delivery_location ON bid_requests(delivery_location);
 CREATE INDEX IF NOT EXISTS idx_bid_requests_paid_local ON bid_requests(paid_local);
+
+-- 23. deposits テーブルに USD 換算額を記録するカラムを追加
+ALTER TABLE deposits ADD COLUMN IF NOT EXISTS usd_amount NUMERIC DEFAULT NULL;

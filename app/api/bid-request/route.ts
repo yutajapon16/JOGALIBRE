@@ -376,10 +376,12 @@ export async function PATCH(request: Request) {
       // ユーザーのロール情報を取得し、B001本人またはB001がエージェントとして紐づいている顧客か判定する
       const { data: userRole } = await supabaseAdmin
         .from('user_roles')
-        .select('customer_id, agent_customer_id')
+        .select('customer_id, agent_customer_id, country')
         .eq('email', currentRequest.customer_email)
         .single();
       const isB001Linked = userRole?.agent_customer_id === 'B001' || userRole?.customer_id === 'B001';
+      const isBrasilAgent = userRole?.customer_id?.startsWith('A') && 
+        ((userRole?.country || '').toLowerCase().trim() === 'brasil' || (userRole?.country || '').toLowerCase().trim() === 'brazil');
 
       // 分割支払いの処理と全体の paid 連動ロジック
       let newPaidBrazil = paid_brazil !== undefined ? paid_brazil : currentRequest.paid_brazil;
@@ -391,7 +393,11 @@ export async function PATCH(request: Request) {
         // 全体支払いが明示的に変更された場合、分割支払いも同期する
         newPaidBrazil = paid;
         newPaidParaguay = paid;
-        newPaidJapan = paid;
+        // B001紐づき顧客またはブラジルエージェントの場合は連動させない
+        if (!(isB001Linked || isBrasilAgent)) {
+          newPaidJapan = paid;
+        }
+      }
       } else if (isB001Linked && (paid_brazil !== undefined || paid_paraguay !== undefined || paid_japan !== undefined)) {
         // B001関連アイテムの場合、ブラジル、パラグアイ、日本のすべてが支払済なら全体も支払済とする
         newPaid = (newPaidBrazil === true && newPaidParaguay === true && newPaidJapan === true);

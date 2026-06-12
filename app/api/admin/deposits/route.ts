@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { customerId, depositDate, amount, paymentMethod } = body;
+    const { customerId, depositDate, amount, paymentMethod, usdAmount } = body;
 
     if (!customerId || !depositDate || amount === undefined || !paymentMethod) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -104,6 +104,7 @@ export async function POST(request: Request) {
         deposit_date: depositDate,
         amount: Number(amount),
         payment_method: paymentMethod,
+        usd_amount: usdAmount !== undefined && usdAmount !== null ? Number(usdAmount) : null,
       })
       .select()
       .single();
@@ -128,7 +129,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { id, depositDate, amount, paymentMethod } = body;
+    const { id, depositDate, amount, paymentMethod, usdAmount } = body;
 
     if (!id || !depositDate || amount === undefined || !paymentMethod) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -140,6 +141,7 @@ export async function PATCH(request: Request) {
         deposit_date: depositDate,
         amount: Number(amount),
         payment_method: paymentMethod,
+        usd_amount: usdAmount !== undefined && usdAmount !== null ? Number(usdAmount) : null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

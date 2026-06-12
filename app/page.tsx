@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, calculateLocalCost } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, calculateLocalCost, calculateJapanSendAmount } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
@@ -4466,7 +4466,7 @@ export default function Home() {
                                         </span>
                                       )}
                                     </div>
-                                    <span className={`text-sm font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                    <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
                                       {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
                                     </span>
                                   </div>
@@ -4531,7 +4531,7 @@ export default function Home() {
                                     </span>
                                   )}
                                 </div>
-                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
                                   {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
                                 </span>
                               </div>
@@ -4608,8 +4608,11 @@ export default function Home() {
             {/* 保証金・入金および残高の集計サマリーボックス */}
             {(() => {
               const isB001 = currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001';
+              const isBrasilAgent = currentUser?.customerId?.startsWith('A') && 
+                ((currentUser?.country || '').trim().toLowerCase() === 'brasil' || 
+                 (currentUser?.country || '').trim().toLowerCase() === 'brazil');
 
-              // 各アイテムの合計売価を算出する共通ヘルパー（購入タブと同様）
+              // 各アイテムの合計売価を算出する共通ヘルパー
               const getItemPrice = (item: any) => {
                 return Math.round(
                   item.finalPrice ||
@@ -4619,34 +4622,21 @@ export default function Home() {
                 );
               };
 
-              let totalDepositsUsd = 0;
-              let totalDepositsBrl = 0;
+              // 通算入金USD (BRL入金ならusd_amount、USD入金ならamount)
+              const totalDepositsUsd = depositsList
+                .reduce((sum, item) => {
+                  const isBrl = item.payment_method?.endsWith('_brl');
+                  return sum + (isBrl ? (item.usd_amount || 0) : (item.amount || 0));
+                }, 0);
+
+              // 通算購入USD
               let totalPurchasedUsd = 0;
-              let totalPurchasedBrl = 0;
-
-              const brlRate = exchangeRates['BRL'] || 5.6;
-
-              depositsList.forEach(d => {
-                const isBrl = d.payment_method?.endsWith('_brl');
-                if (isBrl) {
-                  totalDepositsBrl += (d.amount || 0);
-                } else {
-                  totalDepositsUsd += (d.amount || 0);
-                }
-              });
-
               purchasedItems.forEach(item => {
                 const cost = getItemPrice(item);
                 const totalSalePrice = Math.round(cost);
 
-                if (currentUser?.customerId === 'B001') {
-                  totalPurchasedUsd += totalSalePrice;
-                } else if (currentUser?.agentCustomerId === 'B001') {
-                  const paraguayUsd = Math.round(totalSalePrice * 0.5);
-                  totalPurchasedUsd += paraguayUsd;
-
-                  const brazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
-                  totalPurchasedBrl += brazilBrl;
+                if (currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001' || isBrasilAgent) {
+                  totalPurchasedUsd += calculateJapanSendAmount(item, totalSalePrice);
                 } else {
                   totalPurchasedUsd += totalSalePrice;
                 }
@@ -4655,107 +4645,86 @@ export default function Home() {
               const balanceUsd = totalDepositsUsd - totalPurchasedUsd;
               const isNegativeUsd = balanceUsd < 0;
 
-              const balanceBrl = totalDepositsBrl - totalPurchasedBrl;
-              const isNegativeBrl = balanceBrl < 0;
-
               // フィルターされた入金の合計 (表示用)
-              const filteredDepositsTotalUsd = getFilteredDeposits().filter(d => !d.payment_method?.endsWith('_brl')).reduce((sum, item) => sum + (item.amount || 0), 0);
-              const filteredDepositsTotalBrl = getFilteredDeposits().filter(d => d.payment_method?.endsWith('_brl')).reduce((sum, item) => sum + (item.amount || 0), 0);
+              const filteredDepositsTotalUsd = getFilteredDeposits()
+                .reduce((sum, item) => {
+                  const isBrl = item.payment_method?.endsWith('_brl');
+                  return sum + (isBrl ? (item.usd_amount || 0) : (item.amount || 0));
+                }, 0);
 
-              if (isB001) {
-                // B001関連ユーザー：USDとBRLに完全に分離した 4段ボックス
-                const formatBrl = (amount: number) => {
-                  const rounded = Math.round(amount);
-                  return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                };
+              // フィルターされた購入商品の現地費用合計・未入金計算
+              const targetPurchasedForLocalCost = purchasedItems.filter(item => {
+                if (depositFilterYear !== 'all') {
+                  if (!item.confirmedAt) return false;
+                  const date = new Date(item.confirmedAt);
+                  if (date.getFullYear().toString() !== depositFilterYear) return false;
+                }
+                if (depositFilterMonth !== 'all') {
+                  if (!item.confirmedAt) return false;
+                  const date = new Date(item.confirmedAt);
+                  if ((date.getMonth() + 1).toString() !== depositFilterMonth) return false;
+                }
+                return true;
+              });
 
-                const formattedBalanceUsd = isNegativeUsd
-                  ? `- $${Math.abs(Math.round(balanceUsd)).toLocaleString('en-US')}`
-                  : `$${Math.round(balanceUsd).toLocaleString('en-US')}`;
+              const localCostTotal = targetPurchasedForLocalCost.reduce((sum, item) => {
+                if (item.delivery_location === 'JP') return sum;
+                return sum + calculateLocalCost(item.delivery_location, item);
+              }, 0);
 
-                const formattedBalanceBrl = isNegativeBrl
-                  ? `- R$ ${formatBrl(Math.abs(balanceBrl))}`
-                  : `R$ ${formatBrl(balanceBrl)}`;
+              const unpaidLocalCostTotal = targetPurchasedForLocalCost.reduce((sum, item) => {
+                if (item.delivery_location === 'JP') return sum;
+                const localCost = calculateLocalCost(item.delivery_location, item);
+                return sum + (item.paid_local ? 0 : localCost);
+              }, 0);
 
-                return (
-                  <div className="flex flex-col gap-2 mb-6">
-                    {/* 合計入金額 USD (青) */}
-                    <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-indigo-500 tracking-wider">
-                        Total USD
-                      </span>
-                      <span className="text-base font-black text-indigo-600">
-                        ${Math.round(filteredDepositsTotalUsd).toLocaleString('en-US')}
-                      </span>
-                    </div>
+              const formattedBalanceUsd = isNegativeUsd
+                ? `- $${Math.abs(Math.round(balanceUsd)).toLocaleString('en-US')}`
+                : `$${Math.round(balanceUsd).toLocaleString('en-US')}`;
 
-                    {/* 残高 USD (赤/緑) */}
-                    <div className={`bg-white border ${isNegativeUsd ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
-                      <span className={`text-xs font-bold ${isNegativeUsd ? 'text-red-500' : 'text-green-500'} tracking-wider`}>
-                        Saldo USD
-                      </span>
-                      <span className={`text-base font-black ${isNegativeUsd ? 'text-red-600' : 'text-green-600'}`}>
-                        {formattedBalanceUsd}
-                      </span>
-                    </div>
-
-                    {/* 合計入金額 BRL (緑) */}
-                    <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-green-500 tracking-wider">
-                        Total BRL
-                      </span>
-                      <span className="text-base font-black text-green-600">
-                        R$ {formatBrl(filteredDepositsTotalBrl)}
-                      </span>
-                    </div>
-
-                    {/* 残高 BRL (赤/緑) */}
-                    <div className={`bg-white border ${isNegativeBrl ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
-                      <span className={`text-xs font-bold ${isNegativeBrl ? 'text-red-500' : 'text-green-500'} tracking-wider`}>
-                        Saldo BRL
-                      </span>
-                      <span className={`text-base font-black ${isNegativeBrl ? 'text-red-600' : 'text-green-600'}`}>
-                        {formattedBalanceBrl}
-                      </span>
-                    </div>
+              return (
+                <div className="flex flex-col gap-3 mb-6 font-sans">
+                  {/* 合計金額 USD */}
+                  <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-indigo-500 tracking-wider">
+                      {lang === 'es' ? 'Total USD' : 'Total USD'}
+                    </span>
+                    <span className="text-base font-black text-indigo-600">
+                      ${Math.round(filteredDepositsTotalUsd).toLocaleString('en-US')}
+                    </span>
                   </div>
-                );
-              } else {
-                // 通常ユーザー：従来通りの2つのボックス
-                const filteredDepositsTotal = getFilteredDeposits().reduce((sum, item) => sum + (item.amount || 0), 0);
-                const totalDeposits = depositsList.reduce((sum, item) => sum + (item.amount || 0), 0);
-                const totalPurchased = purchasedItems.reduce((sum, item) => sum + (item.finalPrice || 0), 0);
-                const balance = totalDeposits - totalPurchased;
-                const isNegative = balance < 0;
 
-                const formattedBalance = isNegative
-                  ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
-                  : `$${Math.round(balance).toLocaleString('en-US')}`;
-
-                return (
-                  <div className="flex flex-col gap-3 mb-6">
-                    {/* 合計入金額（青） */}
-                    <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-indigo-500 tracking-wider">
-                        {lang === 'es' ? 'Total' : 'Total'}
-                      </span>
-                      <span className="text-base font-black text-indigo-600">
-                        ${Math.round(filteredDepositsTotal).toLocaleString('en-US')}
-                      </span>
-                    </div>
-
-                    {/* 残高 (Saldo / Balance) */}
-                    <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
-                      <span className={`text-xs font-bold ${isNegative ? 'text-red-500' : 'text-green-500'} tracking-wider`}>
-                        {lang === 'es' ? 'Balance' : 'Saldo'}
-                      </span>
-                      <span className={`text-base font-black ${isNegative ? 'text-red-600' : 'text-green-600'}`}>
-                        {formattedBalance}
-                      </span>
-                    </div>
+                  {/* 残高 USD */}
+                  <div className={`bg-white border ${isNegativeUsd ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
+                    <span className={`text-xs font-bold ${isNegativeUsd ? 'text-red-500' : 'text-green-500'} tracking-wider`}>
+                      {lang === 'es' ? 'Saldo USD' : 'Saldo USD'}
+                    </span>
+                    <span className={`text-base font-black ${isNegativeUsd ? 'text-red-600' : 'text-green-600'}`}>
+                      {formattedBalanceUsd}
+                    </span>
                   </div>
-                );
-              }
+
+                  {/* 現地費用合計金額 USD */}
+                  <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-gray-500 tracking-wider">
+                      {lang === 'es' ? 'Costo Local Total USD' : 'Custo Local Total USD'}
+                    </span>
+                    <span className="text-base font-black text-black font-sans">
+                      ${Math.round(localCostTotal).toLocaleString('en-US')}
+                    </span>
+                  </div>
+
+                  {/* 現地費用未入金額 USD */}
+                  <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-gray-500 tracking-wider">
+                      {lang === 'es' ? 'Costo Local Pendiente USD' : 'Custo Local Pendente USD'}
+                    </span>
+                    <span className="text-base font-black text-black font-sans">
+                      ${Math.round(unpaidLocalCostTotal).toLocaleString('en-US')}
+                    </span>
+                  </div>
+                </div>
+              );
             })()}
 
             {/* 入金履歴一覧リスト */}
@@ -4772,17 +4741,20 @@ export default function Home() {
                 <table className="min-w-full divide-y divide-gray-200 text-sm table-fixed">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="w-[28%] px-2.5 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="w-[24%] px-2.5 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {t.date}
                       </th>
                       <th className="w-[12%] px-1 sm:px-2 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {lang === 'es' ? 'Moneda' : 'Moeda'}
                       </th>
-                      <th className="w-[30%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="w-[22%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {lang === 'es' ? 'Monto' : 'Valor'}
                       </th>
-                      <th className="w-[30%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="w-[22%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {lang === 'es' ? 'Método' : 'Método'}
+                      </th>
+                      <th className="w-[20%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                        USD
                       </th>
                     </tr>
                   </thead>
@@ -4806,17 +4778,20 @@ export default function Home() {
                       };
                       return (
                         <tr key={item.id} className="hover:bg-gray-50 transition text-black">
-                          <td className="w-[28%] px-2.5 sm:px-4 py-3 whitespace-nowrap text-center font-medium text-gray-700">
+                          <td className="w-[24%] px-2.5 sm:px-4 py-3 whitespace-nowrap text-center font-medium text-gray-700">
                             {dateFormatted}
                           </td>
                           <td className="w-[12%] px-1 sm:px-2 py-3 whitespace-nowrap text-center text-gray-700 font-bold">
                             {isBrl ? 'BRL' : 'USD'}
                           </td>
-                          <td className="w-[30%] px-2 sm:px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
+                          <td className="w-[22%] px-2 sm:px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
                             {isBrl ? `R$ ${formatBrl(Number(item.amount))}` : `$${Number(item.amount).toLocaleString('en-US')}`}
                           </td>
-                          <td className="w-[30%] px-2 sm:px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
+                          <td className="w-[22%] px-2 sm:px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
                             {paymentMethodNames[item.payment_method] || item.payment_method}
+                          </td>
+                          <td className={`w-[20%] px-2 sm:px-4 py-3 whitespace-nowrap font-bold text-indigo-600 ${(!isBrl || !item.usd_amount) ? 'text-center' : 'text-right'}`}>
+                            {isBrl ? (item.usd_amount ? `$${Number(item.usd_amount).toLocaleString('en-US')}` : '-') : '-'}
                           </td>
                         </tr>
                       );

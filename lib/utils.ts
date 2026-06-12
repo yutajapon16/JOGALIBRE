@@ -226,3 +226,33 @@ export const calculateLocalCost = (deliveryLocation?: string, item?: any): numbe
   
   return 200; // 現在は仮として一律 $200
 };
+
+/**
+ * ブラジルエージェント、B001紐づき顧客などの日本支払額（日本送金額）を計算して返す関数
+ * @param item 商品情報
+ * @param totalSalePrice 合計売価
+ * @returns 日本支払額 (USD)
+ */
+export const calculateJapanSendAmount = (item: any, totalSalePrice: number): number => {
+  if (item.customerId === 'B001' || item.customer_id === 'B001') {
+    return totalSalePrice;
+  }
+  let ownDivisor = 0.6; // デフォルト: 一般顧客 (利益率40%＝除数0.6)
+  let targetDivisor = 0.9; // デフォルト: B001本人の仕入れ割合 (利益率10%＝除数0.9)
+  
+  if (item.agentCustomerId === 'B001' || item.agent_customer_id === 'B001') {
+    ownDivisor = 0.5; // B001紐づき (利益率50%＝除数0.5)
+    targetDivisor = 0.6; // 一般顧客 (利益率40%＝除数0.6)
+  } else if (item.customerId?.startsWith('A') || item.customer_id?.startsWith('A')) {
+    const country = (item.customerCountry || item.country || '').trim().toLowerCase();
+    if (country === 'brasil' || country === 'brazil') {
+      ownDivisor = 0.7; // ブラジルエージェント (利益率30%＝除数0.7)
+      targetDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
+    } else {
+      ownDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
+      targetDivisor = 0.9; // B001本人 (利益率10%＝除数0.9)
+    }
+  }
+  return Math.ceil(((totalSalePrice * ownDivisor) / targetDivisor) / 10) * 10;
+};
+
