@@ -902,7 +902,10 @@ export default function AdminDashboard() {
         customerId: req.customer_id,
         customerRole: req.customer_role,
         agentCustomerId: req.agent_customer_id as string | null | undefined,
-        customerCountry: req.customer_country as string | null | undefined
+        customerCountry: req.customer_country as string | null | undefined,
+        delivery_location: req.delivery_location as string | undefined,
+        paid_local: req.paid_local || false,
+        paid_local_at: req.paid_local_at as string | null | undefined
       }));
 
       setBidRequests(convertedRequests);
@@ -951,7 +954,10 @@ export default function AdminDashboard() {
         productId: item.product_id as string,
         customerId: item.customer_id as string,
         agentCustomerId: item.agent_customer_id as string | null | undefined,
-        customerCountry: item.customer_country as string | null | undefined
+        customerCountry: item.customer_country as string | null | undefined,
+        delivery_location: item.delivery_location as string | undefined,
+        paid_local: item.paid_local || false,
+        paid_local_at: item.paid_local_at as string | null | undefined
       }));
 
       setPurchasedItems(convertedItems);

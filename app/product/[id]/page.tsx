@@ -80,7 +80,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       deliveryFob: 'Japón 🇯🇵',
       deliveryAsuncion: 'Asunción 🇵🇾',
       deliveryEncarnacion: 'Encarnación 🇵🇾',
-      deliveryPjc: 'Pedro Juan Caballero 🇵🇾 Ponta Porã 🇧🇷',
+      deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
       localCostLabel: 'Costo Local'
     },
     pt: {
@@ -112,8 +112,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       deliveryLocationLabel: 'Local de entrega',
       deliveryFob: 'Japão 🇯🇵',
       deliveryAsuncion: 'Assunção 🇵🇾',
-      deliveryEncarnacion: 'Encarnación 🇵🇾',
-      deliveryPjc: 'Pedro Juan Caballero 🇵🇾 Ponta Porã 🇧🇷',
+      deliveryEncarnacion: 'Encarnação 🇵🇾',
+      deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
       localCostLabel: 'Custo Local'
     }
   };

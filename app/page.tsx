@@ -127,7 +127,7 @@ const translations = {
     deliveryFob: 'Japón 🇯🇵',
     deliveryAsuncion: 'Asunción 🇵🇾',
     deliveryEncarnacion: 'Encarnación 🇵🇾',
-    deliveryPjc: 'Pedro Juan Caballero 🇵🇾 Ponta Porã 🇧🇷',
+    deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
     localCostLabel: 'Costo Local',
   },
   pt: {
@@ -234,8 +234,8 @@ const translations = {
     deliveryLocationLabel: 'Local de entrega',
     deliveryFob: 'Japão 🇯🇵',
     deliveryAsuncion: 'Assunção 🇵🇾',
-    deliveryEncarnacion: 'Encarnación 🇵🇾',
-    deliveryPjc: 'Pedro Juan Caballero 🇵🇾 Ponta Porã 🇧🇷',
+    deliveryEncarnacion: 'Encarnação 🇵🇾',
+    deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
     localCostLabel: 'Custo Local',
   }
 };
@@ -1749,6 +1749,9 @@ export default function Home() {
         productId: item.product_id as string,
         agentCustomerId: item.agent_customer_id as string | null | undefined,
         customerCountry: item.customer_country as string | null | undefined,
+        delivery_location: item.delivery_location as string | undefined,
+        paid_local: item.paid_local || false,
+        paid_local_at: item.paid_local_at as string | null | undefined,
       }));
 
       // 商品タイトルを選択言語に翻訳
@@ -2416,6 +2419,9 @@ export default function Home() {
         customerId: req.customer_id as string,
         agentCustomerId: req.agent_customer_id as string | null | undefined,
         customerCountry: req.customer_country as string | null | undefined,
+        delivery_location: req.delivery_location as string | undefined,
+        paid_local: req.paid_local || false,
+        paid_local_at: req.paid_local_at as string | null | undefined,
       }));
 
       // 商品タイトルを選択言語に翻訳
