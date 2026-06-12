@@ -4159,7 +4159,7 @@ export default function Home() {
                       <span className="text-xs font-bold text-gray-500 tracking-wider font-sans">
                         {lang === 'es' ? 'Costo Local Total' : 'Custo Local Total'}
                       </span>
-                      <span className="text-base font-black text-green-600 font-sans">
+                      <span className="text-base font-black text-black font-sans">
                         {convertUSDToSelectedCurrency(localCostTotal)}
                       </span>
                     </div>
@@ -4169,7 +4169,7 @@ export default function Home() {
                       <span className="text-xs font-bold text-gray-500 tracking-wider font-sans">
                         {lang === 'es' ? 'Costo Local Pendiente' : 'Custo Local Pendente'}
                       </span>
-                      <span className="text-base font-black text-green-600 font-sans">
+                      <span className="text-base font-black text-black font-sans">
                         {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
                       </span>
                     </div>
@@ -4204,7 +4204,7 @@ export default function Home() {
                       <span className="text-xs font-bold text-gray-500 tracking-wider font-sans">
                         {lang === 'es' ? 'Costo Local Total' : 'Custo Local Total'}
                       </span>
-                      <span className="text-base font-black text-green-600 font-sans">
+                      <span className="text-base font-black text-black font-sans">
                         {convertUSDToSelectedCurrency(localCostTotal)}
                       </span>
                     </div>
@@ -4213,7 +4213,7 @@ export default function Home() {
                       <span className="text-xs font-bold text-gray-500 tracking-wider font-sans">
                         {lang === 'es' ? 'Costo Local Pendiente' : 'Custo Local Pendente'}
                       </span>
-                      <span className="text-base font-black text-green-600 font-sans">
+                      <span className="text-base font-black text-black font-sans">
                         {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
                       </span>
                     </div>

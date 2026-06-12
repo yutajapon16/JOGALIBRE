@@ -2123,13 +2123,13 @@ export default function AdminDashboard() {
                     </div>
                     <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                       <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額</span>
-                      <span className="text-base font-black text-green-600 font-sans">
+                      <span className="text-base font-black text-black font-sans">
                         {convertUSDToSelectedCurrency(localCostTotal)}
                       </span>
                     </div>
                     <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                       <span className="text-xs font-bold text-gray-500 font-sans">現地費用未入金額</span>
-                      <span className="text-base font-black text-green-600 font-sans">
+                      <span className="text-base font-black text-black font-sans">
                         {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
                       </span>
                     </div>
@@ -2331,9 +2331,7 @@ export default function AdminDashboard() {
                                   </div>
 
                                   {/* 4段目: 支払額 🇯🇵 */}
-                                  <div className={`flex items-center justify-between font-bold text-gray-700 border-t border-gray-200/50 pt-2 bg-red-50 -mx-3 p-3 ${
-                                    item.delivery_location === 'JP' ? 'rounded-b-lg -mb-3' : ''
-                                  }`}>
+                                  <div className={`flex items-center justify-between font-bold text-gray-700 border-t border-gray-200/50 pt-2 bg-red-50 -mx-3 p-3`}>
                                     <label className="flex items-center cursor-pointer select-none">
                                       <input
                                         type="checkbox"
@@ -2363,14 +2361,14 @@ export default function AdminDashboard() {
                                           onChange={(e) => updatePaidSplitStatus(item.id, { paid_local: e.target.checked })}
                                           className="w-4 h-4 mr-1.5 cursor-pointer text-green-600 border-gray-300 rounded focus:ring-green-500"
                                         />
-                                        <span className="text-green-600 font-black">現地費用:</span>
+                                        <span className="text-black font-black">現地費用:</span>
                                         {item.paid_local && item.paid_local_at && (
                                           <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
                                             ✓ 支払済 ({formatDateTime(item.paid_local_at)})
                                           </span>
                                         )}
                                       </label>
-                                      <span className={`text-base ${item.paid_local ? 'text-green-400 line-through' : 'text-green-600 font-black'}`}>
+                                      <span className={`text-base ${item.paid_local ? 'text-gray-400 line-through' : 'text-black font-black'}`}>
                                         {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
                                       </span>
                                     </div>
@@ -2410,6 +2408,36 @@ export default function AdminDashboard() {
                                   : (item.counterOffer || item.maxBid || 0))).toLocaleString('en-US')}
                               </span>
                             </div>
+
+                            {/* 日本支払額 (ブラジルエージェント or B001紐づき顧客用・チェックボックス付) */}
+                            {(item.agentCustomerId === 'B001' || (item.customerId?.startsWith('A') && ((item.customerCountry || '').toLowerCase().trim() === 'brasil' || (item.customerCountry || '').toLowerCase().trim() === 'brazil'))) && (() => {
+                              const totalSalePrice = Math.round(item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
+                                ? item.customerCounterOffer
+                                : (item.counterOffer || item.maxBid || 0)));
+                              const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice);
+
+                              return (
+                                <div className="mb-2 h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                                  <label className="flex items-center cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.paid_japan}
+                                      onChange={(e) => updatePaidSplitStatus(item.id, { paid_japan: e.target.checked })}
+                                      className="w-4 h-4 mr-1.5 cursor-pointer text-red-600 border-gray-300 rounded focus:ring-red-500"
+                                    />
+                                    <span className="text-red-600 font-black">日本支払額 🇯🇵:</span>
+                                    {item.paid_japan && item.paid_japan_at && (
+                                      <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
+                                        ✓ 支払済 ({formatDateTime(item.paid_japan_at)})
+                                      </span>
+                                    )}
+                                  </label>
+                                  <span className={`text-base font-bold ${item.paid_japan ? 'text-red-400 line-through' : 'text-red-600'}`}>
+                                    ${Math.round(japanSendAmount).toLocaleString('en-US')}
+                                  </span>
+                                </div>
+                              );
+                            })()}
 
                             {/* 商品渡し場所 (通常顧客用) */}
                             <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
