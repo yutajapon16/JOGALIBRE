@@ -397,7 +397,6 @@ export async function PATCH(request: Request) {
         if (!(isB001Linked || isBrasilAgent)) {
           newPaidJapan = paid;
         }
-      }
       } else if (isB001Linked && (paid_brazil !== undefined || paid_paraguay !== undefined || paid_japan !== undefined)) {
         // B001関連アイテムの場合、ブラジル、パラグアイ、日本のすべてが支払済なら全体も支払済とする
         newPaid = (newPaidBrazil === true && newPaidParaguay === true && newPaidJapan === true);
