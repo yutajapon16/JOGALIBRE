@@ -2149,9 +2149,9 @@ export default function AdminDashboard() {
                         ${Math.round(localCostTotal).toLocaleString('en-US')}
                       </span>
                     </div>
-                    <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-gray-500 font-sans">現地費用未入金額</span>
-                      <span className="text-base font-black text-black font-sans">
+                    <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-red-500 font-sans">現地費用未入金額</span>
+                      <span className="text-base font-black text-red-600 font-sans">
                         ${Math.round(unpaidLocalCostTotal).toLocaleString('en-US')}
                       </span>
                     </div>

@@ -4165,11 +4165,11 @@ export default function Home() {
                     </div>
 
                     {/* 現地費用未入金額 */}
-                    <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-gray-500 tracking-wider font-sans">
+                    <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-red-500 tracking-wider font-sans">
                         {lang === 'es' ? 'Costo Local Pendiente' : 'Custo Local Pendente'}
                       </span>
-                      <span className="text-base font-black text-black font-sans">
+                      <span className="text-base font-black text-red-600 font-sans">
                         {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
                       </span>
                     </div>
@@ -4209,11 +4209,11 @@ export default function Home() {
                       </span>
                     </div>
                     {/* 現地費用未入金額 */}
-                    <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-gray-500 tracking-wider font-sans">
+                    <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-red-500 tracking-wider font-sans">
                         {lang === 'es' ? 'Costo Local Pendiente' : 'Custo Local Pendente'}
                       </span>
-                      <span className="text-base font-black text-black font-sans">
+                      <span className="text-base font-black text-red-600 font-sans">
                         {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
                       </span>
                     </div>
