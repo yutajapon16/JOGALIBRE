@@ -4469,16 +4469,9 @@ export default function Home() {
                                     {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
                                   </button>
                                 ) : (
-                                  <div className="flex items-center gap-1.5 shrink-0 font-sans py-1.5">
-                                    <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-semibold rounded-full whitespace-nowrap shrink-0">
-                                      ✓ {lang === 'es' ? 'Pagado' : 'Pago'}
-                                    </span>
-                                    {item.paidAt && (
-                                      <span className="text-[10px] font-bold text-gray-500 whitespace-nowrap">
-                                        {formatDateTime(item.paidAt, 'customer')}
-                                      </span>
-                                    )}
-                                  </div>
+                                  <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold rounded-full whitespace-nowrap shrink-0 font-sans">
+                                    ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paidAt ? ` ${formatDateTime(item.paidAt, 'customer')}` : ''}
+                                  </span>
                                 )}
                               </div>
                               

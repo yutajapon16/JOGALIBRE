@@ -2424,8 +2424,8 @@ export default function AdminDashboard() {
                                   <span className="text-xs font-semibold text-gray-700">顧客支払額:</span>
                                 </label>
                                 {item.paid && item.paidAt && (
-                                  <span className="text-xs text-gray-500 whitespace-nowrap ml-1.5">
-                                    ({formatDateTime(item.paidAt)})
+                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-bold font-sans">
+                                    ✓ 支払済 ({formatDateTime(item.paidAt)})
                                   </span>
                                 )}
                               </div>
@@ -2452,7 +2452,7 @@ export default function AdminDashboard() {
                                       onChange={(e) => updatePaidSplitStatus(item.id, { paid_japan: e.target.checked })}
                                       className="w-4 h-4 mr-1.5 cursor-pointer text-red-600 border-gray-300 rounded focus:ring-red-500"
                                     />
-                                    <span className="text-red-600 font-black">日本支払額 🇯🇵:</span>
+                                    <span className="text-red-600 font-black">日本支払額:</span>
                                     {item.paid_japan && item.paid_japan_at && (
                                       <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium">
                                         ✓ 支払済 ({formatDateTime(item.paid_japan_at)})
