@@ -2413,18 +2413,18 @@ export default function AdminDashboard() {
                         ) : (
                           <>
                             <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1.5">
                                 <label className="flex items-center cursor-pointer select-none">
                                   <input
                                     type="checkbox"
                                     checked={item.paid}
                                     onChange={(e) => updatePaidStatus(item.id, e.target.checked)}
-                                    className="w-5 h-5 mr-2 cursor-pointer text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                                    className="w-4 h-4 mr-1.5 cursor-pointer text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                                   />
-                                  <span className="text-sm font-semibold text-gray-700">支払済</span>
+                                  <span className="text-xs font-semibold text-gray-700">顧客支払額:</span>
                                 </label>
                                 {item.paid && item.paidAt && (
-                                  <span className="text-xs text-gray-500 whitespace-nowrap">
+                                  <span className="text-xs text-gray-500 whitespace-nowrap ml-1.5">
                                     ({formatDateTime(item.paidAt)})
                                   </span>
                                 )}
