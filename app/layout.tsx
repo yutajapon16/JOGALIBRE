@@ -14,12 +14,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "JOGALIBRE",
-  description: "ヤフオク代理入札サービス - Servicio de subastas Yahoo Japan",
+  description: "Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "JOGALIBRE",
+  },
+  openGraph: {
+    title: "JOGALIBRE",
+    description: "Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão",
+    type: "website",
   },
 };
 
