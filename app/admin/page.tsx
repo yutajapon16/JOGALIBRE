@@ -1865,7 +1865,7 @@ export default function AdminDashboard() {
                         <span className="text-gray-500 font-medium">
                           現地費用:
                         </span>
-                        <span className="font-bold text-gray-800">
+                        <span className="text-base font-bold text-gray-800">
                           {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
                         </span>
                       </div>
@@ -2122,14 +2122,14 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                     <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-green-600 font-sans">現地費用合計金額</span>
-                      <span className="text-base font-black text-green-700 font-sans">
+                      <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額</span>
+                      <span className="text-base font-black text-green-600 font-sans">
                         {convertUSDToSelectedCurrency(localCostTotal)}
                       </span>
                     </div>
                     <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-emerald-600 font-sans">現地費用未入金額</span>
-                      <span className="text-base font-black text-emerald-700 font-sans">
+                      <span className="text-xs font-bold text-gray-500 font-sans">現地費用未入金額</span>
+                      <span className="text-base font-black text-green-600 font-sans">
                         {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
                       </span>
                     </div>
@@ -2370,7 +2370,7 @@ export default function AdminDashboard() {
                                           </span>
                                         )}
                                       </label>
-                                      <span className={`text-sm ${item.paid_local ? 'text-green-400 line-through' : 'text-green-600 font-black'}`}>
+                                      <span className={`text-base ${item.paid_local ? 'text-green-400 line-through' : 'text-green-600 font-black'}`}>
                                         {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
                                       </span>
                                     </div>
@@ -2434,7 +2434,7 @@ export default function AdminDashboard() {
                                     </span>
                                   )}
                                 </label>
-                                <span className={`text-sm font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
                                   {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
                                 </span>
                               </div>

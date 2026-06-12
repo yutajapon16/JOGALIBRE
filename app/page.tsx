@@ -3811,6 +3811,50 @@ export default function Home() {
                       )}
 
 
+                      {/* 落札（won）時の落札金額ボックス */}
+                      {request.finalStatus === 'won' && !request.customerConfirmed && (
+                        <div className="h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm mb-2 w-full">
+                          <span className="text-xs text-gray-500 font-medium">
+                            {lang === 'es' ? 'Precio de adjudicación:' : 'Valor de arremate:'}
+                          </span>
+                          <span className="text-base font-bold text-green-800">
+                            {convertUSDToSelectedCurrency(
+                              request.finalPrice ||
+                              (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
+                            )}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 不落札（lost）時の金額維持表示 ＋ 不落札メッセージ */}
+                      {request.finalStatus === 'lost' && (
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          {/* 管理者カウンターオファーがある場合は維持表示 */}
+                          {request.counterOffer && !(request.customerCounterOffer && !request.customerCounterOfferUsed) && (
+                            <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                              <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                              <span className="text-base font-bold text-blue-700">
+                                {convertUSDToSelectedCurrency(request.counterOffer || 0)}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* 顧客自身のカウンターオファーがある場合は維持表示 (管理者に承認された場合のみ) */}
+                          {request.customerCounterOffer && !request.customerCounterOfferUsed && (
+                            <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
+                              <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
+                              <span className="text-base font-bold text-purple-700">
+                                {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs text-red-800 font-semibold shadow-sm">
+                            {t.lost}
+                          </div>
+                        </div>
+                      )}
+
                       {/* --- 2. 商品渡し場所 ＋ 現地費用 (JP以外) の表示 --- */}
 
                       {/* 商品渡し場所 (Lugar de Entrega / Local de Entrega) */}
@@ -3829,7 +3873,7 @@ export default function Home() {
                           <span className="text-xs text-gray-500 font-medium">
                             {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
                           </span>
-                          <span className="text-sm font-bold text-gray-800">
+                          <span className="text-base font-bold text-gray-800">
                             {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
                           </span>
                         </div>
@@ -3903,64 +3947,24 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* 重複部分の排除 */}
-
+                      {/* 落札（won）時の確認ボタン */}
                       {request.finalStatus === 'won' && !request.customerConfirmed && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          {/* 最終金額h-12ボックス */}
-                          <div className="h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm">
-                            <span className="text-xs text-gray-500 font-medium">
-                              {lang === 'es' ? 'Precio de adjudicación:' : 'Valor de arremate:'}
-                            </span>
-                            <span className="text-base font-bold text-green-800">
-                              {convertUSDToSelectedCurrency(
-                                request.finalPrice ||
-                                (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
-                              )}
-                            </span>
-                          </div>
-                          {/* 確認ボタンボックス */}
-                          <button
-                            onClick={() => handleFinalStatusConfirm(request.id)}
-                            className="w-full bg-green-600 text-white h-12 rounded-lg hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
-                          >
-                            {t.confirm}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleFinalStatusConfirm(request.id)}
+                          className="w-full bg-green-600 text-white h-12 rounded-lg hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
+                        >
+                          {t.confirm}
+                        </button>
                       )}
 
+                      {/* 不落札（lost）時の確認ボタン */}
                       {request.finalStatus === 'lost' && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          {/* 管理者カウンターオファーがある場合は維持表示 */}
-                          {request.counterOffer && !(request.customerCounterOffer && !request.customerCounterOfferUsed) && (
-                            <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                              <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                              <span className="text-base font-bold text-blue-700">
-                                {convertUSDToSelectedCurrency(request.counterOffer || 0)}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* 顧客自身のカウンターオファーがある場合は維持表示 (管理者に承認された場合のみ) */}
-                          {request.customerCounterOffer && !request.customerCounterOfferUsed && (
-                            <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
-                              <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
-                              <span className="text-base font-bold text-purple-700">
-                                {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
-                              </span>
-                            </div>
-                          )}
-
-                          <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs text-red-800 font-semibold shadow-sm">
-                            {t.lost}
-                          </div>
-                          <button
-                            onClick={() => handleFinalStatusConfirm(request.id)}
-                            className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
-                          >
-                            {t.confirm}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleFinalStatusConfirm(request.id)}
+                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
+                        >
+                          {t.confirm}
+                        </button>
                       )}
                     </div>
                   ))}
@@ -4152,20 +4156,20 @@ export default function Home() {
 
                     {/* 現地費用合計金額 */}
                     <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-green-600 tracking-wider font-sans">
+                      <span className="text-xs font-bold text-gray-500 tracking-wider font-sans">
                         {lang === 'es' ? 'Costo Local Total' : 'Custo Local Total'}
                       </span>
-                      <span className="text-base font-black text-green-700 font-sans">
+                      <span className="text-base font-black text-green-600 font-sans">
                         {convertUSDToSelectedCurrency(localCostTotal)}
                       </span>
                     </div>
 
                     {/* 現地費用未入金額 */}
                     <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-emerald-600 tracking-wider font-sans">
+                      <span className="text-xs font-bold text-gray-500 tracking-wider font-sans">
                         {lang === 'es' ? 'Costo Local Pendiente' : 'Custo Local Pendente'}
                       </span>
-                      <span className="text-base font-black text-emerald-700 font-sans">
+                      <span className="text-base font-black text-green-600 font-sans">
                         {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
                       </span>
                     </div>
@@ -4197,19 +4201,19 @@ export default function Home() {
                     </div>
                     {/* 現地費用合計金額 */}
                     <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-green-600 tracking-wider font-sans">
+                      <span className="text-xs font-bold text-gray-500 tracking-wider font-sans">
                         {lang === 'es' ? 'Costo Local Total' : 'Custo Local Total'}
                       </span>
-                      <span className="text-base font-black text-green-700 font-sans">
+                      <span className="text-base font-black text-green-600 font-sans">
                         {convertUSDToSelectedCurrency(localCostTotal)}
                       </span>
                     </div>
                     {/* 現地費用未入金額 */}
                     <div className="bg-white border border-emerald-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-emerald-600 tracking-wider font-sans">
+                      <span className="text-xs font-bold text-gray-500 tracking-wider font-sans">
                         {lang === 'es' ? 'Costo Local Pendiente' : 'Custo Local Pendente'}
                       </span>
-                      <span className="text-base font-black text-emerald-700 font-sans">
+                      <span className="text-base font-black text-green-600 font-sans">
                         {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
                       </span>
                     </div>
@@ -4527,7 +4531,7 @@ export default function Home() {
                                     </span>
                                   )}
                                 </div>
-                                <span className={`text-sm font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-green-600'}`}>
                                   {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
                                 </span>
                               </div>
