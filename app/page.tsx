@@ -3874,7 +3874,7 @@ export default function Home() {
                             {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
                           </span>
                           <span className="text-base font-bold text-gray-800">
-                            Consultar
+                            {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
                           </span>
                         </div>
                       )}
@@ -4449,7 +4449,7 @@ export default function Home() {
                                       )}
                                     </div>
                                     <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                      Consultar
+                                      {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
                                     </span>
                                   </div>
                                 )}
@@ -4507,7 +4507,7 @@ export default function Home() {
                                   )}
                                 </div>
                                 <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                  Consultar
+                                  {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
                                 </span>
                               </div>
                             )}
