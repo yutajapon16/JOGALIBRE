@@ -2373,10 +2373,9 @@ export default function Home() {
     return loc || '-';
   };
 
-  // 引渡し場所に応じた現地費用（USD）を返す関数（暫定で一律200ドル）
+  // 引渡し場所に応じた現地費用（USD）を返す関数（暫定で一律0ドル）
   const getLocalCost = (productUrl: string | null): number => {
-    if (deliveryLocation === 'fob') return 0;
-    return 200;
+    return 0;
   };
 
   const fetchMyRequests = async () => {
