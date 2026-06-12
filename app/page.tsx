@@ -4751,25 +4751,25 @@ export default function Home() {
               </div>
             ) : (
               <div className="overflow-x-auto border border-gray-100 rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200 text-sm table-fixed">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="w-[20%] px-2.5 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {t.date}
                       </th>
-                      <th className="w-[10%] px-1 sm:px-2 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {lang === 'es' ? 'Moneda' : 'Moeda'}
                       </th>
-                      <th className="w-[18%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {lang === 'es' ? 'Monto' : 'Valor'}
                       </th>
-                      <th className="w-[16%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {lang === 'es' ? 'Concepto' : 'Conceito'}
                       </th>
-                      <th className="w-[18%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         {lang === 'es' ? 'Método' : 'Método'}
                       </th>
-                      <th className="w-[18%] px-2 sm:px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         USD
                       </th>
                     </tr>
@@ -4789,27 +4789,29 @@ export default function Home() {
                       };
                       const isBrl = item.payment_method?.endsWith('_brl');
                       const formatBrl = (amount: number) => {
-                        const rounded = Math.round(amount);
-                        return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                        const formatted = amount.toFixed(2);
+                        const [integerPart, decimalPart] = formatted.split('.');
+                        const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                        return `${formattedInteger},${decimalPart}`;
                       };
                       return (
                         <tr key={item.id} className="hover:bg-gray-50 transition text-black">
-                          <td className="w-[20%] px-2.5 sm:px-4 py-3 whitespace-nowrap text-center font-medium text-gray-700">
+                          <td className="px-4 py-3 whitespace-nowrap text-center font-medium text-gray-700">
                             {dateFormatted}
                           </td>
-                          <td className="w-[10%] px-1 sm:px-2 py-3 whitespace-nowrap text-center text-gray-700 font-bold">
+                          <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-bold">
                             {isBrl ? 'BRL' : 'USD'}
                           </td>
-                          <td className="w-[18%] px-2 sm:px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
+                          <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
                             {isBrl ? `R$ ${formatBrl(Number(item.amount))}` : `$${Number(item.amount).toLocaleString('en-US')}`}
                           </td>
-                          <td className="w-[16%] px-2 sm:px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
-                            {item.deposit_type === '現地費用' ? (lang === 'es' ? 'Costo Local' : 'Custo Local') : (lang === 'es' ? 'Precio del Prod.' : 'Preço do Prod.')}
+                          <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
+                            {item.deposit_type === '現地費用' ? (lang === 'es' ? 'Costo Local' : 'Custo Local') : (lang === 'es' ? 'Producto' : 'Produto')}
                           </td>
-                          <td className="w-[18%] px-2 sm:px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
+                          <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
                             {paymentMethodNames[item.payment_method] || item.payment_method}
                           </td>
-                          <td className={`w-[18%] px-2 sm:px-4 py-3 whitespace-nowrap font-bold text-indigo-600 ${(!isBrl || !item.usd_amount) ? 'text-center' : 'text-right'}`}>
+                          <td className={`px-4 py-3 whitespace-nowrap font-bold text-indigo-600 ${(!isBrl || !item.usd_amount) ? 'text-center' : 'text-right'}`}>
                             {isBrl ? (item.usd_amount ? `$${Number(item.usd_amount).toLocaleString('en-US')}` : '-') : '-'}
                           </td>
                         </tr>

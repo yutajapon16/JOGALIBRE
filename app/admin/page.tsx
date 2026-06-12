@@ -3273,8 +3273,10 @@ export default function AdminDashboard() {
                         };
                         const isBrl = item.payment_method?.endsWith('_brl');
                         const formatBrl = (amount: number) => {
-                          const rounded = Math.round(amount);
-                          return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                          const formatted = amount.toFixed(2);
+                          const [integerPart, decimalPart] = formatted.split('.');
+                          const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                          return `${formattedInteger},${decimalPart}`;
                         };
                         return (
                           <tr key={item.id} className="hover:bg-gray-50 transition text-black">
