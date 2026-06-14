@@ -3170,8 +3170,8 @@ export default function Home() {
                     {getCurrencySymbol(selectedCurrency)}
                   </span>
                   {currentUser?.agentCustomerId === 'B001'
-                    ? calculateConvertedPrice(product.currentPrice, selectedCurrency, product.title, product.url)
-                    : calculateConvertedPrice(product.currentPrice, selectedCurrency, product.title, product.url)}
+                    ? calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url)
+                    : calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url)}
                 </span>
                 {selectedCurrency === 'USD' && (
                   <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">
@@ -5596,7 +5596,7 @@ export default function Home() {
                       )}
                     </span>
                     <span className={`font-extrabold text-sm text-indigo-700 transition-opacity duration-200 ${isOfferUpdating ? 'opacity-50' : ''}`}>
-                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.title, selectedProduct.url)}
+                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url)}
                     </span>
                   </div>
                   {deliveryLocation !== 'fob' && (
