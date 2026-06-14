@@ -379,12 +379,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // カテゴリIDの抽出（パンくずリストから最も深いカテゴリIDを取得）
+    // カテゴリIDの抽出（パンくずリストからすべてのカテゴリIDを取得してカンマ区切りにする）
     let categoryId = '';
     const breadcrumbMatches = Array.from(html.matchAll(/auctions\.yahoo\.co\.jp\/category\/list\/(\d+)/g));
     if (breadcrumbMatches.length > 0) {
-      const lastMatch = breadcrumbMatches[breadcrumbMatches.length - 1];
-      categoryId = lastMatch[1];
+      // 親カテゴリから末端カテゴリまですべてのIDをカンマ区切りで保持する
+      categoryId = breadcrumbMatches.map(m => m[1]).join(',');
     }
 
     const product = {

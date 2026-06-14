@@ -271,10 +271,14 @@ export const calculateJapanSendAmount = (item: any, totalSalePrice: number, exch
  */
 export const calculateDefaultFobCost = (title?: string | null, url?: string | null): number => {
   const lowerTitle = (title || '').toLowerCase();
-  const lowerUrl = (url || '').toLowerCase();
+  let lowerUrl = (url || '').toLowerCase();
+  try {
+    lowerUrl = decodeURIComponent(lowerUrl);
+  } catch (e) {
+    // 無視
+  }
 
   // 部品取り車の判定
-  // 「desarme」, 「desmanche」, 「部品取り」, 「丸車」, 「書類無し」などのキーワード、または部品取りカテゴリID「2084061280」を含む場合
   if (
     lowerTitle.includes('desarme') ||
     lowerTitle.includes('desmanche') ||
@@ -283,13 +287,13 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     lowerTitle.includes('書類無し') ||
     lowerUrl.includes('desarme') ||
     lowerUrl.includes('desmanche') ||
-    lowerUrl.includes('2084061280')
+    lowerUrl.includes('2084061280') ||
+    lowerUrl.includes('部品取り')
   ) {
     return 65000;
   }
 
   // バイクの判定
-  // 「moto」, 「バイク」, 「オートバイ」, 「二輪」, 「motorcycle」などのキーワード、またはバイクカテゴリID「26316」を含む場合
   if (
     lowerTitle.includes('moto') ||
     lowerTitle.includes('バイク') ||
@@ -297,13 +301,20 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     lowerTitle.includes('二輪') ||
     lowerTitle.includes('motorcycle') ||
     lowerUrl.includes('moto') ||
+    lowerUrl.includes('バイク') ||
     lowerUrl.includes('26316')
   ) {
     return 10000;
   }
 
   // JDM各車カテゴリの判定
-  if (lowerTitle.includes('supra') || lowerTitle.includes('スープラ') || lowerUrl.includes('supra')) {
+  if (
+    lowerTitle.includes('supra') || 
+    lowerTitle.includes('スープラ') || 
+    lowerTitle.includes('jza80') || 
+    lowerUrl.includes('supra') || 
+    lowerUrl.includes('スープラ')
+  ) {
     return 54000;
   }
   if (
@@ -311,7 +322,13 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     lowerTitle.includes('スカイライン') ||
     lowerTitle.includes('gt-r') ||
     lowerTitle.includes('gtr') ||
-    lowerUrl.includes('skyline')
+    lowerTitle.includes('bnr32') ||
+    lowerTitle.includes('bcnr33') ||
+    lowerTitle.includes('bnr34') ||
+    lowerUrl.includes('skyline') ||
+    lowerUrl.includes('スカイライン') ||
+    lowerUrl.includes('gt-r') ||
+    lowerUrl.includes('gtr')
   ) {
     return 54000;
   }
@@ -321,13 +338,17 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     lowerTitle.includes('ランエボ') ||
     lowerTitle.includes('エボ') ||
     lowerTitle.includes('ランサー') ||
-    lowerUrl.includes('lancer')
+    lowerUrl.includes('lancer') ||
+    lowerUrl.includes('ランエボ') ||
+    lowerUrl.includes('ランサー')
   ) {
     return 54000;
   }
   if (
     lowerTitle.includes('rx-7') ||
     lowerTitle.includes('rx7') ||
+    lowerTitle.includes('fd3s') ||
+    lowerTitle.includes('fc3s') ||
     lowerUrl.includes('rx-7') ||
     lowerUrl.includes('rx7')
   ) {
@@ -337,13 +358,22 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     lowerTitle.includes('silvia') ||
     lowerTitle.includes('シルビア') ||
     lowerTitle.includes('シルホア') ||
+    lowerTitle.includes('s13') ||
+    lowerTitle.includes('s14') ||
+    lowerTitle.includes('s15') ||
     lowerUrl.includes('silvia') ||
-    lowerUrl.includes('silvia') ||
+    lowerUrl.includes('シルビア') ||
     lowerUrl.includes('シルホア')
   ) {
     return 54000;
   }
-  if (lowerTitle.includes('impreza') || lowerTitle.includes('インプレッサ') || lowerUrl.includes('impreza')) {
+  if (
+    lowerTitle.includes('impreza') || 
+    lowerTitle.includes('インプレッサ') || 
+    lowerTitle.includes('gc8') || 
+    lowerUrl.includes('impreza') || 
+    lowerUrl.includes('インプレッサ')
+  ) {
     return 54000;
   }
 
@@ -359,7 +389,12 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
  */
 export const calculateDefaultShippingCost = (title?: string | null, url?: string | null): number => {
   const lowerTitle = (title || '').toLowerCase();
-  const lowerUrl = (url || '').toLowerCase();
+  let lowerUrl = (url || '').toLowerCase();
+  try {
+    lowerUrl = decodeURIComponent(lowerUrl);
+  } catch (e) {
+    // 無視
+  }
 
   // 1. Motor (エンジン本体等)：10,000円
   if (
