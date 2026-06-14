@@ -351,4 +351,149 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
   return 1500;
 };
 
+/**
+ * 商品タイトルやURLから、自動車部品カテゴリに応じたデフォルトの送料（JPY）を判定して返す関数
+ * @param title 商品タイトル
+ * @param url 商品のURL
+ * @returns デフォルトの送料 (JPY)
+ */
+export const calculateDefaultShippingCost = (title?: string | null, url?: string | null): number => {
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+
+  // 1. Motor (エンジン本体等)：10,000円
+  if (
+    lowerTitle.includes('motor') ||
+    lowerTitle.includes('エンジン') ||
+    lowerUrl.includes('motor') ||
+    lowerUrl.includes('2084200282')
+  ) {
+    return 10000;
+  }
+
+  // 2. Transmisión (トランスミッション)：8,000円
+  if (
+    lowerTitle.includes('transmisión') ||
+    lowerTitle.includes('transmision') ||
+    lowerTitle.includes('transmissão') ||
+    lowerTitle.includes('transmissao') ||
+    lowerTitle.includes('トランスミッション') ||
+    lowerTitle.includes('ミッション') ||
+    lowerUrl.includes('transmision') ||
+    lowerUrl.includes('2084008426')
+  ) {
+    return 8000;
+  }
+
+  // 3. Llantas (タイヤ付きホイール)：8,000円
+  // ※タイトルに「タイヤ」が含まれる場合、またはカテゴリID 2084200183 を含む場合
+  if (
+    lowerTitle.includes('llantas') ||
+    lowerTitle.includes('rodas') ||
+    lowerTitle.includes('タイヤ') ||
+    lowerUrl.includes('llantas') ||
+    lowerUrl.includes('2084200183')
+  ) {
+    return 8000;
+  }
+
+  // 4. Aros (ホイールのみ)：6,000円
+  // ※タイトルに「ホイール」または「アルミ」が含まれる場合、またはカテゴリID 2084005140 を含む場合
+  if (
+    lowerTitle.includes('aros') ||
+    lowerTitle.includes('ホイール') ||
+    lowerTitle.includes('アルミ') ||
+    lowerUrl.includes('aros') ||
+    lowerUrl.includes('2084005140')
+  ) {
+    return 6000;
+  }
+
+  // 5. Suspensión (サスペンション)：2,000円
+  if (
+    lowerTitle.includes('suspensión') ||
+    lowerTitle.includes('suspension') ||
+    lowerTitle.includes('suspensão') ||
+    lowerTitle.includes('suspensao') ||
+    lowerTitle.includes('サスペンション') ||
+    lowerTitle.includes('サス') ||
+    lowerTitle.includes('車高調') ||
+    lowerTitle.includes('スプリング') ||
+    lowerTitle.includes('ショック') ||
+    lowerUrl.includes('suspension') ||
+    lowerUrl.includes('2084005257')
+  ) {
+    return 2000;
+  }
+
+  // 6. Asiento (シート)：9,000円
+  if (
+    lowerTitle.includes('asiento') ||
+    lowerTitle.includes('assento') ||
+    lowerTitle.includes('シート') ||
+    lowerTitle.includes('レカロ') ||
+    lowerTitle.includes('recaro') ||
+    lowerTitle.includes('セミバケ') ||
+    lowerTitle.includes('フルバケ') ||
+    lowerUrl.includes('asiento') ||
+    lowerUrl.includes('2084005258')
+  ) {
+    return 9000;
+  }
+
+  // 7. Barras (タワーバー・ロールバー等)：3,000円
+  if (
+    lowerTitle.includes('barras') ||
+    lowerTitle.includes('タワーバー') ||
+    lowerTitle.includes('ロールバー') ||
+    lowerTitle.includes('補強') ||
+    lowerUrl.includes('barras') ||
+    lowerUrl.includes('2084008461')
+  ) {
+    return 3000;
+  }
+
+  // 8. Freno (ブレーキ・ブレンボ等)：4,000円
+  if (
+    lowerTitle.includes('freno') ||
+    lowerTitle.includes('freio') ||
+    lowerTitle.includes('ブレーキ') ||
+    lowerTitle.includes('ブレンボ') ||
+    lowerTitle.includes('brembo') ||
+    lowerTitle.includes('キャリパー') ||
+    lowerTitle.includes('ローター') ||
+    lowerUrl.includes('freno') ||
+    lowerUrl.includes('2084005259')
+  ) {
+    return 4000;
+  }
+
+  // 9. Car Audio (オーディオ・スピーカー・アンプ等)：3,000円
+  if (
+    lowerTitle.includes('audio') ||
+    lowerTitle.includes('som') ||
+    lowerTitle.includes('オーディオ') ||
+    lowerTitle.includes('スピーカー') ||
+    lowerTitle.includes('アンプ') ||
+    lowerTitle.includes('ウーファー') ||
+    lowerTitle.includes('サブウーファー') ||
+    lowerTitle.includes('プレーヤー') ||
+    lowerTitle.includes('player') ||
+    lowerTitle.includes('reproductor') ||
+    lowerTitle.includes('amplificador') ||
+    lowerTitle.includes('subwoofer') ||
+    lowerTitle.includes('altavoz') ||
+    lowerTitle.includes('altavoces') ||
+    lowerTitle.includes('alto-falantes') ||
+    lowerUrl.includes('audio') ||
+    lowerUrl.includes('23852')
+  ) {
+    return 3000;
+  }
+
+  // デフォルト送料は 0
+  return 0;
+};
+
+
 

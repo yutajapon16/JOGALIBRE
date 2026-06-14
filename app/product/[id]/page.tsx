@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
-import { getTimeRemaining, calculateDefaultFobCost } from '@/lib/utils';
+import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost } from '@/lib/utils';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -308,7 +308,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   // 通貨換算の計算ロジック（トップページと完全同期）
   const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency) => {
     const FOB_COST = product ? calculateDefaultFobCost(product.title, product.url) : 1500;
-    const totalJpyPrice = jpyPrice + FOB_COST;
+    const SHIPPING_COST = product ? calculateDefaultShippingCost(product.title, product.url) : 0;
+    const totalJpyPrice = jpyPrice + FOB_COST + SHIPPING_COST;
     
     // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
     const profitDivisor = (() => {

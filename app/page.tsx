@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
@@ -2251,8 +2251,8 @@ export default function Home() {
 
   const calculateUSDPrice = (jpyPrice: number, title?: string, url?: string) => {
     const FOB_COST = calculateDefaultFobCost(title, url);
-    // 送料は常に0として計算
-    const totalJpyPrice = jpyPrice + FOB_COST;
+    const SHIPPING_COST = calculateDefaultShippingCost(title, url);
+    const totalJpyPrice = jpyPrice + FOB_COST + SHIPPING_COST;
     // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
     const profitDivisor = (() => {
       if (currentUser?.customerId === 'B001') return 0.9;
@@ -2303,7 +2303,8 @@ export default function Home() {
 
   const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency, title?: string, url?: string) => {
     const FOB_COST = calculateDefaultFobCost(title, url);
-    const totalJpyPrice = jpyPrice + FOB_COST;
+    const SHIPPING_COST = calculateDefaultShippingCost(title, url);
+    const totalJpyPrice = jpyPrice + FOB_COST + SHIPPING_COST;
     
     // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
     const profitDivisor = (() => {

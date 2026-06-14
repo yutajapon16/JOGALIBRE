@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendOrderCsvEmail } from '@/lib/resend';
 import { getResilientExchangeRate } from '@/lib/exchange';
-import { calculateDefaultFobCost } from '@/lib/utils';
+import { calculateDefaultFobCost, calculateDefaultShippingCost } from '@/lib/utils';
 
 export async function GET(request: Request) {
   // Vercel Cron からの認証チェック（必要に応じて）
@@ -98,6 +98,7 @@ export async function GET(request: Request) {
         : 'New';
 
       const rowFob = calculateDefaultFobCost(order.product_title, order.product_url);
+      const rowShipping = calculateDefaultShippingCost(order.product_title, order.product_url);
 
       return [
         escapeCSV(order.id),
@@ -107,7 +108,7 @@ export async function GET(request: Request) {
         escapeCSV(order.product_title),
         escapeCSV(order.product_url),
         formula, // 数式はクォートなしで出力
-        '',      // Shipping (JPY) は空
+        rowShipping > 0 ? rowShipping : '', // デフォルトの送料を出力
         order.max_bid,
         exchangeRate,
         profitRate,

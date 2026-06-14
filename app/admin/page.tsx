@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost } from '@/lib/utils';
 import { BidRequest } from '@/lib/types';
 
 // 管理者画面用のPWA manifest差し替え
@@ -1264,7 +1264,8 @@ export default function AdminDashboard() {
     if (selectedRequest) {
       const defaultFob = selectedRequest ? calculateDefaultFobCost(selectedRequest.productTitle, selectedRequest.productUrl) : 1500;
       const fob = fobCostJpy.replace(/,/g, '').trim() ? parseFloat(fobCostJpy.replace(/,/g, '')) : defaultFob;
-      const shipping = shippingCostJpy.replace(/,/g, '').trim() ? parseFloat(shippingCostJpy.replace(/,/g, '')) : 0;
+      const defaultShipping = selectedRequest ? calculateDefaultShippingCost(selectedRequest.productTitle, selectedRequest.productUrl) : 0;
+      const shipping = shippingCostJpy.replace(/,/g, '').trim() ? parseFloat(shippingCostJpy.replace(/,/g, '')) : defaultShipping;
 
       const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
       // エージェント(A始まり)は利益率20% (除数 0.8)
@@ -1951,6 +1952,8 @@ export default function AdminDashboard() {
                             setSelectedRequest(request);
                             const defaultFob = calculateDefaultFobCost(request.productTitle, request.productUrl);
                             setFobCostJpy(defaultFob.toLocaleString('en-US'));
+                            const defaultShipping = calculateDefaultShippingCost(request.productTitle, request.productUrl);
+                            setShippingCostJpy(defaultShipping > 0 ? defaultShipping.toLocaleString('en-US') : '');
                             setActionType('counter');
                           }}
                           className="w-full sm:flex-1 bg-blue-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center"
