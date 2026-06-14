@@ -298,12 +298,17 @@ export async function DELETE(request: Request) {
     if (!isAdmin) {
       const { data: bidRequest } = await supabaseAdmin
         .from('bid_requests')
-        .select('customer_email')
+        .select('customer_email, status')
         .eq('id', id)
         .single();
 
       if (!bidRequest || bidRequest.customer_email !== effectiveUser.email) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      // 顧客は保留中のリクエストのみ削除可能
+      if (bidRequest.status !== 'pending') {
+        return NextResponse.json({ error: 'Only pending requests can be deleted' }, { status: 403 });
       }
     }
 
@@ -340,7 +345,7 @@ export async function PATCH(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber, totalJpy } = body;
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, maxBid, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber, totalJpy } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -434,6 +439,13 @@ export async function PATCH(request: Request) {
     }
 
     // 両方または顧客が更新可能なフィールド
+    if (!isAdmin) {
+      // 顧客による金額変更は保留中(pending)の時のみ可能
+      if (maxBid !== undefined && currentRequest.status === 'pending') {
+        updateData.max_bid = Number(maxBid);
+      }
+    }
+
     if (customerConfirmed !== undefined) {
       updateData.customer_confirmed = customerConfirmed;
       // 顧客が確認ボタンを押した日時を記録

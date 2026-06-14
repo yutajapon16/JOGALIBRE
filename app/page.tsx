@@ -928,6 +928,9 @@ export default function Home() {
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showSignUp, setShowSignUp] = useState(false);
+  const [isEditOfferModalOpen, setIsEditOfferModalOpen] = useState(false);
+  const [editingOfferRequest, setEditingOfferRequest] = useState<BidRequest | null>(null);
+  const [editingOfferAmount, setEditingOfferAmount] = useState('');
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [loginForm, setLoginForm] = useState({
@@ -2758,6 +2761,71 @@ export default function Home() {
     }
   };
 
+  const openEditOfferModal = (request: BidRequest) => {
+    setEditingOfferRequest(request);
+    setEditingOfferAmount(request.maxBid ? String(request.maxBid) : '');
+    setIsEditOfferModalOpen(true);
+  };
+
+  const handleEditOfferSubmit = async () => {
+    if (!editingOfferRequest || !editingOfferAmount) return;
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+      const res = await fetch('/api/bid-request', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({
+          id: editingOfferRequest.id,
+          maxBid: Number(editingOfferAmount)
+        })
+      });
+      if (res.ok) {
+        setIsEditOfferModalOpen(false);
+        setEditingOfferRequest(null);
+        setEditingOfferAmount('');
+        fetchMyRequests();
+      } else {
+        const errData = await res.json();
+        alert(lang === 'es' ? `Error: ${errData.error}` : `Erro: ${errData.error}`);
+      }
+    } catch (error) {
+      console.error('Error editing offer:', error);
+      alert(lang === 'es' ? 'Ocurrió un error al editar la oferta.' : 'Ocorreu um erro ao editar a oferta.');
+    }
+  };
+
+  const handleDeleteOffer = async (requestId: string) => {
+    const confirmMsg = lang === 'es' 
+      ? '¿Estás seguro de que quieres eliminar esta oferta?' 
+      : 'Tem certeza que deseja excluir esta oferta?';
+    if (!confirm(confirmMsg)) return;
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/bid-request?id=${requestId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+
+      if (res.ok) {
+        fetchMyRequests();
+      } else {
+        const errData = await res.json();
+        alert(lang === 'es' ? `Error: ${errData.error}` : `Erro: ${errData.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting offer:', error);
+      alert(lang === 'es' ? 'Ocurrió un error al eliminar la oferta.' : 'Ocorreu um erro ao excluir a oferta.');
+    }
+  };
+
   // ← ここに追加！
   const confirmRejection = async (requestId: string) => {
     try {
@@ -3883,6 +3951,24 @@ export default function Home() {
                         </div>
                       )}
 
+
+                      {/* 保留中（未処理）の場合のオファー金額変更・削除ボタン */}
+                      {request.status === 'pending' && (
+                        <div className="flex flex-col gap-2 mb-2 w-full">
+                          <button
+                            onClick={() => openEditOfferModal(request)}
+                            className="w-full bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                          >
+                            {lang === 'es' ? 'Modificar monto de oferta' : 'Modificar valor da oferta'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteOffer(request.id)}
+                            className="w-full bg-red-100 text-red-600 h-12 rounded-lg hover:bg-red-200 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                          >
+                            {lang === 'es' ? 'Eliminar oferta' : 'Excluir oferta'}
+                          </button>
+                        </div>
+                      )}
 
                       {/* --- 3. アクションボタンの表示 --- */}
 
@@ -5755,6 +5841,60 @@ export default function Home() {
           </div>
         )
       }
+
+      {/* オファー金額変更モーダル */}
+      {isEditOfferModalOpen && editingOfferRequest && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+              {lang === 'es' ? 'Modificar monto de oferta' : 'Modificar valor da oferta'}
+            </h3>
+            
+            <div className="mb-4 text-center">
+              <p className="text-sm text-gray-500 mb-1">{t.maxBid} (USD)</p>
+              <div className="text-2xl font-black text-indigo-600">
+                ${editingOfferRequest.maxBid?.toLocaleString('en-US') || 0}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {lang === 'es' ? 'Nuevo monto máximo (USD)' : 'Novo valor máximo (USD)'}
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                <input
+                  type="number"
+                  value={editingOfferAmount}
+                  onChange={(e) => setEditingOfferAmount(e.target.value)}
+                  className="w-full h-14 pl-10 pr-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-lg font-bold text-black focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setIsEditOfferModalOpen(false);
+                  setEditingOfferRequest(null);
+                  setEditingOfferAmount('');
+                }}
+                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 flex items-center justify-center"
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={handleEditOfferSubmit}
+                disabled={!editingOfferAmount || isNaN(Number(editingOfferAmount)) || Number(editingOfferAmount) <= 0}
+                className="flex-1 bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {lang === 'es' ? 'Guardar' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* お知らせモーダル */}
       {showNotifications && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
