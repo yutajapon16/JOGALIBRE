@@ -3545,7 +3545,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 font-semibold">落札合計金額 (日本円 JPY):</span>
+                <span className="text-sm text-gray-600 font-semibold">落札合計金額 (JPY):</span>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">¥</span>
                   <input
@@ -3553,12 +3553,12 @@ export default function AdminDashboard() {
                     value={totalJpyInput}
                     onChange={(e) => setTotalJpyInput(e.target.value)}
                     className="w-36 h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-bold text-indigo-600 text-right focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white"
-                    placeholder="111500"
+                    placeholder="0"
                   />
                 </div>
               </div>
               <p className="text-[10px] text-gray-500 text-right italic leading-relaxed">
-                ※入力された日本円金額は、B001紐づき顧客やブラジルエージェントの正確な日本支払額（送金額）の計算に利用されます。
+                ※入力された日本円金額は、B001紐づき顧客やブラジルエージェントの正確な日本支払額の計算に利用されます。
               </p>
             </div>
 
