@@ -11,6 +11,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetUrl = searchParams.get('url');
+  const jcat = searchParams.get('jcat');
 
   const [productId, setProductId] = useState<string>('');
   const [product, setProduct] = useState<any>(null);
@@ -307,7 +308,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   // 通貨換算の計算ロジック（トップページと完全同期）
   const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency) => {
-    const productUrlWithCategory = product ? (product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : '')) : '';
+    let productUrlWithCategory = product ? (product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : '')) : '';
+    if (jcat) {
+      productUrlWithCategory += (productUrlWithCategory.includes('?') ? '&' : '?') + `jcat=${jcat}`;
+    }
     const FOB_COST = product ? calculateDefaultFobCost(product.titleJa || product.title, productUrlWithCategory) : 1500;
     const SHIPPING_COST = product ? calculateDefaultShippingCost(product.titleJa || product.title, productUrlWithCategory) : 0;
     const totalJpyPrice = jpyPrice + FOB_COST + SHIPPING_COST;
@@ -380,6 +384,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         : bidForm.name;
 
       // 日本円の現在価格からUSD建ての参考落札限界額などを計算
+      let finalUrl = product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : '');
+      if (jcat) {
+        finalUrl += (finalUrl.includes('?') ? '&' : '?') + `jcat=${jcat}`;
+      }
+      
       const res = await fetch('/api/bid-request', {
         method: 'POST',
         headers: {
@@ -389,7 +398,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         body: JSON.stringify({
           productId: product.id,
           productTitle: product.titleJa || product.title,
-          productUrl: product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''),
+          productUrl: finalUrl,
           productImage: product.imageUrl,
           productPrice: product.currentPrice,
           maxBid: Number(bidForm.maxBid),

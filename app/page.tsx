@@ -3146,7 +3146,7 @@ export default function Home() {
 
           <div className="mt-auto space-y-1.5">
             <a
-              href={`/product/${product.id}?url=${encodeURIComponent(product.url || '')}&lang=${lang}`}
+              href={`/product/${product.id}?url=${encodeURIComponent(product.url || '')}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}`}
               className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center"
             >
               {t.viewOnYahoo}
@@ -5610,7 +5610,7 @@ export default function Home() {
                     </div>
                   )}
                   <a
-                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent(selectedProduct.url || '')}&lang=${lang}`}
+                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent(selectedProduct.url || '')}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}`}
                     className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
                   >
                     {t.viewOnYahoo}
