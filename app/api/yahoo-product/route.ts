@@ -379,6 +379,14 @@ export async function POST(request: Request) {
       }
     }
 
+    // カテゴリIDの抽出（パンくずリストから最も深いカテゴリIDを取得）
+    let categoryId = '';
+    const breadcrumbMatches = Array.from(html.matchAll(/auctions\.yahoo\.co\.jp\/category\/list\/(\d+)/g));
+    if (breadcrumbMatches.length > 0) {
+      const lastMatch = breadcrumbMatches[breadcrumbMatches.length - 1];
+      categoryId = lastMatch[1];
+    }
+
     const product = {
       id: productId,
       title: translatedTitle || 'タイトル取得失敗',
@@ -388,6 +396,7 @@ export async function POST(request: Request) {
       timeLeft: timeLeft, // 追加
       imageUrl: imageUrl,
       url: url,
+      categoryId: categoryId, // カテゴリIDを追加
       source: 'yahoo_url_import',
       shippingCost: shippingCost,
       shippingUnknown: shippingUnknown,

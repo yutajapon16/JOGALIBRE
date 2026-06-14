@@ -89,6 +89,7 @@ export interface SearchItem {
   isFavorite?: boolean;
   shippingCost?: number | null;
   translatedDescription?: string | null;
+  categoryId?: string;
 }
 
 export interface ExchangeRateResponse {

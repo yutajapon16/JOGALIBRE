@@ -65,6 +65,18 @@ export async function GET(request: Request) {
       searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(translatedKeyword)}&va=${encodeURIComponent(translatedKeyword)}&exflg=1&b=${start}&n=${itemsPerPage}&s1=score&o1=d${condParam}`;
     }
 
+    // 検索URLからカテゴリIDを抽出
+    let searchCategoryId = '';
+    const auccatMatch = searchUrl.match(/[&?]auccat=([0-9]+)/);
+    if (auccatMatch) {
+      searchCategoryId = auccatMatch[1];
+    } else {
+      const listMatch = searchUrl.match(/\/category\/list\/([0-9]+)/);
+      if (listMatch) {
+        searchCategoryId = listMatch[1];
+      }
+    }
+
     const controllerSearch = new AbortController();
     const timeoutSearch = setTimeout(() => controllerSearch.abort(), 8000);
     const response = await fetch(searchUrl, {
@@ -127,6 +139,7 @@ export async function GET(request: Request) {
                 bids,
                 timeLeft,
                 endTime: endTimeISO,
+                categoryId: searchCategoryId || undefined,
                 source: 'yahoo_car_next_data'
               });
             }
@@ -191,7 +204,7 @@ export async function GET(request: Request) {
       const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
       if (title && url) {
-        items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, endTime: endTimeISO, source: 'yahoo_search' });
+        items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, endTime: endTimeISO, categoryId: searchCategoryId || undefined, source: 'yahoo_search' });
       }
     });
 
@@ -254,7 +267,7 @@ export async function GET(request: Request) {
         const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
         if (title && url) {
-          items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, endTime: endTimeISO, source: 'yahoo_category' });
+          items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, endTime: endTimeISO, categoryId: searchCategoryId || undefined, source: 'yahoo_category' });
         }
       });
     }
@@ -371,6 +384,7 @@ export async function GET(request: Request) {
             currentPrice: item.currentPrice as number,
             bids: item.bids as number,
             timeLeft: item.timeLeft as string,
+            categoryId: searchCategoryId || undefined,
             source: 'yahoo_car_category'
           });
         }
