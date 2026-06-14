@@ -2302,8 +2302,12 @@ export default function Home() {
   };
 
   const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency, title?: string, url?: string) => {
-    const FOB_COST = calculateDefaultFobCost(title, url);
-    const SHIPPING_COST = calculateDefaultShippingCost(title, url);
+    let urlWithJcat = url || '';
+    if (currentCategory?.id) {
+      urlWithJcat += (urlWithJcat.includes('?') ? '&' : '?') + `jcat=${currentCategory.id}`;
+    }
+    const FOB_COST = calculateDefaultFobCost(title, urlWithJcat);
+    const SHIPPING_COST = calculateDefaultShippingCost(title, urlWithJcat);
     const totalJpyPrice = jpyPrice + FOB_COST + SHIPPING_COST;
     
     // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
