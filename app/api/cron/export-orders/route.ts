@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendOrderCsvEmail } from '@/lib/resend';
 import { getResilientExchangeRate } from '@/lib/exchange';
+import { calculateDefaultFobCost } from '@/lib/utils';
 
 export async function GET(request: Request) {
   // Vercel Cron からの認証チェック（必要に応じて）
@@ -96,6 +97,8 @@ export async function GET(request: Request) {
         ? new Date(order.sent_to_joga_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })
         : 'New';
 
+      const rowFob = calculateDefaultFobCost(order.product_title, order.product_url);
+
       return [
         escapeCSV(order.id),
         escapeCSV(order.product_end_time),
@@ -108,7 +111,7 @@ export async function GET(request: Request) {
         order.max_bid,
         exchangeRate,
         profitRate,
-        FOB_JPY,
+        rowFob,
         escapeCSV(sentDate)
       ].join(',');
     });

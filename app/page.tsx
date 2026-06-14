@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, calculateLocalCost, calculateJapanSendAmount } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
@@ -2249,8 +2249,8 @@ export default function Home() {
     }
   };
 
-  const calculateUSDPrice = (jpyPrice: number) => {
-    const FOB_COST = 1500;
+  const calculateUSDPrice = (jpyPrice: number, title?: string, url?: string) => {
+    const FOB_COST = calculateDefaultFobCost(title, url);
     // 送料は常に0として計算
     const totalJpyPrice = jpyPrice + FOB_COST;
     // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
@@ -2301,8 +2301,8 @@ export default function Home() {
     }
   };
 
-  const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency) => {
-    const FOB_COST = 1500;
+  const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency, title?: string, url?: string) => {
+    const FOB_COST = calculateDefaultFobCost(title, url);
     const totalJpyPrice = jpyPrice + FOB_COST;
     
     // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
@@ -3169,8 +3169,8 @@ export default function Home() {
                     {getCurrencySymbol(selectedCurrency)}
                   </span>
                   {currentUser?.agentCustomerId === 'B001'
-                    ? calculateConvertedPrice(product.currentPrice, selectedCurrency)
-                    : calculateConvertedPrice(product.currentPrice)}
+                    ? calculateConvertedPrice(product.currentPrice, selectedCurrency, product.title, product.url)
+                    : calculateConvertedPrice(product.currentPrice, selectedCurrency, product.title, product.url)}
                 </span>
                 {selectedCurrency === 'USD' && (
                   <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">
@@ -5595,7 +5595,7 @@ export default function Home() {
                       )}
                     </span>
                     <span className={`font-extrabold text-sm text-indigo-700 transition-opacity duration-200 ${isOfferUpdating ? 'opacity-50' : ''}`}>
-                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD')}
+                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.title, selectedProduct.url)}
                     </span>
                   </div>
                   {deliveryLocation !== 'fob' && (

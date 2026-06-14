@@ -263,3 +263,78 @@ export const calculateJapanSendAmount = (item: any, totalSalePrice: number, exch
   return Math.ceil(((estimatedBasePrice * ownDivisor) / targetDivisor) / 10) * 10;
 };
 
+/**
+ * 商品タイトルやURLから、カテゴリに応じたFOB費用（JPY）を判定して返す関数
+ * @param title 商品タイトル
+ * @param url 商品のURL
+ * @returns デフォルトのFOB費用 (JPY)
+ */
+export const calculateDefaultFobCost = (title?: string | null, url?: string | null): number => {
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+
+  // 部品取り車の判定
+  // 「desarme」, 「desmanche」, 「部品取り」, 「丸車」, 「書類無し」などのキーワード、または部品取りカテゴリID「2084061280」を含む場合
+  if (
+    lowerTitle.includes('desarme') ||
+    lowerTitle.includes('desmanche') ||
+    lowerTitle.includes('部品取り') ||
+    lowerTitle.includes('丸車') ||
+    lowerTitle.includes('書類無し') ||
+    lowerUrl.includes('desarme') ||
+    lowerUrl.includes('desmanche') ||
+    lowerUrl.includes('2084061280')
+  ) {
+    return 65000;
+  }
+
+  // JDM各車カテゴリの判定
+  if (lowerTitle.includes('supra') || lowerTitle.includes('スープラ') || lowerUrl.includes('supra')) {
+    return 54000;
+  }
+  if (
+    lowerTitle.includes('skyline') ||
+    lowerTitle.includes('スカイライン') ||
+    lowerTitle.includes('gt-r') ||
+    lowerTitle.includes('gtr') ||
+    lowerUrl.includes('skyline')
+  ) {
+    return 54000;
+  }
+  if (
+    lowerTitle.includes('lancer') ||
+    lowerTitle.includes('evo') ||
+    lowerTitle.includes('ランエボ') ||
+    lowerTitle.includes('エボ') ||
+    lowerTitle.includes('ランサー') ||
+    lowerUrl.includes('lancer')
+  ) {
+    return 54000;
+  }
+  if (
+    lowerTitle.includes('rx-7') ||
+    lowerTitle.includes('rx7') ||
+    lowerUrl.includes('rx-7') ||
+    lowerUrl.includes('rx7')
+  ) {
+    return 54000;
+  }
+  if (
+    lowerTitle.includes('silvia') ||
+    lowerTitle.includes('シルビア') ||
+    lowerTitle.includes('シルホア') ||
+    lowerUrl.includes('silvia') ||
+    lowerUrl.includes('silvia') ||
+    lowerUrl.includes('シルホア')
+  ) {
+    return 54000;
+  }
+  if (lowerTitle.includes('impreza') || lowerTitle.includes('インプレッサ') || lowerUrl.includes('impreza')) {
+    return 54000;
+  }
+
+  // デフォルト
+  return 1500;
+};
+
+
