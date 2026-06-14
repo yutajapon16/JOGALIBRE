@@ -2301,10 +2301,10 @@ export default function Home() {
     }
   };
 
-  const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency, title?: string, url?: string) => {
+  const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency, title?: string, url?: string, explicitJcat?: string) => {
     let urlWithJcat = url || '';
-    if (currentCategory?.id) {
-      urlWithJcat += (urlWithJcat.includes('?') ? '&' : '?') + `jcat=${currentCategory.id}`;
+    if (explicitJcat) {
+      urlWithJcat += (urlWithJcat.includes('?') ? '&' : '?') + `jcat=${explicitJcat}`;
     }
     const FOB_COST = calculateDefaultFobCost(title, urlWithJcat);
     const SHIPPING_COST = calculateDefaultShippingCost(title, urlWithJcat);
@@ -3174,8 +3174,8 @@ export default function Home() {
                     {getCurrencySymbol(selectedCurrency)}
                   </span>
                   {currentUser?.agentCustomerId === 'B001'
-                    ? calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''))
-                    : calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''))}
+                    ? calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id)
+                    : calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id)}
                 </span>
                 {selectedCurrency === 'USD' && (
                   <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">
@@ -5600,7 +5600,7 @@ export default function Home() {
                       )}
                     </span>
                     <span className={`font-extrabold text-sm text-indigo-700 transition-opacity duration-200 ${isOfferUpdating ? 'opacity-50' : ''}`}>
-                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''))}
+                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id)}
                     </span>
                   </div>
                   {deliveryLocation !== 'fob' && (
