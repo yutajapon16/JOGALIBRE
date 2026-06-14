@@ -288,6 +288,20 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     return 65000;
   }
 
+  // バイクの判定
+  // 「moto」, 「バイク」, 「オートバイ」, 「二輪」, 「motorcycle」などのキーワード、またはバイクカテゴリID「26316」を含む場合
+  if (
+    lowerTitle.includes('moto') ||
+    lowerTitle.includes('バイク') ||
+    lowerTitle.includes('オートバイ') ||
+    lowerTitle.includes('二輪') ||
+    lowerTitle.includes('motorcycle') ||
+    lowerUrl.includes('moto') ||
+    lowerUrl.includes('26316')
+  ) {
+    return 10000;
+  }
+
   // JDM各車カテゴリの判定
   if (lowerTitle.includes('supra') || lowerTitle.includes('スープラ') || lowerUrl.includes('supra')) {
     return 54000;
