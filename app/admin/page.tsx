@@ -2143,7 +2143,25 @@ export default function AdminDashboard() {
                     return sum + Math.round(cost);
                   }, 0);
 
-                const unpaidSummaryTotal = filteredItemsForSummary
+                const cancelledPaidTotal = filteredItemsForSummary
+                  .reduce((sum, item) => {
+                    if (!item.cancelledAt) return sum;
+                    const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
+                      ? item.customerCounterOffer
+                      : (item.counterOffer || item.maxBid || 0));
+                    const isB001Linked = item.agentCustomerId === 'B001';
+                    const isB001Self = item.customerId === 'B001';
+                    const countryLower = item.customerCountry?.trim().toLowerCase();
+                    const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
+
+                    if (isB001Self || isB001Linked || isBrasilAgent) {
+                      const japanSendAmount = calculateJapanSendAmount(item, Math.round(cost), exchangeRates['JPY'] || exchangeRate || 150);
+                      return sum + (item.paid_japan ? japanSendAmount : 0);
+                    }
+                    return sum + (item.paid ? Math.round(cost) : 0);
+                  }, 0);
+
+                const rawUnpaidSummaryTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
                     if (item.cancelledAt) return sum;
                     const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
@@ -2160,6 +2178,8 @@ export default function AdminDashboard() {
                     }
                     return sum + (item.paid ? 0 : cost);
                   }, 0);
+
+                const unpaidSummaryTotal = Math.max(0, rawUnpaidSummaryTotal - cancelledPaidTotal);
 
                 const localCostTotal = filteredItemsForSummary
                   .reduce((sum, item) => {

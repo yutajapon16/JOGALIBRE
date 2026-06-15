@@ -67,13 +67,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
     }
 
-    // 落札確認済みの全リクエストを取得
+    // 落札確認済みの全リクエストを取得（キャンセルされたものも含める）
     const { data: requests, error: requestsError } = await supabaseAdmin
       .from('bid_requests')
       .select('*')
       .eq('final_status', 'won')
-      .eq('customer_confirmed', true)
-      .is('cancelled_at', null);
+      .eq('customer_confirmed', true);
 
     if (requestsError) {
       console.error('Error fetching requests:', requestsError);
@@ -98,11 +97,21 @@ export async function GET(request: Request) {
       const emailKey = u.email ? u.email.trim().toLowerCase() : '';
       const userReqs = emailKey ? (userRequestsMap.get(emailKey) || []) : [];
       
-      const unpaidCount = userReqs.filter(r => !r.paid).length;
-      const unpaidAmount = userReqs.filter(r => !r.paid).reduce((sum, r) => sum + (r.final_price || 0), 0);
+      const activeUnpaidAmount = userReqs
+        .filter(r => !r.cancelled_at && !r.paid)
+        .reduce((sum, r) => sum + (r.final_price || 0), 0);
+        
+      const cancelledPaidAmount = userReqs
+        .filter(r => r.cancelled_at && r.paid)
+        .reduce((sum, r) => sum + (r.final_price || 0), 0);
+
+      const unpaidAmount = Math.max(0, activeUnpaidAmount - cancelledPaidAmount);
+      const unpaidCount = userReqs.filter(r => !r.cancelled_at && !r.paid).length;
       
-      const paidCount = userReqs.filter(r => r.paid).length;
-      const paidAmount = userReqs.filter(r => r.paid).reduce((sum, r) => sum + (r.final_price || 0), 0);
+      const paidAmount = userReqs
+        .filter(r => !r.cancelled_at && r.paid)
+        .reduce((sum, r) => sum + (r.final_price || 0), 0);
+      const paidCount = userReqs.filter(r => !r.cancelled_at && r.paid).length;
 
       return {
         id: u.id,
