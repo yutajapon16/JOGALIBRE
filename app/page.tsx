@@ -4154,6 +4154,7 @@ export default function Home() {
               };
 
               const summaryTotal = filteredItemsForSummary.reduce((sum, item) => {
+                if (item.cancelledAt) return sum;
                 const itemPrice = getItemPrice(item);
                 const itemSalePrice = itemPrice;
                 return sum + itemSalePrice;
@@ -4161,6 +4162,7 @@ export default function Home() {
 
               const localCostTotal = filteredItemsForSummary
                 .reduce((sum, item) => {
+                  if (item.cancelledAt) return sum;
                   if (item.delivery_location === 'JP') return sum;
                   const localCost = calculateLocalCost(item.delivery_location, item);
                   return sum + localCost;
@@ -4168,6 +4170,7 @@ export default function Home() {
 
               const unpaidLocalCostTotal = filteredItemsForSummary
                 .reduce((sum, item) => {
+                  if (item.cancelledAt) return sum;
                   if (item.delivery_location === 'JP') return sum;
                   const localCost = calculateLocalCost(item.delivery_location, item);
                   return sum + (item.paid_local ? 0 : localCost);
@@ -4177,6 +4180,7 @@ export default function Home() {
                 // B001関連ユーザーの場合はボックスを表示
                 const unpaidBrazilTotalDolar = filteredItemsForSummary
                   .reduce((sum, item) => {
+                    if (item.cancelledAt) return sum;
                     if (item.paid_brazil) return sum;
                     const itemPrice = getItemPrice(item);
                     const itemSalePrice = itemPrice;
@@ -4184,6 +4188,7 @@ export default function Home() {
                   }, 0);
                 const unpaidParaguayTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
+                    if (item.cancelledAt) return sum;
                     if (item.paid_paraguay) return sum;
                     const itemPrice = getItemPrice(item);
                     const itemSalePrice = itemPrice;
@@ -4195,6 +4200,7 @@ export default function Home() {
                 const brlRate = exchangeRates['BRL'] || 5.6;
                 const unpaidBrazilTotalBrl = filteredItemsForSummary
                   .reduce((sum, item) => {
+                    if (item.cancelledAt) return sum;
                     if (item.paid_brazil) return sum;
                     const itemPrice = getItemPrice(item);
                     const itemSalePrice = itemPrice;
@@ -4250,7 +4256,7 @@ export default function Home() {
               } else {
                 // 通常ユーザーの場合は従来通りの2つのボックスを表示
                 const unpaidSummaryTotal = filteredItemsForSummary
-                  .filter(item => !item.paid)
+                  .filter(item => !item.paid && !item.cancelledAt)
                   .reduce((sum, item) => sum + getItemPrice(item), 0);
 
                 return (
@@ -4449,19 +4455,26 @@ export default function Home() {
                               <div className="space-y-2 mb-2 font-sans">
                                 {/* 1段目: 合計支払額ボックス (h-12) */}
                                 <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
-                                    {item.paid ? (
-                                      <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] rounded-full whitespace-nowrap">
-                                        ✓ {lang === 'es' ? 'Pago' : 'Pago'}
-                                      </span>
-                                    ) : (
-                                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                        {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                      </span>
-                                    )}
+                                  <div className="flex items-center gap-1.5 font-sans text-xs">
+                                    <span className="text-gray-500 font-bold">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
+                                    <div className="flex flex-col gap-0.5">
+                                      {item.paid ? (
+                                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] rounded-full whitespace-nowrap font-sans">
+                                          ✓ {lang === 'es' ? 'Pago' : 'Pago'}
+                                        </span>
+                                      ) : !item.cancelledAt ? (
+                                        <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap font-sans">
+                                          {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                        </span>
+                                      ) : null}
+                                      {item.cancelledAt && (
+                                        <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] rounded-full whitespace-nowrap font-bold font-sans">
+                                          ✗ {lang === 'es' ? 'Cancelado' : 'Cancelado'}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
-                                  <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
+                                  <span className={`text-base font-bold whitespace-nowrap ${item.cancelledAt || item.paid ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
                                     {convertUSDToSelectedCurrency(totalSalePrice)}
                                   </span>
                                 </div>
@@ -4482,7 +4495,7 @@ export default function Home() {
                                         </span>
                                       )}
                                     </div>
-                                    <span className={`text-sm ${item.paid_brazil ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                    <span className={`text-sm ${item.cancelledAt || item.paid_brazil ? 'text-gray-400 line-through' : 'text-green-600'}`}>
                                       R$ {halfBrlStr}
                                     </span>
                                   </div>
@@ -4501,7 +4514,7 @@ export default function Home() {
                                         </span>
                                       )}
                                     </div>
-                                    <span className={`text-sm ${item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
+                                    <span className={`text-sm ${item.cancelledAt || item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
                                       {convertUSDToSelectedCurrency(halfPrice)}
                                     </span>
                                   </div>
@@ -4538,7 +4551,7 @@ export default function Home() {
                                         </span>
                                       )}
                                     </div>
-                                    <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                    <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
                                       {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
                                     </span>
                                   </div>
@@ -4550,8 +4563,19 @@ export default function Home() {
                           // 通常の表示
                           <>
                             <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                              <div>
-                                {!item.paid ? (
+                              <div className="flex flex-col gap-0.5">
+                                {item.cancelledAt ? (
+                                  <>
+                                    {item.paid && item.paidAt && (
+                                      <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold rounded-full whitespace-nowrap shrink-0 font-sans w-fit">
+                                        ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paidAt ? ` ${formatDateTime(item.paidAt, 'customer')}` : ''}
+                                      </span>
+                                    )}
+                                    <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded-full whitespace-nowrap shrink-0 font-sans w-fit font-bold font-sans">
+                                      ✗ {lang === 'es' ? 'Cancelado' : 'Cancelado'}{item.cancelledAt ? ` ${formatDateTime(item.cancelledAt, 'customer')}` : ''}
+                                    </span>
+                                  </>
+                                ) : !item.paid ? (
                                   <button
                                     onClick={() => openPaymentModal(item)}
                                     className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 transition shadow-sm font-sans flex items-center justify-center"
@@ -4565,7 +4589,7 @@ export default function Home() {
                                 )}
                               </div>
                               
-                               <span className={`text-base font-bold whitespace-nowrap font-sans ${item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                               <span className={`text-base font-bold whitespace-nowrap font-sans ${item.cancelledAt || item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
                                 {convertUSDToSelectedCurrency(
                                   item.finalPrice ||
                                   (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
@@ -4706,6 +4730,7 @@ export default function Home() {
               // 通算購入USD
               let totalPurchasedUsd = 0;
               purchasedItems.forEach(item => {
+                if (item.cancelledAt) return;
                 const cost = getItemPrice(item);
                 const totalSalePrice = Math.round(cost);
                 totalPurchasedUsd += totalSalePrice;
@@ -4732,6 +4757,7 @@ export default function Home() {
 
               // フィルターされた購入商品の現地費用合計・未入金計算
               const targetPurchasedForLocalCost = purchasedItems.filter(item => {
+                if (item.cancelledAt) return false;
                 if (depositFilterYear !== 'all') {
                   if (!item.confirmedAt) return false;
                   const date = new Date(item.confirmedAt);

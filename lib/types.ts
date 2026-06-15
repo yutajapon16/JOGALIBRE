@@ -71,6 +71,7 @@ export interface BidRequest {
   paid_local?: boolean;
   paid_local_at?: string | null;
   total_jpy?: number | null;
+  cancelledAt?: string | null;
 }
 
 export interface SearchItem {

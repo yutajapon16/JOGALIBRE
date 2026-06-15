@@ -72,7 +72,8 @@ export async function GET(request: Request) {
       .from('bid_requests')
       .select('*')
       .eq('final_status', 'won')
-      .eq('customer_confirmed', true);
+      .eq('customer_confirmed', true)
+      .is('cancelled_at', null);
 
     if (requestsError) {
       console.error('Error fetching requests:', requestsError);

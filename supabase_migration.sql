@@ -175,4 +175,6 @@ ALTER TABLE deposits ADD COLUMN IF NOT EXISTS deposit_type TEXT DEFAULT '商品�
 -- 25. B001紐づき顧客およびブラジルエージェントの正確な日本支払額（日本送金額）計算用に、元の日本円合計金額（オファー/落札価格）を記録するカラムを追加
 ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS total_jpy NUMERIC DEFAULT NULL;
 
-
+-- 26. キャンセル日時（cancelled_at）を記録するカラムを追加
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+CREATE INDEX IF NOT EXISTS idx_bid_requests_cancelled_at ON bid_requests(cancelled_at);

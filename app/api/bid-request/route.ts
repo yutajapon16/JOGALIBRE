@@ -52,7 +52,8 @@ export async function POST(request: Request) {
       customer_confirmed: false,
       customer_message: null,
       admin_needs_confirm: false,
-      delivery_location: deliveryLocation || 'JP'
+      delivery_location: deliveryLocation || 'JP',
+      cancelled_at: null
     };
 
     const { data, error } = await supabaseAdmin
@@ -178,6 +179,7 @@ export async function GET(request: Request) {
         const userInfo = userRolesMap[item.customer_email];
         return {
           ...item,
+          cancelledAt: item.cancelled_at,
           customer_full_name: userInfo?.full_name,
           customer_whatsapp: userInfo?.whatsapp,
           customer_id: userInfo?.customer_id,
@@ -249,6 +251,7 @@ export async function GET(request: Request) {
       const userInfo = userRolesMap[item.customer_email];
       return {
         ...item,
+        cancelledAt: item.cancelled_at,
         customer_full_name: userInfo?.full_name,
         customer_whatsapp: userInfo?.whatsapp,
         customer_id: userInfo?.customer_id,
@@ -345,7 +348,7 @@ export async function PATCH(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, maxBid, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber, totalJpy } = body;
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, maxBid, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber, totalJpy, cancelledAt } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -367,6 +370,10 @@ export async function PATCH(request: Request) {
     }
 
     const updateData: Record<string, unknown> = {};
+
+    if (cancelledAt !== undefined) {
+      updateData.cancelled_at = cancelledAt;
+    }
 
     // 管理者のみが更新可能なフィールド
     if (isAdmin) {

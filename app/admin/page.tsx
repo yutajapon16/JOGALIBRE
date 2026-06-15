@@ -1248,6 +1248,38 @@ export default function AdminDashboard() {
     setEditingInvoiceItem({ id, title, invoiceNumber: currentInvoiceNumber || '' });
   };
 
+  const handleCancelItem = async (itemId: string, currentCancelled: boolean) => {
+    const actionText = currentCancelled ? 'キャンセルの取り消し' : 'キャンセル';
+    if (!window.confirm(`この商品の購入を${actionText}しますか？`)) {
+      return;
+    }
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+      const res = await fetch('/api/bid-request', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({
+          id: itemId,
+          cancelledAt: currentCancelled ? null : new Date().toISOString()
+        })
+      });
+      if (res.ok) {
+        alert(`${actionText}しました`);
+        fetchPurchasedItems();
+      } else {
+        const err = await res.json();
+        alert(`処理に失敗しました: ${err.error || ''}`);
+      }
+    } catch (error) {
+      console.error('Error cancelling item:', error);
+      alert('通信エラーが発生しました');
+    }
+  };
+
   const handleReject = () => {
     if (selectedRequest) {
       updateStatus(selectedRequest.id, 'rejected', rejectReason.trim());
@@ -1315,7 +1347,7 @@ export default function AdminDashboard() {
       item.customerWhatsapp || '',
       `"${(item.productTitle || '').replace(/"/g, '""')}"`,
       item.finalPrice ? Math.round(item.finalPrice) : '',
-      item.paid ? '支払い済み' : '未払い',
+      item.cancelledAt ? 'キャンセル済み' : (item.paid ? '支払い済み' : '未払い'),
       item.productUrl || ''
     ]);
 
@@ -2094,6 +2126,7 @@ export default function AdminDashboard() {
                 const filteredItemsForSummary = getFilteredPurchasedItems();
                 const summaryTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
+                    if (item.cancelledAt) return sum;
                     const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
                       ? item.customerCounterOffer
                       : (item.counterOffer || item.maxBid || 0));
@@ -2111,6 +2144,7 @@ export default function AdminDashboard() {
 
                 const unpaidSummaryTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
+                    if (item.cancelledAt) return sum;
                     const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
                       ? item.customerCounterOffer
                       : (item.counterOffer || item.maxBid || 0));
@@ -2128,6 +2162,7 @@ export default function AdminDashboard() {
 
                 const localCostTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
+                    if (item.cancelledAt) return sum;
                     if (item.delivery_location === 'JP') return sum;
                     const localCost = calculateLocalCost(item.delivery_location, item);
                     return sum + localCost;
@@ -2135,6 +2170,7 @@ export default function AdminDashboard() {
 
                 const unpaidLocalCostTotal = filteredItemsForSummary
                   .reduce((sum, item) => {
+                    if (item.cancelledAt) return sum;
                     if (item.delivery_location === 'JP') return sum;
                     const localCost = calculateLocalCost(item.delivery_location, item);
                     return sum + (item.paid_local ? 0 : localCost);
@@ -2199,6 +2235,18 @@ export default function AdminDashboard() {
                                 </span>
                               </div>
                             )}
+                            {/* キャンセルボタン（✕印） */}
+                            <button
+                              onClick={() => handleCancelItem(item.id, !!item.cancelledAt)}
+                              className={`absolute top-1 left-1 w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-all duration-200 z-10 ${
+                                item.cancelledAt
+                                  ? 'bg-red-600 text-white hover:bg-red-700'
+                                  : 'bg-white/95 text-gray-500 hover:bg-red-600 hover:text-white'
+                              }`}
+                              title={item.cancelledAt ? "キャンセルを取り消す" : "購入をキャンセルする"}
+                            >
+                              <span className="text-xs font-bold font-sans">✕</span>
+                            </button>
                           </div>
                           <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
                             {/* 1. 商品タイトル */}
@@ -2425,15 +2473,28 @@ export default function AdminDashboard() {
                                   checked={item.paid}
                                   onChange={(e) => updatePaidStatus(item.id, e.target.checked)}
                                   className="w-4 h-4 mr-1.5 cursor-pointer text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                                  disabled={!!item.cancelledAt}
                                 />
                                 <span className="text-gray-700 font-semibold">顧客支払額:</span>
-                                {item.paid && item.paidAt && (
-                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-bold font-sans">
-                                    ✓ 支払済 ({formatDateTime(item.paidAt)})
-                                  </span>
-                                )}
+                                <div className="flex flex-col gap-0.5 ml-1.5">
+                                  {item.paid && item.paidAt && (
+                                    <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded whitespace-nowrap font-bold font-sans">
+                                      ✓ 支払済 ({formatDateTime(item.paidAt)})
+                                    </span>
+                                  )}
+                                  {item.cancelledAt && (
+                                    <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded whitespace-nowrap font-bold font-sans">
+                                      ✗ 取消済 ({formatDateTime(item.cancelledAt)})
+                                    </span>
+                                  )}
+                                  {!item.paid && !item.cancelledAt && (
+                                    <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[9px] rounded whitespace-nowrap font-medium font-sans">
+                                      未入金
+                                    </span>
+                                  )}
+                                </div>
                               </label>
-                              <span className={`text-base font-bold whitespace-nowrap ${item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
+                              <span className={`text-base font-bold whitespace-nowrap ${item.cancelledAt || item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
                                 ${Math.round(item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
                                   ? item.customerCounterOffer
                                   : (item.counterOffer || item.maxBid || 0))).toLocaleString('en-US')}
@@ -3095,6 +3156,7 @@ export default function AdminDashboard() {
                 // 現地費用合計・未入金の計算用
                 // 入金タブ側の顧客・期間（年・月）フィルターを適用した購入商品リスト
                 const targetPurchasedForLocalCost = purchasedItems.filter(item => {
+                  if (item.cancelledAt) return false;
                   if (depositFilterCustomer !== 'all') {
                     if (depositFilterCustomer === 'B001_FFGN') {
                       const linkedCustomerIds = customersList
@@ -3186,6 +3248,7 @@ export default function AdminDashboard() {
 
                   // 通算購入
                   const totalPurchased = purchasedItems.filter(item => {
+                    if (item.cancelledAt) return false;
                     if (isB001_FFGN) {
                       return item.customerId === 'B001' || item.agentCustomerId === 'B001' || (item.customerId?.startsWith('A') && ((item.customerCountry || '').trim().toLowerCase() === 'brasil' || (item.customerCountry || '').trim().toLowerCase() === 'brazil'));
                     }
