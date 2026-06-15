@@ -982,7 +982,8 @@ export default function AdminDashboard() {
         delivery_location: item.delivery_location as string | undefined,
         paid_local: item.paid_local || false,
         paid_local_at: item.paid_local_at as string | null | undefined,
-        totalJpy: item.total_jpy
+        totalJpy: item.total_jpy,
+        cancelledAt: item.cancelledAt as string | null | undefined
       }));
 
       setPurchasedItems(convertedItems);

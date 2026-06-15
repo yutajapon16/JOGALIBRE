@@ -1755,6 +1755,7 @@ export default function Home() {
         delivery_location: item.delivery_location as string | undefined,
         paid_local: item.paid_local || false,
         paid_local_at: item.paid_local_at as string | null | undefined,
+        cancelledAt: item.cancelledAt as string | null | undefined,
       }));
 
       // 商品タイトルを選択言語に翻訳
