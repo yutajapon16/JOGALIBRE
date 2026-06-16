@@ -3269,28 +3269,17 @@ export default function Home() {
 
 
             {deliveryLocation !== 'fob' && (
-              <>
-                <div className="h-9 flex items-center justify-between bg-orange-50 px-2.5 sm:px-3 rounded">
-                  <span className="text-[10px] sm:text-xs font-bold text-orange-700 tracking-widest leading-none">
-                    {t.localCostLabel}
-                  </span>
-                  <div className="flex items-center">
-                    <span className="font-extrabold text-orange-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
-                      <span className="text-xs font-semibold mr-0.5">$</span>
-                      {getLocalCost(product.url)}
-                    </span>
-                  </div>
-                </div>
-                {/* 発送方法表示 */}
-                <div className="h-9 flex items-center justify-between bg-orange-50 px-2.5 sm:px-3 rounded">
-                  <span className="text-[10px] sm:text-xs font-bold text-orange-700 tracking-widest leading-none">
-                    {t.shippingMethodLabel}
-                  </span>
-                  <span className="text-[10px] sm:text-xs font-semibold text-gray-700 bg-white px-1.5 sm:px-2 py-0.5 rounded shadow-sm">
-                    {shippingMethod === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+              <div className="h-9 flex items-center justify-between bg-orange-50 px-2.5 sm:px-3 rounded">
+                <span className="text-[10px] sm:text-xs font-bold text-orange-700 tracking-widest leading-none">
+                  {t.localCostLabel}
+                </span>
+                <div className="flex items-center">
+                  <span className="font-extrabold text-orange-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
+                    <span className="text-xs font-semibold mr-0.5">$</span>
+                    {getLocalCost(product.url)}
                   </span>
                 </div>
-              </>
+              </div>
             )}
 
             <button
@@ -4573,32 +4562,23 @@ export default function Home() {
 
                                 {/* 現地費用 */}
                                 {item.delivery_location !== 'JP' && (
-                                  <>
-                                    <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
-                                        {item.paid_local ? (
-                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
-                                          </span>
-                                        ) : (
-                                          <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                            {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                        {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
-                                      </span>
+                                  <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                      {item.paid_local ? (
+                                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                          ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                          {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                        </span>
+                                      )}
                                     </div>
-                                    {/* 発送方法 */}
-                                    <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                                      <span className="text-gray-500 text-xs font-bold">{t.shippingMethodLabel}:</span>
-                                      <span className="text-sm font-semibold text-black">
-                                        {item.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
-                                      </span>
-                                    </div>
-                                  </>
+                                    <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                      {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                             );
@@ -4651,32 +4631,23 @@ export default function Home() {
 
                             {/* 現地費用 */}
                             {item.delivery_location !== 'JP' && (
-                              <>
-                                <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
-                                    {item.paid_local ? (
-                                      <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                        ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
-                                      </span>
-                                    ) : (
-                                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                        {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                    {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
-                                  </span>
+                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                  {item.paid_local ? (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                      ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                      {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                    </span>
+                                  )}
                                 </div>
-                                {/* 発送方法 */}
-                                <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
-                                  <span className="text-gray-500 text-xs font-bold">{t.shippingMethodLabel}:</span>
-                                  <span className="text-sm font-semibold text-black">
-                                    {item.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
-                                  </span>
-                                </div>
-                              </>
+                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                  {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
+                                </span>
+                              </div>
                             )}
                           </>
                         )}
