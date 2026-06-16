@@ -31,6 +31,11 @@ console.log('10. バイク車体 (auccat=26316):', calculateDefaultShippingCost(
 // 11. 自転車本体 (ヤフオクカテゴリID 26246)
 console.log('11. 自転車本体 (auccat=26246):', calculateDefaultShippingCost("ロードバイク 完成車", "https://page.auctions.yahoo.co.jp/jp/auction/f12345?auccat=26246")); // 0のはず (要見積もり)
 
+// 指摘された実際の商品 (u1233507172) のシミュレーション
+// 12. u1233507172 のカテゴリID (2084200183) を含むURL
+console.log('12. u1233507172 実際の商品 (auccat含む):', calculateDefaultShippingCost("SPEEDLINE 17インチ タイヤホイール4本セット", "https://auctions.yahoo.co.jp/jp/auction/u1233507172?auccat=26318,2084300257,2084200183,2084200189,2084231104,2084231106")); // 8000のはず
+
+
 console.log('--- FOB Cost Tests ---');
 // 12. 部品取り車カテゴリ (ヤフオクカテゴリID 2084061280)
 console.log('12. 部品取り車カテゴリ (auccat=2084061280):', calculateDefaultFobCost("テストタイトル", "https://page.auctions.yahoo.co.jp/jp/auction/f12345?auccat=2084061280")); // 65000のはず
