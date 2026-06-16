@@ -1458,525 +1458,786 @@
   "localCosts": {
     "default": {
       "key": "default",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "motor": {
       "key": "motor",
-      "asu": 150,
-      "enc": 180,
-      "pjc": 200
+      "asu_sea": 150,
+      "enc_sea": 180,
+      "pjc_sea": 200,
+      "asu_air": 150,
+      "enc_air": 180,
+      "pjc_air": 200
     },
     "llantas": {
       "key": "llantas",
-      "asu": 100,
-      "enc": 120,
-      "pjc": 150
+      "asu_sea": 100,
+      "enc_sea": 120,
+      "pjc_sea": 150,
+      "asu_air": 100,
+      "enc_air": 120,
+      "pjc_air": 150
     },
     "ll16": {
       "key": "ll16",
-      "asu": 100,
-      "enc": 120,
-      "pjc": 150
+      "asu_sea": 100,
+      "enc_sea": 120,
+      "pjc_sea": 150,
+      "asu_air": 100,
+      "enc_air": 120,
+      "pjc_air": 150
     },
     "ll17": {
       "key": "ll17",
-      "asu": 100,
-      "enc": 120,
-      "pjc": 150
+      "asu_sea": 100,
+      "enc_sea": 120,
+      "pjc_sea": 150,
+      "asu_air": 100,
+      "enc_air": 120,
+      "pjc_air": 150
     },
     "ll18": {
       "key": "ll18",
-      "asu": 100,
-      "enc": 120,
-      "pjc": 150
+      "asu_sea": 100,
+      "enc_sea": 120,
+      "pjc_sea": 150,
+      "asu_air": 100,
+      "enc_air": 120,
+      "pjc_air": 150
     },
     "aros": {
       "key": "aros",
-      "asu": 80,
-      "enc": 100,
-      "pjc": 120
+      "asu_sea": 80,
+      "enc_sea": 100,
+      "pjc_sea": 120,
+      "asu_air": 80,
+      "enc_air": 100,
+      "pjc_air": 120
     },
     "ar16": {
       "key": "ar16",
-      "asu": 80,
-      "enc": 100,
-      "pjc": 120
+      "asu_sea": 80,
+      "enc_sea": 100,
+      "pjc_sea": 120,
+      "asu_air": 80,
+      "enc_air": 100,
+      "pjc_air": 120
     },
     "ar17": {
       "key": "ar17",
-      "asu": 80,
-      "enc": 100,
-      "pjc": 120
+      "asu_sea": 80,
+      "enc_sea": 100,
+      "pjc_sea": 120,
+      "asu_air": 80,
+      "enc_air": 100,
+      "pjc_air": 120
     },
     "ar18": {
       "key": "ar18",
-      "asu": 80,
-      "enc": 100,
-      "pjc": 120
+      "asu_sea": 80,
+      "enc_sea": 100,
+      "pjc_sea": 120,
+      "asu_air": 80,
+      "enc_air": 100,
+      "pjc_air": 120
     },
     "suspension": {
       "key": "suspension",
-      "asu": 50,
-      "enc": 60,
-      "pjc": 70
+      "asu_sea": 50,
+      "enc_sea": 60,
+      "pjc_sea": 70,
+      "asu_air": 50,
+      "enc_air": 60,
+      "pjc_air": 70
     },
     "asiento": {
       "key": "asiento",
-      "asu": 100,
-      "enc": 120,
-      "pjc": 140
+      "asu_sea": 100,
+      "enc_sea": 120,
+      "pjc_sea": 140,
+      "asu_air": 100,
+      "enc_air": 120,
+      "pjc_air": 140
     },
     "barras": {
       "key": "barras",
-      "asu": 30,
-      "enc": 40,
-      "pjc": 50
+      "asu_sea": 30,
+      "enc_sea": 40,
+      "pjc_sea": 50,
+      "asu_air": 30,
+      "enc_air": 40,
+      "pjc_air": 50
     },
     "freno": {
       "key": "freno",
-      "asu": 40,
-      "enc": 50,
-      "pjc": 60
+      "asu_sea": 40,
+      "enc_sea": 50,
+      "pjc_sea": 60,
+      "asu_air": 40,
+      "enc_air": 50,
+      "pjc_air": 60
     },
     "caraudio": {
       "key": "caraudio",
-      "asu": 30,
-      "enc": 45,
-      "pjc": 60
+      "asu_sea": 30,
+      "enc_sea": 45,
+      "pjc_sea": 60,
+      "asu_air": 30,
+      "enc_air": 45,
+      "pjc_air": 60
     },
     "reproductor": {
       "key": "reproductor",
-      "asu": 30,
-      "enc": 45,
-      "pjc": 60
+      "asu_sea": 30,
+      "enc_sea": 45,
+      "pjc_sea": 60,
+      "asu_air": 30,
+      "enc_air": 45,
+      "pjc_air": 60
     },
     "amplificador": {
       "key": "amplificador",
-      "asu": 30,
-      "enc": 45,
-      "pjc": 60
+      "asu_sea": 30,
+      "enc_sea": 45,
+      "pjc_sea": 60,
+      "asu_air": 30,
+      "enc_air": 45,
+      "pjc_air": 60
     },
     "subwoofer": {
       "key": "subwoofer",
-      "asu": 30,
-      "enc": 45,
-      "pjc": 60
+      "asu_sea": 30,
+      "enc_sea": 45,
+      "pjc_sea": 60,
+      "asu_air": 30,
+      "enc_air": 45,
+      "pjc_air": 60
     },
     "altavoz": {
       "key": "altavoz",
-      "asu": 30,
-      "enc": 45,
-      "pjc": 60
+      "asu_sea": 30,
+      "enc_sea": 45,
+      "pjc_sea": 60,
+      "asu_air": 30,
+      "enc_air": 45,
+      "pjc_air": 60
     },
     "supra": {
       "key": "supra",
-      "asu": 500,
-      "enc": 600,
-      "pjc": 700
+      "asu_sea": 500,
+      "enc_sea": 600,
+      "pjc_sea": 700,
+      "asu_air": 500,
+      "enc_air": 600,
+      "pjc_air": 700
     },
     "skyline": {
       "key": "skyline",
-      "asu": 500,
-      "enc": 600,
-      "pjc": 700
+      "asu_sea": 500,
+      "enc_sea": 600,
+      "pjc_sea": 700,
+      "asu_air": 500,
+      "enc_air": 600,
+      "pjc_air": 700
     },
     "lancer": {
       "key": "lancer",
-      "asu": 500,
-      "enc": 600,
-      "pjc": 700
+      "asu_sea": 500,
+      "enc_sea": 600,
+      "pjc_sea": 700,
+      "asu_air": 500,
+      "enc_air": 600,
+      "pjc_air": 700
     },
     "rx7": {
       "key": "rx7",
-      "asu": 500,
-      "enc": 600,
-      "pjc": 700
+      "asu_sea": 500,
+      "enc_sea": 600,
+      "pjc_sea": 700,
+      "asu_air": 500,
+      "enc_air": 600,
+      "pjc_air": 700
     },
     "silvia": {
       "key": "silvia",
-      "asu": 500,
-      "enc": 600,
-      "pjc": 700
+      "asu_sea": 500,
+      "enc_sea": 600,
+      "pjc_sea": 700,
+      "asu_air": 500,
+      "enc_air": 600,
+      "pjc_air": 700
     },
     "impreza": {
       "key": "impreza",
-      "asu": 500,
-      "enc": 600,
-      "pjc": 700
+      "asu_sea": 500,
+      "enc_sea": 600,
+      "pjc_sea": 700,
+      "asu_air": 500,
+      "enc_air": 600,
+      "pjc_air": 700
     },
     "desarme": {
       "key": "desarme",
-      "asu": 400,
-      "enc": 450,
-      "pjc": 500
+      "asu_sea": 400,
+      "enc_sea": 450,
+      "pjc_sea": 500,
+      "asu_air": 400,
+      "enc_air": 450,
+      "pjc_air": 500
     },
     "moto": {
       "key": "moto",
-      "asu": 100,
-      "enc": 120,
-      "pjc": 150
+      "asu_sea": 100,
+      "enc_sea": 120,
+      "pjc_sea": 150,
+      "asu_air": 100,
+      "enc_air": 120,
+      "pjc_air": 150
     },
     "bicicleta": {
       "key": "bicicleta",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "nike_men_shoes": {
       "key": "nike_men_shoes",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "nike_men_clothing": {
       "key": "nike_men_clothing",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "nike_women_shoes": {
       "key": "nike_women_shoes",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "nike_women_clothing": {
       "key": "nike_women_clothing",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "adidas_men_shoes": {
       "key": "adidas_men_shoes",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "adidas_men_clothing": {
       "key": "adidas_men_clothing",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "adidas_women_shoes": {
       "key": "adidas_women_shoes",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "adidas_women_clothing": {
       "key": "adidas_women_clothing",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "nb_men_shoes": {
       "key": "nb_men_shoes",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "nb_men_clothing": {
       "key": "nb_men_clothing",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "nb_women_shoes": {
       "key": "nb_women_shoes",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "nb_women_clothing": {
       "key": "nb_women_clothing",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "ape": {
       "key": "ape",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "abercrombie": {
       "key": "abercrombie",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "converse": {
       "key": "converse",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "diesel": {
       "key": "diesel",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "gap": {
       "key": "gap",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "lacoste": {
       "key": "lacoste",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "michaelkors": {
       "key": "michaelkors",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "puma": {
       "key": "puma",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "tommyhilfiger": {
       "key": "tommyhilfiger",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "uniqlo": {
       "key": "uniqlo",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "vans": {
       "key": "vans",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "zara": {
       "key": "zara",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "casio": {
       "key": "casio",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "seiko": {
       "key": "seiko",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "citizen": {
       "key": "citizen",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "spikes": {
       "key": "spikes",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "training": {
       "key": "training",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "futsal": {
       "key": "futsal",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "running_men_shoes": {
       "key": "running_men_shoes",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "running_men_clothing": {
       "key": "running_men_clothing",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "running_women_shoes": {
       "key": "running_women_shoes",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "running_women_clothing": {
       "key": "running_women_clothing",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "camping": {
       "key": "camping",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "pesca": {
       "key": "pesca",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "rc_engine": {
       "key": "rc_engine",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "rc_electric": {
       "key": "rc_electric",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "gundam": {
       "key": "gundam",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "onepiece": {
       "key": "onepiece",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "miku": {
       "key": "miku",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "madoka": {
       "key": "madoka",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "dragonball": {
       "key": "dragonball",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "nendoroid": {
       "key": "nendoroid",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "iphone": {
       "key": "iphone",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "ipad": {
       "key": "ipad",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "smartwatch": {
       "key": "smartwatch",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "cpu": {
       "key": "cpu",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "memory": {
       "key": "memory",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "gpu": {
       "key": "gpu",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "dslr": {
       "key": "dslr",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "mirrorless": {
       "key": "mirrorless",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "compact_digital": {
       "key": "compact_digital",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "lens": {
       "key": "lens",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "guitarra": {
       "key": "guitarra",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "bajo": {
       "key": "bajo",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "viento": {
       "key": "viento",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "dj": {
       "key": "dj",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     },
     "washlet": {
       "key": "washlet",
-      "asu": 0,
-      "enc": 0,
-      "pjc": 0
+      "asu_sea": 0,
+      "enc_sea": 0,
+      "pjc_sea": 0,
+      "asu_air": 0,
+      "enc_air": 0,
+      "pjc_air": 0
     }
   }
 }

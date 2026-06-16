@@ -129,6 +129,9 @@ const translations = {
     deliveryEncarnacion: 'Encarnación 🇵🇾',
     deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
     localCostLabel: 'Costo Local',
+    shippingMethodLabel: 'Método de envío',
+    shippingMethodSea: 'Contenedor 🚢',
+    shippingMethodAir: 'Avión ✈️',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -237,6 +240,9 @@ const translations = {
     deliveryEncarnacion: 'Encarnação 🇵🇾',
     deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
     localCostLabel: 'Custo Local',
+    shippingMethodLabel: 'Método de envio',
+    shippingMethodSea: 'Contêiner 🚢',
+    shippingMethodAir: 'Avião ✈️',
   }
 };
 
@@ -920,6 +926,7 @@ const determineConditionFromUrl = (url: string): 'all' | 'new' | 'used' => {
 export default function Home() {
   const [lang, setLang] = useState<'es' | 'pt'>('es');
   const [deliveryLocation, setDeliveryLocation] = useState<'fob' | 'asuncion' | 'encarnacion' | 'pjc'>('fob');
+  const [shippingMethod, setShippingMethod] = useState<'sea' | 'air'>('sea');
   const [searchUrl, setSearchUrl] = useState('');
   const [products, setProducts] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1753,6 +1760,7 @@ export default function Home() {
         agentCustomerId: item.agent_customer_id as string | null | undefined,
         customerCountry: item.customer_country as string | null | undefined,
         delivery_location: item.delivery_location as string | undefined,
+        shipping_method: item.shipping_method as string | undefined,
         paid_local: item.paid_local || false,
         paid_local_at: item.paid_local_at as string | null | undefined,
         cancelledAt: item.cancelledAt as string | null | undefined,
@@ -2217,7 +2225,8 @@ export default function Home() {
           customerName: finalCustomerName,
           customerEmail: currentUser?.email,
           language: lang,
-          deliveryLocation: deliveryLocation === 'fob' ? 'JP' : (deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC'))
+          deliveryLocation: deliveryLocation === 'fob' ? 'JP' : (deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC')),
+          shippingMethod: deliveryLocation === 'fob' ? 'sea' : shippingMethod
         })
       });
 
@@ -2382,9 +2391,11 @@ export default function Home() {
     return loc || '-';
   };
 
-  // 引渡し場所に応じた現地費用（USD）を返す関数（暫定で一律0ドル）
+  // 引渡し場所に応じた現地費用（USD）を返す関数
   const getLocalCost = (productUrl: string | null): number => {
-    return 0;
+    if (deliveryLocation === 'fob') return 0;
+    const loc = deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC');
+    return calculateLocalCost(loc, { productUrl }, shippingMethod);
   };
 
   const fetchMyRequests = async () => {
@@ -2428,6 +2439,7 @@ export default function Home() {
         agentCustomerId: req.agent_customer_id as string | null | undefined,
         customerCountry: req.customer_country as string | null | undefined,
         delivery_location: req.delivery_location as string | undefined,
+        shipping_method: req.shipping_method as string | undefined,
         paid_local: req.paid_local || false,
         paid_local_at: req.paid_local_at as string | null | undefined,
       }));
@@ -3257,17 +3269,28 @@ export default function Home() {
 
 
             {deliveryLocation !== 'fob' && (
-              <div className="h-9 flex items-center justify-between bg-orange-50 px-2.5 sm:px-3 rounded">
-                <span className="text-[10px] sm:text-xs font-bold text-orange-700 tracking-widest leading-none">
-                  {t.localCostLabel}
-                </span>
-                <div className="flex items-center">
-                  <span className="font-extrabold text-orange-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
-                    <span className="text-xs font-semibold mr-0.5">$</span>
-                    {getLocalCost(product.url)}
+              <>
+                <div className="h-9 flex items-center justify-between bg-orange-50 px-2.5 sm:px-3 rounded">
+                  <span className="text-[10px] sm:text-xs font-bold text-orange-700 tracking-widest leading-none">
+                    {t.localCostLabel}
+                  </span>
+                  <div className="flex items-center">
+                    <span className="font-extrabold text-orange-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
+                      <span className="text-xs font-semibold mr-0.5">$</span>
+                      {getLocalCost(product.url)}
+                    </span>
+                  </div>
+                </div>
+                {/* 発送方法表示 */}
+                <div className="h-9 flex items-center justify-between bg-orange-50 px-2.5 sm:px-3 rounded">
+                  <span className="text-[10px] sm:text-xs font-bold text-orange-700 tracking-widest leading-none">
+                    {t.shippingMethodLabel}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-semibold text-gray-700 bg-white px-1.5 sm:px-2 py-0.5 rounded shadow-sm">
+                    {shippingMethod === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
                   </span>
                 </div>
-              </div>
+              </>
             )}
 
             <button
@@ -3942,14 +3965,25 @@ export default function Home() {
 
                       {/* 現地費用 (Costo Local / Custo Local) */}
                       {request.delivery_location !== 'JP' && (
-                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
-                          <span className="text-xs text-gray-500 font-medium">
-                            {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
-                          </span>
-                          <span className="text-base font-bold text-gray-800">
-                            {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request))}
-                          </span>
-                        </div>
+                        <>
+                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
+                            <span className="text-xs text-gray-500 font-medium">
+                              {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
+                            </span>
+                            <span className="text-base font-bold text-gray-800">
+                              {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request, request.shipping_method))}
+                            </span>
+                          </div>
+                          {/* 発送方法 */}
+                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
+                            <span className="text-xs text-gray-500 font-medium">
+                              {t.shippingMethodLabel}:
+                            </span>
+                            <span className="text-sm font-semibold text-black">
+                              {request.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                            </span>
+                          </div>
+                        </>
                       )}
 
 
@@ -4165,7 +4199,7 @@ export default function Home() {
                 .reduce((sum, item) => {
                   if (item.cancelledAt) return sum;
                   if (item.delivery_location === 'JP') return sum;
-                  const localCost = calculateLocalCost(item.delivery_location, item);
+                  const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
                   return sum + localCost;
                 }, 0);
 
@@ -4173,7 +4207,7 @@ export default function Home() {
                 .reduce((sum, item) => {
                   if (item.cancelledAt) return sum;
                   if (item.delivery_location === 'JP') return sum;
-                  const localCost = calculateLocalCost(item.delivery_location, item);
+                  const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
                   return sum + (item.paid_local ? 0 : localCost);
                 }, 0);
 
@@ -4539,23 +4573,32 @@ export default function Home() {
 
                                 {/* 現地費用 */}
                                 {item.delivery_location !== 'JP' && (
-                                  <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
-                                      {item.paid_local ? (
-                                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                          ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
-                                        </span>
-                                      ) : (
-                                        <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                          {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                        </span>
-                                      )}
+                                  <>
+                                    <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                        {item.paid_local ? (
+                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                            {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                        {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
+                                      </span>
                                     </div>
-                                    <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                      {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
-                                    </span>
-                                  </div>
+                                    {/* 発送方法 */}
+                                    <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                      <span className="text-gray-500 text-xs font-bold">{t.shippingMethodLabel}:</span>
+                                      <span className="text-sm font-semibold text-black">
+                                        {item.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                                      </span>
+                                    </div>
+                                  </>
                                 )}
                               </div>
                             );
@@ -4608,23 +4651,32 @@ export default function Home() {
 
                             {/* 現地費用 */}
                             {item.delivery_location !== 'JP' && (
-                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
-                                  {item.paid_local ? (
-                                    <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                      ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
-                                    </span>
-                                  ) : (
-                                    <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                      {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                    </span>
-                                  )}
+                              <>
+                                <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                    {item.paid_local ? (
+                                      <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                        ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                        {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                    {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
+                                  </span>
                                 </div>
-                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                  {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item))}
-                                </span>
-                              </div>
+                                {/* 発送方法 */}
+                                <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                                  <span className="text-gray-500 text-xs font-bold">{t.shippingMethodLabel}:</span>
+                                  <span className="text-sm font-semibold text-black">
+                                    {item.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                                  </span>
+                                </div>
+                              </>
                             )}
                           </>
                         )}
@@ -4774,7 +4826,7 @@ export default function Home() {
 
               const localCostTotal = targetPurchasedForLocalCost.reduce((sum, item) => {
                 if (item.delivery_location === 'JP') return sum;
-                return sum + calculateLocalCost(item.delivery_location, item);
+                return sum + calculateLocalCost(item.delivery_location, item, item.shipping_method);
               }, 0);
 
               const formattedBalanceUsd = isNegativeUsd
@@ -5438,6 +5490,23 @@ export default function Home() {
                             <option value="pjc">{t.deliveryPjc}</option>
                           </select>
                         </div>
+
+                        {/* 発送方法選択ドロップダウン */}
+                        {deliveryLocation !== 'fob' && (
+                          <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                              {t.shippingMethodLabel}
+                            </label>
+                            <select
+                              value={shippingMethod}
+                              onChange={(e) => setShippingMethod(e.target.value as any)}
+                              className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                            >
+                              <option value="sea">{t.shippingMethodSea}</option>
+                              <option value="air">{t.shippingMethodAir}</option>
+                            </select>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -5524,6 +5593,23 @@ export default function Home() {
                           <option value="pjc">{t.deliveryPjc}</option>
                         </select>
                       </div>
+
+                      {/* 発送方法選択ドロップダウン */}
+                      {deliveryLocation !== 'fob' && (
+                        <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                            {t.shippingMethodLabel}
+                          </label>
+                          <select
+                            value={shippingMethod}
+                            onChange={(e) => setShippingMethod(e.target.value as any)}
+                            className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                          >
+                            <option value="sea">{t.shippingMethodSea}</option>
+                            <option value="air">{t.shippingMethodAir}</option>
+                          </select>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -5640,6 +5726,23 @@ export default function Home() {
                       <option value="pjc">{t.deliveryPjc}</option>
                     </select>
                   </div>
+
+                  {/* 発送方法選択ドロップダウン */}
+                  {deliveryLocation !== 'fob' && (
+                    <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                        {t.shippingMethodLabel}
+                      </label>
+                      <select
+                        value={shippingMethod}
+                        onChange={(e) => setShippingMethod(e.target.value as any)}
+                        className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                      >
+                        <option value="sea">{t.shippingMethodSea}</option>
+                        <option value="air">{t.shippingMethodAir}</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

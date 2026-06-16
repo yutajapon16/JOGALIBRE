@@ -68,6 +68,7 @@ export interface BidRequest {
   invoiceNumber?: string | null;
   customerCountry?: string | null;
   delivery_location?: string;
+  shipping_method?: string;
   paid_local?: boolean;
   paid_local_at?: string | null;
   total_jpy?: number | null;

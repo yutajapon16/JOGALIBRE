@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
-import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost } from '@/lib/utils';
+import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost } from '@/lib/utils';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -37,6 +37,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   // 引渡し場所のState (デフォルトはfob)
   const [deliveryLocation, setDeliveryLocation] = useState<'fob' | 'asuncion' | 'encarnacion' | 'pjc'>('fob');
+  // 発送方法のState (デフォルトはsea)
+  const [shippingMethod, setShippingMethod] = useState<'sea' | 'air'>('sea');
   // 為替レート関連のState
   const [exchangeRate, setExchangeRate] = useState(150);
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({});
@@ -82,7 +84,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       deliveryAsuncion: 'Asunción 🇵🇾',
       deliveryEncarnacion: 'Encarnación 🇵🇾',
       deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
-      localCostLabel: 'Costo Local'
+      localCostLabel: 'Costo Local',
+      shippingMethodLabel: 'Método de envío',
+      shippingMethodSea: 'Contenedor 🚢',
+      shippingMethodAir: 'Avión ✈️'
     },
     pt: {
       title: 'Visualização de Produto com IA',
@@ -115,7 +120,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       deliveryAsuncion: 'Assunção 🇵🇾',
       deliveryEncarnacion: 'Encarnação 🇵🇾',
       deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
-      localCostLabel: 'Custo Local'
+      localCostLabel: 'Custo Local',
+      shippingMethodLabel: 'Método de envio',
+      shippingMethodSea: 'Contêiner 🚢',
+      shippingMethodAir: 'Avião ✈️'
     }
   };
 
@@ -355,10 +363,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  // 引渡し場所に応じた現地費用（USD）を返す関数（暫定で一律200ドル）
+  // 引渡し場所に応じた現地費用（USD）を返す関数
   const getLocalCost = (productUrl: string | null): number => {
     if (deliveryLocation === 'fob') return 0;
-    return 200;
+    const loc = deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC');
+    return calculateLocalCost(loc, { productUrl }, shippingMethod);
   };
 
   // オファー送信処理
@@ -404,7 +413,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           maxBid: Number(bidForm.maxBid),
           customerName: finalCustomerName,
           language: lang,
-          deliveryLocation: deliveryLocation === 'fob' ? 'JP' : (deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC'))
+          deliveryLocation: deliveryLocation === 'fob' ? 'JP' : (deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC')),
+          shippingMethod: deliveryLocation === 'fob' ? 'sea' : shippingMethod
         })
       });
 
@@ -506,7 +516,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <option value="pt">Português</option>
           </select>
         </div>
-        <div className="max-w-3xl mx-auto px-4 pb-2">
+        <div className="max-w-3xl mx-auto px-4 pb-2 space-y-2">
           <select
             value={deliveryLocation}
             onChange={(e) => setDeliveryLocation(e.target.value as any)}
@@ -517,6 +527,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <option value="encarnacion">{t.deliveryEncarnacion}</option>
             <option value="pjc">{t.deliveryPjc}</option>
           </select>
+
+          {/* 発送方法選択ドロップダウン */}
+          {deliveryLocation !== 'fob' && (
+            <select
+              value={shippingMethod}
+              onChange={(e) => setShippingMethod(e.target.value as any)}
+              className="w-full h-12 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center animate-in fade-in duration-300"
+            >
+              <option value="sea">{t.shippingMethodSea}</option>
+              <option value="air">{t.shippingMethodAir}</option>
+            </select>
+          )}
         </div>
       </header>
 
@@ -608,12 +630,21 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           
           {/* 通常ユーザー用現地費用ボックス（現在価格の下） */}
           {deliveryLocation !== 'fob' && (
-            <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
-              <span className="text-xs">{t.localCostLabel}</span>
-              <span className="text-sm sm:text-base font-extrabold">
-                $ {getLocalCost(product.url)}
-              </span>
-            </div>
+            <>
+              <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
+                <span className="text-xs">{t.localCostLabel}</span>
+                <span className="text-sm sm:text-base font-extrabold">
+                  $ {getLocalCost(product.url)}
+                </span>
+              </div>
+              {/* 発送方法 */}
+              <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
+                <span className="text-xs">{t.shippingMethodLabel}</span>
+                <span className="text-sm sm:text-base font-semibold text-gray-700">
+                  {shippingMethod === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                </span>
+              </div>
+            </>
           )}
         </div>
 

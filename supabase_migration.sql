@@ -178,3 +178,7 @@ ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS total_jpy NUMERIC DEFAULT NULL
 -- 26. キャンセル日時（cancelled_at）を記録するカラムを追加
 ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
 CREATE INDEX IF NOT EXISTS idx_bid_requests_cancelled_at ON bid_requests(cancelled_at);
+
+-- 27. 発送方法（shipping_method）のカラムを追加
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS shipping_method TEXT DEFAULT 'sea';
+CREATE INDEX IF NOT EXISTS idx_bid_requests_shipping_method ON bid_requests(shipping_method);

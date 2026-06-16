@@ -227,9 +227,12 @@ interface FobCostItem {
 
 interface LocalCostItem {
   key: string;
-  asu: number;
-  enc: number;
-  pjc: number;
+  asu_sea: number;
+  enc_sea: number;
+  pjc_sea: number;
+  asu_air: number;
+  enc_air: number;
+  pjc_air: number;
 }
 
 const cachedShippingCosts: ShippingCostItem[] = costsCache.shippingCosts;
@@ -307,7 +310,7 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
  * @param item 商品情報
  * @returns 現地費用 (USD建ての数値、日本渡しは0)
  */
-export const calculateLocalCost = (deliveryLocation?: string, item?: any): number => {
+export const calculateLocalCost = (deliveryLocation?: string, item?: any, shippingMethod?: string): number => {
   if (!deliveryLocation || deliveryLocation === 'JP') return 0;
   
   loadCostsData();
@@ -327,9 +330,19 @@ export const calculateLocalCost = (deliveryLocation?: string, item?: any): numbe
 
   if (!costItem) return 0;
 
-  if (loc === 'asu' || loc === 'asuncion') return costItem.asu;
-  if (loc === 'enc' || loc === 'encarnacion') return costItem.enc;
-  if (loc === 'pjc') return costItem.pjc;
+  // shippingMethodの判定 (引数またはitemから取得。デフォルトは'sea')
+  const method = (shippingMethod || item?.shipping_method || item?.shippingMethod || 'sea').trim().toLowerCase();
+  const isAir = method === 'air' || method === 'airplane' || method === '航空便' || method === '飛行機';
+
+  if (isAir) {
+    if (loc === 'asu' || loc === 'asuncion') return costItem.asu_air ?? 0;
+    if (loc === 'enc' || loc === 'encarnacion') return costItem.enc_air ?? 0;
+    if (loc === 'pjc') return costItem.pjc_air ?? 0;
+  } else {
+    if (loc === 'asu' || loc === 'asuncion') return costItem.asu_sea ?? 0;
+    if (loc === 'enc' || loc === 'encarnacion') return costItem.enc_sea ?? 0;
+    if (loc === 'pjc') return costItem.pjc_sea ?? 0;
+  }
 
   return 0;
 };

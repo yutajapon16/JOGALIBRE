@@ -930,6 +930,7 @@ export default function AdminDashboard() {
         agentCustomerId: req.agent_customer_id as string | null | undefined,
         customerCountry: req.customer_country as string | null | undefined,
         delivery_location: req.delivery_location as string | undefined,
+        shipping_method: req.shipping_method as string | undefined,
         paid_local: req.paid_local || false,
         paid_local_at: req.paid_local_at as string | null | undefined,
         totalJpy: req.total_jpy
@@ -983,6 +984,7 @@ export default function AdminDashboard() {
         agentCustomerId: item.agent_customer_id as string | null | undefined,
         customerCountry: item.customer_country as string | null | undefined,
         delivery_location: item.delivery_location as string | undefined,
+        shipping_method: item.shipping_method as string | undefined,
         paid_local: item.paid_local || false,
         paid_local_at: item.paid_local_at as string | null | undefined,
         totalJpy: item.total_jpy,
@@ -1944,14 +1946,25 @@ export default function AdminDashboard() {
 
                     {/* 現地費用 */}
                     {request.delivery_location !== 'JP' && (
-                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans text-xs">
-                        <span className="text-gray-500 font-medium">
-                          現地費用:
-                        </span>
-                        <span className="text-base font-bold text-gray-800">
-                          {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request), 'USD')}
-                        </span>
-                      </div>
+                      <>
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans text-xs">
+                          <span className="text-gray-500 font-medium">
+                            現地費用:
+                          </span>
+                          <span className="text-base font-bold text-gray-800">
+                            {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request, request.shipping_method), 'USD')}
+                          </span>
+                        </div>
+                        {/* 発送方法 */}
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans text-xs">
+                          <span className="text-gray-500 font-medium">
+                            発送方法:
+                          </span>
+                          <span className="font-semibold text-black">
+                            {request.shipping_method === 'air' ? '航空便 ✈️' : 'コンテナ 🚢'}
+                          </span>
+                        </div>
+                      </>
                     )}
 
                     {/* 各種アクションボタン */}
@@ -2207,7 +2220,7 @@ export default function AdminDashboard() {
                   .reduce((sum, item) => {
                     if (item.cancelledAt) return sum;
                     if (item.delivery_location === 'JP') return sum;
-                    const localCost = calculateLocalCost(item.delivery_location, item);
+                    const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
                     return sum + localCost;
                   }, 0);
 
@@ -2215,7 +2228,7 @@ export default function AdminDashboard() {
                   .reduce((sum, item) => {
                     if (item.cancelledAt) return sum;
                     if (item.delivery_location === 'JP') return sum;
-                    const localCost = calculateLocalCost(item.delivery_location, item);
+                    const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
                     return sum + (item.paid_local ? 0 : localCost);
                   }, 0);
 
@@ -2493,7 +2506,7 @@ export default function AdminDashboard() {
                                         )}
                                       </label>
                                       <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black font-black'}`}>
-                                        {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item), 'USD')}
+                                        {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
                                       </span>
                                     </div>
                                   )}
@@ -2504,6 +2517,14 @@ export default function AdminDashboard() {
                                   <span className="text-gray-500 font-medium">引渡場所:</span>
                                   <span className="font-semibold text-black">{getDeliveryLocationName(item.delivery_location)}</span>
                                 </div>
+
+                                {/* 発送方法 (B001用) */}
+                                {item.delivery_location !== 'JP' && (
+                                  <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                                    <span className="text-gray-500 font-medium">発送方法:</span>
+                                    <span className="font-semibold text-black">{item.shipping_method === 'air' ? '航空便 ✈️' : 'コンテナ 🚢'}</span>
+                                  </div>
+                                )}
                               </>
                             );
                           })()
@@ -2582,25 +2603,34 @@ export default function AdminDashboard() {
 
                             {/* 現地費用 (通常顧客用・チェックボックス付) */}
                             {item.delivery_location !== 'JP' && (
-                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
-                                <label className="flex items-center cursor-pointer select-none">
-                                  <input
-                                    type="checkbox"
-                                    checked={item.paid_local}
-                                    onChange={(e) => updatePaidSplitStatus(item.id, { paid_local: e.target.checked })}
-                                    className="w-4 h-4 mr-1.5 cursor-pointer text-green-600 border-gray-300 rounded focus:ring-green-500"
-                                  />
-                                  <span className="text-gray-500">現地費用:</span>
-                                  {item.paid_local && item.paid_local_at && (
-                                    <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
-                                      ✓ 支払済 ({formatDateTime(item.paid_local_at)})
-                                    </span>
-                                  )}
-                                </label>
-                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                  {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item), 'USD')}
-                                </span>
-                              </div>
+                              <>
+                                <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                                  <label className="flex items-center cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.paid_local}
+                                      onChange={(e) => updatePaidSplitStatus(item.id, { paid_local: e.target.checked })}
+                                      className="w-4 h-4 mr-1.5 cursor-pointer text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                    />
+                                    <span className="text-gray-500">現地費用:</span>
+                                    {item.paid_local && item.paid_local_at && (
+                                      <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
+                                        ✓ 支払済 ({formatDateTime(item.paid_local_at)})
+                                      </span>
+                                    )}
+                                  </label>
+                                  <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                    {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
+                                  </span>
+                                </div>
+                                {/* 発送方法 */}
+                                <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                                  <span className="text-gray-500 font-medium">発送方法:</span>
+                                  <span className="font-semibold text-black">
+                                    {item.shipping_method === 'air' ? '航空便 ✈️' : 'コンテナ 🚢'}
+                                  </span>
+                                </div>
+                              </>
                             )}
                           </>
                         )}
@@ -3230,7 +3260,7 @@ export default function AdminDashboard() {
 
                 const localCostTotal = targetPurchasedForLocalCost.reduce((sum, item) => {
                   if (item.delivery_location === 'JP') return sum;
-                  return sum + calculateLocalCost(item.delivery_location, item);
+                  return sum + calculateLocalCost(item.delivery_location, item, item.shipping_method);
                 }, 0);
 
                 if (depositFilterCustomer === 'all') {

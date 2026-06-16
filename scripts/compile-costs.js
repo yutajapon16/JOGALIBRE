@@ -102,9 +102,12 @@ function compile() {
     localRows.slice(1).forEach(row => {
       localCosts[row[0]] = {
         key: row[0],
-        asu: parseFloat(row[1] || '0'),
-        enc: parseFloat(row[2] || '0'),
-        pjc: parseFloat(row[3] || '0')
+        asu_sea: parseFloat(row[1] || '0'),
+        enc_sea: parseFloat(row[2] || '0'),
+        pjc_sea: parseFloat(row[3] || '0'),
+        asu_air: parseFloat(row[4] || '0'),
+        enc_air: parseFloat(row[5] || '0'),
+        pjc_air: parseFloat(row[6] || '0')
       };
     });
   }

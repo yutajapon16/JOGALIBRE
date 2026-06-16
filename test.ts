@@ -88,6 +88,13 @@ const defaultItem = { productTitle: "普通の小物部品", productUrl: "https:
 console.log('Default Category Key:', detectCategoryKey(defaultItem.productTitle, defaultItem.productUrl)); // default のはず
 console.log('Default ASU Local Cost:', calculateLocalCost('ASU', defaultItem)); // 0 のはず
 
+console.log('--- Shipping Method Local Cost Tests ---');
+const engineItemForMethod = { productTitle: "テストエンジン 3SGTE", productUrl: "https://page.auctions.yahoo.co.jp/jp/auction/f12345?auccat=2084200282" };
+console.log('Engine ASU (sea):', calculateLocalCost('ASU', engineItemForMethod, 'sea')); // 150 のはず
+console.log('Engine ASU (air):', calculateLocalCost('ASU', engineItemForMethod, 'air')); // 150 のはず
+console.log('Engine ASU (default/none):', calculateLocalCost('ASU', engineItemForMethod)); // 150 のはず
+
+
 
 
 
