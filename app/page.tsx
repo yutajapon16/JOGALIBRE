@@ -1893,6 +1893,7 @@ export default function Home() {
           return {
             id: f.product_id as string,
             title: translatedTitles[i] || f.product_title as string,
+            titleJa: f.product_title as string,
             url: f.product_url as string,
             imageUrl: f.product_image as string,
             currentPrice: f.product_price as number,
@@ -1979,6 +1980,15 @@ export default function Home() {
         // ローカルstate更新
         setFavorites(prev => prev.filter(f => f.id !== product.id));
       } else {
+        // URLにカテゴリIDパラメータを動的に付加してお気に入りに保存する
+        let favUrl = product.url || '';
+        if (product.categoryId && !favUrl.includes('auccat=')) {
+          favUrl += (favUrl.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId;
+        }
+        if (currentCategory?.id && !favUrl.includes('jcat=')) {
+          favUrl += (favUrl.includes('?') ? '&' : '?') + 'jcat=' + currentCategory.id;
+        }
+
         // お気に入り追加
         const res = await fetch(`/api/favorites?t=${Date.now()}`, {
           method: 'POST',
@@ -1991,7 +2001,7 @@ export default function Home() {
           body: JSON.stringify({
             productId: product.id,
             productTitle: product.titleJa || product.title || '',
-            productUrl: product.url,
+            productUrl: favUrl,
             productImage: product.imageUrl || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : ''),
             productPrice: product.currentPrice || '',
             bids: product.bids || 0,
@@ -2014,6 +2024,7 @@ export default function Home() {
           const newList = [{
             id: data.product_id,
             title: product.titleJa || product.title || data.product_title,
+            titleJa: product.titleJa || product.title,
             url: data.product_url,
             imageUrl: data.product_image,
             currentPrice: data.product_price,
