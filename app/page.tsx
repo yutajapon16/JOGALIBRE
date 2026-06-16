@@ -2392,10 +2392,17 @@ export default function Home() {
   };
 
   // 引渡し場所に応じた現地費用（USD）を返す関数
-  const getLocalCost = (productUrl: string | null): number => {
+  const getLocalCost = (product: SearchItem): number => {
     if (deliveryLocation === 'fob') return 0;
     const loc = deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC');
-    return calculateLocalCost(loc, { productUrl }, shippingMethod);
+    let finalUrl = product.url || '';
+    if (product.categoryId && !finalUrl.includes('auccat=')) {
+      finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId;
+    }
+    if (currentCategory?.id && !finalUrl.includes('jcat=')) {
+      finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'jcat=' + currentCategory.id;
+    }
+    return calculateLocalCost(loc, { productTitle: product.titleJa || product.title, productUrl: finalUrl }, shippingMethod);
   };
 
   const fetchMyRequests = async () => {
@@ -3276,7 +3283,7 @@ export default function Home() {
                 <div className="flex items-center">
                   <span className="font-extrabold text-orange-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
                     <span className="text-xs font-semibold mr-0.5">$</span>
-                    {getLocalCost(product.url)}
+                    {getLocalCost(product)}
                   </span>
                 </div>
               </div>
@@ -5796,7 +5803,7 @@ export default function Home() {
                         {t.localCostLabel}
                       </span>
                       <span className="font-extrabold text-sm text-indigo-700">
-                        $ {getLocalCost(selectedProduct.url)}
+                        $ {getLocalCost(selectedProduct)}
                       </span>
                     </div>
                   )}

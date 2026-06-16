@@ -367,7 +367,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const getLocalCost = (productUrl: string | null): number => {
     if (deliveryLocation === 'fob') return 0;
     const loc = deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC');
-    return calculateLocalCost(loc, { productUrl }, shippingMethod);
+    let finalUrl = productUrl || '';
+    if (product?.categoryId && !finalUrl.includes('auccat=')) {
+      finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId;
+    }
+    if (jcat && !finalUrl.includes('jcat=')) {
+      finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'jcat=' + jcat;
+    }
+    return calculateLocalCost(loc, { productTitle: product?.titleJa || product?.title || '', productUrl: finalUrl }, shippingMethod);
   };
 
   // オファー送信処理
