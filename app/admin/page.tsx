@@ -1337,20 +1337,39 @@ export default function AdminDashboard() {
     }
 
     // CSVヘッダー
-    const headers = ['日付', '顧客名', '氏名', 'メール', 'WhatsApp', '商品名', '確定金額(USD)', '支払い状態', '商品URL'];
+    const headers = ['日付', 'ID', '氏名', '顧客名またはAGT', 'メール', 'WhatsApp', '商品名', '確定金額(USD)', '支払状況', '商品URL'];
 
     // CSVデータ行
-    const rows = items.map(item => [
-      formatDateTime(item.confirmedAt || ''),
-      item.customerName,
-      item.customerFullName || '',
-      item.customerEmail,
-      item.customerWhatsapp || '',
-      `"${(item.productTitle || '').replace(/"/g, '""')}"`,
-      item.finalPrice ? Math.round(item.finalPrice) : '',
-      item.cancelledAt ? 'キャンセル済み' : (item.paid ? '支払い済み' : '未払い'),
-      item.productUrl || ''
-    ]);
+    const rows = items.map(item => {
+      const isB001Linked = item.agentCustomerId === 'B001';
+      const countryLower = item.customerCountry?.trim().toLowerCase();
+      const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
+      
+      const cost = item.finalPrice || 0;
+      let finalPriceOutput = '';
+      
+      if (cost > 0) {
+        if (isB001Linked || isBrasilAgent) {
+          const jpyRate = exchangeRates['JPY'] || exchangeRate || 150;
+          finalPriceOutput = String(calculateJapanSendAmount(item, Math.round(cost), jpyRate));
+        } else {
+          finalPriceOutput = String(Math.round(cost));
+        }
+      }
+
+      return [
+        formatDateTime(item.confirmedAt || ''),
+        item.customerId || '',
+        item.customerFullName || '',
+        item.customerName || '',
+        item.customerEmail || '',
+        item.customerWhatsapp || '',
+        `"${(item.productTitle || '').replace(/"/g, '""')}"`,
+        finalPriceOutput,
+        item.cancelledAt ? 'キャンセル済み' : (item.paid ? '支払い済み' : '未払い'),
+        item.productUrl || ''
+      ];
+    });
 
     // BOM付きUTF-8でCSV生成（Excelで文字化けしないように）
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
