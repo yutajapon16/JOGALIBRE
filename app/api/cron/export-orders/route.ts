@@ -100,6 +100,16 @@ export async function GET(request: Request) {
       const rowFob = calculateDefaultFobCost(order.product_title, order.product_url);
       const rowShipping = calculateDefaultShippingCost(order.product_title, order.product_url);
 
+      // カウンターオファーが承認された場合の合意金額を判定して反映する
+      let finalMaxBidUsd = order.max_bid;
+      if (order.customer_counter_offer_used) {
+        // 顧客が管理者のカウンターオファーを承認した場合
+        finalMaxBidUsd = order.counter_offer || order.max_bid;
+      } else if (order.customer_counter_offer) {
+        // 顧客提示のカウンターオファーを管理者が承認した場合
+        finalMaxBidUsd = order.customer_counter_offer;
+      }
+
       return [
         escapeCSV(order.id),
         escapeCSV(order.product_end_time),
@@ -109,7 +119,7 @@ export async function GET(request: Request) {
         escapeCSV(order.product_url),
         formula, // 数式はクォートなしで出力
         rowShipping > 0 ? rowShipping : '', // デフォルトの送料を出力
-        order.max_bid,
+        finalMaxBidUsd,
         exchangeRate,
         profitRate,
         rowFob,
