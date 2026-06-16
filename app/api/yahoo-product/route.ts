@@ -385,9 +385,16 @@ export async function POST(request: Request) {
     const breadcrumbMatches = Array.from(
       html.matchAll(/auctions\.yahoo\.co\.jp\/(?:category\/list\/(\d+)|list\d+\/(\d+)-category\.html)/g)
     );
-    if (breadcrumbMatches.length > 0) {
-      // マッチしたグループからカテゴリIDを抽出し、重複を排除してカンマ区切りにする
-      const ids = breadcrumbMatches.map(m => m[1] || m[2]).filter(Boolean);
+    const ids = breadcrumbMatches.map(m => m[1] || m[2]).filter(Boolean);
+
+    // 将来的なURLの変更やパンくずリストの構造変化に備え、HTML内の構造データ ("catidX": "xxxxx") からも補助的にカテゴリIDを抽出してマージする
+    const catidMatches = Array.from(html.matchAll(/"catid\d+"\s*:\s*"(\d+)"/g));
+    if (catidMatches.length > 0) {
+      ids.push(...catidMatches.map(m => m[1]));
+    }
+
+    if (ids.length > 0) {
+      // 重複を排除してカンマ区切りにする
       const uniqueIds = Array.from(new Set(ids));
       categoryId = uniqueIds.join(',');
     }
