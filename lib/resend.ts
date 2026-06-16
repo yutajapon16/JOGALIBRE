@@ -13,7 +13,7 @@ function getResend() {
 export async function sendOrderCsvEmail(to: string, csvContent: string, dateStr: string) {
   try {
     const resend = getResend();
-    const dateStrClean = dateStr.replace(/\//g, ''); // '2026/06/16' -> '20260616'
+    const dateStrUnderscore = dateStr.replace(/\//g, '_'); // '2026/06/16' -> '2026_06_16'
     const { data, error } = await resend.emails.send({
       from: 'JOGALIBRE Orders <order@jogalibre.com>',
       to: [to],
@@ -21,7 +21,7 @@ export async function sendOrderCsvEmail(to: string, csvContent: string, dateStr:
       html: `<p>${dateStr} 時点での入札希望商品リストです。</p>`,
       attachments: [
         {
-          filename: `${dateStrClean} 入札依頼.csv`,
+          filename: `JOGALIBRE_入金依頼_${dateStrUnderscore}.csv`,
           content: Buffer.from('\uFEFF' + csvContent).toString('base64'), // BOM for Excel
         },
       ],
