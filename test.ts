@@ -47,4 +47,25 @@ console.log('14. 車種タイトル判定 (スープラ):', calculateDefaultFobC
 console.log('15. デフォルトFOB (一般商品):', calculateDefaultFobCost("一般の自動車部品", "https://page.auctions.yahoo.co.jp/jp/auction/f12345")); // 1500のはず
 
 
+console.log('--- Profit Rate Tests ---');
+const simulateProfitRate = (customerId: string, agentCustomerId?: string | null) => {
+  let profitRate = 0.4;
+  if (customerId === 'B001') {
+    profitRate = 0.1;
+  } else if (agentCustomerId === 'B001') {
+    profitRate = 0.4; // B001紐づき顧客は通常顧客と同様に40%
+  } else if (customerId.startsWith('A')) {
+    profitRate = 0.2; // 通常・ブラジルエージェント共通で20%
+  }
+  return profitRate;
+};
+
+console.log('1. B001本人 (customerId=B001):', simulateProfitRate('B001')); // 0.1 のはず
+console.log('2. B001紐づき顧客 (customerId=C123, agentCustomerId=B001):', simulateProfitRate('C123', 'B001')); // 0.4 のはず
+console.log('3. ブラジルエージェント (customerId=A001):', simulateProfitRate('A001')); // 0.2 のはず
+console.log('4. 通常エージェント (customerId=A002):', simulateProfitRate('A002')); // 0.2 のはず
+console.log('5. 一般顧客 (customerId=C456):', simulateProfitRate('C456')); // 0.4 のはず
+
+
+
 

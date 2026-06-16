@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendOrderCsvEmail } from '@/lib/resend';
 import { getResilientExchangeRate } from '@/lib/exchange';
-import { calculateDefaultFobCost, calculateDefaultShippingCost } from '@/lib/utils';
+import { calculateDefaultFobCost, calculateDefaultShippingCost, calculateJapanSendAmount } from '@/lib/utils';
 
 export async function GET(request: Request) {
   // Vercel Cron からの認証チェック（必要に応じて）
@@ -75,18 +75,15 @@ export async function GET(request: Request) {
       const customerName = userInfo?.full_name || order.customer_name || '';
       const agentCustomerId = userInfo?.agent_customer_id;
 
+      // 利益率（Profit Rate）の判定
+      // ブラジルエージェントは通常エージェントと同様に 20% (0.2)、B001紐づき顧客は通常顧客と同様に 40% (0.4) とする
       let profitRate = 0.4;
       if (customerId === 'B001') {
         profitRate = 0.1;
       } else if (agentCustomerId === 'B001') {
-        profitRate = 0.5;
+        profitRate = 0.4; // B001紐づき顧客は通常顧客と同様に40%
       } else if (customerId.startsWith('A')) {
-        const countryLower = userInfo?.country?.trim().toLowerCase();
-        if (countryLower === 'brasil' || countryLower === 'brazil') {
-          profitRate = 0.3;
-        } else {
-          profitRate = 0.2;
-        }
+        profitRate = 0.2; // 通常・ブラジルエージェント共通で20%
       }
       
       const rowIdx = index + 2;
@@ -110,6 +107,24 @@ export async function GET(request: Request) {
         finalMaxBidUsd = order.customer_counter_offer;
       }
 
+      // ブラジルエージェントおよびB001紐づき顧客については、Max Bid (USD) に「日本支払額」を出力する
+      let maxBidUsdOutput = finalMaxBidUsd;
+      const isB001Linked = agentCustomerId === 'B001';
+      const isBrasilAgent = customerId.startsWith('A') && 
+        ((userInfo?.country || '').trim().toLowerCase() === 'brasil' || (userInfo?.country || '').trim().toLowerCase() === 'brazil');
+
+      if (isB001Linked || isBrasilAgent) {
+        const itemDummy = {
+          customerId,
+          customer_id: customerId,
+          agentCustomerId,
+          agent_customer_id: agentCustomerId,
+          country: userInfo?.country,
+          customerCountry: userInfo?.country
+        };
+        maxBidUsdOutput = calculateJapanSendAmount(itemDummy, finalMaxBidUsd, exchangeRate);
+      }
+
       return [
         escapeCSV(order.id),
         escapeCSV(order.product_end_time),
@@ -119,7 +134,7 @@ export async function GET(request: Request) {
         escapeCSV(order.product_url),
         formula, // 数式はクォートなしで出力
         rowShipping > 0 ? rowShipping : '', // デフォルトの送料を出力
-        finalMaxBidUsd,
+        maxBidUsdOutput, // 「日本支払額」または「最大オファー金額」を出力
         exchangeRate,
         profitRate,
         rowFob,
