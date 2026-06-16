@@ -21,7 +21,7 @@ export async function sendOrderCsvEmail(to: string, csvContent: string, dateStr:
       html: `<p>${dateStr} 時点での入札希望商品リストです。</p>`,
       attachments: [
         {
-          filename: `JOGALIBRE_入金依頼_${dateStrUnderscore}.csv`,
+          filename: `JOGALIBRE_入札依頼_${dateStrUnderscore}.csv`,
           content: Buffer.from('\uFEFF' + csvContent).toString('base64'), // BOM for Excel
         },
       ],
