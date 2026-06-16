@@ -67,5 +67,28 @@ console.log('4. 通常エージェント (customerId=A002):', simulateProfitRate
 console.log('5. 一般顧客 (customerId=C456):', simulateProfitRate('C456')); // 0.4 のはず
 
 
+console.log('--- Local Cost (CSV based) Tests ---');
+import { calculateLocalCost, detectCategoryKey } from './lib/utils.ts';
+
+// 1. エンジン
+const engineItem = { productTitle: "テストエンジン 3SGTE", productUrl: "https://page.auctions.yahoo.co.jp/jp/auction/f12345?auccat=2084200282" };
+console.log('Engine Category Key:', detectCategoryKey(engineItem.productTitle, engineItem.productUrl)); // motor のはず
+console.log('Engine ASU Local Cost:', calculateLocalCost('ASU', engineItem)); // 150 のはず
+console.log('Engine ENC Local Cost:', calculateLocalCost('ENC', engineItem)); // 180 のはず
+console.log('Engine PJC Local Cost:', calculateLocalCost('PJC', engineItem)); // 200 のはず
+console.log('Engine JP Local Cost (Should be 0):', calculateLocalCost('JP', engineItem)); // 0 のはず
+
+// 2. タイヤ
+const tireItem = { productTitle: "中古タイヤ 4本セット", productUrl: "https://page.auctions.yahoo.co.jp/jp/auction/f12345?auccat=2084200183" };
+console.log('Tire Category Key:', detectCategoryKey(tireItem.productTitle, tireItem.productUrl)); // llantas のはず
+console.log('Tire ASU Local Cost:', calculateLocalCost('ASU', tireItem)); // 100 のはず
+
+// 3. その他（デフォルト）
+const defaultItem = { productTitle: "普通の小物部品", productUrl: "https://page.auctions.yahoo.co.jp/jp/auction/f12345?auccat=123" };
+console.log('Default Category Key:', detectCategoryKey(defaultItem.productTitle, defaultItem.productUrl)); // default のはず
+console.log('Default ASU Local Cost:', calculateLocalCost('ASU', defaultItem)); // 0 のはず
+
+
+
 
 

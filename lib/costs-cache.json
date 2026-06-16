@@ -1,0 +1,383 @@
+{
+  "shippingCosts": [
+    {
+      "key": "motor",
+      "shipping": 10000,
+      "categoryIds": [
+        "2084200282"
+      ],
+      "keywords": [
+        "motor",
+        "エンジン"
+      ]
+    },
+    {
+      "key": "transmision",
+      "shipping": 8000,
+      "categoryIds": [
+        "2084008426"
+      ],
+      "keywords": [
+        "transmisión",
+        "transmision",
+        "transmissão",
+        "transmissao",
+        "トランスミッション",
+        "ミッション"
+      ]
+    },
+    {
+      "key": "llantas",
+      "shipping": 8000,
+      "categoryIds": [
+        "2084226162",
+        "2084200183",
+        "2084200188",
+        "2084200189",
+        "2084200190"
+      ],
+      "keywords": []
+    },
+    {
+      "key": "ll16",
+      "shipping": 8000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "ll17",
+      "shipping": 11000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "ll18",
+      "shipping": 15000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "aros",
+      "shipping": 6000,
+      "categoryIds": [
+        "2084005140",
+        "2084008474",
+        "2084040548",
+        "2084040547"
+      ],
+      "keywords": []
+    },
+    {
+      "key": "ar16",
+      "shipping": 6000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "ar17",
+      "shipping": 8000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "ar18",
+      "shipping": 10000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "suspension",
+      "shipping": 2000,
+      "categoryIds": [
+        "2084005257"
+      ],
+      "keywords": [
+        "suspensión",
+        "suspension",
+        "suspensão",
+        "suspensao",
+        "サスペンション",
+        "サス",
+        "車高調",
+        "スプリング",
+        "ショック"
+      ]
+    },
+    {
+      "key": "asiento",
+      "shipping": 9000,
+      "categoryIds": [
+        "2084005258"
+      ],
+      "keywords": [
+        "asiento",
+        "assento",
+        "シート",
+        "レカロ",
+        "recaro",
+        "セミバケ",
+        "フルバケ"
+      ]
+    },
+    {
+      "key": "barras",
+      "shipping": 3000,
+      "categoryIds": [
+        "2084008461"
+      ],
+      "keywords": [
+        "barras",
+        "タワーバー",
+        "ロールバー",
+        "補強"
+      ]
+    },
+    {
+      "key": "freno",
+      "shipping": 4000,
+      "categoryIds": [
+        "2084005259"
+      ],
+      "keywords": [
+        "freno",
+        "freio",
+        "ブレーキ",
+        "ブレンボ",
+        "brembo",
+        "キャリパー",
+        "ローター"
+      ]
+    },
+    {
+      "key": "caraudio",
+      "shipping": 3000,
+      "categoryIds": [
+        "23852",
+        "2084005294",
+        "2084048322",
+        "23864"
+      ],
+      "keywords": [
+        "audio",
+        "som",
+        "オーディオ",
+        "スピーカー",
+        "アンプ",
+        "ウーファー",
+        "サブウーファー",
+        "プレーヤー",
+        "player",
+        "reproductor",
+        "amplificador",
+        "subwoofer",
+        "altavoz",
+        "altavoces",
+        "alto-falantes"
+      ]
+    }
+  ],
+  "fobCosts": [
+    {
+      "key": "supra",
+      "fob": 54000,
+      "categoryIds": [],
+      "keywords": [
+        "supra",
+        "スープラ",
+        "jza80"
+      ]
+    },
+    {
+      "key": "skyline",
+      "fob": 54000,
+      "categoryIds": [],
+      "keywords": [
+        "skyline",
+        "スカイライン",
+        "gt-r",
+        "gtr",
+        "bnr32",
+        "bcnr33",
+        "bnr34"
+      ]
+    },
+    {
+      "key": "lancer",
+      "fob": 54000,
+      "categoryIds": [],
+      "keywords": [
+        "lancer",
+        "evo",
+        "ランエボ",
+        "エボ",
+        "ランサー"
+      ]
+    },
+    {
+      "key": "rx7",
+      "fob": 54000,
+      "categoryIds": [],
+      "keywords": [
+        "rx-7",
+        "rx7",
+        "fd3s",
+        "fc3s"
+      ]
+    },
+    {
+      "key": "silvia",
+      "fob": 54000,
+      "categoryIds": [],
+      "keywords": [
+        "silvia",
+        "シルビア",
+        "シルホア",
+        "s13",
+        "s14",
+        "s15"
+      ]
+    },
+    {
+      "key": "impreza",
+      "fob": 54000,
+      "categoryIds": [],
+      "keywords": [
+        "impreza",
+        "インプレッサ",
+        "gc8"
+      ]
+    },
+    {
+      "key": "desarme",
+      "fob": 65000,
+      "categoryIds": [
+        "2084061280"
+      ],
+      "keywords": [
+        "desarme",
+        "desmanche",
+        "部品取り",
+        "丸車",
+        "書類無し"
+      ]
+    },
+    {
+      "key": "moto",
+      "fob": 10000,
+      "categoryIds": [
+        "26316"
+      ],
+      "keywords": [
+        "moto",
+        "バイク",
+        "オートバイ",
+        "二輪",
+        "motorcycle"
+      ]
+    }
+  ],
+  "localCosts": {
+    "default": {
+      "key": "default",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "motor": {
+      "key": "motor",
+      "asu": 150,
+      "enc": 180,
+      "pjc": 200
+    },
+    "llantas": {
+      "key": "llantas",
+      "asu": 100,
+      "enc": 120,
+      "pjc": 150
+    },
+    "aros": {
+      "key": "aros",
+      "asu": 80,
+      "enc": 100,
+      "pjc": 120
+    },
+    "suspension": {
+      "key": "suspension",
+      "asu": 50,
+      "enc": 60,
+      "pjc": 70
+    },
+    "asiento": {
+      "key": "asiento",
+      "asu": 100,
+      "enc": 120,
+      "pjc": 140
+    },
+    "barras": {
+      "key": "barras",
+      "asu": 30,
+      "enc": 40,
+      "pjc": 50
+    },
+    "freno": {
+      "key": "freno",
+      "asu": 40,
+      "enc": 50,
+      "pjc": 60
+    },
+    "caraudio": {
+      "key": "caraudio",
+      "asu": 30,
+      "enc": 45,
+      "pjc": 60
+    },
+    "supra": {
+      "key": "supra",
+      "asu": 500,
+      "enc": 600,
+      "pjc": 700
+    },
+    "skyline": {
+      "key": "skyline",
+      "asu": 500,
+      "enc": 600,
+      "pjc": 700
+    },
+    "lancer": {
+      "key": "lancer",
+      "asu": 500,
+      "enc": 600,
+      "pjc": 700
+    },
+    "rx7": {
+      "key": "rx7",
+      "asu": 500,
+      "enc": 600,
+      "pjc": 700
+    },
+    "silvia": {
+      "key": "silvia",
+      "asu": 500,
+      "enc": 600,
+      "pjc": 700
+    },
+    "impreza": {
+      "key": "impreza",
+      "asu": 500,
+      "enc": 600,
+      "pjc": 700
+    },
+    "desarme": {
+      "key": "desarme",
+      "asu": 400,
+      "enc": 450,
+      "pjc": 500
+    },
+    "moto": {
+      "key": "moto",
+      "asu": 100,
+      "enc": 120,
+      "pjc": 150
+    }
+  }
+}
