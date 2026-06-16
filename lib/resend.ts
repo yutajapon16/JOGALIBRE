@@ -18,7 +18,7 @@ export async function sendOrderCsvEmail(to: string, csvContent: string, dateStr:
       from: 'JOGALIBRE Orders <order@jogalibre.com>',
       to: [to],
       subject: `[JOGALIBRE] 入札依頼（${dateStr}）`,
-      html: `<p>${dateStr} 時点での希望入札商品リストです。</p>`,
+      html: `<p>${dateStr} 時点での入札希望商品リストです。</p>`,
       attachments: [
         {
           filename: `${dateStrClean} 入札依頼.csv`,
