@@ -134,6 +134,11 @@ export default function AdminDashboard() {
     return `${getCurrencySymbol(targetCurrency)} ${finalConverted.toLocaleString('en-US').replace(/,/g, '.')}`;
   };
 
+  const formatLocalCost = (cost: number | string, targetCurrency: string = selectedCurrency): string => {
+    if (typeof cost === 'string') return cost;
+    return convertUSDToSelectedCurrency(cost, targetCurrency);
+  };
+
   const handleManualAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualAddForm.productTitle || !manualAddForm.customerId || !manualAddForm.finalPrice || !manualAddForm.createdAt) {
@@ -1951,8 +1956,8 @@ export default function AdminDashboard() {
                           <span className="text-gray-500 font-medium">
                             現地費用:
                           </span>
-                          <span className="text-base font-bold text-gray-800">
-                            {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request, request.shipping_method), 'USD')}
+                          <span className={`text-base font-bold ${typeof calculateLocalCost(request.delivery_location, request, request.shipping_method) === 'string' ? 'text-red-600' : 'text-gray-800'}`}>
+                            {formatLocalCost(calculateLocalCost(request.delivery_location, request, request.shipping_method), 'USD')}
                           </span>
                         </div>
                         {/* 発送方法 */}
@@ -2221,7 +2226,7 @@ export default function AdminDashboard() {
                     if (item.cancelledAt) return sum;
                     if (item.delivery_location === 'JP') return sum;
                     const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
-                    return sum + localCost;
+                    return sum + (typeof localCost === 'number' ? localCost : 0);
                   }, 0);
 
                 const unpaidLocalCostTotal = filteredItemsForSummary
@@ -2229,7 +2234,7 @@ export default function AdminDashboard() {
                     if (item.cancelledAt) return sum;
                     if (item.delivery_location === 'JP') return sum;
                     const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
-                    return sum + (item.paid_local ? 0 : localCost);
+                    return sum + (item.paid_local ? 0 : (typeof localCost === 'number' ? localCost : 0));
                   }, 0);
 
                 return (
@@ -2505,8 +2510,8 @@ export default function AdminDashboard() {
                                           </span>
                                         )}
                                       </label>
-                                      <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black font-black'}`}>
-                                        {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
+                                      <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black font-black')}`}>
+                                        {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
                                       </span>
                                     </div>
                                   )}
@@ -2619,8 +2624,8 @@ export default function AdminDashboard() {
                                       </span>
                                     )}
                                   </label>
-                                  <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                    {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
+                                  <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black')}`}>
+                                    {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
                                   </span>
                                 </div>
                                 {/* 発送方法 */}
@@ -3260,7 +3265,8 @@ export default function AdminDashboard() {
 
                 const localCostTotal = targetPurchasedForLocalCost.reduce((sum, item) => {
                   if (item.delivery_location === 'JP') return sum;
-                  return sum + calculateLocalCost(item.delivery_location, item, item.shipping_method);
+                  const cost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
+                  return sum + (typeof cost === 'number' ? cost : 0);
                 }, 0);
 
                 if (depositFilterCustomer === 'all') {

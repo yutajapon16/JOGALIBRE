@@ -227,12 +227,12 @@ interface FobCostItem {
 
 interface LocalCostItem {
   key: string;
-  asu_sea: number;
-  enc_sea: number;
-  pjc_sea: number;
-  asu_air: number;
-  enc_air: number;
-  pjc_air: number;
+  asu_sea: number | string;
+  enc_sea: number | string;
+  pjc_sea: number | string;
+  asu_air: number | string;
+  enc_air: number | string;
+  pjc_air: number | string;
 }
 
 const cachedShippingCosts: ShippingCostItem[] = costsCache.shippingCosts;
@@ -310,7 +310,7 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
  * @param item 商品情報
  * @returns 現地費用 (USD建ての数値、日本渡しは0)
  */
-export const calculateLocalCost = (deliveryLocation?: string, item?: any, shippingMethod?: string): number => {
+export const calculateLocalCost = (deliveryLocation?: string, item?: any, shippingMethod?: string): number | string => {
   if (!deliveryLocation || deliveryLocation === 'JP') return 0;
   
   loadCostsData();

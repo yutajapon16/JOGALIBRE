@@ -2402,8 +2402,14 @@ export default function Home() {
     return loc || '-';
   };
 
+  // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)
+  const formatLocalCost = (cost: number | string): string => {
+    if (typeof cost === 'string') return cost;
+    return convertUSDToSelectedCurrency(cost);
+  };
+
   // 引渡し場所に応じた現地費用（USD）を返す関数
-  const getLocalCost = (product: SearchItem): number => {
+  const getLocalCost = (product: SearchItem): number | string => {
     if (deliveryLocation === 'fob') return 0;
     const loc = deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC');
     let finalUrl = product.url || '';
@@ -3292,9 +3298,19 @@ export default function Home() {
                   {t.localCostLabel}
                 </span>
                 <div className="flex items-center">
-                  <span className="font-extrabold text-orange-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
-                    <span className="text-xs font-semibold mr-0.5">$</span>
-                    {getLocalCost(product)}
+                  <span className="font-extrabold text-orange-700 text-sm sm:text-base leading-none tabular-nums tracking-tight">
+                    {(() => {
+                      const cost = getLocalCost(product);
+                      if (typeof cost === 'string') {
+                        return <span className="text-xs sm:text-sm text-red-600 font-bold">{cost}</span>;
+                      }
+                      return (
+                        <>
+                          <span className="text-xs font-semibold mr-0.5">$</span>
+                          {cost.toLocaleString('en-US')}
+                        </>
+                      );
+                    })()}
                   </span>
                 </div>
               </div>
@@ -3978,7 +3994,7 @@ export default function Home() {
                               {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
                             </span>
                             <span className="text-base font-bold text-gray-800">
-                              {convertUSDToSelectedCurrency(calculateLocalCost(request.delivery_location, request, request.shipping_method))}
+                              {formatLocalCost(calculateLocalCost(request.delivery_location, request, request.shipping_method))}
                             </span>
                           </div>
                           {/* 発送方法 */}
@@ -4207,7 +4223,7 @@ export default function Home() {
                   if (item.cancelledAt) return sum;
                   if (item.delivery_location === 'JP') return sum;
                   const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
-                  return sum + localCost;
+                  return sum + (typeof localCost === 'number' ? localCost : 0);
                 }, 0);
 
               const unpaidLocalCostTotal = filteredItemsForSummary
@@ -4215,7 +4231,7 @@ export default function Home() {
                   if (item.cancelledAt) return sum;
                   if (item.delivery_location === 'JP') return sum;
                   const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
-                  return sum + (item.paid_local ? 0 : localCost);
+                  return sum + (item.paid_local ? 0 : (typeof localCost === 'number' ? localCost : 0));
                 }, 0);
 
               if (isB001) {
@@ -4593,8 +4609,8 @@ export default function Home() {
                                         </span>
                                       )}
                                     </div>
-                                    <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                      {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
+                                    <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black')}`}>
+                                      {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
                                     </span>
                                   </div>
                                 )}
@@ -4662,8 +4678,8 @@ export default function Home() {
                                     </span>
                                   )}
                                 </div>
-                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                  {convertUSDToSelectedCurrency(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
+                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black')}`}>
+                                  {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
                                 </span>
                               </div>
                             )}
@@ -4815,7 +4831,8 @@ export default function Home() {
 
               const localCostTotal = targetPurchasedForLocalCost.reduce((sum, item) => {
                 if (item.delivery_location === 'JP') return sum;
-                return sum + calculateLocalCost(item.delivery_location, item, item.shipping_method);
+                const cost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
+                return sum + (typeof cost === 'number' ? cost : 0);
               }, 0);
 
               const formattedBalanceUsd = isNegativeUsd
@@ -5814,7 +5831,13 @@ export default function Home() {
                         {t.localCostLabel}
                       </span>
                       <span className="font-extrabold text-sm text-indigo-700">
-                        $ {getLocalCost(selectedProduct)}
+                        {(() => {
+                          const cost = getLocalCost(selectedProduct);
+                          if (typeof cost === 'string') {
+                            return <span className="text-red-600 font-bold">{cost}</span>;
+                          }
+                          return `$ ${cost.toLocaleString('en-US')}`;
+                        })()}
                       </span>
                     </div>
                   )}

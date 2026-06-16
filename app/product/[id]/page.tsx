@@ -363,8 +363,34 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const convertUSDToSelectedCurrency = (usdAmount: number, targetCurrency: string = selectedCurrency) => {
+    if (targetCurrency === 'USD') {
+      return `${getCurrencySymbol(targetCurrency)}${Math.round(usdAmount).toLocaleString('en-US')}`;
+    }
+    const rate = exchangeRates[targetCurrency] || 1;
+    const rawConverted = usdAmount * rate;
+    const rounded = Math.round(rawConverted);
+    
+    let finalConverted = rounded;
+    if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
+      finalConverted = Math.ceil(rounded / 10) * 10;
+    } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
+      finalConverted = Math.ceil(rounded / 1000) * 1000;
+    } else {
+      finalConverted = Math.ceil(rounded);
+    }
+    
+    return `${getCurrencySymbol(targetCurrency)} ${finalConverted.toLocaleString('en-US').replace(/,/g, '.')}`;
+  };
+
+  // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)
+  const formatLocalCost = (cost: number | string): string => {
+    if (typeof cost === 'string') return cost;
+    return convertUSDToSelectedCurrency(cost);
+  };
+
   // 引渡し場所に応じた現地費用（USD）を返す関数
-  const getLocalCost = (productUrl: string | null): number => {
+  const getLocalCost = (productUrl: string | null): number | string => {
     if (deliveryLocation === 'fob') return 0;
     const loc = deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC');
     let finalUrl = productUrl || '';
@@ -641,7 +667,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
                 <span className="text-xs">{t.localCostLabel}</span>
                 <span className="text-sm sm:text-base font-extrabold">
-                  $ {getLocalCost(product.url)}
+                  {(() => {
+                    const cost = getLocalCost(product.url);
+                    if (typeof cost === 'string') {
+                      return <span className="text-red-600 font-bold">{cost}</span>;
+                    }
+                    return `$ ${cost.toLocaleString('en-US')}`;
+                  })()}
                 </span>
               </div>
               {/* 発送方法 */}

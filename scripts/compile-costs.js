@@ -99,15 +99,22 @@ function compile() {
   // 3. 現地費用
   const localRows = parseCsv('data/local-costs.csv');
   if (localRows.length > 1) {
+    const parseLocalVal = (val) => {
+      if (!val) return 0;
+      const trimmed = val.trim();
+      const num = parseFloat(trimmed);
+      return isNaN(num) ? trimmed : num;
+    };
+
     localRows.slice(1).forEach(row => {
       localCosts[row[0]] = {
         key: row[0],
-        asu_sea: parseFloat(row[1] || '0'),
-        enc_sea: parseFloat(row[2] || '0'),
-        pjc_sea: parseFloat(row[3] || '0'),
-        asu_air: parseFloat(row[4] || '0'),
-        enc_air: parseFloat(row[5] || '0'),
-        pjc_air: parseFloat(row[6] || '0')
+        asu_sea: parseLocalVal(row[1]),
+        enc_sea: parseLocalVal(row[2]),
+        pjc_sea: parseLocalVal(row[3]),
+        asu_air: parseLocalVal(row[4]),
+        enc_air: parseLocalVal(row[5]),
+        pjc_air: parseLocalVal(row[6])
       };
     });
   }
