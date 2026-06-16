@@ -13,14 +13,15 @@ function getResend() {
 export async function sendOrderCsvEmail(to: string, csvContent: string, dateStr: string) {
   try {
     const resend = getResend();
+    const dateStrClean = dateStr.replace(/\//g, ''); // '2026/06/16' -> '20260616'
     const { data, error } = await resend.emails.send({
       from: 'JOGALIBRE Orders <order@jogalibre.com>',
       to: [to],
-      subject: `[JOGALIBRE] Order Report - ${dateStr}`,
-      html: `<p>Attached is the daily order report for ${dateStr}.</p>`,
+      subject: `[JOGALIBRE] 入札依頼（${dateStr}）`,
+      html: `<p>${dateStr} 時点での希望入札商品リストです。</p>`,
       attachments: [
         {
-          filename: `orders_${dateStr}.csv`,
+          filename: `${dateStrClean} 入札依頼.csv`,
           content: Buffer.from('\uFEFF' + csvContent).toString('base64'), // BOM for Excel
         },
       ],
