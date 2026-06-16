@@ -265,6 +265,20 @@ export const calculateJapanSendAmount = (item: any, totalSalePrice: number, exch
 
 import { CATEGORY_COSTS } from './category-costs';
 
+// ヤフオクカテゴリIDとFOB費用キーのマッピングテーブル
+const FOB_CATEGORY_ID_MAP = [
+  {
+    // 部品取り車
+    keys: ['2084061280'],
+    key: 'desarme'
+  },
+  {
+    // バイク（二輪車車体）
+    keys: ['26316'],
+    key: 'moto'
+  }
+];
+
 /**
  * 商品タイトルやURLから、カテゴリに応じたFOB費用（JPY）を判定して返す関数
  * @param title 商品タイトル
@@ -282,15 +296,30 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     jcat = jcatMatch[1];
   }
 
-  // 2. jcatがあればマスタデータからFOB費用を取得
+  const lowerUrl = decodedUrl.toLowerCase();
+  const lowerTitle = (title || '').toLowerCase();
+
+  // --- 1. URL内のヤフオクカテゴリIDによる厳密な判定 ---
+  let matchedKey: string | null = null;
+  for (const mapping of FOB_CATEGORY_ID_MAP) {
+    if (mapping.keys.some(id => lowerUrl.includes(id))) {
+      matchedKey = mapping.key;
+      break;
+    }
+  }
+
+  if (matchedKey) {
+    if (CATEGORY_COSTS[matchedKey] && CATEGORY_COSTS[matchedKey].fob !== undefined) {
+      return CATEGORY_COSTS[matchedKey].fob as number;
+    }
+  }
+
+  // --- 2. jcatがあればマスタデータからFOB費用を取得 (上記カテゴリIDで一致しなかった場合) ---
   if (jcat && CATEGORY_COSTS[jcat] && CATEGORY_COSTS[jcat].fob !== undefined) {
     return CATEGORY_COSTS[jcat].fob as number;
   }
 
-  // 3. jcatがない場合（URL直接入力など）のフォールバック判定
-  const lowerTitle = (title || '').toLowerCase();
-  const lowerUrl = decodedUrl.toLowerCase();
-
+  // --- 3. URLにカテゴリIDがない場合のフォールバック判定（タイトルやキーワードによる判定） ---
   if (
     lowerTitle.includes('desarme') ||
     lowerTitle.includes('desmanche') ||
@@ -299,7 +328,6 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     lowerTitle.includes('書類無し') ||
     lowerUrl.includes('desarme') ||
     lowerUrl.includes('desmanche') ||
-    lowerUrl.includes('2084061280') ||
     lowerUrl.includes('部品取り')
   ) {
     return CATEGORY_COSTS['desarme'].fob as number;
@@ -311,9 +339,8 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     lowerTitle.includes('オートバイ') ||
     lowerTitle.includes('二輪') ||
     lowerTitle.includes('motorcycle') ||
-    lowerUrl.includes('moto') ||
-    lowerUrl.includes('バイク') ||
-    lowerUrl.includes('26316')
+    (lowerUrl.includes('moto') && !lowerUrl.includes('motor')) ||
+    lowerUrl.includes('バイク')
   ) {
     return CATEGORY_COSTS['moto'].fob as number;
   }
@@ -327,6 +354,55 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
 
   return 1500;
 };
+
+// ヤフオクカテゴリIDと部品送料キーのマッピングテーブル
+const CATEGORY_ID_MAP = [
+  {
+    // タイヤおよびタイヤ・ホイールセット
+    keys: ['2084226162', '2084200183', '2084200188', '2084200189', '2084200190'],
+    key: 'llantas'
+  },
+  {
+    // ホイール
+    keys: ['2084005140', '2084008474', '2084040548', '2084040547'],
+    key: 'aros'
+  },
+  {
+    // エンジン
+    keys: ['2084200282'],
+    key: 'motor'
+  },
+  {
+    // トランスミッション
+    keys: ['2084008426'],
+    key: 'transmision'
+  },
+  {
+    // サスペンション
+    keys: ['2084005257'],
+    key: 'suspension'
+  },
+  {
+    // シート
+    keys: ['2084005258'],
+    key: 'asiento'
+  },
+  {
+    // 補強バー類
+    keys: ['2084008461'],
+    key: 'barras'
+  },
+  {
+    // ブレーキ
+    keys: ['2084005259'],
+    key: 'freno'
+  },
+  {
+    // カーオーディオ（プレーヤー、アンプ、サブウーファー、スピーカー等を含む）
+    keys: ['23852', '2084005294', '2084048322', '23864'],
+    key: 'caraudio'
+  }
+];
 
 /**
  * 商品タイトルやURLから、自動車部品カテゴリに応じたデフォルトの送料（JPY）を判定して返す関数
@@ -345,24 +421,76 @@ export const calculateDefaultShippingCost = (title?: string | null, url?: string
     jcat = jcatMatch[1];
   }
 
-  // 2. jcatがあればマスタデータから送料を取得
+  const lowerUrl = decodedUrl.toLowerCase();
+  const lowerTitle = (title || '').toLowerCase();
+
+  // --- 0. 車両本体（自動車車体、バイク車体、部品取り車、自転車本体等）は送料0円（要見積もり）とする ---
+  const isVehicle = 
+    lowerUrl.includes('26360') || // 自動車車体
+    lowerUrl.includes('26316') || // オートバイ車体
+    lowerUrl.includes('2084061280') || // 部品取り車
+    lowerUrl.includes('26246') || // 自転車本体
+    lowerTitle.includes('部品取り') ||
+    lowerTitle.includes('丸車') ||
+    lowerTitle.includes('バイク') ||
+    lowerTitle.includes('オートバイ') ||
+    lowerTitle.includes('二輪') ||
+    (lowerUrl.includes('moto') && !lowerUrl.includes('motor')) ||
+    lowerUrl.includes('desarme');
+
+  if (isVehicle) {
+    return 0;
+  }
+
+  // --- 1. URL内のヤフオクカテゴリIDによる厳密な判定 ---
+  let matchedKey: string | null = null;
+  for (const mapping of CATEGORY_ID_MAP) {
+    if (mapping.keys.some(id => lowerUrl.includes(id))) {
+      matchedKey = mapping.key;
+      break;
+    }
+  }
+
+  if (matchedKey) {
+    // タイヤ・ホイールセット系の特別マッピング処理（jcatを考慮）
+    if (matchedKey === 'llantas') {
+      if (jcat && ['ll16', 'll17', 'll18', 'llantas'].includes(jcat)) {
+        return CATEGORY_COSTS[jcat].shipping as number;
+      }
+      if (jcat === 'ar16') return CATEGORY_COSTS['ll16'].shipping as number;
+      if (jcat === 'ar17') return CATEGORY_COSTS['ll17'].shipping as number;
+      if (jcat === 'ar18') return CATEGORY_COSTS['ll18'].shipping as number;
+      if (jcat === 'aros') return CATEGORY_COSTS['llantas'].shipping as number;
+      return CATEGORY_COSTS['llantas'].shipping as number;
+    }
+
+    if (matchedKey === 'aros') {
+      if (jcat && ['ar16', 'ar17', 'ar18', 'aros'].includes(jcat)) {
+        return CATEGORY_COSTS[jcat].shipping as number;
+      }
+      return CATEGORY_COSTS['aros'].shipping as number;
+    }
+
+    // その他のカテゴリは直接マッピングされたキーから送料を取得
+    if (CATEGORY_COSTS[matchedKey] && CATEGORY_COSTS[matchedKey].shipping !== undefined) {
+      return CATEGORY_COSTS[matchedKey].shipping as number;
+    }
+  }
+
+  // --- 2. jcatがあればマスタデータから送料を取得 (上記カテゴリIDで一致しなかった場合) ---
   if (jcat && CATEGORY_COSTS[jcat] && CATEGORY_COSTS[jcat].shipping !== undefined) {
     return CATEGORY_COSTS[jcat].shipping as number;
   }
 
-  // 3. jcatがない場合のフォールバック判定
-  const lowerTitle = (title || '').toLowerCase();
-  const lowerUrl = decodedUrl.toLowerCase();
+  // --- 3. URLにカテゴリIDがない場合のフォールバック判定（タイトルやキーワードによる判定） ---
+  if (lowerTitle.includes('motor') || lowerTitle.includes('エンジン') || lowerUrl.includes('motor')) return CATEGORY_COSTS['motor'].shipping as number;
+  if (lowerTitle.includes('transmisión') || lowerTitle.includes('transmision') || lowerTitle.includes('transmissão') || lowerTitle.includes('transmissao') || lowerTitle.includes('トランスミッション') || lowerTitle.includes('ミッション') || lowerUrl.includes('transmision')) return CATEGORY_COSTS['transmision'].shipping as number;
+  if (lowerTitle.includes('suspensión') || lowerTitle.includes('suspension') || lowerTitle.includes('suspensão') || lowerTitle.includes('suspensao') || lowerTitle.includes('サスペンション') || lowerTitle.includes('サス') || lowerTitle.includes('車高調') || lowerTitle.includes('スプリング') || lowerTitle.includes('ショック') || lowerUrl.includes('suspension')) return CATEGORY_COSTS['suspension'].shipping as number;
+  if (lowerTitle.includes('asiento') || lowerTitle.includes('assento') || lowerTitle.includes('シート') || lowerTitle.includes('レカロ') || lowerTitle.includes('recaro') || lowerTitle.includes('セミバケ') || lowerTitle.includes('フルバケ') || lowerUrl.includes('asiento')) return CATEGORY_COSTS['asiento'].shipping as number;
+  if (lowerTitle.includes('barras') || lowerTitle.includes('タワーバー') || lowerTitle.includes('ロールバー') || lowerTitle.includes('補強') || lowerUrl.includes('barras')) return CATEGORY_COSTS['barras'].shipping as number;
+  if (lowerTitle.includes('freno') || lowerTitle.includes('freio') || lowerTitle.includes('ブレーキ') || lowerTitle.includes('ブレンボ') || lowerTitle.includes('brembo') || lowerTitle.includes('キャリパー') || lowerTitle.includes('ローター') || lowerUrl.includes('freno')) return CATEGORY_COSTS['freno'].shipping as number;
+  if (lowerTitle.includes('audio') || lowerTitle.includes('som') || lowerTitle.includes('オーディオ') || lowerTitle.includes('スピーカー') || lowerTitle.includes('アンプ') || lowerTitle.includes('ウーファー') || lowerTitle.includes('サブウーファー') || lowerTitle.includes('プレーヤー') || lowerTitle.includes('player') || lowerTitle.includes('reproductor') || lowerTitle.includes('amplificador') || lowerTitle.includes('subwoofer') || lowerTitle.includes('altavoz') || lowerTitle.includes('altavoces') || lowerTitle.includes('alto-falantes') || lowerUrl.includes('audio')) return CATEGORY_COSTS['caraudio'].shipping as number;
 
-  if (lowerTitle.includes('motor') || lowerTitle.includes('エンジン') || lowerUrl.includes('motor') || lowerUrl.includes('2084200282')) return CATEGORY_COSTS['motor'].shipping as number;
-  if (lowerTitle.includes('transmisión') || lowerTitle.includes('transmision') || lowerTitle.includes('transmissão') || lowerTitle.includes('transmissao') || lowerTitle.includes('トランスミッション') || lowerTitle.includes('ミッション') || lowerUrl.includes('transmision') || lowerUrl.includes('2084008426')) return CATEGORY_COSTS['transmision'].shipping as number;
-  if (lowerTitle.includes('llantas') || lowerTitle.includes('rodas') || lowerTitle.includes('タイヤ') || lowerUrl.includes('llantas') || lowerUrl.includes('2084200183')) return CATEGORY_COSTS['llantas'].shipping as number;
-  if (lowerTitle.includes('aros') || lowerTitle.includes('ホイール') || lowerTitle.includes('アルミ') || lowerUrl.includes('aros') || lowerUrl.includes('2084005140')) return CATEGORY_COSTS['aros'].shipping as number;
-  if (lowerTitle.includes('suspensión') || lowerTitle.includes('suspension') || lowerTitle.includes('suspensão') || lowerTitle.includes('suspensao') || lowerTitle.includes('サスペンション') || lowerTitle.includes('サス') || lowerTitle.includes('車高調') || lowerTitle.includes('スプリング') || lowerTitle.includes('ショック') || lowerUrl.includes('suspension') || lowerUrl.includes('2084005257')) return CATEGORY_COSTS['suspension'].shipping as number;
-  if (lowerTitle.includes('asiento') || lowerTitle.includes('assento') || lowerTitle.includes('シート') || lowerTitle.includes('レカロ') || lowerTitle.includes('recaro') || lowerTitle.includes('セミバケ') || lowerTitle.includes('フルバケ') || lowerUrl.includes('asiento') || lowerUrl.includes('2084005258')) return CATEGORY_COSTS['asiento'].shipping as number;
-  if (lowerTitle.includes('barras') || lowerTitle.includes('タワーバー') || lowerTitle.includes('ロールバー') || lowerTitle.includes('補強') || lowerUrl.includes('barras') || lowerUrl.includes('2084008461')) return CATEGORY_COSTS['barras'].shipping as number;
-  if (lowerTitle.includes('freno') || lowerTitle.includes('freio') || lowerTitle.includes('ブレーキ') || lowerTitle.includes('ブレンボ') || lowerTitle.includes('brembo') || lowerTitle.includes('キャリパー') || lowerTitle.includes('ローター') || lowerUrl.includes('freno') || lowerUrl.includes('2084005259')) return CATEGORY_COSTS['freno'].shipping as number;
-  if (lowerTitle.includes('audio') || lowerTitle.includes('som') || lowerTitle.includes('オーディオ') || lowerTitle.includes('スピーカー') || lowerTitle.includes('アンプ') || lowerTitle.includes('ウーファー') || lowerTitle.includes('サブウーファー') || lowerTitle.includes('プレーヤー') || lowerTitle.includes('player') || lowerTitle.includes('reproductor') || lowerTitle.includes('amplificador') || lowerTitle.includes('subwoofer') || lowerTitle.includes('altavoz') || lowerTitle.includes('altavoces') || lowerTitle.includes('alto-falantes') || lowerUrl.includes('audio') || lowerUrl.includes('23852')) return CATEGORY_COSTS['caraudio'].shipping as number;
-
-  return 0;
+  // 自動車部品・車両本体以外のすべての一般カテゴリはデフォルトで1,000円とする
+  return 1000;
 };
