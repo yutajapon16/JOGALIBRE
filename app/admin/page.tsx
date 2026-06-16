@@ -523,7 +523,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    const headers = ['入金確認日', '通貨', '顧客ID', '氏名', '入金額', '支払方法'];
+    const headers = ['日付', 'ID', '氏名', '通貨', '入金額', '内容', '支払方法', 'USD換算額'];
 
     const customerMap = new Map<string, string>();
     customersList.forEach(c => customerMap.set(c.customerId, c.fullName || c.customerName || ''));
@@ -543,13 +543,16 @@ export default function AdminDashboard() {
       const name = customerMap.get(item.customer_id) || '';
       const isBrl = item.payment_method?.endsWith('_brl');
       const currency = isBrl ? 'BRL' : 'USD';
+      const usdEquivalent = item.usd_amount !== null && item.usd_amount !== undefined ? item.usd_amount : item.amount;
       return [
         item.deposit_date.replace(/-/g, '/'),
-        currency,
         item.customer_id,
         `"${name.replace(/"/g, '""')}"`,
+        currency,
         item.amount,
-        paymentMethodNames[item.payment_method] || item.payment_method
+        `"${(item.deposit_type || '').replace(/"/g, '""')}"`,
+        paymentMethodNames[item.payment_method] || item.payment_method,
+        usdEquivalent
       ];
     });
 
