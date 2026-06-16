@@ -174,6 +174,508 @@
         "altavoces",
         "alto-falantes"
       ]
+    },
+    {
+      "key": "reproductor",
+      "shipping": 3000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "amplificador",
+      "shipping": 3000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "subwoofer",
+      "shipping": 3000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "altavoz",
+      "shipping": 3000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "bicicleta",
+      "shipping": 0,
+      "categoryIds": [
+        "26246"
+      ],
+      "keywords": [
+        "自転車",
+        "bicicleta"
+      ]
+    },
+    {
+      "key": "nike_men_shoes",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "nike",
+        "ナイキ"
+      ]
+    },
+    {
+      "key": "nike_men_clothing",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nike_women_shoes",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nike_women_clothing",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "adidas_men_shoes",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "adidas",
+        "アディダス"
+      ]
+    },
+    {
+      "key": "adidas_men_clothing",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "adidas_women_shoes",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "adidas_women_clothing",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nb_men_shoes",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "new balance",
+        "ニューバランス"
+      ]
+    },
+    {
+      "key": "nb_men_clothing",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nb_women_shoes",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nb_women_clothing",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "ape",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "ape",
+        "エイプ"
+      ]
+    },
+    {
+      "key": "abercrombie",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "abercrombie"
+      ]
+    },
+    {
+      "key": "converse",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "converse",
+        "コンバース"
+      ]
+    },
+    {
+      "key": "diesel",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "diesel",
+        "ディーゼル"
+      ]
+    },
+    {
+      "key": "gap",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "gap",
+        "ギャップ"
+      ]
+    },
+    {
+      "key": "lacoste",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "lacoste",
+        "ラコステ"
+      ]
+    },
+    {
+      "key": "michaelkors",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "michael kors"
+      ]
+    },
+    {
+      "key": "puma",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "puma",
+        "プーマ"
+      ]
+    },
+    {
+      "key": "tommyhilfiger",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "tommy hilfiger"
+      ]
+    },
+    {
+      "key": "uniqlo",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "uniqlo",
+        "ユニクロ"
+      ]
+    },
+    {
+      "key": "vans",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "vans",
+        "バンズ"
+      ]
+    },
+    {
+      "key": "zara",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "zara",
+        "ザラ"
+      ]
+    },
+    {
+      "key": "casio",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "casio",
+        "カシオ"
+      ]
+    },
+    {
+      "key": "seiko",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "seiko",
+        "セイコー"
+      ]
+    },
+    {
+      "key": "citizen",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "citizen",
+        "シチズン"
+      ]
+    },
+    {
+      "key": "spikes",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "training",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "futsal",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "running_men_shoes",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "running_men_clothing",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "running_women_shoes",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "running_women_clothing",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "camping",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "camping"
+      ]
+    },
+    {
+      "key": "pesca",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "pesca",
+        "釣り",
+        "フィッシング"
+      ]
+    },
+    {
+      "key": "rc_engine",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "rc_electric",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "gundam",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "gundam",
+        "ガンダム",
+        "ガンプラ"
+      ]
+    },
+    {
+      "key": "onepiece",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "one piece",
+        "ワンピース"
+      ]
+    },
+    {
+      "key": "miku",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "miku",
+        "初音ミク"
+      ]
+    },
+    {
+      "key": "madoka",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "madoka",
+        "まどか"
+      ]
+    },
+    {
+      "key": "dragonball",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "dragon ball",
+        "ドラゴンボール"
+      ]
+    },
+    {
+      "key": "nendoroid",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "nendoroid",
+        "ねんどろいど"
+      ]
+    },
+    {
+      "key": "iphone",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "iphone"
+      ]
+    },
+    {
+      "key": "ipad",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "ipad"
+      ]
+    },
+    {
+      "key": "smartwatch",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "smartwatch",
+        "スマートウォッチ"
+      ]
+    },
+    {
+      "key": "cpu",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "cpu"
+      ]
+    },
+    {
+      "key": "memory",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "memory",
+        "メモリ",
+        "ram"
+      ]
+    },
+    {
+      "key": "gpu",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "gpu",
+        "グラフィックボード",
+        "グラボ"
+      ]
+    },
+    {
+      "key": "dslr",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "dslr",
+        "一眼レフ"
+      ]
+    },
+    {
+      "key": "mirrorless",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "mirrorless",
+        "ミラーレス"
+      ]
+    },
+    {
+      "key": "compact_digital",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "lens",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "lens",
+        "レンズ"
+      ]
+    },
+    {
+      "key": "guitarra",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "guitarra",
+        "ギター"
+      ]
+    },
+    {
+      "key": "bajo",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "bajo",
+        "ベース"
+      ]
+    },
+    {
+      "key": "viento",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "dj",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "dj"
+      ]
+    },
+    {
+      "key": "washlet",
+      "shipping": 1000,
+      "categoryIds": [],
+      "keywords": [
+        "washlet",
+        "ウォシュレット"
+      ]
     }
   ],
   "fobCosts": [
@@ -274,6 +776,683 @@
         "二輪",
         "motorcycle"
       ]
+    },
+    {
+      "key": "bicicleta",
+      "fob": 1500,
+      "categoryIds": [
+        "26246"
+      ],
+      "keywords": [
+        "自転車",
+        "bicicleta"
+      ]
+    },
+    {
+      "key": "motor",
+      "fob": 1500,
+      "categoryIds": [
+        "2084200282"
+      ],
+      "keywords": [
+        "motor",
+        "エンジン"
+      ]
+    },
+    {
+      "key": "transmision",
+      "fob": 1500,
+      "categoryIds": [
+        "2084008426"
+      ],
+      "keywords": [
+        "transmisión",
+        "transmision",
+        "transmissão",
+        "transmissao",
+        "トランスミッション",
+        "ミッション"
+      ]
+    },
+    {
+      "key": "llantas",
+      "fob": 1500,
+      "categoryIds": [
+        "2084226162",
+        "2084200183",
+        "2084200188",
+        "2084200189",
+        "2084200190"
+      ],
+      "keywords": []
+    },
+    {
+      "key": "ll16",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "ll17",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "ll18",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "aros",
+      "fob": 1500,
+      "categoryIds": [
+        "2084005140",
+        "2084008474",
+        "2084040548",
+        "2084040547"
+      ],
+      "keywords": []
+    },
+    {
+      "key": "ar16",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "ar17",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "ar18",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "suspension",
+      "fob": 1500,
+      "categoryIds": [
+        "2084005257"
+      ],
+      "keywords": [
+        "suspensión",
+        "suspension",
+        "suspensão",
+        "suspensao",
+        "サスペンション",
+        "サス",
+        "車高調",
+        "スプリング",
+        "ショック"
+      ]
+    },
+    {
+      "key": "asiento",
+      "fob": 1500,
+      "categoryIds": [
+        "2084005258"
+      ],
+      "keywords": [
+        "asiento",
+        "assento",
+        "シート",
+        "レカロ",
+        "recaro",
+        "セミバケ",
+        "フルバケ"
+      ]
+    },
+    {
+      "key": "barras",
+      "fob": 1500,
+      "categoryIds": [
+        "2084008461"
+      ],
+      "keywords": [
+        "barras",
+        "タワーバー",
+        "ロールバー",
+        "補強"
+      ]
+    },
+    {
+      "key": "freno",
+      "fob": 1500,
+      "categoryIds": [
+        "2084005259"
+      ],
+      "keywords": [
+        "freno",
+        "freio",
+        "ブレーキ",
+        "ブレンボ",
+        "brembo",
+        "キャリパー",
+        "ローター"
+      ]
+    },
+    {
+      "key": "caraudio",
+      "fob": 1500,
+      "categoryIds": [
+        "23852",
+        "2084005294",
+        "2084048322",
+        "23864"
+      ],
+      "keywords": [
+        "audio",
+        "som",
+        "オーディオ",
+        "スピーカー",
+        "アンプ",
+        "ウーファー",
+        "サブウーファー",
+        "プレーヤー",
+        "player",
+        "reproductor",
+        "amplificador",
+        "subwoofer",
+        "altavoz",
+        "altavoces",
+        "alto-falantes"
+      ]
+    },
+    {
+      "key": "reproductor",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "amplificador",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "subwoofer",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "altavoz",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nike_men_shoes",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "nike",
+        "ナイキ"
+      ]
+    },
+    {
+      "key": "nike_men_clothing",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nike_women_shoes",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nike_women_clothing",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "adidas_men_shoes",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "adidas",
+        "アディダス"
+      ]
+    },
+    {
+      "key": "adidas_men_clothing",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "adidas_women_shoes",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "adidas_women_clothing",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nb_men_shoes",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "new balance",
+        "ニューバランス"
+      ]
+    },
+    {
+      "key": "nb_men_clothing",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nb_women_shoes",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "nb_women_clothing",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "ape",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "ape",
+        "エイプ"
+      ]
+    },
+    {
+      "key": "abercrombie",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "abercrombie"
+      ]
+    },
+    {
+      "key": "converse",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "converse",
+        "コンバース"
+      ]
+    },
+    {
+      "key": "diesel",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "diesel",
+        "ディーゼル"
+      ]
+    },
+    {
+      "key": "gap",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "gap",
+        "ギャップ"
+      ]
+    },
+    {
+      "key": "lacoste",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "lacoste",
+        "ラコステ"
+      ]
+    },
+    {
+      "key": "michaelkors",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "michael kors"
+      ]
+    },
+    {
+      "key": "puma",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "puma",
+        "プーマ"
+      ]
+    },
+    {
+      "key": "tommyhilfiger",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "tommy hilfiger"
+      ]
+    },
+    {
+      "key": "uniqlo",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "uniqlo",
+        "ユニクロ"
+      ]
+    },
+    {
+      "key": "vans",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "vans",
+        "バンズ"
+      ]
+    },
+    {
+      "key": "zara",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "zara",
+        "ザラ"
+      ]
+    },
+    {
+      "key": "casio",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "casio",
+        "カシオ"
+      ]
+    },
+    {
+      "key": "seiko",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "seiko",
+        "セイコー"
+      ]
+    },
+    {
+      "key": "citizen",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "citizen",
+        "シチズン"
+      ]
+    },
+    {
+      "key": "spikes",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "training",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "futsal",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "running_men_shoes",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "running_men_clothing",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "running_women_shoes",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "running_women_clothing",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "camping",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "camping"
+      ]
+    },
+    {
+      "key": "pesca",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "pesca",
+        "釣り",
+        "フィッシング"
+      ]
+    },
+    {
+      "key": "rc_engine",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "rc_electric",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "gundam",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "gundam",
+        "ガンダム",
+        "ガンプラ"
+      ]
+    },
+    {
+      "key": "onepiece",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "one piece",
+        "ワンピース"
+      ]
+    },
+    {
+      "key": "miku",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "miku",
+        "初音ミク"
+      ]
+    },
+    {
+      "key": "madoka",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "madoka",
+        "まどか"
+      ]
+    },
+    {
+      "key": "dragonball",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "dragon ball",
+        "ドラゴンボール"
+      ]
+    },
+    {
+      "key": "nendoroid",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "nendoroid",
+        "ねんどろいど"
+      ]
+    },
+    {
+      "key": "iphone",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "iphone"
+      ]
+    },
+    {
+      "key": "ipad",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "ipad"
+      ]
+    },
+    {
+      "key": "smartwatch",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "smartwatch",
+        "スマートウォッチ"
+      ]
+    },
+    {
+      "key": "cpu",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "cpu"
+      ]
+    },
+    {
+      "key": "memory",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "memory",
+        "メモリ",
+        "ram"
+      ]
+    },
+    {
+      "key": "gpu",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "gpu",
+        "グラフィックボード",
+        "グラボ"
+      ]
+    },
+    {
+      "key": "dslr",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "dslr",
+        "一眼レフ"
+      ]
+    },
+    {
+      "key": "mirrorless",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "mirrorless",
+        "ミラーレス"
+      ]
+    },
+    {
+      "key": "compact_digital",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "lens",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "lens",
+        "レンズ"
+      ]
+    },
+    {
+      "key": "guitarra",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "guitarra",
+        "ギター"
+      ]
+    },
+    {
+      "key": "bajo",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "bajo",
+        "ベース"
+      ]
+    },
+    {
+      "key": "viento",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": []
+    },
+    {
+      "key": "dj",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "dj"
+      ]
+    },
+    {
+      "key": "washlet",
+      "fob": 1500,
+      "categoryIds": [],
+      "keywords": [
+        "washlet",
+        "ウォシュレット"
+      ]
     }
   ],
   "localCosts": {
@@ -295,8 +1474,44 @@
       "enc": 120,
       "pjc": 150
     },
+    "ll16": {
+      "key": "ll16",
+      "asu": 100,
+      "enc": 120,
+      "pjc": 150
+    },
+    "ll17": {
+      "key": "ll17",
+      "asu": 100,
+      "enc": 120,
+      "pjc": 150
+    },
+    "ll18": {
+      "key": "ll18",
+      "asu": 100,
+      "enc": 120,
+      "pjc": 150
+    },
     "aros": {
       "key": "aros",
+      "asu": 80,
+      "enc": 100,
+      "pjc": 120
+    },
+    "ar16": {
+      "key": "ar16",
+      "asu": 80,
+      "enc": 100,
+      "pjc": 120
+    },
+    "ar17": {
+      "key": "ar17",
+      "asu": 80,
+      "enc": 100,
+      "pjc": 120
+    },
+    "ar18": {
+      "key": "ar18",
       "asu": 80,
       "enc": 100,
       "pjc": 120
@@ -327,6 +1542,30 @@
     },
     "caraudio": {
       "key": "caraudio",
+      "asu": 30,
+      "enc": 45,
+      "pjc": 60
+    },
+    "reproductor": {
+      "key": "reproductor",
+      "asu": 30,
+      "enc": 45,
+      "pjc": 60
+    },
+    "amplificador": {
+      "key": "amplificador",
+      "asu": 30,
+      "enc": 45,
+      "pjc": 60
+    },
+    "subwoofer": {
+      "key": "subwoofer",
+      "asu": 30,
+      "enc": 45,
+      "pjc": 60
+    },
+    "altavoz": {
+      "key": "altavoz",
       "asu": 30,
       "enc": 45,
       "pjc": 60
@@ -378,6 +1617,366 @@
       "asu": 100,
       "enc": 120,
       "pjc": 150
+    },
+    "bicicleta": {
+      "key": "bicicleta",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "nike_men_shoes": {
+      "key": "nike_men_shoes",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "nike_men_clothing": {
+      "key": "nike_men_clothing",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "nike_women_shoes": {
+      "key": "nike_women_shoes",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "nike_women_clothing": {
+      "key": "nike_women_clothing",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "adidas_men_shoes": {
+      "key": "adidas_men_shoes",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "adidas_men_clothing": {
+      "key": "adidas_men_clothing",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "adidas_women_shoes": {
+      "key": "adidas_women_shoes",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "adidas_women_clothing": {
+      "key": "adidas_women_clothing",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "nb_men_shoes": {
+      "key": "nb_men_shoes",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "nb_men_clothing": {
+      "key": "nb_men_clothing",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "nb_women_shoes": {
+      "key": "nb_women_shoes",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "nb_women_clothing": {
+      "key": "nb_women_clothing",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "ape": {
+      "key": "ape",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "abercrombie": {
+      "key": "abercrombie",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "converse": {
+      "key": "converse",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "diesel": {
+      "key": "diesel",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "gap": {
+      "key": "gap",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "lacoste": {
+      "key": "lacoste",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "michaelkors": {
+      "key": "michaelkors",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "puma": {
+      "key": "puma",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "tommyhilfiger": {
+      "key": "tommyhilfiger",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "uniqlo": {
+      "key": "uniqlo",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "vans": {
+      "key": "vans",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "zara": {
+      "key": "zara",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "casio": {
+      "key": "casio",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "seiko": {
+      "key": "seiko",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "citizen": {
+      "key": "citizen",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "spikes": {
+      "key": "spikes",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "training": {
+      "key": "training",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "futsal": {
+      "key": "futsal",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "running_men_shoes": {
+      "key": "running_men_shoes",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "running_men_clothing": {
+      "key": "running_men_clothing",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "running_women_shoes": {
+      "key": "running_women_shoes",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "running_women_clothing": {
+      "key": "running_women_clothing",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "camping": {
+      "key": "camping",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "pesca": {
+      "key": "pesca",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "rc_engine": {
+      "key": "rc_engine",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "rc_electric": {
+      "key": "rc_electric",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "gundam": {
+      "key": "gundam",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "onepiece": {
+      "key": "onepiece",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "miku": {
+      "key": "miku",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "madoka": {
+      "key": "madoka",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "dragonball": {
+      "key": "dragonball",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "nendoroid": {
+      "key": "nendoroid",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "iphone": {
+      "key": "iphone",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "ipad": {
+      "key": "ipad",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "smartwatch": {
+      "key": "smartwatch",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "cpu": {
+      "key": "cpu",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "memory": {
+      "key": "memory",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "gpu": {
+      "key": "gpu",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "dslr": {
+      "key": "dslr",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "mirrorless": {
+      "key": "mirrorless",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "compact_digital": {
+      "key": "compact_digital",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "lens": {
+      "key": "lens",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "guitarra": {
+      "key": "guitarra",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "bajo": {
+      "key": "bajo",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "viento": {
+      "key": "viento",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "dj": {
+      "key": "dj",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
+    },
+    "washlet": {
+      "key": "washlet",
+      "asu": 0,
+      "enc": 0,
+      "pjc": 0
     }
   }
 }

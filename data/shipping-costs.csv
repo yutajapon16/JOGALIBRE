@@ -14,3 +14,67 @@ asiento,9000,2084005258,asiento|assento|シート|レカロ|recaro|セミバケ|
 barras,3000,2084008461,barras|タワーバー|ロールバー|補強
 freno,4000,2084005259,freno|freio|ブレーキ|ブレンボ|brembo|キャリパー|ローター
 caraudio,3000,"23852,2084005294,2084048322,23864",audio|som|オーディオ|スピーカー|アンプ|ウーファー|サブウーファー|プレーヤー|player|reproductor|amplificador|subwoofer|altavoz|altavoces|alto-falantes
+reproductor,3000,,
+amplificador,3000,,
+subwoofer,3000,,
+altavoz,3000,,
+bicicleta,0,26246,自転車|bicicleta
+nike_men_shoes,1000,,nike|ナイキ
+nike_men_clothing,1000,,
+nike_women_shoes,1000,,
+nike_women_clothing,1000,,
+adidas_men_shoes,1000,,adidas|アディダス
+adidas_men_clothing,1000,,
+adidas_women_shoes,1000,,
+adidas_women_clothing,1000,,
+nb_men_shoes,1000,,new balance|ニューバランス
+nb_men_clothing,1000,,
+nb_women_shoes,1000,,
+nb_women_clothing,1000,,
+ape,1000,,ape|エイプ
+abercrombie,1000,,abercrombie
+converse,1000,,converse|コンバース
+diesel,1000,,diesel|ディーゼル
+gap,1000,,gap|ギャップ
+lacoste,1000,,lacoste|ラコステ
+michaelkors,1000,,michael kors
+puma,1000,,puma|プーマ
+tommyhilfiger,1000,,tommy hilfiger
+uniqlo,1000,,uniqlo|ユニクロ
+vans,1000,,vans|バンズ
+zara,1000,,zara|ザラ
+casio,1000,,casio|カシオ
+seiko,1000,,seiko|セイコー
+citizen,1000,,citizen|シチズン
+spikes,1000,,
+training,1000,,
+futsal,1000,,
+running_men_shoes,1000,,
+running_men_clothing,1000,,
+running_women_shoes,1000,,
+running_women_clothing,1000,,
+camping,1000,,camping
+pesca,1000,,pesca|釣り|フィッシング
+rc_engine,1000,,
+rc_electric,1000,,
+gundam,1000,,gundam|ガンダム|ガンプラ
+onepiece,1000,,one piece|ワンピース
+miku,1000,,miku|初音ミク
+madoka,1000,,madoka|まどか
+dragonball,1000,,dragon ball|ドラゴンボール
+nendoroid,1000,,nendoroid|ねんどろいど
+iphone,1000,,iphone
+ipad,1000,,ipad
+smartwatch,1000,,smartwatch|スマートウォッチ
+cpu,1000,,cpu
+memory,1000,,memory|メモリ|ram
+gpu,1000,,gpu|グラフィックボード|グラボ
+dslr,1000,,dslr|一眼レフ
+mirrorless,1000,,mirrorless|ミラーレス
+compact_digital,1000,,
+lens,1000,,lens|レンズ
+guitarra,1000,,guitarra|ギター
+bajo,1000,,bajo|ベース
+viento,1000,,
+dj,1000,,dj
+washlet,1000,,washlet|ウォシュレット
