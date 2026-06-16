@@ -135,7 +135,16 @@ export default function AdminDashboard() {
   };
 
   const formatLocalCost = (cost: number | string, targetCurrency: string = selectedCurrency): string => {
-    if (typeof cost === 'string') return cost;
+    if (typeof cost === 'string') {
+      const lower = cost.trim().toLowerCase();
+      if (lower === 'unavailable' || lower === '発送不可' || lower === 'no disponible' || lower === 'não disponível') {
+        return '発送不可 ❌';
+      }
+      if (lower === 'consultar' || lower === '要問い合わせ' || lower === '要問合せ') {
+        return '要問い合わせ 💬';
+      }
+      return cost;
+    }
     return convertUSDToSelectedCurrency(cost, targetCurrency);
   };
 

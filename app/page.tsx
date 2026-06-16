@@ -2404,7 +2404,16 @@ export default function Home() {
 
   // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)
   const formatLocalCost = (cost: number | string): string => {
-    if (typeof cost === 'string') return cost;
+    if (typeof cost === 'string') {
+      const lower = cost.trim().toLowerCase();
+      if (lower === 'unavailable' || lower === '発送不可' || lower === 'no disponible' || lower === 'não disponível') {
+        return lang === 'es' ? 'No disponible ❌' : 'Não disponível ❌';
+      }
+      if (lower === 'consultar' || lower === '要問い合わせ' || lower === '要問合せ') {
+        return lang === 'es' ? 'Consultar 💬' : 'Consultar 💬';
+      }
+      return cost;
+    }
     return convertUSDToSelectedCurrency(cost);
   };
 
