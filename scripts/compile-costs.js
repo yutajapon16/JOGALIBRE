@@ -128,10 +128,20 @@ function compile() {
         cde_sea: parseLocalVal(row[2]),
         enc_sea: parseLocalVal(row[3]),
         pjc_sea: parseLocalVal(row[4]),
-        asu_air: parseLocalVal(row[5]),
-        cde_air: parseLocalVal(row[6]),
-        enc_air: parseLocalVal(row[7]),
-        pjc_air: parseLocalVal(row[8])
+        snt_sea: parseLocalVal(row[5]),
+        iqq_sea: parseLocalVal(row[6]),
+        lpz_sea: parseLocalVal(row[7]),
+        scz_sea: parseLocalVal(row[8]),
+        bue_sea: parseLocalVal(row[9]),
+        asu_air: parseLocalVal(row[10]),
+        cde_air: parseLocalVal(row[11]),
+        enc_air: parseLocalVal(row[12]),
+        pjc_air: parseLocalVal(row[13]),
+        snt_air: parseLocalVal(row[14]),
+        iqq_air: parseLocalVal(row[15]),
+        lpz_air: parseLocalVal(row[16]),
+        scz_air: parseLocalVal(row[17]),
+        bue_air: parseLocalVal(row[18])
       };
     });
   }

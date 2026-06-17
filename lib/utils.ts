@@ -231,10 +231,20 @@ interface LocalCostItem {
   cde_sea: number | string;
   enc_sea: number | string;
   pjc_sea: number | string;
+  snt_sea: number | string;
+  iqq_sea: number | string;
+  lpz_sea: number | string;
+  scz_sea: number | string;
+  bue_sea: number | string;
   asu_air: number | string;
   cde_air: number | string;
   enc_air: number | string;
   pjc_air: number | string;
+  snt_air: number | string;
+  iqq_air: number | string;
+  lpz_air: number | string;
+  scz_air: number | string;
+  bue_air: number | string;
 }
 
 const cachedShippingCosts: ShippingCostItem[] = costsCache.shippingCosts;
@@ -453,11 +463,21 @@ export const calculateLocalCost = (deliveryLocation?: string, item?: any, shippi
     if (loc === 'cde' || loc === 'ciudad_del_este' || loc === 'ciudad del este') return costItem.cde_air ?? 0;
     if (loc === 'enc' || loc === 'encarnacion') return costItem.enc_air ?? 0;
     if (loc === 'pjc') return costItem.pjc_air ?? 0;
+    if (loc === 'snt' || loc === 'santiago') return costItem.snt_air ?? 0;
+    if (loc === 'iqq' || loc === 'iquique') return costItem.iqq_air ?? 0;
+    if (loc === 'lpz' || loc === 'lapaz' || loc === 'la paz') return costItem.lpz_air ?? 0;
+    if (loc === 'scz' || loc === 'santacruz' || loc === 'santa cruz') return costItem.scz_air ?? 0;
+    if (loc === 'bue' || loc === 'buenosaires' || loc === 'buenos aires') return costItem.bue_air ?? 0;
   } else {
     if (loc === 'asu' || loc === 'asuncion') return costItem.asu_sea ?? 0;
     if (loc === 'cde' || loc === 'ciudad_del_este' || loc === 'ciudad del este') return costItem.cde_sea ?? 0;
     if (loc === 'enc' || loc === 'encarnacion') return costItem.enc_sea ?? 0;
     if (loc === 'pjc') return costItem.pjc_sea ?? 0;
+    if (loc === 'snt' || loc === 'santiago') return costItem.snt_sea ?? 0;
+    if (loc === 'iqq' || loc === 'iquique') return costItem.iqq_sea ?? 0;
+    if (loc === 'lpz' || loc === 'lapaz' || loc === 'la paz') return costItem.lpz_sea ?? 0;
+    if (loc === 'scz' || loc === 'santacruz' || loc === 'santa cruz') return costItem.scz_sea ?? 0;
+    if (loc === 'bue' || loc === 'buenosaires' || loc === 'buenos aires') return costItem.bue_sea ?? 0;
   }
 
   return 0;
