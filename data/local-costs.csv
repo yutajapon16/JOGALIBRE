@@ -1,4 +1,4 @@
-key,asu_sea,cde_sea,enc_sea,pjc_sea,snt_sea,iqq_sea,lpz_sea,scz_sea,bue_sea,asu_air,cde_air,enc_air,pjc_air,snt_air,iqq_air,lpz_air,scz_air,bue_air
+﻿key,asu_sea,cde_sea,enc_sea,pjc_sea,snt_sea,iqq_sea,lpz_sea,scz_sea,bue_sea,asu_air,cde_air,enc_air,pjc_air,snt_air,iqq_air,lpz_air,scz_air,bue_air
 default,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 motor,700,700,600,700,0,0,0,0,0,発送不可,発送不可,発送不可,発送不可,発送不可,発送不可,発送不可,発送不可,発送不可
 llantas,340,340,300,340,0,0,0,0,0,発送不可,発送不可,発送不可,発送不可,発送不可,発送不可,発送不可,発送不可,発送不可
