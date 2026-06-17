@@ -10,7 +10,22 @@ function parseCsv(filePath) {
       return [];
     }
 
-    const content = fs.readFileSync(absolutePath, 'utf-8');
+    const buffer = fs.readFileSync(absolutePath);
+    let content = '';
+    
+    try {
+      const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+      content = utf8Decoder.decode(buffer);
+    } catch (e) {
+      console.log(`Failed to decode ${filePath} as UTF-8, trying Shift-JIS...`);
+      const sjisDecoder = new TextDecoder('shift-jis', { fatal: true });
+      try {
+        content = sjisDecoder.decode(buffer);
+      } catch (err) {
+        console.warn(`Failed to decode as Shift-JIS, falling back to standard UTF-8.`);
+        content = buffer.toString('utf-8');
+      }
+    }
     const result = [];
     let row = [];
     let entry = '';
@@ -110,11 +125,13 @@ function compile() {
       localCosts[row[0]] = {
         key: row[0],
         asu_sea: parseLocalVal(row[1]),
-        enc_sea: parseLocalVal(row[2]),
-        pjc_sea: parseLocalVal(row[3]),
-        asu_air: parseLocalVal(row[4]),
-        enc_air: parseLocalVal(row[5]),
-        pjc_air: parseLocalVal(row[6])
+        cde_sea: parseLocalVal(row[2]),
+        enc_sea: parseLocalVal(row[3]),
+        pjc_sea: parseLocalVal(row[4]),
+        asu_air: parseLocalVal(row[5]),
+        cde_air: parseLocalVal(row[6]),
+        enc_air: parseLocalVal(row[7]),
+        pjc_air: parseLocalVal(row[8])
       };
     });
   }

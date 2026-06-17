@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { productId, productTitle, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language, deliveryLocation, shippingMethod } = body;
+    const { productId, productTitle, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language, deliveryLocation, deliveryCountry, deliveryCity, shippingMethod } = body;
 
     // 顧客の場合は自身のメールアドレスを強制使用
     const finalEmail = isAdmin ? customerEmail : effectiveUser.email;
@@ -53,6 +53,8 @@ export async function POST(request: Request) {
       customer_message: null,
       admin_needs_confirm: false,
       delivery_location: deliveryLocation || 'JP',
+      delivery_country: deliveryCountry || null,
+      delivery_city: deliveryCity || null,
       shipping_method: shippingMethod || 'sea',
       cancelled_at: null
     };

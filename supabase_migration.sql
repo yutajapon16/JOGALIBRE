@@ -182,3 +182,19 @@ CREATE INDEX IF NOT EXISTS idx_bid_requests_cancelled_at ON bid_requests(cancell
 -- 27. 発送方法（shipping_method）のカラムを追加
 ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS shipping_method TEXT DEFAULT 'sea';
 CREATE INDEX IF NOT EXISTS idx_bid_requests_shipping_method ON bid_requests(shipping_method);
+
+-- 28. 引渡場所の国名（delivery_country）と都市名（delivery_city）カラムを追加
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS delivery_country TEXT;
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS delivery_city TEXT;
+
+-- 既存データの移行
+UPDATE bid_requests SET delivery_country = '日本 🇯🇵', delivery_city = '' WHERE delivery_location = 'JP';
+UPDATE bid_requests SET delivery_country = 'パラグアイ 🇵🇾', delivery_city = 'アスンシオン 🇵🇾' WHERE delivery_location = 'ASU';
+UPDATE bid_requests SET delivery_country = 'パラグアイ 🇵🇾', delivery_city = 'シウダー・デル・エステ 🇵🇾' WHERE delivery_location = 'CDE';
+UPDATE bid_requests SET delivery_country = 'パラグアイ 🇵🇾', delivery_city = 'エンカルナシオン 🇵🇾' WHERE delivery_location = 'ENC';
+UPDATE bid_requests SET delivery_country = 'パラグアイ 🇵🇾', delivery_city = 'ペドロ・フアン・カバジェロ 🇵🇾' WHERE delivery_location = 'PJC';
+
+-- インデックスの作成
+CREATE INDEX IF NOT EXISTS idx_bid_requests_delivery_country ON bid_requests(delivery_country);
+CREATE INDEX IF NOT EXISTS idx_bid_requests_delivery_city ON bid_requests(delivery_city);
+

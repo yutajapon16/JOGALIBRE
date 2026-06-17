@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
@@ -126,6 +126,7 @@ const translations = {
     deliveryLocationLabel: 'Lugar de entrega',
     deliveryFob: 'Japón 🇯🇵',
     deliveryAsuncion: 'Asunción 🇵🇾',
+    deliveryCde: 'Ciudad del Este 🇵🇾',
     deliveryEncarnacion: 'Encarnación 🇵🇾',
     deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
     localCostLabel: 'Costo Local',
@@ -237,6 +238,7 @@ const translations = {
     deliveryLocationLabel: 'Local de entrega',
     deliveryFob: 'Japão 🇯🇵',
     deliveryAsuncion: 'Assunção 🇵🇾',
+    deliveryCde: 'Ciudad del Este 🇵🇾',
     deliveryEncarnacion: 'Encarnação 🇵🇾',
     deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
     localCostLabel: 'Custo Local',
@@ -925,7 +927,8 @@ const determineConditionFromUrl = (url: string): 'all' | 'new' | 'used' => {
 
 export default function Home() {
   const [lang, setLang] = useState<'es' | 'pt'>('es');
-  const [deliveryLocation, setDeliveryLocation] = useState<'fob' | 'asuncion' | 'encarnacion' | 'pjc'>('fob');
+  const [deliveryCountry, setDeliveryCountry] = useState<string>('JP');
+  const [deliveryCity, setDeliveryCity] = useState<string>('');
   const [shippingMethod, setShippingMethod] = useState<'sea' | 'air'>('sea');
   const [searchUrl, setSearchUrl] = useState('');
   const [products, setProducts] = useState<SearchItem[]>([]);
@@ -2236,8 +2239,10 @@ export default function Home() {
           customerName: finalCustomerName,
           customerEmail: currentUser?.email,
           language: lang,
-          deliveryLocation: deliveryLocation === 'fob' ? 'JP' : (deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC')),
-          shippingMethod: deliveryLocation === 'fob' ? 'sea' : shippingMethod
+          deliveryLocation: deliveryCountry === 'JP' ? 'JP' : deliveryCity,
+          deliveryCountry: getCountryNameJa(deliveryCountry),
+          deliveryCity: deliveryCountry === 'JP' ? '' : getCityNameJa(deliveryCountry, deliveryCity),
+          shippingMethod: deliveryCountry === 'JP' ? 'sea' : shippingMethod
         })
       });
 
@@ -2395,11 +2400,35 @@ export default function Home() {
   };
 
   const getDeliveryLocationName = (loc?: string) => {
+    if (!loc) return '-';
     if (loc === 'JP') return lang === 'es' ? 'Japón 🇯🇵' : 'Japão 🇯🇵';
     if (loc === 'ASU') return lang === 'es' ? 'Asunción 🇵🇾' : 'Assunção 🇵🇾';
+    if (loc === 'CDE') return 'Ciudad del Este 🇵🇾';
     if (loc === 'ENC') return lang === 'es' ? 'Encarnación 🇵🇾' : 'Encarnação 🇵🇾';
     if (loc === 'PJC') return 'Pedro Juan Caballero 🇵🇾';
-    return loc || '-';
+    
+    // 都市コード（SNT, IQQ など）から言語別都市名を取得する
+    for (const country of deliveryLocations) {
+      const city = country.cities.find(c => c.code === loc);
+      if (city) {
+        return lang === 'es' ? city.nameEs : city.namePt;
+      }
+    }
+
+    // もし "国名:都市名" の形式の場合、都市名部分を抽出してローカライズ
+    if (loc.includes(':')) {
+      const parts = loc.split(':');
+      const cityJaName = parts[1].trim();
+      for (const country of deliveryLocations) {
+        const city = country.cities.find(c => c.nameJa === cityJaName);
+        if (city) {
+          return lang === 'es' ? city.nameEs : city.namePt;
+        }
+      }
+      return cityJaName;
+    }
+
+    return loc;
   };
 
   // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)
@@ -2419,8 +2448,8 @@ export default function Home() {
 
   // 引渡し場所に応じた現地費用（USD）を返す関数
   const getLocalCost = (product: SearchItem): number | string => {
-    if (deliveryLocation === 'fob') return 0;
-    const loc = deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC');
+    if (deliveryCountry === 'JP') return 0;
+    const loc = deliveryCity;
     let finalUrl = product.url || '';
     if (product.categoryId && !finalUrl.includes('auccat=')) {
       finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId;
@@ -2472,6 +2501,8 @@ export default function Home() {
         agentCustomerId: req.agent_customer_id as string | null | undefined,
         customerCountry: req.customer_country as string | null | undefined,
         delivery_location: req.delivery_location as string | undefined,
+        delivery_country: req.delivery_country as string | undefined,
+        delivery_city: req.delivery_city as string | undefined,
         shipping_method: req.shipping_method as string | undefined,
         paid_local: req.paid_local || false,
         paid_local_at: req.paid_local_at as string | null | undefined,
@@ -3301,29 +3332,32 @@ export default function Home() {
 
 
 
-            {deliveryLocation !== 'fob' && (
-              <div className="h-9 flex items-center justify-between bg-orange-50 px-2.5 sm:px-3 rounded">
-                <span className="text-[10px] sm:text-xs font-bold text-orange-700 tracking-widest leading-none">
-                  {t.localCostLabel}
-                </span>
-                <div className="flex items-center">
-                  <span className="font-extrabold text-orange-700 text-sm sm:text-base leading-none tabular-nums tracking-tight">
-                    {(() => {
-                      const cost = getLocalCost(product);
-                      if (typeof cost === 'string') {
-                        return <span className="text-xs sm:text-sm text-red-600 font-bold">{cost}</span>;
-                      }
-                      return (
-                        <>
-                          <span className="text-xs font-semibold mr-0.5">$</span>
-                          {cost.toLocaleString('en-US')}
-                        </>
-                      );
-                    })()}
+            {deliveryCountry !== 'JP' && (() => {
+              const cost = getLocalCost(product);
+              const isStringCost = typeof cost === 'string';
+              if (isStringCost) {
+                return (
+                  <div className="h-9 flex items-center justify-center bg-orange-50 px-2.5 sm:px-3 rounded">
+                    <span className="text-xs sm:text-sm text-red-600 font-black tracking-wide leading-none">
+                      {formatLocalCost(cost)}
+                    </span>
+                  </div>
+                );
+              }
+              return (
+                <div className="h-9 flex items-center justify-between bg-orange-50 px-2.5 sm:px-3 rounded">
+                  <span className="text-[10px] sm:text-xs font-bold text-orange-700 tracking-widest leading-none">
+                    {t.localCostLabel}
                   </span>
+                  <div className="flex items-center">
+                    <span className="font-extrabold text-orange-700 text-sm sm:text-base leading-none tabular-nums tracking-tight">
+                      <span className="text-xs font-semibold mr-0.5">$</span>
+                      {cost.toLocaleString('en-US')}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             <button
               onClick={() => {
@@ -3996,27 +4030,40 @@ export default function Home() {
                       </div>
 
                       {/* 現地費用 (Costo Local / Custo Local) */}
-                      {request.delivery_location !== 'JP' && (
-                        <>
-                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
-                            <span className="text-xs text-gray-500 font-medium">
-                              {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
-                            </span>
-                            <span className="text-base font-bold text-gray-800">
-                              {formatLocalCost(calculateLocalCost(request.delivery_location, request, request.shipping_method))}
-                            </span>
-                          </div>
-                          {/* 発送方法 */}
-                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
-                            <span className="text-xs text-gray-500 font-medium">
-                              {t.shippingMethodLabel}:
-                            </span>
-                            <span className="text-sm font-semibold text-black">
-                              {request.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
-                            </span>
-                          </div>
-                        </>
-                      )}
+                      {request.delivery_location !== 'JP' && (() => {
+                        const localCost = calculateLocalCost(request.delivery_location, request, request.shipping_method);
+                        const isStringCost = typeof localCost === 'string';
+                        if (isStringCost) {
+                          return (
+                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-black font-sans">
+                              <span className="text-sm font-black text-red-600 tracking-wide">
+                                {formatLocalCost(localCost)}
+                              </span>
+                            </div>
+                          );
+                        }
+                        return (
+                          <>
+                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
+                              <span className="text-xs text-gray-500 font-medium">
+                                {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
+                              </span>
+                              <span className="text-base font-bold text-gray-800">
+                                {formatLocalCost(localCost)}
+                              </span>
+                            </div>
+                            {/* 発送方法 */}
+                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
+                              <span className="text-xs text-gray-500 font-medium">
+                                {t.shippingMethodLabel}:
+                              </span>
+                              <span className="text-sm font-semibold text-black">
+                                {request.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()}
 
 
                       {/* 保留中（未処理）の場合のオファー金額変更・削除ボタン */}
@@ -4604,25 +4651,38 @@ export default function Home() {
                                 </div>
 
                                 {/* 現地費用 */}
-                                {item.delivery_location !== 'JP' && (
-                                  <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
-                                      {item.paid_local ? (
-                                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                          ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                {item.delivery_location !== 'JP' && (() => {
+                                  const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
+                                  const isStringCost = typeof localCost === 'string';
+                                  if (isStringCost) {
+                                    return (
+                                      <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center">
+                                        <span className="text-sm font-black text-red-600 tracking-wide">
+                                          {formatLocalCost(localCost)}
                                         </span>
-                                      ) : (
-                                        <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                          {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                        </span>
-                                      )}
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                        {item.paid_local ? (
+                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                            {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                        {formatLocalCost(localCost)}
+                                      </span>
                                     </div>
-                                    <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black')}`}>
-                                      {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
-                                    </span>
-                                  </div>
-                                )}
+                                  );
+                                })()}
                               </div>
                             );
                           })()
@@ -4673,25 +4733,38 @@ export default function Home() {
                             </div>
 
                             {/* 現地費用 */}
-                            {item.delivery_location !== 'JP' && (
-                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
-                                  {item.paid_local ? (
-                                    <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                      ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                            {item.delivery_location !== 'JP' && (() => {
+                              const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
+                              const isStringCost = typeof localCost === 'string';
+                              if (isStringCost) {
+                                return (
+                                  <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center font-sans">
+                                    <span className="text-sm font-black text-red-600 tracking-wide">
+                                      {formatLocalCost(localCost)}
                                     </span>
-                                  ) : (
-                                    <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                      {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                    </span>
-                                  )}
+                                  </div>
+                                );
+                              }
+                              return (
+                                <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                    {item.paid_local ? (
+                                      <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                        ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                        {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                    {formatLocalCost(localCost)}
+                                  </span>
                                 </div>
-                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black')}`}>
-                                  {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method))}
-                                </span>
-                              </div>
-                            )}
+                              );
+                            })()}
                           </>
                         )}
                       </div>
@@ -5373,6 +5446,9 @@ export default function Home() {
                           setProducts([]);
                           setSearchPage(1);
                           setNextPageExists(false);
+                          if (currentCategory && !currentCategory.sub) {
+                            setCategoryHistory(prev => prev.slice(0, -1));
+                          }
                         }}
                         className="w-full sm:w-auto text-center text-xs text-indigo-600 hover:underline hover:bg-indigo-100 font-bold h-12 bg-indigo-50 rounded px-6 flex items-center justify-center shadow-sm border border-indigo-100 transition-colors font-sans"
                       >
@@ -5418,7 +5494,7 @@ export default function Home() {
 
                     // 自動車車体(26360)および部品取り車(2084061280)以外の、有効なカテゴリIDを持つすべてのカテゴリで検索ボックスを表示する
                     const isSearchable = catId && catId !== '26360' && catId !== '2084061280';
-                    if (!isSearchable) return null;
+                    if (!isSearchable && !activeCategoryUrl) return null;
 
                     const placeholderText = lang === 'es' 
                       ? 'Buscar por marca o modelo' 
@@ -5426,88 +5502,124 @@ export default function Home() {
 
                     return (
                       <div className="mb-4 animate-in fade-in duration-300 space-y-4">
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder={placeholderText}
-                            value={categorySearchKeyword}
-                            onChange={(e) => setCategorySearchKeyword(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleCategorySearch(catId);
-                              }
-                            }}
-                            className="flex-1 px-4 h-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm font-sans"
-                          />
-                          <button
-                            onClick={() => handleCategorySearch(catId)}
-                            className="bg-indigo-600 text-white min-w-[100px] px-6 h-12 rounded-lg font-bold hover:bg-indigo-700 transition text-sm shadow-sm font-sans"
-                          >
-                            {lang === 'es' ? 'Buscar' : 'Buscar'}
-                          </button>
-                        </div>
+                        {isSearchable && (
+                          <>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder={placeholderText}
+                                value={categorySearchKeyword}
+                                onChange={(e) => setCategorySearchKeyword(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleCategorySearch(catId);
+                                  }
+                                }}
+                                className="flex-1 px-4 h-12 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-600 outline-none text-gray-800 text-sm font-sans"
+                              />
+                              <button
+                                onClick={() => handleCategorySearch(catId)}
+                                className="bg-indigo-600 text-white min-w-[100px] px-6 h-12 rounded-lg font-bold hover:bg-indigo-700 transition text-sm shadow-sm font-sans"
+                              >
+                                {lang === 'es' ? 'Buscar' : 'Buscar'}
+                              </button>
+                            </div>
 
-                        <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full max-w-md mx-auto h-11">
-                          <button
-                            onClick={() => {
-                              setSearchCondition('all');
-                              handleCategorySearch(catId, 'all');
-                            }}
-                            className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
-                              searchCondition === 'all'
-                                ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
-                                : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
-                            }`}
-                          >
-                            {t.condAll}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSearchCondition('new');
-                              handleCategorySearch(catId, 'new');
-                            }}
-                            className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
-                              searchCondition === 'new'
-                                ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
-                                : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
-                            }`}
-                          >
-                            {t.condNew}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSearchCondition('used');
-                              handleCategorySearch(catId, 'used');
-                            }}
-                            className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
-                              searchCondition === 'used'
-                                ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
-                                : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
-                            }`}
-                          >
-                            {t.condUsed}
-                          </button>
-                        </div>
+                            <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl border border-gray-200/50 w-full max-w-md mx-auto h-11">
+                              <button
+                                onClick={() => {
+                                  setSearchCondition('all');
+                                  handleCategorySearch(catId, 'all');
+                                }}
+                                className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
+                                  searchCondition === 'all'
+                                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
+                                    : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
+                                }`}
+                              >
+                                {t.condAll}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSearchCondition('new');
+                                  handleCategorySearch(catId, 'new');
+                                }}
+                                className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
+                                  searchCondition === 'new'
+                                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
+                                    : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
+                                }`}
+                              >
+                                {t.condNew}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSearchCondition('used');
+                                  handleCategorySearch(catId, 'used');
+                                }}
+                                className={`flex-1 h-full rounded-lg font-bold text-sm transition-all duration-300 text-center flex items-center justify-center ${
+                                  searchCondition === 'used'
+                                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-100 transform scale-[1.02]'
+                                    : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
+                                }`}
+                              >
+                                {t.condUsed}
+                              </button>
+                            </div>
+                          </>
+                        )}
 
-                        {/* 引渡し場所選択ドロップダウン */}
+                        {/* 引渡し場所（国名）選択ドロップダウン */}
                         <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
                           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
                             {t.deliveryLocationLabel}
                           </label>
                           <select
-                            value={deliveryLocation}
-                            onChange={(e) => setDeliveryLocation(e.target.value as any)}
+                            value={deliveryCountry}
+                            onChange={(e) => {
+                              const countryCode = e.target.value;
+                              setDeliveryCountry(countryCode);
+                              if (countryCode === 'JP') {
+                                setDeliveryCity('');
+                              } else {
+                                const country = deliveryLocations.find(c => c.code === countryCode);
+                                if (country && country.cities.length > 0) {
+                                  setDeliveryCity(country.cities[0].code);
+                                }
+                              }
+                            }}
                             className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
                           >
-                            <option value="fob">{t.deliveryFob}</option>
-                            <option value="asuncion">{t.deliveryAsuncion}</option>
-                            <option value="encarnacion">{t.deliveryEncarnacion}</option>
-                            <option value="pjc">{t.deliveryPjc}</option>
+                            {deliveryLocations.map(country => (
+                              <option key={country.code} value={country.code}>
+                                {lang === 'es' ? country.nameEs : country.namePt}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
+                        {/* 引渡し場所（都市名）選択ドロップダウン */}
+                        {deliveryCountry !== 'JP' && (
+                          <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                              {lang === 'es' ? 'Ciudad' : 'Cidade'}
+                            </label>
+                            <select
+                              value={deliveryCity}
+                              onChange={(e) => setDeliveryCity(e.target.value)}
+                              className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                            >
+                              {deliveryLocations.find(c => c.code === deliveryCountry)?.cities.map(city => (
+                                <option key={city.code} value={city.code}>
+                                  {lang === 'es' ? city.nameEs : city.namePt}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
                         {/* 発送方法選択ドロップダウン */}
-                        {deliveryLocation !== 'fob' && (
+                        {deliveryCountry !== 'JP' && (
                           <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
                             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
                               {t.shippingMethodLabel}
@@ -5592,25 +5704,57 @@ export default function Home() {
                         </button>
                       </div>
 
-                      {/* 引渡し場所選択ドロップダウン */}
+                      {/* 引渡し場所（国名）選択ドロップダウン */}
                       <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
                           {t.deliveryLocationLabel}
                         </label>
                         <select
-                          value={deliveryLocation}
-                          onChange={(e) => setDeliveryLocation(e.target.value as any)}
+                          value={deliveryCountry}
+                          onChange={(e) => {
+                            const countryCode = e.target.value;
+                            setDeliveryCountry(countryCode);
+                            if (countryCode === 'JP') {
+                              setDeliveryCity('');
+                            } else {
+                              const country = deliveryLocations.find(c => c.code === countryCode);
+                              if (country && country.cities.length > 0) {
+                                  setDeliveryCity(country.cities[0].code);
+                              }
+                            }
+                          }}
                           className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
                         >
-                          <option value="fob">{t.deliveryFob}</option>
-                          <option value="asuncion">{t.deliveryAsuncion}</option>
-                          <option value="encarnacion">{t.deliveryEncarnacion}</option>
-                          <option value="pjc">{t.deliveryPjc}</option>
+                          {deliveryLocations.map(country => (
+                            <option key={country.code} value={country.code}>
+                              {lang === 'es' ? country.nameEs : country.namePt}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
+                      {/* 引渡し場所（都市名）選択ドロップダウン */}
+                      {deliveryCountry !== 'JP' && (
+                        <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                            {lang === 'es' ? 'Ciudad' : 'Cidade'}
+                          </label>
+                          <select
+                            value={deliveryCity}
+                            onChange={(e) => setDeliveryCity(e.target.value)}
+                            className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                          >
+                            {deliveryLocations.find(c => c.code === deliveryCountry)?.cities.map(city => (
+                              <option key={city.code} value={city.code}>
+                                {lang === 'es' ? city.nameEs : city.namePt}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
                       {/* 発送方法選択ドロップダウン */}
-                      {deliveryLocation !== 'fob' && (
+                      {deliveryCountry !== 'JP' && (
                         <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
                           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
                             {t.shippingMethodLabel}
@@ -5638,6 +5782,7 @@ export default function Home() {
                             if (cat.sub) {
                               setCategoryHistory(prev => [...prev, cat]);
                             } else if (cat.url) {
+                              setCategoryHistory(prev => [...prev, cat]);
                               // 以前の検索文字をクリアする
                               setCategorySearchKeyword('');
                               setJdmSearchKeyword('');
@@ -5725,25 +5870,57 @@ export default function Home() {
                     </button>
                   </div>
 
-                  {/* 引渡し場所選択ドロップダウン */}
+                  {/* 引渡し場所（国名）選択ドロップダウン */}
                   <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
                       {t.deliveryLocationLabel}
                     </label>
                     <select
-                      value={deliveryLocation}
-                      onChange={(e) => setDeliveryLocation(e.target.value as any)}
+                      value={deliveryCountry}
+                      onChange={(e) => {
+                        const countryCode = e.target.value;
+                        setDeliveryCountry(countryCode);
+                        if (countryCode === 'JP') {
+                          setDeliveryCity('');
+                        } else {
+                          const country = deliveryLocations.find(c => c.code === countryCode);
+                          if (country && country.cities.length > 0) {
+                              setDeliveryCity(country.cities[0].code);
+                          }
+                        }
+                      }}
                       className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
                     >
-                      <option value="fob">{t.deliveryFob}</option>
-                      <option value="asuncion">{t.deliveryAsuncion}</option>
-                      <option value="encarnacion">{t.deliveryEncarnacion}</option>
-                      <option value="pjc">{t.deliveryPjc}</option>
+                      {deliveryLocations.map(country => (
+                        <option key={country.code} value={country.code}>
+                          {lang === 'es' ? country.nameEs : country.namePt}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
+                  {/* 引渡し場所（都市名）選択ドロップダウン */}
+                  {deliveryCountry !== 'JP' && (
+                    <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                        {lang === 'es' ? 'Ciudad' : 'Cidade'}
+                      </label>
+                      <select
+                        value={deliveryCity}
+                        onChange={(e) => setDeliveryCity(e.target.value)}
+                        className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                      >
+                        {deliveryLocations.find(c => c.code === deliveryCountry)?.cities.map(city => (
+                          <option key={city.code} value={city.code}>
+                            {lang === 'es' ? city.nameEs : city.namePt}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   {/* 発送方法選択ドロップダウン */}
-                  {deliveryLocation !== 'fob' && (
+                  {deliveryCountry !== 'JP' && (
                     <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
                       <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
                         {t.shippingMethodLabel}
@@ -5834,22 +6011,29 @@ export default function Home() {
                       $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id)}
                     </span>
                   </div>
-                  {deliveryLocation !== 'fob' && (
-                    <div className="text-[10px] sm:text-xs h-7 flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-1.5 w-full whitespace-nowrap overflow-hidden text-ellipsis">
-                      <span className="text-gray-500 font-medium flex items-center gap-1">
-                        {t.localCostLabel}
-                      </span>
-                      <span className="font-extrabold text-sm text-indigo-700">
-                        {(() => {
-                          const cost = getLocalCost(selectedProduct);
-                          if (typeof cost === 'string') {
-                            return <span className="text-red-600 font-bold">{cost}</span>;
-                          }
-                          return `$ ${cost.toLocaleString('en-US')}`;
-                        })()}
-                      </span>
-                    </div>
-                  )}
+                  {deliveryCountry !== 'JP' && (() => {
+                    const cost = getLocalCost(selectedProduct);
+                    const isStringCost = typeof cost === 'string';
+                    if (isStringCost) {
+                      return (
+                        <div className="text-[10px] sm:text-xs h-7 flex items-center justify-center bg-gray-50 border border-gray-100 rounded px-1.5 w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                          <span className="text-red-600 font-black tracking-wide">
+                            {formatLocalCost(cost)}
+                          </span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="text-[10px] sm:text-xs h-7 flex items-center justify-between bg-gray-50 border border-gray-100 rounded px-1.5 w-full whitespace-nowrap overflow-hidden text-ellipsis">
+                        <span className="text-gray-500 font-medium flex items-center gap-1">
+                          {t.localCostLabel}
+                        </span>
+                        <span className="font-extrabold text-sm text-indigo-700">
+                          $ {cost.toLocaleString('en-US')}
+                        </span>
+                      </div>
+                    );
+                  })()}
                   <a
                     href={`/product/${selectedProduct.id}?url=${encodeURIComponent(selectedProduct.url || '')}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}`}
                     className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"

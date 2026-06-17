@@ -96,9 +96,11 @@ export default function AdminDashboard() {
     return null;
   };
 
-  const getDeliveryLocationName = (loc?: string) => {
+  const getDeliveryLocationName = (loc?: string, city?: string) => {
+    if (city) return city;
     if (loc === 'JP') return '日本 🇯🇵';
     if (loc === 'ASU') return 'アスンシオン 🇵🇾';
+    if (loc === 'CDE') return 'シウダーデルエステ 🇵🇾';
     if (loc === 'ENC') return 'エンカルナシオン 🇵🇾';
     if (loc === 'PJC') return 'ペドロフアンカバジェロ 🇵🇾';
     return loc || '-';
@@ -1954,7 +1956,7 @@ export default function AdminDashboard() {
                         引渡場所:
                       </span>
                       <span className="font-semibold text-black">
-                        {getDeliveryLocationName(request.delivery_location)}
+                        {getDeliveryLocationName(request.delivery_location, request.delivery_city)}
                       </span>
                     </div>
 
@@ -2529,7 +2531,7 @@ export default function AdminDashboard() {
                                 {/* 商品渡し場所 (B001用) */}
                                 <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
                                   <span className="text-gray-500 font-medium">引渡場所:</span>
-                                  <span className="font-semibold text-black">{getDeliveryLocationName(item.delivery_location)}</span>
+                                  <span className="font-semibold text-black">{getDeliveryLocationName(item.delivery_location, item.delivery_city)}</span>
                                 </div>
 
                                 {/* 発送方法 (B001用) */}
@@ -2612,7 +2614,7 @@ export default function AdminDashboard() {
                             {/* 商品渡し場所 (通常顧客用) */}
                             <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
                               <span className="text-gray-500 font-medium">引渡場所:</span>
-                              <span className="font-semibold text-black">{getDeliveryLocationName(item.delivery_location)}</span>
+                              <span className="font-semibold text-black">{getDeliveryLocationName(item.delivery_location, item.delivery_city)}</span>
                             </div>
 
                             {/* 現地費用 (通常顧客用・チェックボックス付) */}

@@ -228,9 +228,11 @@ interface FobCostItem {
 interface LocalCostItem {
   key: string;
   asu_sea: number | string;
+  cde_sea: number | string;
   enc_sea: number | string;
   pjc_sea: number | string;
   asu_air: number | string;
+  cde_air: number | string;
   enc_air: number | string;
   pjc_air: number | string;
 }
@@ -304,14 +306,126 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
   return 'default';
 };
 
+export interface City {
+  code: string;
+  nameJa: string;
+  nameEs: string;
+  namePt: string;
+}
+
+export interface Country {
+  code: string;
+  nameJa: string;
+  nameEs: string;
+  namePt: string;
+  cities: City[];
+}
+
+export const deliveryLocations: Country[] = [
+  {
+    code: 'JP',
+    nameJa: '日本 🇯🇵',
+    nameEs: 'Japón 🇯🇵',
+    namePt: 'Japão 🇯🇵',
+    cities: []
+  },
+  {
+    code: 'PY',
+    nameJa: 'パラグアイ 🇵🇾',
+    nameEs: 'Paraguay 🇵🇾',
+    namePt: 'Paraguai 🇵🇾',
+    cities: [
+      { code: 'ASU', nameJa: 'アスンシオン 🇵🇾', nameEs: 'Asunción 🇵🇾', namePt: 'Assunção 🇵🇾' },
+      { code: 'CDE', nameJa: 'シウダー・デル・エステ 🇵🇾', nameEs: 'Ciudad del Este 🇵🇾', namePt: 'Ciudad del Este 🇵🇾' },
+      { code: 'ENC', nameJa: 'エンカルナシオン 🇵🇾', nameEs: 'Encarnación 🇵🇾', namePt: 'Encarnação 🇵🇾' },
+      { code: 'PJC', nameJa: 'ペドロ・フアン・カバジェロ 🇵🇾', nameEs: 'Pedro Juan Caballero 🇵🇾', namePt: 'Pedro Juan Caballero 🇵🇾' }
+    ]
+  },
+  {
+    code: 'CL',
+    nameJa: 'チリ 🇨🇱',
+    nameEs: 'Chile 🇨🇱',
+    namePt: 'Chile 🇨🇱',
+    cities: [
+      { code: 'SNT', nameJa: 'サンティアゴ 🇨🇱', nameEs: 'Santiago 🇨🇱', namePt: 'Santiago 🇨🇱' },
+      { code: 'IQQ', nameJa: 'イキケ 🇨🇱', nameEs: 'Iquique 🇨🇱', namePt: 'Iquique 🇨🇱' }
+    ]
+  },
+  {
+    code: 'BO',
+    nameJa: 'ボリビア 🇧🇴',
+    nameEs: 'Bolivia 🇧🇴',
+    namePt: 'Bolívia 🇧🇴',
+    cities: [
+      { code: 'LPZ', nameJa: 'ラパス 🇧🇴', nameEs: 'La Paz 🇧🇴', namePt: 'La Paz 🇧🇴' },
+      { code: 'SCZ', nameJa: 'サンタ・クルス 🇧🇴', nameEs: 'Santa Cruz 🇧🇴', namePt: 'Santa Cruz 🇧🇴' }
+    ]
+  },
+  {
+    code: 'AR',
+    nameJa: 'アルゼンチン 🇦🇷',
+    nameEs: 'Argentina 🇦🇷',
+    namePt: 'Argentina 🇦🇷',
+    cities: [
+      { code: 'BUE', nameJa: 'ブエノスアイレス 🇦🇷', nameEs: 'Buenos Aires 🇦🇷', namePt: 'Buenos Aires 🇦🇷' }
+    ]
+  }
+];
+
+export const getCountryNameJa = (code: string): string => {
+  const country = deliveryLocations.find(c => c.code === code);
+  return country ? country.nameJa : '日本 🇯🇵';
+};
+
+export const getCityNameJa = (countryCode: string, cityCode: string): string => {
+  const country = deliveryLocations.find(c => c.code === countryCode);
+  const city = country?.cities.find(c => c.code === cityCode);
+  return city ? city.nameJa : '';
+};
+
+export const getCityCodeByJaName = (cityName: string): string => {
+  if (!cityName) return 'JP';
+  const cleanName = cityName.trim();
+  for (const country of deliveryLocations) {
+    for (const city of country.cities) {
+      if (city.nameJa === cleanName || city.nameJa.includes(cleanName) || cleanName.includes(city.nameJa)) {
+        return city.code;
+      }
+    }
+  }
+  return 'JP';
+};
+
+export const getCityCode = (deliveryLocation?: string): string => {
+  if (!deliveryLocation) return 'JP';
+  const loc = deliveryLocation.trim();
+  
+  // 既存の古いコードとの互換性
+  if (loc === 'JP') return 'JP';
+  if (loc === 'ASU') return 'ASU';
+  if (loc === 'CDE') return 'CDE';
+  if (loc === 'ENC') return 'ENC';
+  if (loc === 'PJC') return 'PJC';
+
+  // もし "パラグアイ 🇵🇾:アスンシオン 🇵🇾" などの形式の場合、都市名部分を取り出す
+  if (loc.includes(':')) {
+    const parts = loc.split(':');
+    return getCityCodeByJaName(parts[1]);
+  }
+
+  // もし都市の日本語名がそのまま渡された場合
+  return getCityCodeByJaName(loc);
+};
+
 /**
  * 商品渡し場所と商品カテゴリに基づいて現地費用（USD）を計算して返す関数
- * @param deliveryLocation 商品渡し場所 ('JP', 'ASU', 'ENC', 'PJC')
+ * @param deliveryLocation 商品渡し場所 ('JP', 'ASU', 'ENC', 'PJC' または国・都市表記)
  * @param item 商品情報
  * @returns 現地費用 (USD建ての数値、日本渡しは0)
  */
 export const calculateLocalCost = (deliveryLocation?: string, item?: any, shippingMethod?: string): number | string => {
-  if (!deliveryLocation || deliveryLocation === 'JP') return 0;
+  const cityCode = getCityCode(deliveryLocation);
+  if (cityCode === 'JP') return 0;
   
   loadCostsData();
 
@@ -320,7 +434,7 @@ export const calculateLocalCost = (deliveryLocation?: string, item?: any, shippi
   const url = item?.productUrl || item?.product_url || '';
   const categoryKey = detectCategoryKey(title, url);
 
-  const loc = deliveryLocation.trim().toLowerCase();
+  const loc = cityCode.toLowerCase();
   let costItem = cachedLocalCosts[categoryKey];
   
   // マッチしなかった場合はdefaultを使用
@@ -336,10 +450,12 @@ export const calculateLocalCost = (deliveryLocation?: string, item?: any, shippi
 
   if (isAir) {
     if (loc === 'asu' || loc === 'asuncion') return costItem.asu_air ?? 0;
+    if (loc === 'cde' || loc === 'ciudad_del_este' || loc === 'ciudad del este') return costItem.cde_air ?? 0;
     if (loc === 'enc' || loc === 'encarnacion') return costItem.enc_air ?? 0;
     if (loc === 'pjc') return costItem.pjc_air ?? 0;
   } else {
     if (loc === 'asu' || loc === 'asuncion') return costItem.asu_sea ?? 0;
+    if (loc === 'cde' || loc === 'ciudad_del_este' || loc === 'ciudad del este') return costItem.cde_sea ?? 0;
     if (loc === 'enc' || loc === 'encarnacion') return costItem.enc_sea ?? 0;
     if (loc === 'pjc') return costItem.pjc_sea ?? 0;
   }

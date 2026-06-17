@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
-import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost } from '@/lib/utils';
+import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -35,8 +35,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   
   // 選択された通貨のState (デフォルトはUSD)
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
-  // 引渡し場所のState (デフォルトはfob)
-  const [deliveryLocation, setDeliveryLocation] = useState<'fob' | 'asuncion' | 'encarnacion' | 'pjc'>('fob');
+  // 引渡し場所のState (デフォルトはJP)
+  const [deliveryCountry, setDeliveryCountry] = useState<string>('JP');
+  const [deliveryCity, setDeliveryCity] = useState<string>('');
   // 発送方法のState (デフォルトはsea)
   const [shippingMethod, setShippingMethod] = useState<'sea' | 'air'>('sea');
   // 為替レート関連のState
@@ -82,6 +83,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       deliveryLocationLabel: 'Lugar de entrega',
       deliveryFob: 'Japón 🇯🇵',
       deliveryAsuncion: 'Asunción 🇵🇾',
+      deliveryCde: 'Ciudad del Este 🇵🇾',
       deliveryEncarnacion: 'Encarnación 🇵🇾',
       deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
       localCostLabel: 'Costo Local',
@@ -118,6 +120,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       deliveryLocationLabel: 'Local de entrega',
       deliveryFob: 'Japão 🇯🇵',
       deliveryAsuncion: 'Assunção 🇵🇾',
+      deliveryCde: 'Ciudad del Este 🇵🇾',
       deliveryEncarnacion: 'Encarnação 🇵🇾',
       deliveryPjc: 'Pedro Juan Caballero 🇵🇾',
       localCostLabel: 'Custo Local',
@@ -400,8 +403,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   // 引渡し場所に応じた現地費用（USD）を返す関数
   const getLocalCost = (productUrl: string | null): number | string => {
-    if (deliveryLocation === 'fob') return 0;
-    const loc = deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC');
+    if (deliveryCountry === 'JP') return 0;
+    const loc = deliveryCity;
     let finalUrl = productUrl || '';
     if (product?.categoryId && !finalUrl.includes('auccat=')) {
       finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId;
@@ -455,8 +458,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           maxBid: Number(bidForm.maxBid),
           customerName: finalCustomerName,
           language: lang,
-          deliveryLocation: deliveryLocation === 'fob' ? 'JP' : (deliveryLocation === 'asuncion' ? 'ASU' : (deliveryLocation === 'encarnacion' ? 'ENC' : 'PJC')),
-          shippingMethod: deliveryLocation === 'fob' ? 'sea' : shippingMethod
+          deliveryLocation: deliveryCountry === 'JP' ? 'JP' : deliveryCity,
+          deliveryCountry: getCountryNameJa(deliveryCountry),
+          deliveryCity: deliveryCountry === 'JP' ? '' : getCityNameJa(deliveryCountry, deliveryCity),
+          shippingMethod: deliveryCountry === 'JP' ? 'sea' : shippingMethod
         })
       });
 
@@ -559,19 +564,47 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </select>
         </div>
         <div className="max-w-3xl mx-auto px-4 pb-2 space-y-2">
+          {/* 引渡し場所（国名）選択ドロップダウン */}
           <select
-            value={deliveryLocation}
-            onChange={(e) => setDeliveryLocation(e.target.value as any)}
+            value={deliveryCountry}
+            onChange={(e) => {
+              const countryCode = e.target.value;
+              setDeliveryCountry(countryCode);
+              if (countryCode === 'JP') {
+                setDeliveryCity('');
+              } else {
+                const country = deliveryLocations.find(c => c.code === countryCode);
+                if (country && country.cities.length > 0) {
+                  setDeliveryCity(country.cities[0].code);
+                }
+              }
+            }}
             className="w-full h-12 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
           >
-            <option value="fob">{t.deliveryFob}</option>
-            <option value="asuncion">{t.deliveryAsuncion}</option>
-            <option value="encarnacion">{t.deliveryEncarnacion}</option>
-            <option value="pjc">{t.deliveryPjc}</option>
+            {deliveryLocations.map(country => (
+              <option key={country.code} value={country.code}>
+                {lang === 'es' ? country.nameEs : country.namePt}
+              </option>
+            ))}
           </select>
 
+          {/* 引渡し場所（都市名）選択ドロップダウン */}
+          {deliveryCountry !== 'JP' && (
+            <select
+              value={deliveryCity}
+              onChange={(e) => setDeliveryCity(e.target.value)}
+              className="w-full h-12 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center animate-in fade-in duration-300"
+            >
+              {deliveryLocations.find(c => c.code === deliveryCountry)?.cities.map(city => (
+                <option key={city.code} value={city.code}>
+                  {lang === 'es' ? city.nameEs : city.namePt}
+                </option>
+              ))}
+            </select>
+          )}
+
           {/* 発送方法選択ドロップダウン */}
-          {deliveryLocation !== 'fob' && (
+          {deliveryCountry !== 'JP' && (
             <select
               value={shippingMethod}
               onChange={(e) => setShippingMethod(e.target.value as any)}
@@ -671,29 +704,36 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
           
           {/* 通常ユーザー用現地費用ボックス（現在価格の下） */}
-          {deliveryLocation !== 'fob' && (
-            <>
-              <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
-                <span className="text-xs">{t.localCostLabel}</span>
-                <span className="text-sm sm:text-base font-extrabold">
-                  {(() => {
-                    const cost = getLocalCost(product.url);
-                    if (typeof cost === 'string') {
-                      return <span className="text-red-600 font-bold">{cost}</span>;
-                    }
-                    return `$ ${cost.toLocaleString('en-US')}`;
-                  })()}
-                </span>
-              </div>
-              {/* 発送方法 */}
-              <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
-                <span className="text-xs">{t.shippingMethodLabel}</span>
-                <span className="text-sm sm:text-base font-semibold text-gray-700">
-                  {shippingMethod === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
-                </span>
-              </div>
-            </>
-          )}
+          {deliveryCountry !== 'JP' && (() => {
+            const cost = getLocalCost(product.url);
+            const isStringCost = typeof cost === 'string';
+            if (isStringCost) {
+              return (
+                <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-center text-orange-700 font-bold shadow-sm">
+                  <span className="text-sm sm:text-base font-black text-red-600 tracking-wide leading-none">
+                    {formatLocalCost(cost)}
+                  </span>
+                </div>
+              );
+            }
+            return (
+              <>
+                <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
+                  <span className="text-xs">{t.localCostLabel}</span>
+                  <span className="text-sm sm:text-base font-extrabold">
+                    $ {cost.toLocaleString('en-US')}
+                  </span>
+                </div>
+                {/* 発送方法 */}
+                <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
+                  <span className="text-xs">{t.shippingMethodLabel}</span>
+                  <span className="text-sm sm:text-base font-semibold text-gray-700">
+                    {shippingMethod === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                  </span>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* 3. AI要約翻訳エリア */}
