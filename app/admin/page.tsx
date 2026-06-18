@@ -2921,23 +2921,25 @@ export default function AdminDashboard() {
             {/* 招待コード管理セクション */}
             <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 mb-6 font-sans">
               <h3 className="text-sm font-bold text-indigo-900 mb-3 flex items-center gap-1.5">
-                🔑 エージェント招待コードの管理
+                🔑 エージェント招待コード管理
               </h3>
-              <div className="flex flex-wrap gap-3 items-end mb-4">
+              <div className="flex flex-col gap-3 mb-4 w-full">
                 <button
                   onClick={handleGenerateInviteCode}
                   disabled={isGeneratingCode}
-                  className="bg-indigo-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm flex items-center justify-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50"
+                  className="bg-indigo-600 text-white w-full h-12 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm flex items-center justify-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50"
                 >
-                  {isGeneratingCode ? '生成中...' : '✨ 新しい招待コードを生成'}
+                  {isGeneratingCode ? '生成中...' : '✨ 新規招待コード生成'}
                 </button>
                 {latestGeneratedCode && (
-                  <div className="bg-white border border-indigo-200 rounded-lg h-12 px-3 flex items-center gap-2 shadow-sm">
-                    <span className="text-xs text-gray-500">最新のコード:</span>
-                    <span className="font-mono font-bold text-indigo-700 select-all">{latestGeneratedCode}</span>
+                  <div className="bg-white border border-indigo-200 rounded-lg h-12 px-3 flex items-center justify-between w-full shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">最新コード:</span>
+                      <span className="font-mono font-bold text-indigo-700 select-all">{latestGeneratedCode}</span>
+                    </div>
                     <button
                       onClick={() => handleCopyText(latestGeneratedCode)}
-                      className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold px-2 py-1 rounded transition"
+                      className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold px-3 py-1.5 rounded transition"
                     >
                       コピー
                     </button>
@@ -2950,8 +2952,7 @@ export default function AdminDashboard() {
                   <table className="min-w-full divide-y divide-gray-200 text-xs font-sans">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-500">招待コード</th>
-                        <th className="px-3 py-2 text-center font-semibold text-gray-500">生成日時</th>
+                        <th className="px-3 py-2 text-left font-semibold text-gray-500">コード</th>
                         <th className="px-3 py-2 text-center font-semibold text-gray-500">有効期限</th>
                         <th className="px-3 py-2 text-center font-semibold text-gray-500">状態</th>
                       </tr>
@@ -2962,7 +2963,6 @@ export default function AdminDashboard() {
                         return (
                           <tr key={code.code} className="hover:bg-gray-50/50">
                             <td className="px-3 py-2 font-mono font-bold text-gray-700 select-all">{code.code}</td>
-                            <td className="px-3 py-2 text-center text-gray-500">{formatDateTime(code.createdAt)}</td>
                             <td className="px-3 py-2 text-center text-gray-500">{formatDateTime(code.expiresAt)}</td>
                             <td className="px-3 py-2 text-center">
                               {code.used ? (
