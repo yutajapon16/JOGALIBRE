@@ -3160,14 +3160,23 @@ export default function Home() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">{t.password}</label>
+              <label className="block text-sm font-medium mb-2">
+                {t.password}
+                {showSignUp && (
+                  <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                    {lang === 'es'
+                      ? 'Crea una contraseña para iniciar sesión en JOGALIBRE'
+                      : 'Crie uma senha para fazer login no JOGALIBRE'}
+                  </span>
+                )}
+              </label>
               <input
                 type="password"
                 name="password"
                 value={loginForm.password}
                 onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                autoComplete="current-password"
+                autoComplete={showSignUp ? "new-password" : "current-password"}
                 required
                 minLength={6}
               />

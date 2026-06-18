@@ -193,6 +193,11 @@ export default function AgentRegister() {
           <div>
             <label className="block text-sm font-medium mb-1">
               {lang === 'es' ? 'Contraseña' : 'Senha'}
+              <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                {lang === 'es'
+                  ? 'Crea una contraseña para iniciar sesión en JOGALIBRE'
+                  : 'Crie uma senha para fazer login no JOGALIBRE'}
+              </span>
             </label>
             <input
               type="password"
@@ -359,6 +364,11 @@ export default function AgentRegister() {
           <div>
             <label className="block text-sm font-medium mb-1">
               {lang === 'es' ? 'Contraseña de registro *' : 'Senha de registro *'}
+              <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                {lang === 'es'
+                  ? 'Confirma con la persona que te compartió esta página de registro'
+                  : 'Confirme com a pessoa que lhe indicou esta página de registro'}
+              </span>
             </label>
             <input
               type="password"
