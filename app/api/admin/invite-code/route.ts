@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
+import { cleanExpiredInviteCodes, type InviteCode } from '@/lib/utils';
 
 // 完全にランダムな8文字の英数字コードを生成するヘルパー関数
 function generateRandomCode(): string {
@@ -11,14 +12,6 @@ function generateRandomCode(): string {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
-}
-
-// 招待コードのインターフェース定義
-interface InviteCode {
-  code: string;
-  expiresAt: string;
-  used: boolean;
-  createdAt: string;
 }
 
 // 管理者権限を検証する共通ヘルパー
@@ -58,8 +51,23 @@ export async function GET(request: Request) {
 
     const inviteCodes: InviteCode[] = settingData?.value ? (settingData.value as InviteCode[]) : [];
 
+    // 有効期限切れ後24時間経過したコードをクリーンアップ
+    const { cleanedCodes, isUpdated } = cleanExpiredInviteCodes(inviteCodes);
+
+    if (isUpdated) {
+      const { error: saveError } = await supabaseAdmin
+        .from('system_settings')
+        .upsert({
+          key: 'agent_invite_codes',
+          value: cleanedCodes
+        });
+      if (saveError) {
+        console.error('Failed to auto-clean expired invite codes in GET:', saveError);
+      }
+    }
+
     // 日付順（新しい順）に並べ替えて返却
-    const sortedCodes = inviteCodes.sort(
+    const sortedCodes = cleanedCodes.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
@@ -92,11 +100,14 @@ export async function POST(request: Request) {
 
     const inviteCodes: InviteCode[] = settingData?.value ? (settingData.value as InviteCode[]) : [];
 
+    // 有効期限切れ後24時間経過したコードをクリーンアップ
+    const { cleanedCodes } = cleanExpiredInviteCodes(inviteCodes);
+
     // 2. 新しいランダムな8文字コードを生成
     let newCode = generateRandomCode();
     // 重複チェック（万が一既存コードと重複した場合、再生成する）
     let attempts = 0;
-    while (inviteCodes.some(c => c.code === newCode) && attempts < 10) {
+    while (cleanedCodes.some(c => c.code === newCode) && attempts < 10) {
       newCode = generateRandomCode();
       attempts++;
     }
@@ -112,7 +123,7 @@ export async function POST(request: Request) {
     };
 
     // リストの先頭に追加
-    const updatedCodes = [newInvite, ...inviteCodes];
+    const updatedCodes = [newInvite, ...cleanedCodes];
 
     // 3. system_settings テーブルへ保存（UPSERT）
     const { error: saveError } = await supabaseAdmin

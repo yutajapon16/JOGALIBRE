@@ -688,3 +688,35 @@ export const calculateDefaultShippingCost = (title?: string | null, url?: string
   // 自動車部品・車両本体以外のすべての一般カテゴリはデフォルトで1,000円とする
   return 1000;
 };
+
+// 招待コードのインターフェース定義
+export interface InviteCode {
+  code: string;
+  expiresAt: string;
+  used: boolean;
+  createdAt: string;
+}
+
+/**
+ * 有効期限切れから24時間が経過した招待コードをリストから削除するヘルパー関数
+ * @param inviteCodes 招待コードの配列
+ * @returns 削除対象を除外した新しい配列と、削除が発生したかどうかのフラグ
+ */
+export function cleanExpiredInviteCodes(inviteCodes: InviteCode[]): { cleanedCodes: InviteCode[]; isUpdated: boolean } {
+  const now = Date.now();
+  const limitTime = 24 * 60 * 60 * 1000; // 24時間 (ミリ秒)
+  
+  let isUpdated = false;
+  const cleanedCodes = inviteCodes.filter(code => {
+    const expiresTime = new Date(code.expiresAt).getTime();
+    // 有効期限切れ後24時間を超えている場合は削除 (除外) する
+    if (expiresTime + limitTime <= now) {
+      isUpdated = true;
+      return false;
+    }
+    return true;
+  });
+  
+  return { cleanedCodes, isUpdated };
+}
+

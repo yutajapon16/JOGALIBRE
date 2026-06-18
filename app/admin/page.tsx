@@ -2952,7 +2952,7 @@ export default function AdminDashboard() {
                   <table className="min-w-full divide-y divide-gray-200 text-xs font-sans">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-500">コード</th>
+                        <th className="px-3 py-2 text-center font-semibold text-gray-500">コード</th>
                         <th className="px-3 py-2 text-center font-semibold text-gray-500">有効期限</th>
                         <th className="px-3 py-2 text-center font-semibold text-gray-500">状態</th>
                       </tr>
@@ -2962,7 +2962,7 @@ export default function AdminDashboard() {
                         const isExpired = new Date(code.expiresAt).getTime() < Date.now();
                         return (
                           <tr key={code.code} className="hover:bg-gray-50/50">
-                            <td className="px-3 py-2 font-mono font-bold text-gray-700 select-all">{code.code}</td>
+                            <td className="px-3 py-2 text-center font-mono font-bold text-gray-700 select-all">{code.code}</td>
                             <td className="px-3 py-2 text-center text-gray-500">{formatDateTime(code.expiresAt)}</td>
                             <td className="px-3 py-2 text-center">
                               {code.used ? (

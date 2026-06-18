@@ -1,13 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-
-interface InviteCode {
-  code: string;
-  expiresAt: string;
-  used: boolean;
-  createdAt: string;
-}
+import { cleanExpiredInviteCodes, type InviteCode } from '@/lib/utils';
 
 // エージェント登録用API
 // admin.createUser で確実にユーザーを作成し、email_confirm: true で即ログイン可能にする
@@ -41,8 +35,11 @@ export async function POST(request: Request) {
 
     const inviteCodes: InviteCode[] = settingData?.value ? (settingData.value as InviteCode[]) : [];
 
+    // 有効期限切れ後24時間経過したコードをクリーンアップ
+    const { cleanedCodes } = cleanExpiredInviteCodes(inviteCodes);
+
     // 入力されたコードと一致する有効な（未使用かつ期限内の）招待コードを検索
-    const matchedCodeIndex = inviteCodes.findIndex(c => 
+    const matchedCodeIndex = cleanedCodes.findIndex(c => 
       c.code === accessPassword && 
       !c.used && 
       new Date(c.expiresAt).getTime() > Date.now()
@@ -133,13 +130,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. 招待コードを「使用済み」に更新
-    inviteCodes[matchedCodeIndex].used = true;
+    // 3. 招待コードを「使用済み」に更新（クリーンアップ後の配列を使用）
+    cleanedCodes[matchedCodeIndex].used = true;
     const { error: updateError } = await supabaseAdmin
       .from('system_settings')
       .upsert({
         key: 'agent_invite_codes',
-        value: inviteCodes
+        value: cleanedCodes
       });
 
     if (updateError) {
