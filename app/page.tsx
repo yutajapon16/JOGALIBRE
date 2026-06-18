@@ -3350,7 +3350,7 @@ export default function Home() {
                     {t.localCostLabel}
                   </span>
                   <div className="flex items-center">
-                    <span className="font-extrabold text-orange-700 text-sm sm:text-base leading-none tabular-nums tracking-tight">
+                    <span className="font-extrabold text-orange-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
                       <span className="text-xs font-semibold mr-0.5">$</span>
                       {cost.toLocaleString('en-US')}
                     </span>
