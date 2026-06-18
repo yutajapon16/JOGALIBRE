@@ -88,7 +88,7 @@ export async function GET(request: Request) {
       
       const rowIdx = index + 2;
       // ユーザー指定の正確な数式形式（カンマを含まない形式に変更）
-      const formula = `=(I${rowIdx}*J${rowIdx}*(1-K${rowIdx}))-L${rowIdx}-H${rowIdx}`;
+      const formula = `=ROUNDDOWN((I${rowIdx}*J${rowIdx}*(1-K${rowIdx}))-L${rowIdx}-H${rowIdx},-3)`;
 
       const sentDate = order.sent_to_joga_at 
         ? new Date(order.sent_to_joga_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })
