@@ -97,15 +97,9 @@ export async function GET(request: Request) {
       const emailKey = u.email ? u.email.trim().toLowerCase() : '';
       const userReqs = emailKey ? (userRequestsMap.get(emailKey) || []) : [];
       
-      const activeUnpaidAmount = userReqs
+      const unpaidAmount = userReqs
         .filter(r => !r.cancelled_at && !r.paid)
         .reduce((sum, r) => sum + (r.final_price || 0), 0);
-        
-      const cancelledPaidAmount = userReqs
-        .filter(r => r.cancelled_at && r.paid)
-        .reduce((sum, r) => sum + (r.final_price || 0), 0);
-
-      const unpaidAmount = Math.max(0, activeUnpaidAmount - cancelledPaidAmount);
       const unpaidCount = userReqs.filter(r => !r.cancelled_at && !r.paid).length;
       
       const paidAmount = userReqs
