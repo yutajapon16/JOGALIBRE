@@ -710,7 +710,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             if (isStringCost) {
               return (
                 <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-center text-orange-700 font-bold shadow-sm">
-                  <span className="text-sm sm:text-base font-black text-red-600 tracking-wide leading-none">
+                  <span className="text-sm font-bold text-red-600 tracking-wide leading-none">
                     {formatLocalCost(cost)}
                   </span>
                 </div>

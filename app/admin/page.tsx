@@ -100,9 +100,14 @@ export default function AdminDashboard() {
     if (city) return city;
     if (loc === 'JP') return '日本 🇯🇵';
     if (loc === 'ASU') return 'アスンシオン 🇵🇾';
-    if (loc === 'CDE') return 'シウダーデルエステ 🇵🇾';
+    if (loc === 'CDE') return 'シウダー・デル・エステ 🇵🇾';
     if (loc === 'ENC') return 'エンカルナシオン 🇵🇾';
-    if (loc === 'PJC') return 'ペドロフアンカバジェロ 🇵🇾';
+    if (loc === 'PJC') return 'ペドロ・フアン・カバジェロ 🇵🇾';
+    if (loc === 'SNT') return 'サンティアゴ 🇨🇱';
+    if (loc === 'IQQ') return 'イキケ 🇨🇱';
+    if (loc === 'LPZ') return 'ラパス 🇧🇴';
+    if (loc === 'SCZ') return 'サンタ・クルス 🇧🇴';
+    if (loc === 'BUE') return 'ブエノスアイレス 🇦🇷';
     return loc || '-';
   };
 
@@ -946,6 +951,8 @@ export default function AdminDashboard() {
         agentCustomerId: req.agent_customer_id as string | null | undefined,
         customerCountry: req.customer_country as string | null | undefined,
         delivery_location: req.delivery_location as string | undefined,
+        delivery_city: req.delivery_city as string | undefined,
+        delivery_country: req.delivery_country as string | undefined,
         shipping_method: req.shipping_method as string | undefined,
         paid_local: req.paid_local || false,
         paid_local_at: req.paid_local_at as string | null | undefined,
@@ -1000,6 +1007,8 @@ export default function AdminDashboard() {
         agentCustomerId: item.agent_customer_id as string | null | undefined,
         customerCountry: item.customer_country as string | null | undefined,
         delivery_location: item.delivery_location as string | undefined,
+        delivery_city: item.delivery_city as string | undefined,
+        delivery_country: item.delivery_country as string | undefined,
         shipping_method: item.shipping_method as string | undefined,
         paid_local: item.paid_local || false,
         paid_local_at: item.paid_local_at as string | null | undefined,
