@@ -408,14 +408,13 @@ export const getCityCodeByJaName = (cityName: string): string => {
 
 export const getCityCode = (deliveryLocation?: string): string => {
   if (!deliveryLocation) return 'JP';
-  const loc = deliveryLocation.trim();
-  
-  // 既存の古いコードとの互換性
-  if (loc === 'JP') return 'JP';
-  if (loc === 'ASU') return 'ASU';
-  if (loc === 'CDE') return 'CDE';
-  if (loc === 'ENC') return 'ENC';
-  if (loc === 'PJC') return 'PJC';
+  const loc = deliveryLocation.trim().toUpperCase();
+
+  // 新旧すべての都市コードとの直接一致をチェック
+  const allCodes = ['JP', 'ASU', 'CDE', 'ENC', 'PJC', 'SNT', 'IQQ', 'LPZ', 'SCZ', 'BUE'];
+  if (allCodes.includes(loc)) {
+    return loc;
+  }
 
   // もし "パラグアイ 🇵🇾:アスンシオン 🇵🇾" などの形式の場合、都市名部分を取り出す
   if (loc.includes(':')) {
