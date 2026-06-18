@@ -3338,7 +3338,7 @@ export default function Home() {
               if (isStringCost) {
                 return (
                   <div className="h-9 flex items-center justify-center bg-orange-50 px-2.5 sm:px-3 rounded">
-                    <span className="text-sm text-red-600 font-bold tracking-wide leading-none">
+                    <span className="text-xs text-red-600 font-semibold">
                       {formatLocalCost(cost)}
                     </span>
                   </div>
