@@ -2,21 +2,55 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// エージェント登録用アクセスパスワード
-const AGENT_SIGNUP_PASSWORD = 'joga&agent';
+interface InviteCode {
+  code: string;
+  expiresAt: string;
+  used: boolean;
+  createdAt: string;
+}
 
 // エージェント登録用API
 // admin.createUser で確実にユーザーを作成し、email_confirm: true で即ログイン可能にする
-// アクセスパスワードで保護されており、パスワードを知らないと登録できない
+// 一時的な招待コードで保護されており、有効なコードがないと登録できない
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { email, password, fullName, whatsapp, accessPassword, address, zipCode, country, cpf, state, city, language } = body;
 
-    // アクセスパスワードの検証
-    if (!accessPassword || accessPassword !== AGENT_SIGNUP_PASSWORD) {
+    // 招待コードの検証
+    if (!accessPassword) {
       return NextResponse.json(
-        { error: '登録パスワードが正しくありません' },
+        { error: '招待コードは必須です' },
+        { status: 400 }
+      );
+    }
+
+    const { data: settingData, error: fetchError } = await supabaseAdmin
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'agent_invite_codes')
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching invite codes:', fetchError);
+      return NextResponse.json(
+        { error: '招待コードの検証に失敗しました。管理者にお問い合わせください。' },
+        { status: 500 }
+      );
+    }
+
+    const inviteCodes: InviteCode[] = settingData?.value ? (settingData.value as InviteCode[]) : [];
+
+    // 入力されたコードと一致する有効な（未使用かつ期限内の）招待コードを検索
+    const matchedCodeIndex = inviteCodes.findIndex(c => 
+      c.code === accessPassword && 
+      !c.used && 
+      new Date(c.expiresAt).getTime() > Date.now()
+    );
+
+    if (matchedCodeIndex === -1) {
+      return NextResponse.json(
+        { error: '招待コードが正しくないか、期限切れです' },
         { status: 403 }
       );
     }
@@ -97,6 +131,19 @@ export async function POST(request: Request) {
         { error: 'ロール設定に失敗しました: ' + roleError.message },
         { status: 500 }
       );
+    }
+
+    // 3. 招待コードを「使用済み」に更新
+    inviteCodes[matchedCodeIndex].used = true;
+    const { error: updateError } = await supabaseAdmin
+      .from('system_settings')
+      .upsert({
+        key: 'agent_invite_codes',
+        value: inviteCodes
+      });
+
+    if (updateError) {
+      console.error('Failed to mark invite code as used:', updateError);
     }
 
     return NextResponse.json({

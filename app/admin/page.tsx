@@ -252,6 +252,63 @@ export default function AdminDashboard() {
      (selectedCustInfoForEdit?.country || '').trim().toLowerCase() === 'brazil');
   const isB001LinkedOrBrasilForEdit = isB001LinkedForEdit || isBrasilAgentForEdit;
 
+  // 招待コード管理用のステートと関数
+  const [inviteCodes, setInviteCodes] = useState<any[]>([]);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [latestGeneratedCode, setLatestGeneratedCode] = useState<string>('');
+
+  const fetchInviteCodes = async () => {
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/admin/invite-code', {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+      const data = await res.json();
+      if (data.inviteCodes) {
+        setInviteCodes(data.inviteCodes);
+      }
+    } catch (err) {
+      console.error('Error fetching invite codes:', err);
+    }
+  };
+
+  const handleGenerateInviteCode = async () => {
+    if (isGeneratingCode) return;
+    setIsGeneratingCode(true);
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/admin/invite-code', {
+        method: 'POST',
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.inviteCode) {
+        setLatestGeneratedCode(data.inviteCode.code);
+        fetchInviteCodes();
+      } else {
+        alert('招待コードの生成に失敗しました: ' + (data.error || ''));
+      }
+    } catch (err) {
+      console.error('Error generating invite code:', err);
+      alert('通信エラーが発生しました。');
+    } finally {
+      setIsGeneratingCode(false);
+    }
+  };
+
+  const handleCopyText = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('コピーしました: ' + text);
+  };
+
   // ヤフオク最新情報を同期・復旧する処理
   const handleSyncYahooProduct = async (requestItem: BidRequest) => {
     if (isSyncing) return;
@@ -652,6 +709,9 @@ export default function AdminDashboard() {
         fetchPurchasedItems();
       } else {
         fetchUsersData();
+        if (activeTab === 'agents') {
+          fetchInviteCodes();
+        }
       }
       fetchExchangeRate();
 
@@ -1629,7 +1689,12 @@ export default function AdminDashboard() {
                   if (activeTab === 'requests') fetchBidRequests();
                   else if (activeTab === 'purchased') fetchPurchasedItems();
                   else if (activeTab === 'deposits') { fetchDeposits(); fetchUsersData(); }
-                  else fetchUsersData();
+                  else {
+                    fetchUsersData();
+                    if (activeTab === 'agents') {
+                      fetchInviteCodes();
+                    }
+                  }
                 }}
                 className="bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base w-1/2 flex items-center justify-center"
               >
@@ -2851,6 +2916,72 @@ export default function AdminDashboard() {
                   </span>
                 </span>
               </div>
+            </div>
+
+            {/* 招待コード管理セクション */}
+            <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 mb-6 font-sans">
+              <h3 className="text-sm font-bold text-indigo-900 mb-3 flex items-center gap-1.5">
+                🔑 エージェント招待コードの管理
+              </h3>
+              <div className="flex flex-wrap gap-3 items-end mb-4">
+                <button
+                  onClick={handleGenerateInviteCode}
+                  disabled={isGeneratingCode}
+                  className="bg-indigo-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-indigo-700 transition text-sm flex items-center justify-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50"
+                >
+                  {isGeneratingCode ? '生成中...' : '✨ 新しい招待コードを生成'}
+                </button>
+                {latestGeneratedCode && (
+                  <div className="bg-white border border-indigo-200 rounded-lg h-12 px-3 flex items-center gap-2 shadow-sm">
+                    <span className="text-xs text-gray-500">最新のコード:</span>
+                    <span className="font-mono font-bold text-indigo-700 select-all">{latestGeneratedCode}</span>
+                    <button
+                      onClick={() => handleCopyText(latestGeneratedCode)}
+                      className="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold px-2 py-1 rounded transition"
+                    >
+                      コピー
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {inviteCodes.length > 0 ? (
+                <div className="overflow-x-auto bg-white border border-gray-100 rounded-lg max-h-60 overflow-y-auto">
+                  <table className="min-w-full divide-y divide-gray-200 text-xs font-sans">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold text-gray-500">招待コード</th>
+                        <th className="px-3 py-2 text-center font-semibold text-gray-500">生成日時</th>
+                        <th className="px-3 py-2 text-center font-semibold text-gray-500">有効期限</th>
+                        <th className="px-3 py-2 text-center font-semibold text-gray-500">状態</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {inviteCodes.map((code) => {
+                        const isExpired = new Date(code.expiresAt).getTime() < Date.now();
+                        return (
+                          <tr key={code.code} className="hover:bg-gray-50/50">
+                            <td className="px-3 py-2 font-mono font-bold text-gray-700 select-all">{code.code}</td>
+                            <td className="px-3 py-2 text-center text-gray-500">{formatDateTime(code.createdAt)}</td>
+                            <td className="px-3 py-2 text-center text-gray-500">{formatDateTime(code.expiresAt)}</td>
+                            <td className="px-3 py-2 text-center">
+                              {code.used ? (
+                                <span className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-[10px] font-bold">使用済</span>
+                              ) : isExpired ? (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold">期限切れ</span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-[10px] font-bold">有効</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 mt-2">生成された招待コードはありません。</p>
+              )}
             </div>
 
             {loadingUsers ? (
