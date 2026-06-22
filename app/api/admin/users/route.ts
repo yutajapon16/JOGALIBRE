@@ -119,6 +119,7 @@ export async function GET(request: Request) {
         depositAmount: u.deposit_amount !== null && u.deposit_amount !== undefined ? Number(u.deposit_amount) : (u.role === 'agent' ? 500 : 100),
         depositConfirmedAt: u.deposit_confirmed_at,
         termsAcceptedAt: u.terms_accepted_at,
+        lastLoginAt: u.last_login_at,
         unpaidCount,
         unpaidAmount,
         paidCount,

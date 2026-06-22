@@ -198,3 +198,14 @@ UPDATE bid_requests SET delivery_country = 'パラグアイ 🇵🇾', delivery_
 CREATE INDEX IF NOT EXISTS idx_bid_requests_delivery_country ON bid_requests(delivery_country);
 CREATE INDEX IF NOT EXISTS idx_bid_requests_delivery_city ON bid_requests(delivery_city);
 
+-- 29. 最終ログイン日時とリマインドメール送信日時を追跡するカラムを追加
+ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS last_login_reminded_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+
+-- 既存の全ユーザーの last_login_at に初期値として現在時刻を設定（急に全員にメールが送られるのを防ぐため）
+UPDATE user_roles SET last_login_at = NOW() WHERE last_login_at IS NULL;
+
+-- インデックス作成
+CREATE INDEX IF NOT EXISTS idx_user_roles_last_login_at ON user_roles(last_login_at);
+
+

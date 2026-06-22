@@ -48,6 +48,44 @@ export async function signUp(
   return { user: { email } };
 }
 
+// 最終ログイン日時を更新するAPIを叩くヘルパー関数（24時間キャッシュ制御付き）
+async function triggerUpdateLastLogin(force: boolean = false) {
+  try {
+    if (typeof window === 'undefined') return;
+
+    const cacheKey = 'joga_last_login_trigger';
+    const now = Date.now();
+    const lastTrigger = localStorage.getItem(cacheKey);
+
+    // 強制更新（ログイン時）でない場合、前回の更新から24時間経過していなければスキップ
+    if (!force && lastTrigger) {
+      const lastTime = parseInt(lastTrigger, 10);
+      const oneDay = 24 * 60 * 60 * 1000;
+      if (now - lastTime < oneDay) {
+        return;
+      }
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+    if (!accessToken) return;
+
+    const res = await fetch('/api/update-last-login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    if (res.ok) {
+      localStorage.setItem(cacheKey, now.toString());
+    }
+  } catch (error) {
+    console.warn('Failed to trigger last login update:', error);
+  }
+}
+
 export async function signIn(email: string, password: string) {
   // 古い壊れたセッションをクリアしてから新規ログイン
   try {
@@ -62,6 +100,10 @@ export async function signIn(email: string, password: string) {
   });
 
   if (error) throw error;
+
+  // ログイン成功時に最終ログイン日時を強制更新（非同期）
+  triggerUpdateLastLogin(true).catch(err => console.warn('triggerUpdateLastLogin error:', err));
+
   return data;
 }
 
@@ -269,6 +311,9 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
           language: userData.language,
         }));
       }
+
+      // セッション確立時に最終ログイン日時を更新（24時間キャッシュ付き、非同期）
+      triggerUpdateLastLogin(false).catch(err => console.warn('triggerUpdateLastLogin error:', err));
 
       return userData;
     } catch (error) {

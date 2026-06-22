@@ -2768,6 +2768,7 @@ export default function AdminDashboard() {
                       <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">未入金</th>
                       <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">入金済</th>
                       <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">操作</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">最終ログイン</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
@@ -2860,6 +2861,9 @@ export default function AdminDashboard() {
                           >
                             編集
                           </button>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center text-xs text-gray-600">
+                          {customer.lastLoginAt ? formatDateTime(customer.lastLoginAt) : '—'}
                         </td>
                       </tr>
                     ))}
@@ -3002,6 +3006,7 @@ export default function AdminDashboard() {
                       <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">未入金</th>
                       <th className="px-4 py-3 text-right font-semibold text-gray-600 whitespace-nowrap">入金済</th>
                       <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">操作</th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">最終ログイン</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
@@ -3088,6 +3093,9 @@ export default function AdminDashboard() {
                           >
                             編集
                           </button>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center text-xs text-gray-600">
+                          {agent.lastLoginAt ? formatDateTime(agent.lastLoginAt) : '—'}
                         </td>
                       </tr>
                     ))}

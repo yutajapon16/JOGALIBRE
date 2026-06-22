@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/export-orders",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/remind-inactive-users",
+      "schedule": "0 0 * * *"
     }
   ]
 }

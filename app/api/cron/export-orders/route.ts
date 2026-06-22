@@ -5,10 +5,15 @@ import { getResilientExchangeRate } from '@/lib/exchange';
 import { calculateDefaultFobCost, calculateDefaultShippingCost, calculateJapanSendAmount } from '@/lib/utils';
 
 export async function GET(request: Request) {
-  // Vercel Cron からの認証チェック（必要に応じて）
+  // Vercel Cron からの認証チェック
   const authHeader = request.headers.get('authorization');
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response('Unauthorized', { status: 401 });
+  if (process.env.CRON_SECRET) {
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      console.warn('Unauthorized cron execution attempt');
+      return new Response('Unauthorized', { status: 401 });
+    }
+  } else {
+    console.warn('Warning: CRON_SECRET env variable is not set. Anyone can trigger this endpoint.');
   }
 
   try {
