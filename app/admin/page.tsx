@@ -1501,7 +1501,17 @@ export default function AdminDashboard() {
                   type="date"
                   value={getShippingValue(item.id, 'shippedAt')}
                   onChange={(e) => handleShippingChange(item.id, 'shippedAt', e.target.value)}
-                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full h-8 box-border min-w-0"
+                  className="border border-gray-300 rounded text-xs text-black bg-white w-full h-8 min-w-0"
+                  style={{
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    padding: '0 8px',
+                    lineHeight: '30px'
+                  }}
                 />
               </div>
               <div className="flex-1 flex flex-col gap-0.5">
@@ -1510,7 +1520,17 @@ export default function AdminDashboard() {
                   type="date"
                   value={getShippingValue(item.id, 'estimatedArrivalDate')}
                   onChange={(e) => handleShippingChange(item.id, 'estimatedArrivalDate', e.target.value)}
-                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full h-8 box-border min-w-0"
+                  className="border border-gray-300 rounded text-xs text-black bg-white w-full h-8 min-w-0"
+                  style={{
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    padding: '0 8px',
+                    lineHeight: '30px'
+                  }}
                 />
               </div>
             </div>
