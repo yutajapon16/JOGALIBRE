@@ -2449,6 +2449,11 @@ export default function Home() {
   // 引渡し場所に応じた現地費用（USD）を返す関数
   const getLocalCost = (product: SearchItem): number | string => {
     if (deliveryCountry === 'JP') return 0;
+    // キーワード検索（searchType === 'keyword'）または URL検索（searchType === 'url'）の場合、
+    // 日本以外を選択した場合は常に「要問い合わせ」を表示する。
+    if (searchType === 'keyword' || searchType === 'url') {
+      return '要問い合わせ';
+    }
     const loc = deliveryCity;
     let finalUrl = product.url || '';
     if (product.categoryId && !finalUrl.includes('auccat=')) {
@@ -3304,7 +3309,7 @@ export default function Home() {
 
           <div className="mt-auto space-y-1.5">
             <a
-              href={`/product/${product.id}?url=${encodeURIComponent(product.url || '')}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}`}
+              href={`/product/${product.id}?url=${encodeURIComponent(product.url || '')}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}`}
               className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center"
             >
               {t.viewOnYahoo}
@@ -5424,7 +5429,7 @@ export default function Home() {
               </div>
 
               {searchType === 'url' && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-300 font-sans">
                   <div className="flex gap-3">
                     <input
                       type="text"
@@ -5441,6 +5446,72 @@ export default function Home() {
                       {loading ? '...' : t.import}
                     </button>
                   </div>
+
+                  {/* 引渡し場所（国名）選択ドロップダウン */}
+                  <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                      {t.deliveryLocationLabel}
+                    </label>
+                    <select
+                      value={deliveryCountry}
+                      onChange={(e) => {
+                        const countryCode = e.target.value;
+                        setDeliveryCountry(countryCode);
+                        if (countryCode === 'JP') {
+                          setDeliveryCity('');
+                        } else {
+                          const country = deliveryLocations.find(c => c.code === countryCode);
+                          if (country && country.cities.length > 0) {
+                              setDeliveryCity(country.cities[0].code);
+                          }
+                        }
+                      }}
+                      className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                    >
+                      {deliveryLocations.map(country => (
+                        <option key={country.code} value={country.code}>
+                          {lang === 'es' ? country.nameEs : country.namePt}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 引渡し場所（都市名）選択ドロップダウン */}
+                  {deliveryCountry !== 'JP' && (
+                    <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                        {lang === 'es' ? 'Ciudad' : 'Cidade'}
+                      </label>
+                      <select
+                        value={deliveryCity}
+                        onChange={(e) => setDeliveryCity(e.target.value)}
+                        className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                      >
+                        {deliveryLocations.find(c => c.code === deliveryCountry)?.cities.map(city => (
+                          <option key={city.code} value={city.code}>
+                            {lang === 'es' ? city.nameEs : city.namePt}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* 発送方法選択ドロップダウン */}
+                  {deliveryCountry !== 'JP' && (
+                    <div className="flex flex-col gap-1.5 w-full max-w-md mx-auto animate-in fade-in duration-300">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider pl-1">
+                        {t.shippingMethodLabel}
+                      </label>
+                      <select
+                        value={shippingMethod}
+                        onChange={(e) => setShippingMethod(e.target.value as any)}
+                        className="w-full h-11 px-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none text-gray-700 text-sm font-semibold shadow-sm font-sans cursor-pointer transition text-center"
+                      >
+                        <option value="sea">{t.shippingMethodSea}</option>
+                        <option value="air">{t.shippingMethodAir}</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -6044,7 +6115,7 @@ export default function Home() {
                     );
                   })()}
                   <a
-                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent(selectedProduct.url || '')}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}`}
+                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent(selectedProduct.url || '')}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}`}
                     className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
                   >
                     {t.viewOnYahoo}

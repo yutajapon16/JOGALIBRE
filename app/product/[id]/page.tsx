@@ -12,6 +12,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const searchParams = useSearchParams();
   const targetUrl = searchParams.get('url');
   const jcat = searchParams.get('jcat');
+  const st = searchParams.get('st');
 
   const [productId, setProductId] = useState<string>('');
   const [product, setProduct] = useState<any>(null);
@@ -404,6 +405,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   // 引渡し場所に応じた現地費用（USD）を返す関数
   const getLocalCost = (productUrl: string | null): number | string => {
     if (deliveryCountry === 'JP') return 0;
+    // キーワード検索（st === 'keyword'）または URL検索（st === 'url'）の場合、
+    // 日本以外を選択した場合は常に「要問い合わせ」を表示する。
+    if (st === 'keyword' || st === 'url') {
+      return '要問い合わせ';
+    }
     const loc = deliveryCity;
     let finalUrl = productUrl || '';
     if (product?.categoryId && !finalUrl.includes('auccat=')) {
