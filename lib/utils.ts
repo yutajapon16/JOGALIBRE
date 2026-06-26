@@ -348,7 +348,8 @@ export const deliveryLocations: Country[] = [
       { code: 'ASU', nameJa: 'アスンシオン 🇵🇾', nameEs: 'Asunción 🇵🇾', namePt: 'Assunção 🇵🇾' },
       { code: 'CDE', nameJa: 'シウダー・デル・エステ 🇵🇾', nameEs: 'Ciudad del Este 🇵🇾', namePt: 'Ciudad del Este 🇵🇾' },
       { code: 'ENC', nameJa: 'エンカルナシオン 🇵🇾', nameEs: 'Encarnación 🇵🇾', namePt: 'Encarnação 🇵🇾' },
-      { code: 'PJC', nameJa: 'ペドロ・フアン・カバジェロ 🇵🇾', nameEs: 'Pedro Juan Caballero 🇵🇾', namePt: 'Pedro Juan Caballero 🇵🇾' }
+      { code: 'PJC', nameJa: 'ペドロ・フアン・カバジェロ 🇵🇾', nameEs: 'Pedro Juan Caballero 🇵🇾', namePt: 'Pedro Juan Caballero 🇵🇾' },
+      { code: 'OTH_PY', nameJa: 'その他 🇵🇾', nameEs: 'Otra 🇵🇾', namePt: 'Outra 🇵🇾' }
     ]
   },
   {
@@ -358,7 +359,8 @@ export const deliveryLocations: Country[] = [
     namePt: 'Chile 🇨🇱',
     cities: [
       { code: 'SNT', nameJa: 'サンティアゴ 🇨🇱', nameEs: 'Santiago 🇨🇱', namePt: 'Santiago 🇨🇱' },
-      { code: 'IQQ', nameJa: 'イキケ 🇨🇱', nameEs: 'Iquique 🇨🇱', namePt: 'Iquique 🇨🇱' }
+      { code: 'IQQ', nameJa: 'イキケ 🇨🇱', nameEs: 'Iquique 🇨🇱', namePt: 'Iquique 🇨🇱' },
+      { code: 'OTH_CL', nameJa: 'その他 🇨🇱', nameEs: 'Otra 🇨🇱', namePt: 'Outra 🇨🇱' }
     ]
   },
   {
@@ -368,7 +370,8 @@ export const deliveryLocations: Country[] = [
     namePt: 'Bolívia 🇧🇴',
     cities: [
       { code: 'LPZ', nameJa: 'ラパス 🇧🇴', nameEs: 'La Paz 🇧🇴', namePt: 'La Paz 🇧🇴' },
-      { code: 'SCZ', nameJa: 'サンタ・クルス 🇧🇴', nameEs: 'Santa Cruz 🇧🇴', namePt: 'Santa Cruz 🇧🇴' }
+      { code: 'SCZ', nameJa: 'サンタ・クルス 🇧🇴', nameEs: 'Santa Cruz 🇧🇴', namePt: 'Santa Cruz 🇧🇴' },
+      { code: 'OTH_BO', nameJa: 'その他 🇧🇴', nameEs: 'Otra 🇧🇴', namePt: 'Outra 🇧🇴' }
     ]
   },
   {
@@ -377,7 +380,8 @@ export const deliveryLocations: Country[] = [
     nameEs: 'Argentina 🇦🇷',
     namePt: 'Argentina 🇦🇷',
     cities: [
-      { code: 'BUE', nameJa: 'ブエノスアイレス 🇦🇷', nameEs: 'Buenos Aires 🇦🇷', namePt: 'Buenos Aires 🇦🇷' }
+      { code: 'BUE', nameJa: 'ブエノスアイレス 🇦🇷', nameEs: 'Buenos Aires 🇦🇷', namePt: 'Buenos Aires 🇦🇷' },
+      { code: 'OTH_AR', nameJa: 'その他 🇦🇷', nameEs: 'Otra 🇦🇷', namePt: 'Outra 🇦🇷' }
     ]
   }
 ];
@@ -435,6 +439,10 @@ export const getCityCode = (deliveryLocation?: string): string => {
 export const calculateLocalCost = (deliveryLocation?: string, item?: any, shippingMethod?: string): number | string => {
   const cityCode = getCityCode(deliveryLocation);
   if (cityCode === 'JP') return 0;
+  // 都市コードが「その他（OTH_XX）」で始まる場合は無条件で「要問い合わせ」を返す
+  if (cityCode.startsWith('OTH')) {
+    return '要問い合わせ';
+  }
   
   loadCostsData();
 
