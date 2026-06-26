@@ -1814,7 +1814,7 @@ export default function AdminDashboard() {
 
                       <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
                         {/* 1. 商品タイトル */}
-                        <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight h-[30px] overflow-hidden">{request.productTitle}</h3>
+                        <h3 className="text-xs font-semibold line-clamp-2 leading-tight h-[30px] overflow-hidden">{request.productTitle}</h3>
 
                         {/* 2. 終了までボックス (h-7) */}
                         <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center w-full box-border">
