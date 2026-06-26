@@ -133,6 +133,20 @@ const translations = {
     shippingMethodLabel: 'Método de envío',
     shippingMethodSea: 'Contenedor 🚢',
     shippingMethodAir: 'Avión ✈️',
+    shippingStatusLabel: 'Estado de envío',
+    shippingDateLabel: 'Fecha y hora de envío',
+    carrierLabel: 'Transportista',
+    trackingNumberLabel: 'Número de seguimiento',
+    trackingUrlButton: 'Ver Tracking 🔍',
+    estimatedArrivalLabel: 'Fecha estimada de llegada',
+    arrivalLabel: 'Fecha de llegada',
+    deliveryCompleteLabel: 'Fecha de entrega',
+    statusNotShipped: 'No enviado',
+    statusArrivedJp: 'Llegado al almacén de Japón',
+    statusInTransit: 'En tránsito',
+    statusArrivedLocal: 'Llegado al destino',
+    statusReadyForDelivery: 'Listo para retiro',
+    statusDelivered: 'Entregado',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -245,6 +259,20 @@ const translations = {
     shippingMethodLabel: 'Método de envio',
     shippingMethodSea: 'Contêiner 🚢',
     shippingMethodAir: 'Avião ✈️',
+    shippingStatusLabel: 'Status de envio',
+    shippingDateLabel: 'Data e hora de envio',
+    carrierLabel: 'Transportadora',
+    trackingNumberLabel: 'Número de rastreamento',
+    trackingUrlButton: 'Rastrear Envio 🔍',
+    estimatedArrivalLabel: 'Data estimada de chegada',
+    arrivalLabel: 'Data de chegada',
+    deliveryCompleteLabel: 'Data de entrega',
+    statusNotShipped: 'Não enviado',
+    statusArrivedJp: 'Chegou ao armazém do Japão',
+    statusInTransit: 'Em trânsito',
+    statusArrivedLocal: 'Chegou ao destino',
+    statusReadyForDelivery: 'Pronto para retirada',
+    statusDelivered: 'Entregue',
   }
 };
 
@@ -1767,6 +1795,12 @@ export default function Home() {
         paid_local: item.paid_local || false,
         paid_local_at: item.paid_local_at as string | null | undefined,
         cancelledAt: item.cancelledAt as string | null | undefined,
+        shippingStatus: item.shipping_status as string | undefined,
+        shippedAt: item.shipped_at as string | null | undefined,
+        carrier: item.carrier as string | null | undefined,
+        trackingNumber: item.tracking_number as string | null | undefined,
+        trackingUrl: item.tracking_url as string | null | undefined,
+        estimatedArrivalDate: item.estimated_arrival_date as string | null | undefined
       }));
 
       // 商品タイトルを選択言語に翻訳
@@ -5124,11 +5158,309 @@ export default function Home() {
             )}
           </div>
         ) : activeTab === 'shipping' ? (
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans">
-            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.shippingTab}</h2>
-            <div className="text-center text-gray-500 py-12">
-              <p>{lang === 'es' ? 'No hay información de envío.' : 'Não há informações de envio.'}</p>
-            </div>
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans text-left">
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center sm:text-left">{t.shippingTab}</h2>
+            {purchasedItems.length === 0 ? (
+              <div className="text-center text-gray-500 py-12">
+                <p>{lang === 'es' ? 'No hay información de envío.' : 'Não há informações de envio.'}</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {purchasedItems
+                  .sort((a, b) => new Date(b.confirmedAt || '').getTime() - new Date(a.confirmedAt || '').getTime())
+                  .map((item) => {
+                    const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
+                      ? item.customerCounterOffer
+                      : (item.counterOffer || item.maxBid || 0));
+                    const totalSalePrice = Math.round(cost || 0);
+                    const brlRate = exchangeRates['BRL'] || 5.6;
+                    const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
+                    const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
+                    const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice, exchangeRates['JPY'] || exchangeRate || 150);
+
+                    const halfBrlStr = paidBrazilBrl.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    const halfPrice = paidParaguayUsd;
+
+                    const isB001Linked = item.agentCustomerId === 'B001';
+                    const isB001Self = item.customerId === 'B001';
+                    const countryLower = item.customerCountry?.trim().toLowerCase();
+                    const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
+
+                    const getStatusLabel = (status?: string) => {
+                      switch (status) {
+                        case 'arrived_jp': return lang === 'es' ? 'Llegado al almacén de Japón' : 'Chegou ao armazém do Japão';
+                        case 'in_transit': return lang === 'es' ? 'En tránsito' : 'Em trânsito';
+                        case 'arrived_local': return lang === 'es' ? 'Llegado al destino' : 'Chegou ao destino';
+                        case 'ready_for_delivery': return lang === 'es' ? 'Listo para retiro' : 'Pronto para retirada';
+                        case 'delivered': return lang === 'es' ? 'Entregado' : 'Entregue';
+                        default: return lang === 'es' ? 'No enviado' : 'Não enviado';
+                      }
+                    };
+
+                    const shippingStatus = item.shippingStatus || 'not_shipped';
+                    const isDetailVisible = ['in_transit', 'arrived_local', 'ready_for_delivery', 'delivered'].includes(shippingStatus);
+                    
+                    const arrivalDateLabel = shippingStatus === 'delivered' ? (lang === 'es' ? 'Fecha de entrega' : 'Data de entrega') :
+                      ['arrived_local', 'ready_for_delivery'].includes(shippingStatus) ? (lang === 'es' ? 'Fecha de llegada' : 'Data de chegada') : (lang === 'es' ? 'Fecha estimada de llegada' : 'Data estimada de chegada');
+
+                    const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
+
+                    return (
+                      <div key={item.id} className="bg-white rounded-lg border border-gray-100 shadow-sm p-3 sm:p-4 text-black text-left">
+                        <div className="flex gap-4 mb-3">
+                          <div className="relative w-32 h-32 flex-shrink-0">
+                            {item.productImage ? (
+                              <Image
+                                src={item.productImage}
+                                alt={item.productTitle}
+                                fill
+                                className="object-cover rounded"
+                                sizes="128px"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2">
+                                <span className="text-xs font-semibold text-gray-500">
+                                  {lang === 'es' ? 'Sin foto' : 'Sem foto'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
+                            <h3 className="text-xs font-semibold line-clamp-2 leading-tight h-[30px] overflow-hidden text-gray-900">{item.productTitle}</h3>
+
+                            <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center justify-between w-full box-border">
+                              <span className="text-gray-500 text-xs font-medium">{lang === 'es' ? 'No. de Stock:' : 'Nº de Estoque:'}</span>
+                              <span className="font-semibold text-gray-900 text-xs truncate">
+                                {item.stockNumber || '-'}
+                              </span>
+                            </div>
+
+                            <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center justify-between w-full box-border">
+                              <span className="text-gray-500 text-xs font-medium">{lang === 'es' ? 'No. de Factura:' : 'Nº da Fatura:'}</span>
+                              <span className="font-semibold text-gray-900 text-xs truncate">
+                                {item.invoiceNumber || '-'}
+                              </span>
+                            </div>
+
+                            <div className="w-full">
+                              {item.productUrl ? (
+                                <a
+                                  href={item.productUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border ${
+                                    item.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
+                                  }`}
+                                >
+                                  {item.productId?.startsWith('m-') ? 'URL' : (lang === 'es' ? 'Ver en Yahoo' : 'Ver no Yahoo')}
+                                </a>
+                              ) : (
+                                <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none">
+                                  {lang === 'es' ? 'Sin URL' : 'Sem URL'}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 mb-3">
+                          {isB001Self || isB001Linked || isBrasilAgent ? (
+                            <>
+                              <div className="h-12 px-3 bg-indigo-50/50 border border-indigo-100 rounded-lg flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-indigo-600 font-black text-xs">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
+                                  {item.paid ? (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap font-bold">
+                                      ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paidAt ? ` ${formatDateTime(item.paidAt, 'customer')}` : ''}
+                                    </span>
+                                  ) : !item.cancelledAt ? (
+                                    <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                      {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                    </span>
+                                  ) : null}
+                                  {item.cancelledAt && (
+                                    <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] rounded-full whitespace-nowrap font-bold">
+                                      ✗ {lang === 'es' ? 'Cancelado' : 'Cancelado'}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className={`text-base font-bold whitespace-nowrap ${item.cancelledAt || item.paid ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
+                                  {convertUSDToSelectedCurrency(totalSalePrice)}
+                                </span>
+                              </div>
+
+                              <div className="p-3 bg-gray-50 border border-gray-100 rounded-lg space-y-2.5">
+                                <div className="flex items-center justify-between text-xs font-bold text-gray-700">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇧🇷:' : 'Valor no 🇧🇷:'}</span>
+                                    {item.paid_brazil ? (
+                                      <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                        ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_brazil_at ? ` ${formatDateTime(item.paid_brazil_at, 'customer')}` : ''}
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                        {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className={`text-sm ${item.cancelledAt || item.paid_brazil ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                    R$ {halfBrlStr}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs font-bold text-gray-700 border-t border-gray-200/50 pt-2.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-500">{lang === 'es' ? 'Monto en 🇵🇾:' : 'Valor no 🇵🇾:'}</span>
+                                    {item.paid_paraguay ? (
+                                      <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                        ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_paraguay_at ? ` ${formatDateTime(item.paid_paraguay_at, 'customer')}` : ''}
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full whitespace-nowrap">
+                                        {lang === 'es' ? 'En Paraguay' : 'No Paraguai'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className={`text-sm ${item.cancelledAt || item.paid_paraguay ? 'text-gray-400 line-through' : 'text-amber-600'}`}>
+                                    {convertUSDToSelectedCurrency(halfPrice)}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between">
+                                <span className="text-red-600 font-black text-xs">{lang === 'es' ? 'Envío a Japón' : 'Envio ao Japão'} 🇯🇵:</span>
+                                <span className="text-red-600 font-black text-base">
+                                  {convertUSDToSelectedCurrency(japanSendAmount)}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-gray-500 font-bold text-xs">{lang === 'es' ? 'Monto Total:' : 'Valor Total:'}</span>
+                                {item.paid ? (
+                                  <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold rounded-full whitespace-nowrap">
+                                    ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paidAt ? ` ${formatDateTime(item.paidAt, 'customer')}` : ''}
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] font-bold rounded-full whitespace-nowrap">
+                                    {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`text-base font-bold whitespace-nowrap ${item.cancelledAt || item.paid ? 'text-gray-400 line-through' : 'text-green-600'}`}>
+                                {convertUSDToSelectedCurrency(
+                                  item.finalPrice ||
+                                  (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0))
+                                )}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                            <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Lugar de Entrega:' : 'Local de Entrega:'}</span>
+                            <span className="text-sm font-semibold text-black">
+                              {getDeliveryLocationName(item.delivery_location)}
+                            </span>
+                          </div>
+
+                          {item.delivery_location === 'JP' && (
+                            <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                              <span className="text-gray-500 text-xs font-bold">{t.shippingStatusLabel}:</span>
+                              <span className="text-sm font-semibold text-black">
+                                {getStatusLabel(item.shippingStatus)}
+                              </span>
+                            </div>
+                          )}
+
+                          {item.delivery_location !== 'JP' && (
+                            <>
+                              <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                  {item.paid_local ? (
+                                    <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                      ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                      {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                  {formatLocalCost(localCost)}
+                                </span>
+                              </div>
+                              <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                                <span className="text-gray-500 text-xs font-bold">
+                                  {t.shippingMethodLabel}:
+                                </span>
+                                <span className="text-sm font-semibold text-black">
+                                  {item.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                                </span>
+                              </div>
+
+                              <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                                <span className="text-gray-500 text-xs font-bold">{t.shippingStatusLabel}:</span>
+                                <span className="text-sm font-semibold text-black">
+                                  {getStatusLabel(item.shippingStatus)}
+                                </span>
+                              </div>
+                            </>
+                          )}
+
+                          {isDetailVisible && (
+                            <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 space-y-2.5 font-sans text-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-500 font-bold">{t.shippingDateLabel}:</span>
+                                <span className="font-semibold text-black">
+                                  {item.shippedAt ? formatDateOnly(item.shippedAt, 'customer') : '-'}
+                                </span>
+                              </div>
+                              
+                              <div className="flex gap-2 border-t border-gray-200/50 pt-2">
+                                <div className="flex-1 flex flex-col gap-0.5">
+                                  <span className="text-gray-500 text-[10px] font-bold">{t.carrierLabel}:</span>
+                                  <span className="font-semibold text-black text-xs truncate">
+                                    {item.carrier || '-'}
+                                  </span>
+                                </div>
+                                <div className="flex-1 flex flex-col gap-0.5">
+                                  <span className="text-gray-500 text-[10px] font-bold">{t.trackingNumberLabel}:</span>
+                                  <span className="font-semibold text-black text-xs truncate">
+                                    {item.trackingNumber || '-'}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {item.trackingUrl && (
+                                <div className="border-t border-gray-200/50 pt-2">
+                                  <a
+                                    href={item.trackingUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-full h-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded flex items-center justify-center text-xs transition"
+                                  >
+                                    {t.trackingUrlButton}
+                                  </a>
+                                </div>
+                              )}
+                              
+                              <div className="flex items-center justify-between border-t border-gray-200/50 pt-2">
+                                <span className="text-gray-500 font-bold">{arrivalDateLabel}:</span>
+                                <span className="font-semibold text-black">
+                                  {item.estimatedArrivalDate ? formatDateOnly(item.estimatedArrivalDate, 'customer') : '-'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
           </div>
         ) : activeTab === 'mypage' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">

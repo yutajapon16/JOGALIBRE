@@ -75,6 +75,12 @@ export interface BidRequest {
   paid_local_at?: string | null;
   total_jpy?: number | null;
   cancelledAt?: string | null;
+  shippingStatus?: string;
+  shippedAt?: string | null;
+  carrier?: string | null;
+  trackingNumber?: string | null;
+  trackingUrl?: string | null;
+  estimatedArrivalDate?: string | null;
 }
 
 export interface SearchItem {

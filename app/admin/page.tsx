@@ -1073,7 +1073,13 @@ export default function AdminDashboard() {
         paid_local: item.paid_local || false,
         paid_local_at: item.paid_local_at as string | null | undefined,
         totalJpy: item.total_jpy,
-        cancelledAt: item.cancelledAt as string | null | undefined
+        cancelledAt: item.cancelledAt as string | null | undefined,
+        shippingStatus: item.shipping_status as string | undefined,
+        shippedAt: item.shipped_at as string | null | undefined,
+        carrier: item.carrier as string | null | undefined,
+        trackingNumber: item.tracking_number as string | null | undefined,
+        trackingUrl: item.tracking_url as string | null | undefined,
+        estimatedArrivalDate: item.estimated_arrival_date as string | null | undefined
       }));
 
       setPurchasedItems(convertedItems);
@@ -1369,6 +1375,188 @@ export default function AdminDashboard() {
       console.error('Error cancelling item:', error);
       alert('通信エラーが発生しました');
     }
+  };
+
+  const [shippingForm, setShippingForm] = useState<Record<string, {
+    shippingStatus?: string;
+    shippedAt?: string;
+    carrier?: string;
+    trackingNumber?: string;
+    trackingUrl?: string;
+    estimatedArrivalDate?: string;
+  }>>({});
+
+  const toInputDateFormat = (dateString?: string | null) => {
+    if (!dateString) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const getShippingValue = (itemId: string, field: 'shippingStatus' | 'shippedAt' | 'carrier' | 'trackingNumber' | 'trackingUrl' | 'estimatedArrivalDate') => {
+    if (shippingForm[itemId] && shippingForm[itemId][field] !== undefined) {
+      return shippingForm[itemId][field] as string;
+    }
+    const item = purchasedItems.find(i => i.id === itemId);
+    if (!item) return '';
+    
+    if (field === 'shippingStatus') return item.shippingStatus || 'not_shipped';
+    if (field === 'shippedAt') return item.shippedAt ? toInputDateFormat(item.shippedAt) : '';
+    if (field === 'carrier') return item.carrier || '';
+    if (field === 'trackingNumber') return item.trackingNumber || '';
+    if (field === 'trackingUrl') return item.trackingUrl || '';
+    if (field === 'estimatedArrivalDate') return item.estimatedArrivalDate ? toInputDateFormat(item.estimatedArrivalDate) : '';
+    return '';
+  };
+
+  const handleShippingChange = (itemId: string, field: string, value: string) => {
+    setShippingForm(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleUpdateShipping = async (itemId: string) => {
+    const currentForm = shippingForm[itemId] || {};
+    const item = purchasedItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    const payload = {
+      id: itemId,
+      shipping_status: currentForm.shippingStatus !== undefined ? currentForm.shippingStatus : (item.shippingStatus || 'not_shipped'),
+      shipped_at: currentForm.shippedAt !== undefined ? (currentForm.shippedAt || null) : (item.shippedAt || null),
+      carrier: currentForm.carrier !== undefined ? (currentForm.carrier || null) : (item.carrier || null),
+      tracking_number: currentForm.trackingNumber !== undefined ? (currentForm.trackingNumber || null) : (item.trackingNumber || null),
+      tracking_url: currentForm.trackingUrl !== undefined ? (currentForm.trackingUrl || null) : (item.trackingUrl || null),
+      estimated_arrival_date: currentForm.estimatedArrivalDate !== undefined ? (currentForm.estimatedArrivalDate || null) : (item.estimatedArrivalDate || null),
+    };
+
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch('/api/bid-request', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        alert('発送情報を更新しました。');
+        await fetchPurchasedItems();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert('更新に失敗しました: ' + (err.error || ''));
+      }
+    } catch (error) {
+      console.error('Error updating shipping info:', error);
+      alert('通信エラーが発生しました。');
+    }
+  };
+
+  const renderShippingForm = (item: BidRequest) => {
+    const shippingStatus = getShippingValue(item.id, 'shippingStatus');
+    const isDetailVisible = ['in_transit', 'arrived_local', 'ready_for_delivery', 'delivered'].includes(shippingStatus);
+    
+    const arrivalDateLabel = shippingStatus === 'delivered' ? '引渡完了日' :
+      ['arrived_local', 'ready_for_delivery'].includes(shippingStatus) ? '到着日' : '到着予定日';
+
+    return (
+      <div className="mb-2 font-sans text-xs bg-gray-50 border border-gray-100 rounded-lg p-3 box-border text-left">
+        <div className="flex items-center justify-between h-8 mb-1">
+          <span className="text-gray-500 font-semibold">発送ステータス:</span>
+          <select
+            value={shippingStatus}
+            onChange={(e) => handleShippingChange(item.id, 'shippingStatus', e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 bg-white text-black text-xs font-semibold"
+          >
+            <option value="not_shipped">未発送</option>
+            <option value="arrived_jp">日本倉庫到着</option>
+            <option value="in_transit">輸送中</option>
+            <option value="arrived_local">現地到着</option>
+            <option value="ready_for_delivery">引渡可能</option>
+            <option value="delivered">引渡完了</option>
+          </select>
+        </div>
+
+        {isDetailVisible && (
+          <div className="mt-2 space-y-2 pt-2 border-t border-gray-200/50">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500 font-semibold">発送日時:</span>
+              <input
+                type="date"
+                value={getShippingValue(item.id, 'shippedAt')}
+                onChange={(e) => handleShippingChange(item.id, 'shippedAt', e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1 text-xs w-40 text-black bg-white"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <div className="flex-1 flex flex-col gap-0.5">
+                <span className="text-gray-500 text-[10px] font-semibold">配送業者:</span>
+                <input
+                  type="text"
+                  placeholder="手入力..."
+                  value={getShippingValue(item.id, 'carrier')}
+                  onChange={(e) => handleShippingChange(item.id, 'carrier', e.target.value)}
+                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
+                />
+              </div>
+              <div className="flex-1 flex flex-col gap-0.5">
+                <span className="text-gray-500 text-[10px] font-semibold">トラッキングナンバー:</span>
+                <input
+                  type="text"
+                  placeholder="手入力..."
+                  value={getShippingValue(item.id, 'trackingNumber')}
+                  onChange={(e) => handleShippingChange(item.id, 'trackingNumber', e.target.value)}
+                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-0.5">
+              <span className="text-gray-500 text-[10px] font-semibold">トラッキングURL:</span>
+              <input
+                type="text"
+                placeholder="URLを入力..."
+                value={getShippingValue(item.id, 'trackingUrl')}
+                onChange={(e) => handleShippingChange(item.id, 'trackingUrl', e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500 font-semibold">{arrivalDateLabel}:</span>
+              <input
+                type="date"
+                value={getShippingValue(item.id, 'estimatedArrivalDate')}
+                onChange={(e) => handleShippingChange(item.id, 'estimatedArrivalDate', e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1 text-xs w-40 text-black bg-white"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={() => handleUpdateShipping(item.id)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded text-xs transition"
+          >
+            発送情報を更新
+          </button>
+        </div>
+      </div>
+    );
   };
 
   const handleReject = () => {
@@ -3625,9 +3813,281 @@ export default function AdminDashboard() {
 
         {/* 発送タブ */}
         {activeTab === 'shipping' && (
-          <div className="bg-white rounded-lg shadow p-12 text-center font-sans">
-            <p className="text-gray-500 text-lg">発送機能は準備中です</p>
-          </div>
+          <>
+            {/* 上部ヘッダー（フィルター等）の個別カード化 */}
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4">発送管理</h2>
+
+              <div className="flex flex-col gap-4 mb-6">
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">ID:</span>
+                  <select
+                    value={selectedCustomer}
+                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                    className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                  >
+                    <option value="all">すべてのID</option>
+                    <option value="B001">B001 FFGN</option>
+                    {getCustomerIdList().filter(id => id !== 'B001').map(id => {
+                      const firstMatch = purchasedItems.find(item => item.customerId === id);
+                      const name = firstMatch ? (firstMatch.customerFullName || firstMatch.customerName) : '';
+                      return (
+                        <option key={id} value={id}>
+                          {id} {name}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">期間:</span>
+                  <div className="flex gap-2 w-full">
+                    <select
+                      value={purchasedYear}
+                      onChange={(e) => setPurchasedYear(e.target.value)}
+                      className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                    >
+                      <option value="all">すべての年</option>
+                      <option value="2026">2026年</option>
+                      <option value="2027">2027年</option>
+                      <option value="2028">2028年</option>
+                      <option value="2029">2029年</option>
+                      <option value="2030">2030年</option>
+                    </select>
+                    <select
+                      value={purchasedMonth}
+                      onChange={(e) => setPurchasedMonth(e.target.value)}
+                      className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                    >
+                      <option value="all">すべての月</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                        <option key={m} value={m.toString()}>{m}月</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {purchasedItems.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                <p className="text-gray-500 text-lg">発送対象の商品がありません</p>
+              </div>
+            ) : getFilteredPurchasedItems().length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-12 text-center font-sans">
+                <p className="text-gray-500 text-lg">条件に一致する発送対象の商品がありません</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {getFilteredPurchasedItems()
+                    .sort((a, b) => new Date(b.confirmedAt || '').getTime() - new Date(a.confirmedAt || '').getTime())
+                    .map((item) => {
+                      const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
+                        ? item.customerCounterOffer
+                        : (item.counterOffer || item.maxBid || 0));
+                      const totalSalePrice = Math.round(cost || 0);
+                      const brlRate = exchangeRates['BRL'] || 5.6;
+                      const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
+                      const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
+                      const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice, exchangeRates['JPY'] || exchangeRate || 150);
+
+                      const formatBrl = (amount: number) => {
+                        const rounded = Math.round(amount);
+                        return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                      };
+
+                      return (
+                        <div key={item.id} className="bg-white rounded-lg shadow-md p-3 sm:p-4 text-black">
+                          <div className="flex gap-4 mb-2">
+                            <div className="relative w-32 h-32 flex-shrink-0">
+                              {item.productImage ? (
+                                <Image
+                                  src={item.productImage}
+                                  alt={item.productTitle}
+                                  fill
+                                  className="object-cover rounded"
+                                  sizes="128px"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2 text-black font-sans">
+                                  <span className="text-xs font-semibold text-gray-500 font-sans">
+                                    写真なし
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 flex flex-col justify-between h-32 py-0.5 overflow-hidden">
+                              {/* 1. 商品タイトル */}
+                              <h3 className="text-xs font-semibold line-clamp-2 leading-tight h-[30px] overflow-hidden">{item.productTitle}</h3>
+
+                              {/* 2. 在庫番号表示ボックス (h-7) */}
+                              <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center justify-between w-full box-border">
+                                <div className="min-w-0 flex items-center overflow-hidden whitespace-nowrap text-ellipsis mr-2">
+                                  <span className="text-gray-500 text-xs font-medium mr-1">在庫番号:</span>
+                                  <span className="font-semibold text-gray-900 text-xs truncate">
+                                    {item.stockNumber || '-'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* 3. 請求書番号表示ボックス (h-7) */}
+                              <div className="h-7 px-2 bg-gray-50 border border-gray-100 rounded flex items-center justify-between w-full box-border">
+                                <div className="min-w-0 flex items-center overflow-hidden whitespace-nowrap text-ellipsis mr-2">
+                                  <span className="text-gray-500 text-xs font-medium mr-1">請求書番号:</span>
+                                  <span className="font-semibold text-gray-900 text-xs truncate">
+                                    {item.invoiceNumber || '-'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* 4. ヤフオクURLボタン (h-7) */}
+                              <div className="w-full">
+                                {item.productUrl ? (
+                                  <a
+                                    href={item.productUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
+                                      item.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
+                                    }`}
+                                  >
+                                    {item.productId?.startsWith('m-') ? 'URL' : 'ヤフオクURL'}
+                                  </a>
+                                ) : (
+                                  <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none font-sans">
+                                    URLなし
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 申請内容ボックス（h-24） */}
+                          <div className="h-24 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs mb-2 box-border grid grid-rows-2 grid-cols-2">
+                            <div className="flex flex-col justify-center h-12">
+                              <span className="text-gray-500 text-[10px] leading-tight">ID:</span>
+                              <span className="font-semibold truncate text-black leading-tight">{item.customerId}</span>
+                            </div>
+                            <div className="flex flex-col justify-center h-12">
+                              <span className="text-gray-500 text-[10px] leading-tight">確認日時:</span>
+                              <span className="font-semibold truncate text-black leading-tight">{formatDateTime(item.confirmedAt || '')}</span>
+                            </div>
+                            <div className="flex flex-col justify-center h-12">
+                              <span className="text-gray-500 text-[10px] leading-tight">氏名:</span>
+                              <span className="font-semibold truncate text-black leading-tight">{item.customerFullName || item.customerName}</span>
+                            </div>
+                            <div className="flex flex-col justify-center h-12">
+                              <span className="text-gray-500 text-[10px] leading-tight">
+                                {item.customerId?.startsWith('C') && item.agentCustomerId ? 'エージェント名:' : '顧客名:'}
+                              </span>
+                              <span className="font-semibold truncate text-black leading-tight">{item.customerName}</span>
+                            </div>
+                          </div>
+
+                          {/* 支払情報 & 金額ボックス */}
+                          <div className="space-y-2 mb-2 bg-gray-50 p-3 rounded-lg border border-gray-100 font-sans text-xs">
+                            <div className="flex items-center justify-between font-sans text-xs">
+                              <div className="flex items-center font-semibold text-gray-700">
+                                <span>顧客支払額:</span>
+                                <div className="flex flex-col gap-0.5 ml-1.5">
+                                  {item.paid && item.paidAt && (
+                                    <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded whitespace-nowrap font-bold font-sans">
+                                      ✓ 支払済 ({formatDateTime(item.paidAt)})
+                                    </span>
+                                  )}
+                                  {item.cancelledAt && (
+                                    <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded whitespace-nowrap font-bold font-sans">
+                                      ✗ 取消済 ({formatDateTime(item.cancelledAt)})
+                                    </span>
+                                  )}
+                                  {!item.paid && !item.cancelledAt && (
+                                    <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[9px] rounded whitespace-nowrap font-medium font-sans">
+                                      未入金
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <span className={`text-base font-bold whitespace-nowrap ${item.cancelledAt || item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
+                                ${totalSalePrice.toLocaleString('en-US')}
+                              </span>
+                            </div>
+
+                            {/* 日本支払額 (ブラジルエージェント or B001用) */}
+                            {(item.agentCustomerId === 'B001' || (item.customerId?.startsWith('A') && ((item.customerCountry || '').toLowerCase().trim() === 'brasil' || (item.customerCountry || '').toLowerCase().trim() === 'brazil'))) && (
+                              <div className="flex items-center justify-between font-sans text-xs border-t border-gray-200/50 pt-2">
+                                <div className="flex items-center font-semibold text-gray-700">
+                                  <span className="text-red-600 font-black">日本支払額:</span>
+                                  {item.paid_japan && item.paid_japan_at && (
+                                    <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-bold font-sans">
+                                      ✓ 支払済 ({formatDateTime(item.paid_japan_at)})
+                                    </span>
+                                  )}
+                                  {!item.paid_japan && (
+                                    <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
+                                      未入金
+                                    </span>
+                                  )}
+                                </div>
+                                <span className={`text-base font-bold ${item.paid_japan ? 'text-red-400 line-through' : 'text-red-600'}`}>
+                                  ${Math.round(japanSendAmount).toLocaleString('en-US')}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* 現地費用 */}
+                            {item.delivery_location !== 'JP' && (
+                              <div className="flex items-center justify-between font-sans text-xs border-t border-gray-200/50 pt-2">
+                                <div className="flex items-center font-semibold text-gray-700">
+                                  <span className="text-gray-500">現地費用:</span>
+                                  {item.paid_local && item.paid_local_at && (
+                                    <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
+                                      ✓ 支払済 ({formatDateTime(item.paid_local_at)})
+                                    </span>
+                                  )}
+                                  {!item.paid_local && (
+                                    <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
+                                      未入金
+                                    </span>
+                                  )}
+                                </div>
+                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black')}`}>
+                                  {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 商品渡し場所 */}
+                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                            <span className="text-gray-500 font-medium">引渡場所:</span>
+                            <span className="font-semibold text-black">{getDeliveryLocationName(item.delivery_location, item.delivery_city)}</span>
+                          </div>
+
+                          {/* 引渡場所が日本の場合はこの下に発送ステータスを配置 */}
+                          {item.delivery_location === 'JP' && renderShippingForm(item)}
+
+                          {/* 発送方法 */}
+                          {item.delivery_location !== 'JP' && (
+                            <>
+                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                                <span className="text-gray-500 font-medium">発送方法:</span>
+                                <span className="font-semibold text-black">
+                                  {item.shipping_method === 'air' ? '航空便 ✈️' : 'コンテナ 🚢'}
+                                </span>
+                              </div>
+                              {/* 引渡場所が日本以外の場合はこの下に発送ステータスを配置 */}
+                              {renderShippingForm(item)}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </>
+            )}
+          </>
         )}
       </main>
 

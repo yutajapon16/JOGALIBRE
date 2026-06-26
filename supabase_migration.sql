@@ -208,4 +208,16 @@ UPDATE user_roles SET last_login_at = NOW() WHERE last_login_at IS NULL;
 -- インデックス作成
 CREATE INDEX IF NOT EXISTS idx_user_roles_last_login_at ON user_roles(last_login_at);
 
+-- 30. 発送追跡関連のカラムを bid_requests テーブルに追加
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS shipping_status TEXT DEFAULT 'not_shipped';
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS shipped_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS carrier TEXT DEFAULT NULL;
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS tracking_number TEXT DEFAULT NULL;
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS tracking_url TEXT DEFAULT NULL;
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS estimated_arrival_date DATE DEFAULT NULL;
+
+-- 発送ステータス検索用インデックスの作成
+CREATE INDEX IF NOT EXISTS idx_bid_requests_shipping_status ON bid_requests(shipping_status);
+
+
 

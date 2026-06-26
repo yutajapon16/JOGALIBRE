@@ -351,7 +351,10 @@ export async function PATCH(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, maxBid, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber, totalJpy, cancelledAt } = body;
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, maxBid, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber, totalJpy, cancelledAt,
+      // 発送追跡
+      shipping_status, shipped_at, carrier, tracking_number, tracking_url, estimated_arrival_date
+    } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
@@ -388,6 +391,14 @@ export async function PATCH(request: Request) {
       if (totalJpy !== undefined) updateData.total_jpy = totalJpy ? Number(totalJpy) : null;
       if (stockNumber !== undefined) updateData.stock_number = stockNumber ? stockNumber.trim() : null;
       if (invoiceNumber !== undefined) updateData.invoice_number = invoiceNumber ? invoiceNumber.trim() : null;
+
+      // 発送追跡
+      if (shipping_status !== undefined) updateData.shipping_status = shipping_status;
+      if (shipped_at !== undefined) updateData.shipped_at = shipped_at;
+      if (carrier !== undefined) updateData.carrier = carrier;
+      if (tracking_number !== undefined) updateData.tracking_number = tracking_number;
+      if (tracking_url !== undefined) updateData.tracking_url = tracking_url;
+      if (estimated_arrival_date !== undefined) updateData.estimated_arrival_date = estimated_arrival_date;
       
       // ユーザーのロール情報を取得し、B001本人またはB001がエージェントとして紐づいている顧客か判定する
       const { data: userRole } = await supabaseAdmin
