@@ -524,8 +524,8 @@ export const calculateJapanSendAmount = (item: any, totalSalePrice: number, exch
     const jpySendAmount = Number(totalJpy) / targetDivisor;
     // 1,000円未満切り上げ
     const jpySendAmountRounded = Math.ceil(jpySendAmount / 1000) * 1000;
-    // ドル換算 ＋ 10ドル単位で四捨五入 (Math.round)
-    return Math.round((jpySendAmountRounded / exchangeRate) / 10) * 10;
+    // ドル換算 ＋ 10ドル単位で切り上げ (Math.ceil)
+    return Math.ceil((jpySendAmountRounded / exchangeRate) / 10) * 10;
   }
 
   // 2. 元の日本円合計金額がない場合は、10ドル切り上げ済みのドル売価から逆算（-5 近似式）します。
