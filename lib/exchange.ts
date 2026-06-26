@@ -41,7 +41,7 @@ export async function getResilientExchangeRate(): Promise<{
     clearTimeout(timeoutId);
 
     const jpyMarketRate = data.rates.JPY;
-    const jpyTtbRate = jpyMarketRate - 4; // JPYは従来通りTTBレート相当の計算
+    const jpyTtbRate = jpyMarketRate - 3.5; // JPYはTTBレート相当の計算（API値から-3.5円に調整）
 
     if (isNaN(jpyTtbRate) || jpyTtbRate <= 0) {
       throw new Error('Invalid rate structure from external API');
