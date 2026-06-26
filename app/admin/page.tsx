@@ -1472,13 +1472,14 @@ export default function AdminDashboard() {
       ['arrived_local', 'ready_for_delivery'].includes(shippingStatus) ? '到着日' : '到着予定日';
 
     return (
-      <div className="mb-2 font-sans text-xs bg-gray-50 border border-gray-100 rounded-lg p-3 box-border text-left">
-        <div className="flex items-center justify-between h-8 mb-1">
-          <span className="text-gray-500 font-semibold">発送ステータス:</span>
+      <div className="mb-2 font-sans text-xs space-y-2 text-left">
+        {/* 発送ステータスボックス (h-12) */}
+        <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+          <span className="text-gray-500 font-medium">発送ステータス:</span>
           <select
             value={shippingStatus}
             onChange={(e) => handleShippingChange(item.id, 'shippingStatus', e.target.value)}
-            className="border border-gray-300 rounded px-2 py-1 bg-white text-black text-xs font-semibold"
+            className="border border-gray-300 rounded bg-white text-black text-xs font-bold h-7 w-[calc(100%-144px)] px-2 text-center"
           >
             <option value="not_shipped">未発送</option>
             <option value="arrived_jp">日本倉庫到着</option>
@@ -1489,18 +1490,32 @@ export default function AdminDashboard() {
           </select>
         </div>
 
+        {/* 発送情報詳細ボックス */}
         {isDetailVisible && (
-          <div className="mt-2 space-y-2 pt-2 border-t border-gray-200/50">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500 font-semibold">発送日時:</span>
-              <input
-                type="date"
-                value={getShippingValue(item.id, 'shippedAt')}
-                onChange={(e) => handleShippingChange(item.id, 'shippedAt', e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1 text-xs w-40 text-black bg-white"
-              />
+          <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 space-y-3 font-sans text-xs">
+            {/* 上段: 発送日 & 到着予定日（動的） */}
+            <div className="flex gap-2">
+              <div className="flex-1 flex flex-col gap-0.5">
+                <span className="text-gray-500 text-[10px] font-semibold">発送日:</span>
+                <input
+                  type="date"
+                  value={getShippingValue(item.id, 'shippedAt')}
+                  onChange={(e) => handleShippingChange(item.id, 'shippedAt', e.target.value)}
+                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
+                />
+              </div>
+              <div className="flex-1 flex flex-col gap-0.5">
+                <span className="text-gray-500 text-[10px] font-semibold">{arrivalDateLabel}:</span>
+                <input
+                  type="date"
+                  value={getShippingValue(item.id, 'estimatedArrivalDate')}
+                  onChange={(e) => handleShippingChange(item.id, 'estimatedArrivalDate', e.target.value)}
+                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
+                />
+              </div>
             </div>
 
+            {/* 中段: 配送業者 & 追跡番号 */}
             <div className="flex gap-2">
               <div className="flex-1 flex flex-col gap-0.5">
                 <span className="text-gray-500 text-[10px] font-semibold">配送業者:</span>
@@ -1513,7 +1528,7 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="flex-1 flex flex-col gap-0.5">
-                <span className="text-gray-500 text-[10px] font-semibold">トラッキングナンバー:</span>
+                <span className="text-gray-500 text-[10px] font-semibold">追跡番号:</span>
                 <input
                   type="text"
                   placeholder="手入力..."
@@ -1524,8 +1539,9 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* 下段: 追跡URL */}
             <div className="flex flex-col gap-0.5">
-              <span className="text-gray-500 text-[10px] font-semibold">トラッキングURL:</span>
+              <span className="text-gray-500 text-[10px] font-semibold">追跡URL:</span>
               <input
                 type="text"
                 placeholder="URLを入力..."
@@ -1534,23 +1550,14 @@ export default function AdminDashboard() {
                 className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
               />
             </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500 font-semibold">{arrivalDateLabel}:</span>
-              <input
-                type="date"
-                value={getShippingValue(item.id, 'estimatedArrivalDate')}
-                onChange={(e) => handleShippingChange(item.id, 'estimatedArrivalDate', e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1 text-xs w-40 text-black bg-white"
-              />
-            </div>
           </div>
         )}
 
+        {/* 発送情報を更新ボタン（最下段・右下・ヤフオクURLボタンのサイズに統一） */}
         <div className="mt-3 flex justify-end">
           <button
             onClick={() => handleUpdateShipping(item.id)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded text-xs transition"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-7 rounded px-2 text-xs transition w-[calc(100%-144px)] flex items-center justify-center"
           >
             発送情報を更新
           </button>
