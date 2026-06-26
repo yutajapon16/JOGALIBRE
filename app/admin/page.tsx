@@ -1501,7 +1501,7 @@ export default function AdminDashboard() {
                   type="date"
                   value={getShippingValue(item.id, 'shippedAt')}
                   onChange={(e) => handleShippingChange(item.id, 'shippedAt', e.target.value)}
-                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
+                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full h-8 box-border min-w-0"
                 />
               </div>
               <div className="flex-1 flex flex-col gap-0.5">
@@ -1510,7 +1510,7 @@ export default function AdminDashboard() {
                   type="date"
                   value={getShippingValue(item.id, 'estimatedArrivalDate')}
                   onChange={(e) => handleShippingChange(item.id, 'estimatedArrivalDate', e.target.value)}
-                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
+                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full h-8 box-border min-w-0"
                 />
               </div>
             </div>
@@ -1524,7 +1524,7 @@ export default function AdminDashboard() {
                   placeholder="手入力..."
                   value={getShippingValue(item.id, 'carrier')}
                   onChange={(e) => handleShippingChange(item.id, 'carrier', e.target.value)}
-                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
+                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full h-8 box-border min-w-0"
                 />
               </div>
               <div className="flex-1 flex flex-col gap-0.5">
@@ -1534,7 +1534,7 @@ export default function AdminDashboard() {
                   placeholder="手入力..."
                   value={getShippingValue(item.id, 'trackingNumber')}
                   onChange={(e) => handleShippingChange(item.id, 'trackingNumber', e.target.value)}
-                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
+                  className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full h-8 box-border min-w-0"
                 />
               </div>
             </div>
@@ -1547,7 +1547,7 @@ export default function AdminDashboard() {
                 placeholder="URLを入力..."
                 value={getShippingValue(item.id, 'trackingUrl')}
                 onChange={(e) => handleShippingChange(item.id, 'trackingUrl', e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full"
+                className="border border-gray-300 rounded px-2 py-1 text-xs text-black bg-white w-full h-8 box-border min-w-0"
               />
             </div>
           </div>
