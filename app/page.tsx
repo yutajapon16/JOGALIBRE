@@ -5159,7 +5159,7 @@ export default function Home() {
           </div>
         ) : activeTab === 'shipping' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans text-left">
-            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center sm:text-left">{t.shippingTab}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.shippingTab}</h2>
             {purchasedItems.length === 0 ? (
               <div className="text-center text-gray-500 py-12">
                 <p>{lang === 'es' ? 'No hay información de envío.' : 'Não há informações de envio.'}</p>
@@ -5264,7 +5264,7 @@ export default function Home() {
                         </div>
 
                         <div className="space-y-3 mb-3">
-                          {isB001Self || isB001Linked || isBrasilAgent ? (
+                          {item.customerId === 'B001' && currentUser?.customerId === 'B001' ? (
                             <>
                               <div className="h-12 px-3 bg-indigo-50/50 border border-indigo-100 rounded-lg flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
