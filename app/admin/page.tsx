@@ -1479,7 +1479,14 @@ export default function AdminDashboard() {
           <select
             value={shippingStatus}
             onChange={(e) => handleShippingChange(item.id, 'shippingStatus', e.target.value)}
-            className="border border-gray-300 rounded bg-white text-black text-xs font-bold h-7 w-[calc(100%-144px)] px-2 text-center"
+            className="border border-gray-300 rounded bg-white text-black text-xs font-bold h-8 w-[calc(50%-16px)] min-w-0"
+            style={{
+              appearance: 'none',
+              WebkitAppearance: 'none',
+              padding: '0 8px',
+              lineHeight: '30px',
+              textAlign: 'center'
+            }}
           >
             <option value="not_shipped">未発送</option>
             <option value="arrived_jp">日本倉庫到着</option>
@@ -1573,11 +1580,11 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 発送情報を更新ボタン（最下段・右下・ヤフオクURLボタンのサイズに統一） */}
-        <div className="mt-3 flex justify-end">
+        {/* 発送情報を更新ボタン（最下段・右下・入力ボックスのサイズに統一） */}
+        <div className="mt-3 flex justify-end px-3">
           <button
             onClick={() => handleUpdateShipping(item.id)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-7 rounded px-2 text-xs transition w-[calc(100%-144px)] flex items-center justify-center"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-7 rounded px-2 text-xs transition w-[calc(50%-4px)] flex items-center justify-center"
           >
             発送情報を更新
           </button>
