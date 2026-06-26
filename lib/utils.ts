@@ -415,8 +415,8 @@ export const getCityCode = (deliveryLocation?: string): string => {
   const loc = deliveryLocation.trim().toUpperCase();
 
   // 新旧すべての都市コードとの直接一致をチェック
-  const allCodes = ['JP', 'ASU', 'CDE', 'ENC', 'PJC', 'SNT', 'IQQ', 'LPZ', 'SCZ', 'BUE'];
-  if (allCodes.includes(loc)) {
+  const allCodes = ['JP', 'ASU', 'CDE', 'ENC', 'PJC', 'SNT', 'IQQ', 'LPZ', 'SCZ', 'BUE', 'OTH_PY', 'OTH_CL', 'OTH_BO', 'OTH_AR'];
+  if (allCodes.includes(loc) || loc.startsWith('OTH')) {
     return loc;
   }
 
