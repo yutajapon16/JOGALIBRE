@@ -4049,11 +4049,22 @@ export default function Home() {
                         const isStringCost = typeof localCost === 'string';
                         if (isStringCost) {
                           return (
-                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-black font-sans">
-                              <span className="text-sm font-black text-red-600 tracking-wide">
-                                {formatLocalCost(localCost)}
-                              </span>
-                            </div>
+                            <>
+                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-black font-sans">
+                                <span className="text-sm font-black text-red-600 tracking-wide">
+                                  {formatLocalCost(localCost)}
+                                </span>
+                              </div>
+                              {/* 発送方法 */}
+                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
+                                <span className="text-xs text-gray-500 font-medium">
+                                  {t.shippingMethodLabel}:
+                                </span>
+                                <span className="text-sm font-semibold text-black">
+                                  {request.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                                </span>
+                              </div>
+                            </>
                           );
                         }
                         return (
@@ -4670,31 +4681,53 @@ export default function Home() {
                                   const isStringCost = typeof localCost === 'string';
                                   if (isStringCost) {
                                     return (
-                                      <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center">
-                                        <span className="text-sm font-black text-red-600 tracking-wide">
-                                          {formatLocalCost(localCost)}
-                                        </span>
-                                      </div>
+                                      <>
+                                        <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center">
+                                          <span className="text-sm font-black text-red-600 tracking-wide">
+                                            {formatLocalCost(localCost)}
+                                          </span>
+                                        </div>
+                                        {/* 発送方法 */}
+                                        <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                          <span className="text-gray-500 text-xs font-bold">
+                                            {t.shippingMethodLabel}:
+                                          </span>
+                                          <span className="text-sm font-semibold text-black">
+                                            {item.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                                          </span>
+                                        </div>
+                                      </>
                                     );
                                   }
                                   return (
-                                    <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
-                                        {item.paid_local ? (
-                                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                            ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
-                                          </span>
-                                        ) : (
-                                          <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                            {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                          </span>
-                                        )}
+                                    <>
+                                      <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                          {item.paid_local ? (
+                                            <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                              ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                            </span>
+                                          ) : (
+                                            <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                              {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                          {formatLocalCost(localCost)}
+                                        </span>
                                       </div>
-                                      <span className={`text-base font-bold ${item.cancelledAt || item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                        {formatLocalCost(localCost)}
-                                      </span>
-                                    </div>
+                                      {/* 発送方法 */}
+                                      <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                                        <span className="text-gray-500 text-xs font-bold">
+                                          {t.shippingMethodLabel}:
+                                        </span>
+                                        <span className="text-sm font-semibold text-black">
+                                          {item.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                                        </span>
+                                      </div>
+                                    </>
                                   );
                                 })()}
                               </div>
@@ -4752,31 +4785,53 @@ export default function Home() {
                               const isStringCost = typeof localCost === 'string';
                               if (isStringCost) {
                                 return (
-                                  <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center font-sans">
-                                    <span className="text-sm font-black text-red-600 tracking-wide">
-                                      {formatLocalCost(localCost)}
-                                    </span>
-                                  </div>
+                                  <>
+                                    <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center font-sans">
+                                      <span className="text-sm font-black text-red-600 tracking-wide">
+                                        {formatLocalCost(localCost)}
+                                      </span>
+                                    </div>
+                                    {/* 発送方法 */}
+                                    <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                                      <span className="text-gray-500 text-xs font-bold">
+                                        {t.shippingMethodLabel}:
+                                      </span>
+                                      <span className="text-sm font-semibold text-black">
+                                        {item.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                                      </span>
+                                    </div>
+                                  </>
                                 );
                               }
                               return (
-                                <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
-                                    {item.paid_local ? (
-                                      <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
-                                        ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
-                                      </span>
-                                    ) : (
-                                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
-                                        {lang === 'es' ? 'Pendiente' : 'Pendente'}
-                                      </span>
-                                    )}
+                                <>
+                                  <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-gray-500 text-xs font-bold">{lang === 'es' ? 'Costo Local:' : 'Custo Local:'}</span>
+                                      {item.paid_local ? (
+                                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full whitespace-nowrap">
+                                          ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paid_local_at ? ` ${formatDateTime(item.paid_local_at, 'customer')}` : ''}
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full whitespace-nowrap">
+                                          {lang === 'es' ? 'Pendiente' : 'Pendente'}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
+                                      {formatLocalCost(localCost)}
+                                    </span>
                                   </div>
-                                  <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : 'text-black'}`}>
-                                    {formatLocalCost(localCost)}
-                                  </span>
-                                </div>
+                                  {/* 発送方法 */}
+                                  <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans">
+                                    <span className="text-gray-500 text-xs font-bold">
+                                      {t.shippingMethodLabel}:
+                                    </span>
+                                    <span className="text-sm font-semibold text-black">
+                                      {item.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                                    </span>
+                                  </div>
+                                </>
                               );
                             })()}
                           </>
