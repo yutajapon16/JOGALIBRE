@@ -5595,9 +5595,7 @@ export default function Home() {
                                 </div>
                                 <div className="flex-1 flex flex-col gap-0.5">
                                   <span className="text-gray-500 text-[10px] font-bold">
-                                    {item.shipping_method === 'sea' ? 
-                                      (lang === 'es' ? 'No. de Contenedor:' : lang === 'pt' ? 'Nº do Contêiner:' : 'コンテナ番号:') : 
-                                      `${t.trackingNumberLabel}:`}
+                                    {`${t.trackingNumberLabel}:`}
                                   </span>
                                   <div
                                     onClick={() => handleCopyTrackingNumber(item.id, item.trackingNumber || '')}

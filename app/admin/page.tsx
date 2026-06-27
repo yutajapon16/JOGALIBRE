@@ -1710,7 +1710,7 @@ export default function AdminDashboard() {
               </div>
               <div className="flex-1 flex flex-col gap-0.5">
                 <span className="text-gray-500 text-[10px] font-semibold">
-                  {item.shipping_method === 'sea' ? 'コンテナ番号:' : '追跡番号:'}
+                  追跡番号:
                 </span>
                 <input
                   type="text"
@@ -4073,7 +4073,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div className="min-w-0">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">コンテナ番号</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">追跡番号</label>
                     <input
                       type="text"
                       placeholder="例: MEDU4570792"
