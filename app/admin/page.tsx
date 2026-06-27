@@ -3354,14 +3354,14 @@ export default function AdminDashboard() {
                         return (
                           <tr key={code.code} className="hover:bg-gray-50/50">
                             <td className="px-3 py-2 text-center font-mono font-bold text-gray-700 select-all">{code.code}</td>
-                            <td className="px-3 py-2 text-center text-gray-500">{formatDateTime(code.expiresAt)}</td>
+                            <td className="px-3 py-2 text-center text-gray-500">{formatDateOnly(code.expiresAt)}</td>
                             <td className="px-3 py-2 text-center">
                               {code.used ? (
-                                <span className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-[10px] font-bold">使用済</span>
+                                <span className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-[10px] font-bold whitespace-nowrap">使用済</span>
                               ) : isExpired ? (
-                                <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold">期限切れ</span>
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-bold whitespace-nowrap">期限切れ</span>
                               ) : (
-                                <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-[10px] font-bold">有効</span>
+                                <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-[10px] font-bold whitespace-nowrap">有効</span>
                               )}
                             </td>
                           </tr>
