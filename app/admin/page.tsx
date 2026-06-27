@@ -4172,7 +4172,7 @@ export default function AdminDashboard() {
                   >
                     <option value="all">すべてのステータス</option>
                     <option value="not_shipped">未発送</option>
-                    <option value="arrived_jp">日本到着</option>
+                    <option value="arrived_jp">日本倉庫到着</option>
                     <option value="in_transit">輸送中</option>
                     <option value="arrived_local">現地到着</option>
                     <option value="ready_for_delivery">引渡可能</option>
