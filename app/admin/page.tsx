@@ -1585,7 +1585,7 @@ export default function AdminDashboard() {
         <div className="mt-3 flex justify-end px-3">
           <button
             onClick={() => handleUpdateShipping(item.id)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-7 rounded px-2 text-xs transition w-[calc(50%-4px)] flex items-center justify-center"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-8 rounded px-2 text-xs transition w-[calc(50%-4px)] flex items-center justify-center"
           >
             発送情報を更新
           </button>
