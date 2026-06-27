@@ -708,6 +708,10 @@ export default function AdminDashboard() {
         fetchDeposits();
         fetchUsersData();
         fetchPurchasedItems();
+      } else if (activeTab === 'shipping') {
+        fetchPurchasedItems();
+        fetchUsersData();
+        fetchShippingContainers();
       } else {
         fetchUsersData();
         if (activeTab === 'agents') {
@@ -763,6 +767,10 @@ export default function AdminDashboard() {
               await fetchDeposits();
               await fetchUsersData();
               await fetchPurchasedItems();
+            } else if (activeTab === 'shipping') {
+              await fetchUsersData();
+              await fetchPurchasedItems();
+              await fetchShippingContainers();
             } else {
               await fetchUsersData();
             }
@@ -1386,6 +1394,97 @@ export default function AdminDashboard() {
     }
   };
 
+  // 発送コンテナ登録用のステートと関数
+  const [shippingContainers, setShippingContainers] = useState<any[]>([]);
+  const [shippingContainerForm, setShippingContainerForm] = useState({
+    containerCode: '',
+    shippedAt: '',
+    estimatedArrivalDate: '',
+    carrier: '',
+    trackingNumber: '',
+    trackingUrl: ''
+  });
+
+  const fetchShippingContainers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('shipping_containers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setShippingContainers(data || []);
+    } catch (err) {
+      console.error('Error fetching shipping containers:', err);
+    }
+  };
+
+  const handleCreateShippingContainer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shippingContainerForm.containerCode.trim()) {
+      alert('社内管理コンテナ番号を入力してください');
+      return;
+    }
+
+    try {
+      const payload = {
+        container_code: shippingContainerForm.containerCode.trim(),
+        shipped_at: shippingContainerForm.shippedAt ? new Date(shippingContainerForm.shippedAt).toISOString() : null,
+        estimated_arrival_date: shippingContainerForm.estimatedArrivalDate || null,
+        carrier: shippingContainerForm.carrier.trim() || null,
+        tracking_number: shippingContainerForm.trackingNumber.trim() || null,
+        tracking_url: shippingContainerForm.trackingUrl.trim() || null,
+      };
+
+      const { error } = await supabase
+        .from('shipping_containers')
+        .insert([payload]);
+
+      if (error) {
+        if (error.code === '23505') {
+          alert('この社内管理コンテナ番号は既に登録されています');
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      alert('発送コンテナ情報を登録しました');
+      setShippingContainerForm({
+        containerCode: '',
+        shippedAt: '',
+        estimatedArrivalDate: '',
+        carrier: '',
+        trackingNumber: '',
+        trackingUrl: ''
+      });
+      await fetchShippingContainers();
+    } catch (err) {
+      console.error('Error creating shipping container:', err);
+      alert('登録に失敗しました。');
+    }
+  };
+
+  const handleSelectContainer = (itemId: string, containerCode: string) => {
+    if (!containerCode) return;
+    const container = shippingContainers.find(c => c.container_code === containerCode);
+    if (!container) return;
+
+    const formattedShippedAt = container.shipped_at ? container.shipped_at.split('T')[0] : '';
+    const formattedEstimatedArrival = container.estimated_arrival_date || '';
+
+    setShippingForm(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        shippedAt: formattedShippedAt,
+        estimatedArrivalDate: formattedEstimatedArrival,
+        carrier: container.carrier || '',
+        trackingNumber: container.tracking_number || '',
+        trackingUrl: container.tracking_url || ''
+      }
+    }));
+  };
+
   const [shippingForm, setShippingForm] = useState<Record<string, {
     shippingStatus?: string;
     shippedAt?: string;
@@ -1485,6 +1584,26 @@ export default function AdminDashboard() {
         {/* 発送ステータスボックス (h-12) */}
         <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
           <span className="text-gray-500 font-medium">発送ステータス:</span>
+          {isDetailVisible && (
+            <select
+              value=""
+              onChange={(e) => handleSelectContainer(item.id, e.target.value)}
+              className="border border-gray-300 rounded bg-white text-black text-xs font-semibold h-8 flex-1 mx-2 min-w-0"
+              style={{
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                padding: '0 8px',
+                lineHeight: '30px',
+              }}
+            >
+              <option value="">コンテナ選択</option>
+              {shippingContainers.map(c => (
+                <option key={c.id} value={c.container_code}>
+                  {c.container_code}
+                </option>
+              ))}
+            </select>
+          )}
           <select
             value={shippingStatus}
             onChange={(e) => handleShippingChange(item.id, 'shippingStatus', e.target.value)}
@@ -1923,6 +2042,7 @@ export default function AdminDashboard() {
                   if (activeTab === 'requests') fetchBidRequests();
                   else if (activeTab === 'purchased') fetchPurchasedItems();
                   else if (activeTab === 'deposits') { fetchDeposits(); fetchUsersData(); }
+                  else if (activeTab === 'shipping') { fetchPurchasedItems(); fetchUsersData(); fetchShippingContainers(); }
                   else {
                     fetchUsersData();
                     if (activeTab === 'agents') {
@@ -3860,6 +3980,102 @@ export default function AdminDashboard() {
         {/* 発送タブ */}
         {activeTab === 'shipping' && (
           <>
+            {/* 発送コンテナ登録ボックス */}
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 font-sans text-left">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">発送コンテナ登録</h2>
+              <form onSubmit={handleCreateShippingContainer} className="space-y-4 text-black">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="min-w-0">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">社内管理コンテナ番号</label>
+                    <input
+                      type="text"
+                      placeholder="例: C-202606"
+                      value={shippingContainerForm.containerCode}
+                      onChange={(e) => setShippingContainerForm({ ...shippingContainerForm, containerCode: e.target.value })}
+                      className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border font-semibold"
+                      required
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">発送日</label>
+                    <input
+                      type="date"
+                      value={shippingContainerForm.shippedAt}
+                      onChange={(e) => setShippingContainerForm({ ...shippingContainerForm, shippedAt: e.target.value })}
+                      className="w-full h-12 block min-w-0 max-w-full box-border border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      style={{
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        display: 'block',
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
+                        padding: '0 10px',
+                        lineHeight: '46px'
+                      }}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">到着予定日</label>
+                    <input
+                      type="date"
+                      value={shippingContainerForm.estimatedArrivalDate}
+                      onChange={(e) => setShippingContainerForm({ ...shippingContainerForm, estimatedArrivalDate: e.target.value })}
+                      className="w-full h-12 block min-w-0 max-w-full box-border border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black"
+                      style={{
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        display: 'block',
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
+                        padding: '0 10px',
+                        lineHeight: '46px'
+                      }}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">配送業者</label>
+                    <input
+                      type="text"
+                      placeholder="例: MSC"
+                      value={shippingContainerForm.carrier}
+                      onChange={(e) => setShippingContainerForm({ ...shippingContainerForm, carrier: e.target.value })}
+                      className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">コンテナ番号</label>
+                    <input
+                      type="text"
+                      placeholder="例: MEDU4570792"
+                      value={shippingContainerForm.trackingNumber}
+                      onChange={(e) => setShippingContainerForm({ ...shippingContainerForm, trackingNumber: e.target.value })}
+                      className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
+                    />
+                  </div>
+                  <div className="min-w-0 col-span-1 sm:col-span-2 md:col-span-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">追跡URL</label>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={shippingContainerForm.trackingUrl}
+                      onChange={(e) => setShippingContainerForm({ ...shippingContainerForm, trackingUrl: e.target.value })}
+                      className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="w-full sm:w-auto h-12 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    登録する
+                  </button>
+                </div>
+              </form>
+            </div>
+
             {/* 上部ヘッダー（フィルター等）の個別カード化 */}
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4">
               <h2 className="text-xl sm:text-2xl font-bold mb-4">発送管理</h2>
