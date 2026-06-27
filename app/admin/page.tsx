@@ -1486,6 +1486,28 @@ export default function AdminDashboard() {
     }));
   };
 
+  const getSelectedContainerCode = (itemId: string) => {
+    const shippedAt = getShippingValue(itemId, 'shippedAt');
+    const estimatedArrivalDate = getShippingValue(itemId, 'estimatedArrivalDate');
+    const carrier = getShippingValue(itemId, 'carrier');
+    const trackingNumber = getShippingValue(itemId, 'trackingNumber');
+    const trackingUrl = getShippingValue(itemId, 'trackingUrl');
+
+    const match = shippingContainers.find(c => {
+      const cShippedAt = c.shipped_at ? c.shipped_at.split('T')[0] : '';
+      const cEstimatedArrival = c.estimated_arrival_date || '';
+      return (
+        (c.tracking_number || '') === trackingNumber &&
+        cShippedAt === shippedAt &&
+        cEstimatedArrival === estimatedArrivalDate &&
+        (c.carrier || '') === carrier &&
+        (c.tracking_url || '') === trackingUrl
+      );
+    });
+
+    return match ? match.container_code : '';
+  };
+
   const [shippingForm, setShippingForm] = useState<Record<string, {
     shippingStatus?: string;
     shippedAt?: string;
@@ -1587,7 +1609,7 @@ export default function AdminDashboard() {
           <span className="text-gray-500 font-medium">発送ステータス:</span>
           {isDetailVisible && (
             <select
-              value=""
+              value={getSelectedContainerCode(item.id)}
               onChange={(e) => handleSelectContainer(item.id, e.target.value)}
               className="border border-gray-300 rounded bg-white text-black text-xs font-semibold h-8 flex-1 mx-2 min-w-0"
               style={{
