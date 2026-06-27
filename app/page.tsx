@@ -5377,7 +5377,31 @@ export default function Home() {
                           </div>
                         </div>
 
-                        <div className="space-y-3 mb-3">
+                        <div className="space-y-2 mb-2">
+                          {/* 顧客名と確認日時のボックス */}
+                          <div className="h-12 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs box-border grid grid-cols-2 gap-2">
+                            <div className="flex flex-col justify-center h-full min-w-0">
+                              <span className="text-gray-500 text-[10px] leading-tight">
+                                {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
+                                  lang === 'es' ? 'Tu agente:' : 'Seu agente:'
+                                ) : (
+                                  'Cliente:'
+                                )}
+                              </span>
+                              <span className="font-semibold truncate text-black leading-tight">
+                                {item.customerName}
+                              </span>
+                            </div>
+                            <div className="flex flex-col justify-center h-full min-w-0">
+                              <span className="text-gray-500 text-[10px] leading-tight">
+                                {lang === 'es' ? 'Fecha de confirmación:' : 'Data de confirmação:'}
+                              </span>
+                              <span className="font-semibold truncate text-black leading-tight">
+                                {item.confirmedAt ? formatDateTime(item.confirmedAt, 'customer') : '-'}
+                              </span>
+                            </div>
+                          </div>
+
                           {item.customerId === 'B001' && currentUser?.customerId === 'B001' ? (
                             <>
                               <div className="h-12 px-3 bg-indigo-50/50 border border-indigo-100 rounded-lg flex items-center justify-between">
