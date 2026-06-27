@@ -938,6 +938,11 @@ export default function AdminDashboard() {
   const getFilteredPurchasedItems = () => {
     let filtered = purchasedItems;
 
+    // 発送タブでは取消済の商品は非表示
+    if (activeTab === 'shipping') {
+      filtered = filtered.filter(item => !item.cancelledAt);
+    }
+
     // 顧客IDでフィルタリング
     if (selectedCustomer !== 'all') {
       if (selectedCustomer === 'B001') {

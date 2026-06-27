@@ -2226,6 +2226,11 @@ export default function Home() {
   const getFilteredPurchasedItems = () => {
     let filtered = purchasedItems;
 
+    // 発送タブでは取消済の商品は非表示
+    if (activeTab === 'shipping') {
+      filtered = filtered.filter(item => !item.cancelledAt);
+    }
+
     // 顧客名でフィルタリング
     if (selectedCustomer && selectedCustomer !== 'all') {
       filtered = filtered.filter(item => item.customerName === selectedCustomer);
