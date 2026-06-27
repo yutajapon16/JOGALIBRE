@@ -111,15 +111,23 @@ export async function POST(request: Request) {
         const { fullName, whatsapp, address, zipCode, agentCustomerId, cpf, state, city, language } = body;
         const cleanAgentCustomerId = agentCustomerId ? agentCustomerId.trim().toUpperCase() : null;
 
-        // 既存のロールと国名を取得（国名は更新しないため、引き継ぐ）
+        // 既存のロール、国名、およびその他の重要ステータスを取得（引き継ぐため）
         const { data: existingData } = await supabaseAdmin
             .from('user_roles')
-            .select('role, country')
+            .select('*')
             .eq('id', user.id)
             .single();
 
         const currentRole = existingData?.role || 'customer';
         const currentCountry = existingData?.country || null;
+
+        // 既存の重要データを退避（プロフィール更新時に消失するのを防ぐ）
+        const currentDepositAmount = existingData?.deposit_amount !== undefined && existingData?.deposit_amount !== null
+            ? existingData.deposit_amount
+            : (currentRole === 'agent' ? 500 : 100);
+        const currentDepositConfirmedAt = existingData?.deposit_confirmed_at || null;
+        const currentTermsAcceptedAt = existingData?.terms_accepted_at || null;
+        const currentCustomerId = existingData?.customer_id || null;
 
         // supabaseAdmin（service role key）でRLSを完全に回避してUPSERT
         const { data: roleData, error: roleError } = await supabaseAdmin
@@ -137,7 +145,12 @@ export async function POST(request: Request) {
                 cpf: cpf || null,
                 state: state || null,
                 city: city || null,
-                language: language || null
+                language: language || null,
+                // 既存の重要ステータスを引き継ぐ
+                deposit_amount: currentDepositAmount,
+                deposit_confirmed_at: currentDepositConfirmedAt,
+                terms_accepted_at: currentTermsAcceptedAt,
+                customer_id: currentCustomerId
             }, {
                 onConflict: 'id'
             })
