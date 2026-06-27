@@ -537,6 +537,17 @@ export async function PATCH(request: Request) {
       updateData.admin_needs_confirm = true;
     }
 
+    if (
+      shipping_status !== undefined ||
+      shipped_at !== undefined ||
+      carrier !== undefined ||
+      tracking_number !== undefined ||
+      tracking_url !== undefined ||
+      estimated_arrival_date !== undefined
+    ) {
+      updateData.shipping_updated_at = new Date().toISOString();
+    }
+
     if (Object.keys(updateData).length > 0) {
       updateData.updated_at = new Date().toISOString();
     }

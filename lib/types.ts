@@ -82,6 +82,7 @@ export interface BidRequest {
   trackingUrl?: string | null;
   estimatedArrivalDate?: string | null;
   updatedAt?: string | null;
+  shippingUpdatedAt?: string | null;
 }
 
 export interface SearchItem {
