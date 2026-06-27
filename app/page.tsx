@@ -1650,10 +1650,15 @@ export default function Home() {
         } else {
           console.warn('Profile API returned null or undefined profile object');
         }
-      } else if (res.status === 401 && retryCount < 2) {
-        // ログイン直後のアクセストークン反映タイムラグ対策として、800ms待ってからリトライする
-        await new Promise(resolve => setTimeout(resolve, 800));
-        fetchUserProfile(retryCount + 1);
+      } else if (res.status === 401) {
+        if (retryCount < 2) {
+          // ログイン直後のアクセストークン反映タイムラグ対策として、800ms待ってからリトライする
+          await new Promise(resolve => setTimeout(resolve, 800));
+          fetchUserProfile(retryCount + 1);
+        } else {
+          console.warn('Profile API returned 401 after retries, signing out due to expired session');
+          handleLogout();
+        }
       } else {
         const errText = await res.text();
         console.error('Profile API HTTP status NOT OK:', res.status, errText);
@@ -1700,7 +1705,12 @@ export default function Home() {
         });
         setShowTermsModal(false);
       } else {
-        alert(lang === 'es' ? 'Error al aceptar los términos' : 'Erro ao aceitar os termos');
+        if (res.status === 401) {
+          alert(lang === 'es' ? 'La sesión ha expirado. Por favor, inicie sesión de nuevo.' : 'A sessão expirou. Por favor, faça login novamente.');
+          handleLogout();
+        } else {
+          alert(lang === 'es' ? 'Error al aceptar los términos' : 'Erro ao aceitar os termos');
+        }
       }
     } catch (error) {
       console.error('Error accepting terms:', error);
