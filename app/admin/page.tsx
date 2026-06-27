@@ -1421,7 +1421,7 @@ export default function AdminDashboard() {
   const handleCreateShippingContainer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!shippingContainerForm.containerCode.trim()) {
-      alert('社内管理コンテナ番号を入力してください');
+      alert('管理番号を入力してください');
       return;
     }
 
@@ -1441,14 +1441,14 @@ export default function AdminDashboard() {
 
       if (error) {
         if (error.code === '23505') {
-          alert('この社内管理コンテナ番号は既に登録されています');
+          alert('この管理番号は既に登録されています');
         } else {
           throw error;
         }
         return;
       }
 
-      alert('発送コンテナ情報を登録しました');
+      alert('発送情報を登録しました');
       setShippingContainerForm({
         containerCode: '',
         shippedAt: '',
@@ -1460,7 +1460,8 @@ export default function AdminDashboard() {
       await fetchShippingContainers();
     } catch (err) {
       console.error('Error creating shipping container:', err);
-      alert('登録に失敗しました。');
+      const errMsg = err instanceof Error ? err.message : (typeof err === 'object' && err !== null && 'message' in err ? String((err as any).message) : String(err));
+      alert('登録に失敗しました。: ' + errMsg);
     }
   };
 
@@ -1596,7 +1597,7 @@ export default function AdminDashboard() {
                 lineHeight: '30px',
               }}
             >
-              <option value="">コンテナ選択</option>
+              <option value="">選択</option>
               {shippingContainers.map(c => (
                 <option key={c.id} value={c.container_code}>
                   {c.container_code}
@@ -3980,16 +3981,16 @@ export default function AdminDashboard() {
         {/* 発送タブ */}
         {activeTab === 'shipping' && (
           <>
-            {/* 発送コンテナ登録ボックス */}
+            {/* 発送登録ボックス */}
             <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 font-sans text-left">
-              <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">発送コンテナ登録</h2>
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-900">発送登録</h2>
               <form onSubmit={handleCreateShippingContainer} className="space-y-4 text-black">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="min-w-0">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">社内管理コンテナ番号</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">管理番号</label>
                     <input
                       type="text"
-                      placeholder="例: C-202606"
+                      placeholder="例: C001"
                       value={shippingContainerForm.containerCode}
                       onChange={(e) => setShippingContainerForm({ ...shippingContainerForm, containerCode: e.target.value })}
                       className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black box-border font-semibold"

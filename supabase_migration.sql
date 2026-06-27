@@ -222,7 +222,7 @@ CREATE INDEX IF NOT EXISTS idx_bid_requests_shipping_status ON bid_requests(ship
 -- 31. 発送コンテナ登録管理テーブルを追加
 CREATE TABLE IF NOT EXISTS shipping_containers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  container_code TEXT UNIQUE NOT NULL,                             -- 社内管理コンテナ番号 (ユニーク)
+  container_code TEXT UNIQUE NOT NULL,                             -- 管理番号 (ユニーク)
   shipped_at TIMESTAMP WITH TIME ZONE,                            -- 発送日
   estimated_arrival_date DATE,                                    -- 到着予定日
   carrier TEXT,                                                   -- 配送業者
@@ -234,21 +234,6 @@ CREATE TABLE IF NOT EXISTS shipping_containers (
 
 -- パフォーマンス向上のためのインデックス作成
 CREATE INDEX IF NOT EXISTS idx_shipping_containers_container_code ON shipping_containers(container_code);
-
--- RLS（Row Level Security）ポリシー設定
-ALTER TABLE shipping_containers ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow all operations for admins on shipping_containers" ON shipping_containers;
-CREATE POLICY "Allow all operations for admins on shipping_containers"
-ON shipping_containers
-FOR ALL
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM user_roles
-    WHERE user_roles.id = auth.uid() AND user_roles.role = 'admin'
-  )
-);
 
 
 
