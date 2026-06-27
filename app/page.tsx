@@ -5158,15 +5158,67 @@ export default function Home() {
             )}
           </div>
         ) : activeTab === 'shipping' ? (
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans text-left">
-            <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.shippingTab}</h2>
-            {purchasedItems.length === 0 ? (
-              <div className="text-center text-gray-500 py-12">
+          <>
+            {/* 上部ヘッダー（フィルター等）の個別カード化 */}
+            <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 font-sans text-left text-black">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4">{t.shippingTab}</h2>
+
+              <div className="flex flex-col gap-4 mb-6">
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">{t.filterByCustomer}:</span>
+                  <select
+                    value={selectedCustomer}
+                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                    className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                  >
+                    <option value="all">{t.allCustomers}</option>
+                    {getCustomerList().map(customerName => (
+                      <option key={customerName} value={customerName}>
+                        {customerName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">
+                    {lang === 'es' ? 'Período:' : 'Período:'}
+                  </span>
+                  <div className="flex gap-2 w-full">
+                    <select
+                      value={purchasedYear}
+                      onChange={(e) => setPurchasedYear(e.target.value)}
+                      className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                    >
+                      <option value="all">{lang === 'es' ? 'Año' : 'Ano'}</option>
+                      <option value="2026">2026</option>
+                      <option value="2027">2027</option>
+                      <option value="2028">2028</option>
+                      <option value="2029">2029</option>
+                      <option value="2030">2030</option>
+                    </select>
+                    <select
+                      value={purchasedMonth}
+                      onChange={(e) => setPurchasedMonth(e.target.value)}
+                      className="w-1/2 h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                    >
+                      <option value="all">{lang === 'es' ? 'Mes' : 'Mês'}</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                        <option key={m} value={m.toString()}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {getFilteredPurchasedItems().length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500 font-sans text-left">
                 <p>{lang === 'es' ? 'No hay información de envío.' : 'Não há informações de envio.'}</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {purchasedItems
+              <div className="space-y-4">
+                {getFilteredPurchasedItems()
                   .sort((a, b) => new Date(b.confirmedAt || '').getTime() - new Date(a.confirmedAt || '').getTime())
                   .map((item) => {
                     const cost = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
@@ -5206,7 +5258,7 @@ export default function Home() {
                     const localCost = calculateLocalCost(item.delivery_location, item, item.shipping_method);
 
                     return (
-                      <div key={item.id} className="bg-white rounded-lg border border-gray-100 shadow-sm p-3 sm:p-4 text-black text-left">
+                      <div key={item.id} className="bg-white rounded-lg shadow-md p-4 sm:p-6 text-black text-left font-sans">
                         <div className="flex gap-4 mb-3">
                           <div className="relative w-32 h-32 flex-shrink-0">
                             {item.productImage ? (
@@ -5248,11 +5300,9 @@ export default function Home() {
                                   href={item.productUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border ${
-                                    item.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
-                                  }`}
+                                  className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border bg-[#ff0033]"
                                 >
-                                  {item.productId?.startsWith('m-') ? 'URL' : (lang === 'es' ? 'Ver en Yahoo' : 'Ver no Yahoo')}
+                                  {lang === 'es' ? 'Ver en Yahoo' : 'Ver no Yahoo'}
                                 </a>
                               ) : (
                                 <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none">
@@ -5411,47 +5461,92 @@ export default function Home() {
                           )}
 
                           {isDetailVisible && (
-                            <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 space-y-2.5 font-sans text-xs">
-                              <div className="flex items-center justify-between">
-                                <span className="text-gray-500 font-bold">{t.shippingDateLabel}:</span>
-                                <span className="font-semibold text-black">
-                                  {item.shippedAt ? formatDateOnly(item.shippedAt, 'customer') : '-'}
-                                </span>
+                            <div className="border border-gray-200 rounded-lg p-2.5 mt-2 bg-gray-50 space-y-2 text-left font-sans text-xs">
+                              {/* 上段: 発送日 & 到着予定日 (または到着日/引渡完了日など動的ラベル) */}
+                              <div className="flex gap-2">
+                                <div className="flex-1 flex flex-col gap-0.5">
+                                  <span className="text-gray-500 text-[10px] font-bold">{t.shippingDateLabel}:</span>
+                                  <div
+                                    className="border border-gray-300 rounded text-xs text-black bg-white w-full h-8 min-w-0 px-2 flex items-center justify-center font-bold"
+                                    style={{
+                                      lineHeight: '30px',
+                                      height: '32px'
+                                    }}
+                                  >
+                                    {item.shippedAt ? formatDateOnly(item.shippedAt, 'customer') : '-'}
+                                  </div>
+                                </div>
+                                <div className="flex-1 flex flex-col gap-0.5">
+                                  <span className="text-gray-500 text-[10px] font-bold">{arrivalDateLabel}:</span>
+                                  <div
+                                    className="border border-gray-300 rounded text-xs text-black bg-white w-full h-8 min-w-0 px-2 flex items-center justify-center font-bold"
+                                    style={{
+                                      lineHeight: '30px',
+                                      height: '32px'
+                                    }}
+                                  >
+                                    {item.estimatedArrivalDate ? formatDateOnly(item.estimatedArrivalDate, 'customer') : '-'}
+                                  </div>
+                                </div>
                               </div>
-                              
-                              <div className="flex gap-2 border-t border-gray-200/50 pt-2">
+
+                              {/* 中段: 配送業者 & 追跡番号 */}
+                              <div className="flex gap-2">
                                 <div className="flex-1 flex flex-col gap-0.5">
                                   <span className="text-gray-500 text-[10px] font-bold">{t.carrierLabel}:</span>
-                                  <span className="font-semibold text-black text-xs truncate">
+                                  <div
+                                    className="border border-gray-300 rounded text-xs text-black bg-white w-full h-8 min-w-0 px-2 flex items-center justify-center font-bold truncate"
+                                    style={{
+                                      lineHeight: '30px',
+                                      height: '32px'
+                                    }}
+                                    title={item.carrier || ''}
+                                  >
                                     {item.carrier || '-'}
-                                  </span>
+                                  </div>
                                 </div>
                                 <div className="flex-1 flex flex-col gap-0.5">
                                   <span className="text-gray-500 text-[10px] font-bold">{t.trackingNumberLabel}:</span>
-                                  <span className="font-semibold text-black text-xs truncate">
+                                  <div
+                                    className="border border-gray-300 rounded text-xs text-black bg-white w-full h-8 min-w-0 px-2 flex items-center justify-center font-bold truncate"
+                                    style={{
+                                      lineHeight: '30px',
+                                      height: '32px'
+                                    }}
+                                    title={item.trackingNumber || ''}
+                                  >
                                     {item.trackingNumber || '-'}
-                                  </span>
+                                  </div>
                                 </div>
                               </div>
-                              
-                              {item.trackingUrl && (
-                                <div className="border-t border-gray-200/50 pt-2">
+
+                              {/* 下段: 追跡URL */}
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-gray-500 text-[10px] font-bold">{lang === 'es' ? 'URL de seguimiento:' : 'URL de rastreamento:'}</span>
+                                {item.trackingUrl ? (
                                   <a
                                     href={item.trackingUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="w-full h-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded flex items-center justify-center text-xs transition"
+                                    style={{
+                                      lineHeight: '30px',
+                                      height: '32px'
+                                    }}
                                   >
                                     {t.trackingUrlButton}
                                   </a>
-                                </div>
-                              )}
-                              
-                              <div className="flex items-center justify-between border-t border-gray-200/50 pt-2">
-                                <span className="text-gray-500 font-bold">{arrivalDateLabel}:</span>
-                                <span className="font-semibold text-black">
-                                  {item.estimatedArrivalDate ? formatDateOnly(item.estimatedArrivalDate, 'customer') : '-'}
-                                </span>
+                                ) : (
+                                  <div
+                                    className="border border-gray-300 rounded text-xs text-gray-400 bg-gray-100 w-full h-8 min-w-0 px-2 flex items-center justify-center font-semibold select-none"
+                                    style={{
+                                      lineHeight: '30px',
+                                      height: '32px'
+                                    }}
+                                  >
+                                    -
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
@@ -5461,7 +5556,7 @@ export default function Home() {
                   })}
               </div>
             )}
-          </div>
+          </>
         ) : activeTab === 'mypage' ? (
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <h2 className="text-xl sm:text-2xl font-bold mb-6">{t.myPage}</h2>
