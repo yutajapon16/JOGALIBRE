@@ -1096,7 +1096,8 @@ export default function AdminDashboard() {
         carrier: item.carrier as string | null | undefined,
         trackingNumber: item.tracking_number as string | null | undefined,
         trackingUrl: item.tracking_url as string | null | undefined,
-        estimatedArrivalDate: item.estimated_arrival_date as string | null | undefined
+        estimatedArrivalDate: item.estimated_arrival_date as string | null | undefined,
+        updatedAt: item.updated_at as string | null | undefined
       }));
 
       setPurchasedItems(convertedItems);
@@ -1735,7 +1736,10 @@ export default function AdminDashboard() {
         )}
 
         {/* 発送情報を更新ボタン（最下段・右下・入力ボックスのサイズに統一） */}
-        <div className="mt-3 flex justify-end px-3">
+        <div className="mt-3 flex justify-between items-center px-3">
+          <div className="text-[10px] text-gray-500 font-semibold font-sans">
+            {item.updatedAt ? `更新日時: ${formatDateTime(item.updatedAt, 'admin')}` : ''}
+          </div>
           <button
             onClick={() => handleUpdateShipping(item.id)}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-8 rounded px-2 text-xs transition w-[calc(50%-4px)] flex items-center justify-center"
