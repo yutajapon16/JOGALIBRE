@@ -1479,7 +1479,7 @@ export default function AdminDashboard() {
           <select
             value={shippingStatus}
             onChange={(e) => handleShippingChange(item.id, 'shippingStatus', e.target.value)}
-            className="border border-gray-300 rounded bg-white text-black text-xs font-bold h-8 w-[calc(50%-16px)] min-w-0"
+            className="border border-gray-300 rounded bg-white text-black text-xs font-bold h-8 w-[calc(50%-4px)] min-w-0"
             style={{
               appearance: 'none',
               WebkitAppearance: 'none',
