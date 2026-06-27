@@ -51,10 +51,19 @@ export const formatDateTime = (dateString: string, mode: 'admin' | 'customer' = 
 export const formatDateOnly = (dateString: string, mode: 'admin' | 'customer' = 'admin') => {
   if (!dateString) return '-';
 
+  // タイムゾーンの変換を防ぎ、かつ Safari 等で NaN になるのを避けるため、YYYY-MM-DD や YYYY/MM/DD の日付のみ形式を安全に検出して組み替える
+  const simpleDateMatch = dateString.trim().match(/^(\d{4})[-/](\d{2})[-/](\d{2})(?:\s|T|$)/);
+  if (simpleDateMatch) {
+    const [_, y, m, d] = simpleDateMatch;
+    if (mode === 'customer') {
+      return `${d}/${m}/${y}`;
+    } else {
+      return `${y}/${m}/${d}`;
+    }
+  }
+
   const date = parseDbDateTime(dateString);
   if (!date || isNaN(date.getTime())) return dateString;
-
-  if (isNaN(date.getTime())) return dateString;
 
   const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const pad = (num: number) => String(num).padStart(2, '0');

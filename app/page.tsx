@@ -134,7 +134,7 @@ const translations = {
     shippingMethodSea: 'Contenedor 🚢',
     shippingMethodAir: 'Avión ✈️',
     shippingStatusLabel: 'Estado de envío',
-    shippingDateLabel: 'Fecha y hora de envío',
+    shippingDateLabel: 'Fecha de envío',
     carrierLabel: 'Transportista',
     trackingNumberLabel: 'Número de seguimiento',
     trackingUrlButton: 'Ver Tracking 🔍',
@@ -260,7 +260,7 @@ const translations = {
     shippingMethodSea: 'Contêiner 🚢',
     shippingMethodAir: 'Avião ✈️',
     shippingStatusLabel: 'Status de envio',
-    shippingDateLabel: 'Data e hora de envio',
+    shippingDateLabel: 'Data de envio',
     carrierLabel: 'Transportadora',
     trackingNumberLabel: 'Número de rastreamento',
     trackingUrlButton: 'Rastrear Envio 🔍',
@@ -1209,6 +1209,8 @@ export default function Home() {
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [purchasedYear, setPurchasedYear] = useState<string>('all');
   const [purchasedMonth, setPurchasedMonth] = useState<string>('all');
+  const [shippingStatusFilter, setShippingStatusFilter] = useState<string>('all');
+  const [copiedItemId, setCopiedItemId] = useState<string | null>(null);
   const [exchangeRate, setExchangeRate] = useState(150);
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({
@@ -2199,7 +2201,18 @@ export default function Home() {
     window.location.href = '/';
   };
 
-  // ← ここに追加！
+  const handleCopyTrackingNumber = (itemId: string, trackingNumber: string) => {
+    if (!trackingNumber) return;
+    navigator.clipboard.writeText(trackingNumber).then(() => {
+      setCopiedItemId(itemId);
+      setTimeout(() => {
+        setCopiedItemId(null);
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy tracking number: ', err);
+    });
+  };
+
   const getFilteredPurchasedItems = () => {
     let filtered = purchasedItems;
 
@@ -2223,6 +2236,14 @@ export default function Home() {
         if (!item.confirmedAt) return false;
         const date = new Date(item.confirmedAt);
         return (date.getMonth() + 1).toString() === purchasedMonth;
+      });
+    }
+
+    // 発送ステータスでフィルタリング（発送タブの場合のみ適用）
+    if (activeTab === 'shipping' && shippingStatusFilter !== 'all') {
+      filtered = filtered.filter(item => {
+        const status = item.shippingStatus || 'not_shipped';
+        return status === shippingStatusFilter;
       });
     }
 
@@ -5209,6 +5230,39 @@ export default function Home() {
                     </select>
                   </div>
                 </div>
+
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">
+                    {lang === 'es' ? 'Estado de envío:' : 'Status de envio:'}
+                  </span>
+                  <select
+                    value={shippingStatusFilter}
+                    onChange={(e) => setShippingStatusFilter(e.target.value)}
+                    className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                  >
+                    <option value="all">
+                      {lang === 'es' ? 'Todos los estados' : 'Todos os status'}
+                    </option>
+                    <option value="not_shipped">
+                      {lang === 'es' ? 'No enviado' : 'Não enviado'}
+                    </option>
+                    <option value="arrived_jp">
+                      {lang === 'es' ? 'Llegado al almacén de Japón' : 'Chegou ao armazém do Japão'}
+                    </option>
+                    <option value="in_transit">
+                      {lang === 'es' ? 'En tránsito' : 'Em trânsito'}
+                    </option>
+                    <option value="arrived_local">
+                      {lang === 'es' ? 'Llegado al destino' : 'Chegou ao destino'}
+                    </option>
+                    <option value="ready_for_delivery">
+                      {lang === 'es' ? 'Listo para retiro' : 'Pronto para retirada'}
+                    </option>
+                    <option value="delivered">
+                      {lang === 'es' ? 'Entregado' : 'Entregue'}
+                    </option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -5506,16 +5560,32 @@ export default function Home() {
                                   </div>
                                 </div>
                                 <div className="flex-1 flex flex-col gap-0.5">
-                                  <span className="text-gray-500 text-[10px] font-bold">{t.trackingNumberLabel}:</span>
+                                  <span className="text-gray-500 text-[10px] font-bold">
+                                    {item.shipping_method === 'sea' ? 
+                                      (lang === 'es' ? 'No. de Contenedor:' : lang === 'pt' ? 'Nº do Contêiner:' : 'コンテナ番号:') : 
+                                      `${t.trackingNumberLabel}:`}
+                                  </span>
                                   <div
-                                    className="border border-gray-300 rounded text-xs text-black bg-white w-full h-8 min-w-0 px-2 flex items-center justify-center font-bold truncate"
+                                    onClick={() => handleCopyTrackingNumber(item.id, item.trackingNumber || '')}
+                                    className="border border-gray-300 rounded text-xs text-black bg-white w-full h-8 min-w-0 px-2 flex items-center justify-center font-bold truncate cursor-pointer hover:bg-gray-100/50 transition relative group active:scale-95"
                                     style={{
                                       lineHeight: '30px',
                                       height: '32px'
                                     }}
-                                    title={item.trackingNumber || ''}
+                                    title={item.trackingNumber ? (lang === 'es' ? 'Click para copiar' : 'Clique para copiar') : ''}
                                   >
-                                    {item.trackingNumber || '-'}
+                                    {copiedItemId === item.id ? (
+                                      <span className="text-green-600 font-bold">
+                                        {lang === 'es' ? '¡Copiado!' : 'Copiado!'}
+                                      </span>
+                                    ) : (
+                                      item.trackingNumber || '-'
+                                    )}
+                                    {item.trackingNumber && copiedItemId !== item.id && (
+                                      <span className="absolute bottom-full mb-1 hidden group-hover:block bg-black text-white text-[9px] px-1.5 py-0.5 rounded shadow-md whitespace-nowrap z-10 pointer-events-none opacity-80">
+                                        {lang === 'es' ? 'Click para copiar' : 'Clique para copiar'}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>

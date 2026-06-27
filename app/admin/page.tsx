@@ -649,6 +649,7 @@ export default function AdminDashboard() {
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [purchasedYear, setPurchasedYear] = useState<string>('all');
   const [purchasedMonth, setPurchasedMonth] = useState<string>('all');
+  const [shippingStatusFilter, setShippingStatusFilter] = useState<string>('all');
   const [isSendingNotification, setIsSendingNotification] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<'loading' | 'enabled' | 'disabled' | 'unsupported'>('loading');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -959,6 +960,14 @@ export default function AdminDashboard() {
         if (!item.confirmedAt) return false;
         const date = new Date(item.confirmedAt);
         return (date.getMonth() + 1).toString() === purchasedMonth;
+      });
+    }
+
+    // 発送ステータスでフィルタリング（発送タブの場合のみ）
+    if (activeTab === 'shipping' && shippingStatusFilter !== 'all') {
+      filtered = filtered.filter(item => {
+        const status = item.shippingStatus || 'not_shipped';
+        return status === shippingStatusFilter;
       });
     }
 
@@ -1556,7 +1565,9 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="flex-1 flex flex-col gap-0.5">
-                <span className="text-gray-500 text-[10px] font-semibold">追跡番号:</span>
+                <span className="text-gray-500 text-[10px] font-semibold">
+                  {item.shipping_method === 'sea' ? 'コンテナ番号:' : '追跡番号:'}
+                </span>
                 <input
                   type="text"
                   placeholder="手入力..."
@@ -3901,6 +3912,23 @@ export default function AdminDashboard() {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-sm font-semibold text-gray-600">発送ステータス:</span>
+                  <select
+                    value={shippingStatusFilter}
+                    onChange={(e) => setShippingStatusFilter(e.target.value)}
+                    className="w-full h-12 border border-gray-300 rounded-lg px-3 py-0 text-base bg-white text-black box-border"
+                  >
+                    <option value="all">すべてのステータス</option>
+                    <option value="not_shipped">未発送</option>
+                    <option value="arrived_jp">日本到着</option>
+                    <option value="in_transit">輸送中</option>
+                    <option value="arrived_local">現地到着</option>
+                    <option value="ready_for_delivery">引渡可能</option>
+                    <option value="delivered">引渡完了</option>
+                  </select>
                 </div>
               </div>
             </div>
