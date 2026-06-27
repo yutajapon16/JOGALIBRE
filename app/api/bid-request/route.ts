@@ -537,6 +537,10 @@ export async function PATCH(request: Request) {
       updateData.admin_needs_confirm = true;
     }
 
+    if (Object.keys(updateData).length > 0) {
+      updateData.updated_at = new Date().toISOString();
+    }
+
     const { error } = await supabaseAdmin
       .from('bid_requests')
       .update(updateData)

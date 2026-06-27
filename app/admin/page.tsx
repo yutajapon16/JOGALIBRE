@@ -1738,7 +1738,7 @@ export default function AdminDashboard() {
         {/* 発送情報を更新ボタン（最下段・右下・入力ボックスのサイズに統一） */}
         <div className="mt-3 flex justify-between items-center px-3">
           <div className="text-[10px] text-gray-500 font-semibold font-sans">
-            {item.updatedAt ? `更新日時: ${formatDateTime(item.updatedAt, 'admin')}` : ''}
+            更新日時: {item.updatedAt ? formatDateTime(item.updatedAt, 'admin') : '未更新'}
           </div>
           <button
             onClick={() => handleUpdateShipping(item.id)}

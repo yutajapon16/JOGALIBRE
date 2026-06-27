@@ -235,5 +235,8 @@ CREATE TABLE IF NOT EXISTS shipping_containers (
 -- パフォーマンス向上のためのインデックス作成
 CREATE INDEX IF NOT EXISTS idx_shipping_containers_container_code ON shipping_containers(container_code);
 
+-- 32. bid_requests テーブルに updated_at カラムを追加（存在しない場合）
+ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+
 
 
