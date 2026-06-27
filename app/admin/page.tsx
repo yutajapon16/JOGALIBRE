@@ -1479,13 +1479,14 @@ export default function AdminDashboard() {
           <select
             value={shippingStatus}
             onChange={(e) => handleShippingChange(item.id, 'shippingStatus', e.target.value)}
-            className="border border-gray-300 rounded bg-white text-black text-xs font-bold h-8 w-[calc(50%-4px)] min-w-0"
+            className="border border-gray-300 rounded bg-white text-black text-xs font-bold h-8 w-[calc(50%-4px)] min-w-0 text-center"
             style={{
               appearance: 'none',
               WebkitAppearance: 'none',
               padding: '0 8px',
               lineHeight: '30px',
-              textAlign: 'center'
+              textAlign: 'center',
+              textAlignLast: 'center'
             }}
           >
             <option value="not_shipped">未発送</option>
