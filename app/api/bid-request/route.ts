@@ -40,7 +40,6 @@ export async function POST(request: Request) {
       customer_email: finalEmail,
       language: language,
       status: 'pending',
-      created_at: new Date().toISOString(),
       approved_at: null,
       reject_reason: null,
       counter_offer: null,
@@ -378,7 +377,7 @@ export async function PATCH(request: Request) {
     const updateData: Record<string, unknown> = {};
 
     if (cancelledAt !== undefined) {
-      updateData.cancelled_at = cancelledAt;
+      updateData.cancelled_at = cancelledAt ? new Date().toISOString() : null;
     }
 
     // 管理者のみが更新可能なフィールド

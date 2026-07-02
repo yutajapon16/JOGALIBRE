@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
 import { BidRequest } from '@/lib/types';
 
 // 管理者画面用のPWA manifest差し替え
@@ -65,9 +65,24 @@ export default function AdminDashboard() {
     productTitle: '',
     productUrl: '',
     customerId: '',
-    createdAt: new Date().toISOString().split('T')[0],
+    createdAt: '',
     finalPrice: '',
+    deliveryCountry: 'JP',
+    deliveryCity: '',
+    shippingMethod: 'sea',
   });
+
+  // クライアントマウント時に今日の日付をセットする
+  useEffect(() => {
+    const today = new Date();
+    const offset = today.getTimezoneOffset();
+    const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+    const todayStr = localToday.toISOString().split('T')[0];
+    setManualAddForm(prev => ({
+      ...prev,
+      createdAt: todayStr
+    }));
+  }, []);
   const [manualAddImage, setManualAddImage] = useState<File | null>(null);
   const [manualAddImagePreview, setManualAddImagePreview] = useState<string | null>(null);
   const [isSubmittingManualAdd, setIsSubmittingManualAdd] = useState(false);
@@ -167,6 +182,17 @@ export default function AdminDashboard() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
+      const today = new Date();
+      const offset = today.getTimezoneOffset();
+      const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+      const todayStr = localToday.toISOString().split('T')[0];
+      const isToday = manualAddForm.createdAt === todayStr;
+
+      // 配送先の設定
+      const deliveryLocation = manualAddForm.deliveryCountry === 'JP' ? 'JP' : manualAddForm.deliveryCity;
+      const deliveryCountryName = getCountryNameJa(manualAddForm.deliveryCountry);
+      const deliveryCityName = manualAddForm.deliveryCountry === 'JP' ? null : getCityNameJa(manualAddForm.deliveryCountry, manualAddForm.deliveryCity);
+
       const formData = new FormData();
       formData.append('productTitle', manualAddForm.productTitle);
       if (manualAddForm.productUrl) {
@@ -174,7 +200,12 @@ export default function AdminDashboard() {
       }
       formData.append('customerId', manualAddForm.customerId);
       formData.append('createdAt', manualAddForm.createdAt);
+      formData.append('isToday', isToday ? 'true' : 'false');
       formData.append('finalPrice', manualAddForm.finalPrice);
+      formData.append('deliveryLocation', deliveryLocation);
+      if (deliveryCountryName) formData.append('deliveryCountry', deliveryCountryName);
+      if (deliveryCityName) formData.append('deliveryCity', deliveryCityName);
+      formData.append('shippingMethod', manualAddForm.shippingMethod);
       if (manualAddImage) {
         formData.append('image', manualAddImage);
       }
@@ -190,12 +221,19 @@ export default function AdminDashboard() {
       if (res.ok) {
         alert('商品を登録しました。');
         setShowManualAddModal(false);
+        const today = new Date();
+        const offset = today.getTimezoneOffset();
+        const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+        const todayStr = localToday.toISOString().split('T')[0];
         setManualAddForm({
           productTitle: '',
           productUrl: '',
           customerId: '',
-          createdAt: new Date().toISOString().split('T')[0],
+          createdAt: todayStr,
           finalPrice: '',
+          deliveryCountry: 'JP',
+          deliveryCity: '',
+          shippingMethod: 'sea',
         });
         setManualAddImage(null);
         setManualAddImagePreview(null);
@@ -5142,18 +5180,86 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
+              {/* 引渡場所 */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">引渡場所</label>
+                <select
+                  value={manualAddForm.deliveryCountry}
+                  onChange={(e) => {
+                    const countryCode = e.target.value;
+                    const country = deliveryLocations.find(c => c.code === countryCode);
+                    const firstCityCode = country && country.cities.length > 0 ? country.cities[0].code : '';
+                    setManualAddForm({
+                      ...manualAddForm,
+                      deliveryCountry: countryCode,
+                      deliveryCity: firstCityCode
+                    });
+                  }}
+                  className="w-full h-12 block border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black px-3"
+                  required
+                >
+                  {deliveryLocations.map(country => (
+                    <option key={country.code} value={country.code}>
+                      {country.nameJa}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 都市（日本以外の場合） */}
+              {manualAddForm.deliveryCountry !== 'JP' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">都市</label>
+                    <select
+                      value={manualAddForm.deliveryCity}
+                      onChange={(e) => setManualAddForm({ ...manualAddForm, deliveryCity: e.target.value })}
+                      className="w-full h-12 block border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black px-3"
+                      required
+                    >
+                      {deliveryLocations.find(c => c.code === manualAddForm.deliveryCountry)?.cities.map(city => (
+                        <option key={city.code} value={city.code}>
+                          {city.nameJa}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 発送方法 */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">発送方法</label>
+                    <select
+                      value={manualAddForm.shippingMethod}
+                      onChange={(e) => setManualAddForm({ ...manualAddForm, shippingMethod: e.target.value })}
+                      className="w-full h-12 block border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black px-3"
+                      required
+                    >
+                      <option value="sea">船便 🚢</option>
+                      <option value="air">航空便 ✈️</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
               {/* ボタン */}
               <div className="flex gap-3 pt-4 border-t">
                 <button
                   type="button"
                   onClick={() => {
                     setShowManualAddModal(false);
+                    const today = new Date();
+                    const offset = today.getTimezoneOffset();
+                    const localToday = new Date(today.getTime() - (offset * 60 * 1000));
+                    const todayStr = localToday.toISOString().split('T')[0];
                     setManualAddForm({
                       productTitle: '',
                       productUrl: '',
                       customerId: '',
-                      createdAt: new Date().toISOString().split('T')[0],
+                      createdAt: todayStr,
                       finalPrice: '',
+                      deliveryCountry: 'JP',
+                      deliveryCity: '',
+                      shippingMethod: 'sea',
                     });
                     setManualAddImage(null);
                     setManualAddImagePreview(null);

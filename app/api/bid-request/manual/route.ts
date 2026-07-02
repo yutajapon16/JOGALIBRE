@@ -26,7 +26,13 @@ export async function POST(request: Request) {
     const productUrl = formData.get('productUrl') as string | null;
     const customerId = formData.get('customerId') as string;
     const createdAt = formData.get('createdAt') as string; // 購入日時
+    const isTodayStr = formData.get('isToday') as string | null;
+    const isToday = isTodayStr === 'true';
     const finalPriceVal = formData.get('finalPrice') as string;
+    const deliveryLocation = formData.get('deliveryLocation') as string | null;
+    const deliveryCountry = formData.get('deliveryCountry') as string | null;
+    const deliveryCity = formData.get('deliveryCity') as string | null;
+    const shippingMethod = formData.get('shippingMethod') as string | null;
     const imageFile = formData.get('image') as File | null;
 
     if (!productTitle || !customerId || !finalPriceVal || !createdAt) {
@@ -93,24 +99,24 @@ export async function POST(request: Request) {
 
     const recordId = Date.now().toString() + Math.floor(1000 + Math.random() * 9000).toString();
 
-    // フォームの日付 (createdAt = "YYYY-MM-DD") と現在時刻の時・分・秒・ミリ秒をマージする
-    let finalCreatedAt: string;
-    try {
-      const now = new Date();
-      const timePart = now.toISOString().split('T')[1]; // 例: "15:20:30.123Z"
-      const mergedDateTimeStr = `${createdAt}T${timePart}`;
-      const parsedDate = new Date(mergedDateTimeStr);
-      if (isNaN(parsedDate.getTime())) {
-        throw new Error('Invalid merged date');
+    // 購入日時の設定
+    let finalCreatedAt: string | null = null;
+    if (!isToday && createdAt) {
+      try {
+        // 過去などの特定日付が指定された場合、時差による日付のズレを防ぐためUTC正午（12:00:00Z）で統一して保存する
+        const parsedDate = new Date(`${createdAt}T12:00:00Z`);
+        if (isNaN(parsedDate.getTime())) {
+          throw new Error('Invalid date format');
+        }
+        finalCreatedAt = parsedDate.toISOString();
+      } catch (err) {
+        console.warn('Failed to parse past date, using fallback to DB default:', err);
+        finalCreatedAt = null;
       }
-      finalCreatedAt = parsedDate.toISOString();
-    } catch (err) {
-      console.warn('Failed to merge date and time, using fallback:', err);
-      finalCreatedAt = new Date().toISOString();
     }
 
     // 5. bid_requests に手動追加レコードを登録
-    const bidRequest = {
+    const bidRequest: Record<string, any> = {
       id: recordId,
       product_id: 'm-' + recordId, // NOT NULL制約を回避するためのダミー商品ID
       product_title: productTitle,
@@ -122,8 +128,6 @@ export async function POST(request: Request) {
       customer_email: customerRoleData.email,
       language: 'es', // デフォルト言語
       status: 'approved',
-      created_at: finalCreatedAt,
-      approved_at: finalCreatedAt,
       reject_reason: null,
       counter_offer: null,
       shipping_cost_jpy: null,
@@ -134,8 +138,16 @@ export async function POST(request: Request) {
       customer_confirmed: false,
       customer_message: null,
       admin_needs_confirm: false,
-      delivery_location: 'JP'
+      delivery_location: deliveryLocation || 'JP',
+      delivery_country: deliveryCountry || null,
+      delivery_city: deliveryCity || null,
+      shipping_method: shippingMethod || 'sea'
     };
+
+    if (finalCreatedAt) {
+      bidRequest.created_at = finalCreatedAt;
+      bidRequest.approved_at = finalCreatedAt;
+    }
 
     const { data: insertedData, error: insertError } = await supabaseAdmin
       .from('bid_requests')
@@ -146,6 +158,23 @@ export async function POST(request: Request) {
     if (insertError) {
       console.error('Insert manual bid request error:', insertError);
       return NextResponse.json({ error: 'Failed to save record: ' + insertError.message }, { status: 500 });
+    }
+
+    // isToday かつ approved_at が未設定の場合、DB側で自動設定された created_at と同じ値を approved_at にコピーして更新する
+    if (isToday && insertedData && !insertedData.approved_at) {
+      const { data: updatedData, error: updateError } = await supabaseAdmin
+        .from('bid_requests')
+        .update({ approved_at: insertedData.created_at })
+        .eq('id', recordId)
+        .select()
+        .single();
+      
+      if (!updateError && updatedData) {
+        return NextResponse.json({
+          success: true,
+          bidRequest: updatedData
+        });
+      }
     }
 
     return NextResponse.json({
