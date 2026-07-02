@@ -137,7 +137,7 @@ export async function GET(request: Request) {
         escapeCSV(customerName),
         escapeCSV(order.product_title),
         escapeCSV(order.product_url),
-        formula, // 数式はクォートなしで出力
+        escapeCSV(formula), // 数式をクォートして出力（カンマによる列ズレ防止）
         rowShipping > 0 ? rowShipping : '', // デフォルトの送料を出力
         maxBidUsdOutput, // 「日本支払額」または「最大オファー金額」を出力
         exchangeRate,
