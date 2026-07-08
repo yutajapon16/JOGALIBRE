@@ -277,3 +277,46 @@ USING (
       AND (user_roles.role = 'admin' OR user_roles.role = 'agent')
   )
 );
+
+-- 36. deposits テーブルの RLS（Row Level Security）ポリシー設定（管理者とエージェントに許可）
+DROP POLICY IF EXISTS "Allow all for admins and agents on deposits" ON deposits;
+CREATE POLICY "Allow all for admins and agents on deposits"
+ON deposits
+FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_roles.id = auth.uid()
+      AND (user_roles.role = 'admin' OR user_roles.role = 'agent')
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_roles.id = auth.uid()
+      AND (user_roles.role = 'admin' OR user_roles.role = 'agent')
+  )
+);
+
+-- 37. system_settings テーブルの RLS（Row Level Security）ポリシー設定（管理者のみに許可）
+DROP POLICY IF EXISTS "Allow all for admins on system_settings" ON system_settings;
+CREATE POLICY "Allow all for admins on system_settings"
+ON system_settings
+FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_roles.id = auth.uid()
+      AND user_roles.role = 'admin'
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_roles.id = auth.uid()
+      AND user_roles.role = 'admin'
+  )
+);
+
