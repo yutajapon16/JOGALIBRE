@@ -241,5 +241,39 @@ ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME
 -- 33. bid_requests テーブルに shipping_updated_at カラムを追加
 ALTER TABLE bid_requests ADD COLUMN IF NOT EXISTS shipping_updated_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
 
+-- 34. shipping_containers テーブルの RLS（Row Level Security）ポリシー設定
+ALTER TABLE shipping_containers ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow all operations for admins and agents" ON shipping_containers;
+CREATE POLICY "Allow all operations for admins and agents"
+ON shipping_containers
+FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_roles.id = auth.uid()
+      AND (user_roles.role = 'admin' OR user_roles.role = 'agent')
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_roles.id = auth.uid()
+      AND (user_roles.role = 'admin' OR user_roles.role = 'agent')
+  )
+);
 
+-- 35. storage.bid-images バケットのファイル一覧取得 (List) を管理者・エージェントのみに制限
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+
+CREATE POLICY "Admin and Agent Access to metadata" ON storage.objects
+FOR SELECT TO authenticated
+USING (
+  bucket_id = 'bid-images' AND
+  EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_roles.id = auth.uid()
+      AND (user_roles.role = 'admin' OR user_roles.role = 'agent')
+  )
+);
