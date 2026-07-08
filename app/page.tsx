@@ -5366,12 +5366,14 @@ export default function Home() {
                             <div className="w-full">
                               {item.productUrl ? (
                                 <a
-                                  href={item.productUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border bg-[#ff0033]"
+                                  href={item.productId?.startsWith('m-') ? item.productUrl : `/product/${item.productId}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}`}
+                                  target={item.productId?.startsWith('m-') ? "_blank" : undefined}
+                                  rel={item.productId?.startsWith('m-') ? "noopener noreferrer" : undefined}
+                                  className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
+                                    item.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
+                                  }`}
                                 >
-                                  {lang === 'es' ? 'Ver en Yahoo' : 'Ver no Yahoo'}
+                                  {item.productId?.startsWith('m-') ? 'URL' : t.viewOnYahoo}
                                 </a>
                               ) : (
                                 <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none">
