@@ -63,6 +63,7 @@ const translations = {
     reject: 'Rechazar',
     counterOfferAction: 'Contraoferta',
     confirm: 'Confirmar',
+    deleteCard: 'Borrar',
     total: 'Total',
     finalPrice: 'Precio final',
     date: 'Fecha',
@@ -192,6 +193,7 @@ const translations = {
     reject: 'Rejeitar',
     counterOfferAction: 'Contraoferta',
     confirm: 'Confirmar',
+    deleteCard: 'Excluir',
     total: 'Total',
     finalPrice: 'Preço final',
     date: 'Data',
@@ -4187,7 +4189,7 @@ export default function Home() {
                           onClick={() => confirmRejection(request.id)}
                           className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
                         >
-                          {t.confirm}
+                          {t.deleteCard}
                         </button>
                       )}
 
@@ -4224,7 +4226,7 @@ export default function Home() {
                           onClick={() => confirmRejection(request.id)}
                           className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
                         >
-                          {t.confirm}
+                          {t.deleteCard}
                         </button>
                       )}
 
@@ -4262,7 +4264,7 @@ export default function Home() {
                           onClick={() => handleFinalStatusConfirm(request.id)}
                           className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
                         >
-                          {t.confirm}
+                          {t.deleteCard}
                         </button>
                       )}
                     </div>
