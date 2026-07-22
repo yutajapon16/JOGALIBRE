@@ -385,10 +385,11 @@ export default function AdminDashboard() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
       
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch(`/api/admin/users?t=${Date.now()}`, {
         headers: {
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-        }
+        },
+        cache: 'no-store'
       });
       const data = await res.json();
       if (data.customers) setCustomersList(data.customers);
