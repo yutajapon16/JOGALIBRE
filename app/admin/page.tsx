@@ -743,6 +743,7 @@ export default function AdminDashboard() {
         fetchBidRequests();
       } else if (activeTab === 'purchased') {
         fetchPurchasedItems();
+        fetchShippingContainers();
       } else if (activeTab === 'deposits') {
         fetchDeposits();
         fetchUsersData();
@@ -1453,12 +1454,19 @@ export default function AdminDashboard() {
 
   const fetchShippingContainers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('shipping_containers')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      setShippingContainers(data || []);
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/admin/shipping-containers?t=${Date.now()}`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        cache: 'no-store'
+      });
+      const data = await res.json();
+      if (data.containers) {
+        setShippingContainers(data.containers);
+      }
     } catch (err) {
       console.error('Error fetching shipping containers:', err);
     }
@@ -1472,25 +1480,28 @@ export default function AdminDashboard() {
     }
 
     try {
-      const payload = {
-        container_code: shippingContainerForm.containerCode.trim(),
-        shipped_at: shippingContainerForm.shippedAt ? new Date(shippingContainerForm.shippedAt).toISOString() : null,
-        estimated_arrival_date: shippingContainerForm.estimatedArrivalDate || null,
-        carrier: shippingContainerForm.carrier.trim() || null,
-        tracking_number: shippingContainerForm.trackingNumber.trim() || null,
-        tracking_url: shippingContainerForm.trackingUrl.trim() || null,
-      };
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
 
-      const { error } = await supabase
-        .from('shipping_containers')
-        .insert([payload]);
+      const res = await fetch('/api/admin/shipping-containers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({
+          containerCode: shippingContainerForm.containerCode.trim(),
+          shippedAt: shippingContainerForm.shippedAt,
+          estimatedArrivalDate: shippingContainerForm.estimatedArrivalDate,
+          carrier: shippingContainerForm.carrier.trim(),
+          trackingNumber: shippingContainerForm.trackingNumber.trim(),
+          trackingUrl: shippingContainerForm.trackingUrl.trim()
+        })
+      });
 
-      if (error) {
-        if (error.code === '23505') {
-          alert('この管理番号は既に登録されています');
-        } else {
-          throw error;
-        }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || '登録に失敗しました');
         return;
       }
 
@@ -1506,7 +1517,7 @@ export default function AdminDashboard() {
       await fetchShippingContainers();
     } catch (err) {
       console.error('Error creating shipping container:', err);
-      const errMsg = err instanceof Error ? err.message : (typeof err === 'object' && err !== null && 'message' in err ? String((err as any).message) : String(err));
+      const errMsg = err instanceof Error ? err.message : String(err);
       alert('登録に失敗しました。: ' + errMsg);
     }
   };
