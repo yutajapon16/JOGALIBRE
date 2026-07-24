@@ -1004,6 +1004,26 @@ export default function Home() {
   const [activePaymentMethod, setActivePaymentMethod] = useState<'bank' | 'paypal' | 'usdt'>('bank');
   const [copiedText, setCopiedText] = useState<string | null>(null);
 
+  // B001傘下顧客 / ブラジルエージェント用の複数選択・一括決済ステート
+  const [selectedBrlItemIds, setSelectedBrlItemIds] = useState<string[]>([]);
+  const [showBrlBatchPaymentModal, setShowBrlBatchPaymentModal] = useState(false);
+  const [brlPaymentMethod, setBrlPaymentMethod] = useState<'pix' | 'card'>('pix');
+
+  const isBrlUser = !!(
+    currentUser && (
+      currentUser.agentCustomerId === 'B001' ||
+      currentUser.customerId === 'B001' ||
+      (currentUser.customerId?.startsWith('A') && 
+        (currentUser.country?.trim().toLowerCase() === 'brasil' || currentUser.country?.trim().toLowerCase() === 'brazil'))
+    )
+  );
+
+  const toggleBrlItemSelection = (id: string) => {
+    setSelectedBrlItemIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
   // 支払い設定をAPIからフェッチする関数
   const fetchPaymentSettings = async () => {
     if (paymentSettings) return;
@@ -4349,6 +4369,85 @@ export default function Home() {
               </a>
             </div>
 
+            {/* B001傘下顧客・ブラジルエージェント向け Stripe一括決済サマリーカード */}
+            {isBrlUser && (() => {
+              const filteredPurchased = getFilteredPurchasedItems();
+              const unpaidItems = filteredPurchased.filter(item => !item.paid && !item.cancelledAt);
+              const selectedItems = unpaidItems.filter(item => selectedBrlItemIds.includes(item.id));
+              const totalUsd = selectedItems.reduce((sum, item) => {
+                const price = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0));
+                return sum + price;
+              }, 0);
+              const brlRate = exchangeRate || 5.65;
+              const totalBrl = totalUsd * brlRate;
+              const allSelected = unpaidItems.length > 0 && selectedBrlItemIds.length === unpaidItems.length;
+
+              return (
+                <div className="mb-6 bg-gradient-to-r from-emerald-50 to-indigo-50 border border-emerald-200 rounded-xl p-4 sm:p-5 shadow-sm font-sans">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          Stripe Checkout (BRL)
+                        </span>
+                        <span className="text-xs text-gray-600 font-semibold">
+                          {selectedBrlItemIds.length} / {unpaidItems.length} {lang === 'es' ? 'ítems seleccionados' : 'itens selecionados'}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-2xl sm:text-3xl font-black text-indigo-600">
+                          ${Math.round(totalUsd).toLocaleString('en-US')} USD
+                        </span>
+                        <span className="text-lg sm:text-xl font-bold text-emerald-600">
+                          ≈ R$ {totalBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BRL
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        {lang === 'es' ? 'Tipo de cambio' : 'Taxa de câmbio'}: 1 USD = R$ {brlRate.toFixed(2)} (BRL)
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      {unpaidItems.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (allSelected) {
+                              setSelectedBrlItemIds([]);
+                            } else {
+                              setSelectedBrlItemIds(unpaidItems.map(i => i.id));
+                            }
+                          }}
+                          className="px-3 py-2.5 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 rounded-lg text-xs font-bold transition shadow-sm whitespace-nowrap cursor-pointer"
+                        >
+                          {allSelected
+                            ? (lang === 'es' ? 'Deseleccionar todo' : 'Desmarcar todos')
+                            : (lang === 'es' ? 'Seleccionar todo' : 'Selecionar todos')}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        disabled={selectedBrlItemIds.length === 0}
+                        onClick={() => setShowBrlBatchPaymentModal(true)}
+                        className={`flex-1 sm:flex-initial px-5 py-3 rounded-lg text-sm font-bold shadow-md transition flex items-center justify-center gap-2 whitespace-nowrap ${
+                          selectedBrlItemIds.length > 0
+                            ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 cursor-pointer'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        <span>💳</span>
+                        <span>
+                          {lang === 'es'
+                            ? `Pagar Seleccionados (${selectedBrlItemIds.length})`
+                            : `Pagar Selecionados (${selectedBrlItemIds.length})`}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* 未払い合計金額サマリー */}
             {purchasedItems.length > 0 && (() => {
               const filteredItemsForSummary = getFilteredPurchasedItems();
@@ -7275,6 +7374,172 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* B001傘下顧客・ブラジルエージェント向け Stripe一括決済確認モーダル */}
+      {showBrlBatchPaymentModal && (() => {
+        const unpaidPurchased = getFilteredPurchasedItems().filter(item => !item.paid && !item.cancelledAt);
+        const selectedItems = unpaidPurchased.filter(item => selectedBrlItemIds.includes(item.id));
+        const totalUsd = selectedItems.reduce((sum, item) => {
+          const price = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0));
+          return sum + price;
+        }, 0);
+        const brlRate = exchangeRate || 5.65;
+        const totalBrl = totalUsd * brlRate;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col my-8 animate-in fade-in zoom-in duration-200 max-h-[90vh]">
+              {/* ヘッダー */}
+              <div className="p-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-2xl">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <span>💳</span>
+                    <span>Stripe Checkout (BRL)</span>
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {selectedItems.length} {lang === 'es' ? 'ítems seleccionados para pago' : 'itens selecionados para pagamento'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowBrlBatchPaymentModal(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 font-bold transition cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* コンテンツ */}
+              <div className="flex-1 overflow-y-auto p-5 font-sans">
+                {/* 金額サマリー */}
+                <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-indigo-50 border border-emerald-100 flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
+                      {lang === 'es' ? 'Total a Pagar' : 'Total a Pagar'}
+                    </p>
+                    <p className="text-2xl font-black text-indigo-600">
+                      ${Math.round(totalUsd).toLocaleString('en-US')} USD
+                    </p>
+                    <p className="text-sm font-bold text-emerald-600">
+                      ≈ R$ {totalBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BRL
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-semibold text-gray-500 bg-white px-2.5 py-1 rounded-full border shadow-sm">
+                      1 USD = R$ {brlRate.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 決済方法選択タブ */}
+                <div className="grid grid-cols-2 gap-1 bg-gray-100 p-1 rounded-xl mb-5">
+                  <button
+                    type="button"
+                    onClick={() => setBrlPaymentMethod('pix')}
+                    className={`py-2 px-1 text-center rounded-lg font-bold text-xs sm:text-sm transition cursor-pointer ${
+                      brlPaymentMethod === 'pix'
+                        ? 'bg-white text-emerald-600 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-800'
+                    }`}
+                  >
+                    ❖ PIX
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBrlPaymentMethod('card')}
+                    className={`py-2 px-1 text-center rounded-lg font-bold text-xs sm:text-sm transition cursor-pointer ${
+                      brlPaymentMethod === 'card'
+                        ? 'bg-white text-indigo-600 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-800'
+                    }`}
+                  >
+                    💳 Cartão (Crédito / Débito)
+                  </button>
+                </div>
+
+                {/* 各決済方法の説明・プレビュー */}
+                {brlPaymentMethod === 'pix' ? (
+                  <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 space-y-3 text-xs">
+                    <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                      <span>❖</span>
+                      <span>Pagamento via PIX (Stripe)</span>
+                    </div>
+                    <p className="text-gray-600 leading-relaxed">
+                      {lang === 'es'
+                        ? 'Al hacer clic en el botón de abajo, se generará el código QR dinámico de PIX para completar su pago al instante.'
+                        : 'Ao clicar no botão abaixo, será gerado o QR Code dinâmico do PIX para concluir seu pagamento instantaneamente.'}
+                    </p>
+                    <div className="p-3 bg-white rounded-lg border text-gray-500 text-[11px]">
+                      • Processamento instantâneo (24/7)<br />
+                      • Confirmação automática no sistema
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 space-y-3 text-xs">
+                    <div className="flex items-center gap-2 text-indigo-800 font-bold text-sm">
+                      <span>💳</span>
+                      <span>Cartão de Crédito ou Débito (Stripe)</span>
+                    </div>
+                    <p className="text-gray-600 leading-relaxed">
+                      {lang === 'es'
+                        ? 'Pago seguro con tarjeta de crédito/débito a través de Stripe Checkout.'
+                        : 'Pagamento seguro com cartão de crédito/débito via Stripe Checkout.'}
+                    </p>
+                    <div className="p-3 bg-white rounded-lg border text-gray-500 text-[11px]">
+                      • Cartões aceitos: Visa, Mastercard, Elo, Hipercard<br />
+                      • Criptografia de ponta a ponta (SSL/TLS)
+                    </div>
+                  </div>
+                )}
+
+                {/* 選択された商品リスト */}
+                <div className="mt-5">
+                  <h4 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                    {lang === 'es' ? 'Ítems en este pago:' : 'Itens neste pagamento:'}
+                  </h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    {selectedItems.map((item) => {
+                      const price = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0));
+                      return (
+                        <div key={item.id} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg text-xs border">
+                          <span className="font-semibold text-gray-800 line-clamp-1 flex-1 mr-2">
+                            {item.productTitle}
+                          </span>
+                          <span className="font-bold text-indigo-600 whitespace-nowrap">
+                            ${price} USD
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* フッターアクションボタン */}
+              <div className="p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    alert(
+                      lang === 'es'
+                        ? '✨ [Modo de Prueba / Presets] La interfaz de pago unificado de Stripe está lista. Una vez conectada la API Key de Stripe, el pago en BRL (PIX/Cartón) procesará automáticamente los ítems y actualizará el estado de la cuenta.'
+                        : '✨ [Modo de Teste / Presets] A interface de pagamento unificado da Stripe está pronta! Assim que a chave API da Stripe for conectada, o pagamento em BRL (PIX/Cartão) processará os itens e atualizará o status da conta automaticamente.'
+                    );
+                  }}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer"
+                >
+                  <span>✨</span>
+                  <span>
+                    {lang === 'es'
+                      ? `Proceder al Pago Stripe (R$ ${totalBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
+                      : `Ir para Pagamento Stripe (R$ ${totalBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 利用規約同意モーダル */}
       {showTermsModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 overflow-y-auto">
