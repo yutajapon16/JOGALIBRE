@@ -2407,7 +2407,7 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-1">
                             <span className="text-xs text-gray-500 font-medium">日本支払額:</span>
                             <span className="text-base font-bold text-indigo-600">
-                              ${japanAmount.toLocaleString('en-US')}
+                              $ {japanAmount.toLocaleString('en-US')}
                             </span>
                           </div>
                         </div>
@@ -2446,7 +2446,7 @@ export default function AdminDashboard() {
                       <div className="mb-2 h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm">
                         <span className="text-xs text-gray-500 font-medium">落札金額:</span>
                         <span className="text-base font-bold text-green-800">
-                          ${Math.round(request.finalPrice || 0).toLocaleString('en-US')}
+                          $ {Math.round(request.finalPrice || 0).toLocaleString('en-US')}
                         </span>
                       </div>
                     )}
@@ -2456,7 +2456,7 @@ export default function AdminDashboard() {
                         <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-base font-bold text-blue-700">
-                            ${Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                            $ {Math.round(request.counterOffer || 0).toLocaleString('en-US')}
                           </span>
                         </div>
                       </div>
@@ -2466,7 +2466,7 @@ export default function AdminDashboard() {
                       <div className="mb-2 h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between w-full">
                         <span className="text-xs text-gray-500 font-medium">顧客からのカウンターオファー:</span>
                         <span className="text-base font-bold text-purple-700">
-                          ${Math.round(request.customerCounterOffer).toLocaleString('en-US')}
+                          $ {Math.round(request.customerCounterOffer).toLocaleString('en-US')}
                         </span>
                       </div>
                     )}
@@ -2760,25 +2760,25 @@ export default function AdminDashboard() {
                     <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                       <span className="text-xs font-bold text-indigo-500">合計金額</span>
                       <span className="text-base font-black text-indigo-600">
-                        ${Math.round(summaryTotal).toLocaleString('en-US')}
+                        $ {Math.round(summaryTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                     <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                       <span className="text-xs font-bold text-red-500">未入金額</span>
                       <span className="text-base font-black text-red-600">
-                        ${Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
+                        $ {Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                     <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                       <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額</span>
                       <span className="text-base font-black text-black font-sans">
-                        ${Math.round(localCostTotal).toLocaleString('en-US')}
+                        $ {Math.round(localCostTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                     <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                       <span className="text-xs font-bold text-red-500 font-sans">現地費用未入金額</span>
                       <span className="text-base font-black text-red-600 font-sans">
-                        ${Math.round(unpaidLocalCostTotal).toLocaleString('en-US')}
+                        $ {Math.round(unpaidLocalCostTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                   </div>
@@ -3082,7 +3082,7 @@ export default function AdminDashboard() {
                                 </div>
                               </label>
                               <span className={`text-base font-bold whitespace-nowrap ${item.cancelledAt || item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
-                                ${Math.round(item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
+                                $ {Math.round(item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed
                                   ? item.customerCounterOffer
                                   : (item.counterOffer || item.maxBid || 0))).toLocaleString('en-US')}
                               </span>
@@ -3112,7 +3112,7 @@ export default function AdminDashboard() {
                                     )}
                                   </label>
                                   <span className={`text-base font-bold ${item.paid_japan ? 'text-red-400 line-through' : 'text-red-600'}`}>
-                                    ${Math.round(japanSendAmount).toLocaleString('en-US')}
+                                    $ {Math.round(japanSendAmount).toLocaleString('en-US')}
                                   </span>
                                 </div>
                               );
@@ -3193,11 +3193,11 @@ export default function AdminDashboard() {
                 <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額</span>
                 <span className="text-base font-bold flex items-center gap-1.5">
                   <span className="text-red-600">
-                    ${Math.round(customersList.reduce((sum, c) => sum + c.unpaidAmount, 0)).toLocaleString('en-US')}
+                    $ {Math.round(customersList.reduce((sum, c) => sum + c.unpaidAmount, 0)).toLocaleString('en-US')}
                   </span>
                   <span className="text-gray-400">/</span>
                   <span className="text-green-600">
-                    ${Math.round(customersList.reduce((sum, c) => sum + c.paidAmount, 0)).toLocaleString('en-US')}
+                    $ {Math.round(customersList.reduce((sum, c) => sum + c.paidAmount, 0)).toLocaleString('en-US')}
                   </span>
                 </span>
               </div>
@@ -3276,7 +3276,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center">
                           <div className="flex items-center justify-center gap-2">
-                            <span className="font-bold text-gray-900">${customer.depositAmount}</span>
+                            <span className="font-bold text-gray-900">$ {customer.depositAmount}</span>
                             {customer.depositConfirmedAt ? (
                               <span className="inline-block px-2 py-0.5 bg-green-100 text-green-800 rounded text-[10px] font-semibold">
                                 確認済
@@ -3290,13 +3290,13 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-right">
                           <div className="font-bold text-red-600">
-                            ${Math.round(customer.unpaidAmount).toLocaleString('en-US')}
+                            $ {Math.round(customer.unpaidAmount).toLocaleString('en-US')}
                           </div>
                           <div className="text-xs text-gray-500">({customer.unpaidCount} 件)</div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-right">
                           <div className="font-bold text-green-600">
-                            ${Math.round(customer.paidAmount).toLocaleString('en-US')}
+                            $ {Math.round(customer.paidAmount).toLocaleString('en-US')}
                           </div>
                           <div className="text-xs text-gray-500">({customer.paidCount} 件)</div>
                         </td>
@@ -3353,11 +3353,11 @@ export default function AdminDashboard() {
                 <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額（管理顧客分）</span>
                 <span className="text-base font-bold flex items-center gap-1.5">
                   <span className="text-red-600">
-                    ${Math.round(agentsList.reduce((sum, a) => sum + a.unpaidAmount, 0)).toLocaleString('en-US')}
+                    $ {Math.round(agentsList.reduce((sum, a) => sum + a.unpaidAmount, 0)).toLocaleString('en-US')}
                   </span>
                   <span className="text-gray-400">/</span>
                   <span className="text-green-600">
-                    ${Math.round(agentsList.reduce((sum, a) => sum + a.paidAmount, 0)).toLocaleString('en-US')}
+                    $ {Math.round(agentsList.reduce((sum, a) => sum + a.paidAmount, 0)).toLocaleString('en-US')}
                   </span>
                 </span>
               </div>
@@ -3365,11 +3365,11 @@ export default function AdminDashboard() {
                 <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額（AGT分）</span>
                 <span className="text-base font-bold flex items-center gap-1.5">
                   <span className="text-red-600">
-                    ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfUnpaidAmount || 0), 0)).toLocaleString('en-US')}
+                    $ {Math.round(agentsList.reduce((sum, a) => sum + (a.selfUnpaidAmount || 0), 0)).toLocaleString('en-US')}
                   </span>
                   <span className="text-gray-400">/</span>
                   <span className="text-green-600">
-                    ${Math.round(agentsList.reduce((sum, a) => sum + (a.selfPaidAmount || 0), 0)).toLocaleString('en-US')}
+                    $ {Math.round(agentsList.reduce((sum, a) => sum + (a.selfPaidAmount || 0), 0)).toLocaleString('en-US')}
                   </span>
                 </span>
               </div>
@@ -3508,7 +3508,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center">
                           <div className="flex items-center justify-center gap-2">
-                            <span className="font-bold text-gray-900">${agent.depositAmount}</span>
+                            <span className="font-bold text-gray-900">$ {agent.depositAmount}</span>
                             {agent.depositConfirmedAt ? (
                               <span className="inline-block px-2 py-0.5 bg-green-100 text-green-800 rounded text-[10px] font-semibold">
                                 確認済
@@ -3522,13 +3522,13 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-right">
                           <div className="font-bold text-red-600">
-                            ${Math.round(agent.selfUnpaidAmount || 0).toLocaleString('en-US')}
+                            $ {Math.round(agent.selfUnpaidAmount || 0).toLocaleString('en-US')}
                           </div>
                           <div className="text-xs text-gray-500">({agent.selfUnpaidCount || 0} 件)</div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-right">
                           <div className="font-bold text-green-600">
-                            ${Math.round(agent.selfPaidAmount || 0).toLocaleString('en-US')}
+                            $ {Math.round(agent.selfPaidAmount || 0).toLocaleString('en-US')}
                           </div>
                           <div className="text-xs text-gray-500">({agent.selfPaidCount || 0} 件)</div>
                         </td>
@@ -3870,13 +3870,13 @@ export default function AdminDashboard() {
                       <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                         <span className="text-xs font-bold text-indigo-500">合計金額 USD</span>
                         <span className="text-base font-black text-indigo-600">
-                          ${Math.round(currentFilteredTotalUsd).toLocaleString('en-US')}
+                          $ {Math.round(currentFilteredTotalUsd).toLocaleString('en-US')}
                         </span>
                       </div>
                       <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                         <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額 USD</span>
                         <span className="text-base font-black text-black font-sans">
-                          ${Math.round(currentFilteredTotalLocalCostUsd).toLocaleString('en-US')}
+                          $ {Math.round(currentFilteredTotalLocalCostUsd).toLocaleString('en-US')}
                         </span>
                       </div>
                     </div>
@@ -3965,7 +3965,7 @@ export default function AdminDashboard() {
                       <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                         <span className="text-xs font-bold text-gray-500 font-sans">現地費用合計金額 USD</span>
                         <span className="text-base font-black text-black font-sans">
-                          ${Math.round(currentFilteredTotalLocalCostUsd).toLocaleString('en-US')}
+                          $ {Math.round(currentFilteredTotalLocalCostUsd).toLocaleString('en-US')}
                         </span>
                       </div>
                       <div className={`bg-white border ${isLocalCostNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
@@ -4392,7 +4392,7 @@ export default function AdminDashboard() {
                                 </div>
                               </div>
                               <span className={`text-base font-bold whitespace-nowrap ${item.cancelledAt || item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
-                                ${totalSalePrice.toLocaleString('en-US')}
+                                $ {totalSalePrice.toLocaleString('en-US')}
                               </span>
                             </div>
 
@@ -4413,7 +4413,7 @@ export default function AdminDashboard() {
                                   )}
                                 </div>
                                 <span className={`text-base font-bold ${item.paid_japan ? 'text-red-400 line-through' : 'text-red-600'}`}>
-                                  ${Math.round(japanSendAmount).toLocaleString('en-US')}
+                                  $ {Math.round(japanSendAmount).toLocaleString('en-US')}
                                 </span>
                               </div>
                             )}
