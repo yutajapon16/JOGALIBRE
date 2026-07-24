@@ -2367,7 +2367,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-1">
                         <span className="text-xs text-gray-500 font-medium">希望入札額:</span>
                         <span className="text-base font-bold text-indigo-600">
-                          ${Math.round(request.maxBid || 0).toLocaleString('en-US')}
+                          $ {Math.round(request.maxBid || 0).toLocaleString('en-US')}
                         </span>
                       </div>
                       <button
@@ -3190,7 +3190,7 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額</span>
+                <span className="text-xs font-bold text-gray-500">未入金 / 入金済</span>
                 <span className="text-base font-bold flex items-center gap-1.5">
                   <span className="text-red-600">
                     $ {Math.round(customersList.reduce((sum, c) => sum + c.unpaidAmount, 0)).toLocaleString('en-US')}
@@ -3350,7 +3350,7 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額（管理顧客分）</span>
+                <span className="text-xs font-bold text-gray-500">未入金 / 入金済（管理顧客）</span>
                 <span className="text-base font-bold flex items-center gap-1.5">
                   <span className="text-red-600">
                     $ {Math.round(agentsList.reduce((sum, a) => sum + a.unpaidAmount, 0)).toLocaleString('en-US')}
@@ -3362,7 +3362,7 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                <span className="text-xs font-bold text-gray-500">未入金額 / 入金済総額（AGT分）</span>
+                <span className="text-xs font-bold text-gray-500">未入金 / 入金済（AGT）</span>
                 <span className="text-base font-bold flex items-center gap-1.5">
                   <span className="text-red-600">
                     $ {Math.round(agentsList.reduce((sum, a) => sum + (a.selfUnpaidAmount || 0), 0)).toLocaleString('en-US')}
@@ -4529,7 +4529,7 @@ export default function AdminDashboard() {
             <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between mb-4">
               <span className="text-sm text-gray-500 font-medium">顧客のオファー:</span>
               <span className="text-base font-bold text-indigo-600">
-                ${Math.round(selectedRequest.customerCounterOffer || selectedRequest.maxBid || 0).toLocaleString('en-US')}
+                $ {Math.round(selectedRequest.customerCounterOffer || selectedRequest.maxBid || 0).toLocaleString('en-US')}
               </span>
             </div>
 

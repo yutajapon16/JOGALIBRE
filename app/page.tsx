@@ -4584,21 +4584,21 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* 金額表示ブロック (指定フォーマット: $ 310 / R$ 1.570, 右揃え) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-emerald-50/50 p-3.5 rounded-lg border border-emerald-100/80">
-                      <div className="text-right">
-                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5 text-right">
+                    {/* 金額表示ブロック (ラベルと金額を同一行・左揃え) */}
+                    <div className="flex flex-col gap-2.5 bg-emerald-50/50 p-3.5 rounded-lg border border-emerald-100/80">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                           {lang === 'es' ? 'Total Seleccionado (USD)' : 'Total Selecionado (USD)'}
                         </span>
-                        <span className="text-xl sm:text-2xl font-black text-indigo-700 block text-right">
+                        <span className="text-xl sm:text-2xl font-black text-indigo-700">
                           $ {formatUsdCurrency(totalUsd)}
                         </span>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5 text-right">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                           {lang === 'es' ? 'Total a Pagar en BRL' : 'Total a Pagar em BRL'}
                         </span>
-                        <span className="text-xl sm:text-2xl font-black text-emerald-700 block text-right">
+                        <span className="text-xl sm:text-2xl font-black text-emerald-700">
                           R$ {formatBrlCurrency(totalBrl)}
                         </span>
                       </div>
