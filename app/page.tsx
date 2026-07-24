@@ -7422,7 +7422,15 @@ export default function Home() {
           return sum + price;
         }, 0);
         const brlRate = (exchangeRates && exchangeRates['BRL']) ? exchangeRates['BRL'] : 5.65;
-        const totalBrl = totalUsd * brlRate;
+        // サマリーカードと同じBRL金額算出方式（個々のアイテムを10の位で繰り上げて合計）
+        const totalBrl = selectedItems.reduce((sum, item) => {
+          const price = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0));
+          return sum + Math.ceil((price * brlRate) / 10) * 10;
+        }, 0);
+
+        const formatBrlModal = (val: number) => {
+          return val.toLocaleString('pt-BR');
+        };
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -7432,7 +7440,7 @@ export default function Home() {
                 <div>
                   <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                     <span>💳</span>
-                    <span>Stripe Checkout (BRL)</span>
+                    <span>{lang === 'es' ? 'Pago en BRL' : 'Pagamento em BRL'}</span>
                   </h2>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {selectedItems.length} {lang === 'es' ? 'ítems seleccionados para pago' : 'itens selecionados para pagamento'}
@@ -7448,23 +7456,23 @@ export default function Home() {
 
               {/* コンテンツ */}
               <div className="flex-1 overflow-y-auto p-5 font-sans">
-                {/* 金額サマリー */}
-                <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-indigo-50 border border-emerald-100 flex justify-between items-center">
-                  <div>
+                {/* 金額サマリー（ラベル左揃え・金額右揃え1行レイアウト、為替レート非表示） */}
+                <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-indigo-50 border border-emerald-100">
+                  <div className="flex items-center justify-between">
                     <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
-                      {lang === 'es' ? 'Total a Pagar' : 'Total a Pagar'}
+                      Total a Pagar em BRL
                     </p>
-                    <p className="text-2xl font-black text-indigo-600">
-                      USD ${Math.round(totalUsd).toLocaleString('en-US')}
-                    </p>
-                    <p className="text-sm font-bold text-emerald-600">
-                      BRL R${totalBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <p className="text-2xl font-black text-emerald-600">
+                      R$ {formatBrlModal(totalBrl)}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-semibold text-gray-500 bg-white px-2.5 py-1 rounded-full border shadow-sm">
-                      1 USD = R$ {brlRate.toFixed(2)}
-                    </span>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                      USD
+                    </p>
+                    <p className="text-sm font-bold text-gray-400">
+                      $ {Math.round(totalUsd).toLocaleString('en-US')}
+                    </p>
                   </div>
                 </div>
 
@@ -7484,13 +7492,17 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setBrlPaymentMethod('card')}
-                    className={`py-2 px-1 text-center rounded-lg font-bold text-xs sm:text-sm transition cursor-pointer ${
+                    className={`py-2.5 px-1 text-center rounded-lg font-bold transition cursor-pointer flex items-center justify-center gap-1.5 ${
                       brlPaymentMethod === 'card'
                         ? 'bg-white text-indigo-600 shadow-sm'
                         : 'text-gray-500 hover:text-gray-800'
                     }`}
                   >
-                    💳 Cartão (Crédito / Débito)
+                    <span className="text-sm sm:text-base">💳</span>
+                    <span className="flex flex-col leading-tight text-left">
+                      <span className="text-xs sm:text-sm">Cartão</span>
+                      <span className="text-[10px] sm:text-xs font-medium opacity-70">(Crédito / Débito)</span>
+                    </span>
                   </button>
                 </div>
 
@@ -7499,7 +7511,7 @@ export default function Home() {
                   <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 space-y-3 text-xs">
                     <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
                       <span>❖</span>
-                      <span>Pagamento via PIX (Stripe)</span>
+                      <span>Pagamento via PIX</span>
                     </div>
                     <p className="text-gray-600 leading-relaxed">
                       {lang === 'es'
@@ -7515,12 +7527,12 @@ export default function Home() {
                   <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 space-y-3 text-xs">
                     <div className="flex items-center gap-2 text-indigo-800 font-bold text-sm">
                       <span>💳</span>
-                      <span>Cartão de Crédito ou Débito (Stripe)</span>
+                      <span>Cartão de Crédito ou Débito</span>
                     </div>
                     <p className="text-gray-600 leading-relaxed">
                       {lang === 'es'
-                        ? 'Pago seguro con tarjeta de crédito/débito a través de Stripe Checkout.'
-                        : 'Pagamento seguro com cartão de crédito/débito via Stripe Checkout.'}
+                        ? 'Pago seguro con tarjeta de crédito/débito.'
+                        : 'Pagamento seguro com cartão de crédito/débito.'}
                     </p>
                     <div className="p-3 bg-white rounded-lg border text-gray-500 text-[11px]">
                       • Cartões aceitos: Visa, Mastercard, Elo, Hipercard<br />
@@ -7543,7 +7555,7 @@ export default function Home() {
                             {item.productTitle}
                           </span>
                           <span className="font-bold text-indigo-600 whitespace-nowrap">
-                            ${price} USD
+                            $ {Math.round(price).toLocaleString('en-US')}
                           </span>
                         </div>
                       );
@@ -7559,17 +7571,16 @@ export default function Home() {
                   onClick={() => {
                     alert(
                       lang === 'es'
-                        ? '✨ [Modo de Prueba / Presets] La interfaz de pago unificado de Stripe está lista. Una vez conectada la API Key de Stripe, el pago en BRL (PIX/Cartón) procesará automáticamente los ítems y actualizará el estado de la cuenta.'
-                        : '✨ [Modo de Teste / Presets] A interface de pagamento unificado da Stripe está pronta! Assim que a chave API da Stripe for conectada, o pagamento em BRL (PIX/Cartão) processará os itens e atualizará o status da conta automaticamente.'
+                        ? '✨ [Modo de Prueba / Presets] La interfaz de pago unificado está lista. Una vez conectada la API Key, el pago en BRL (PIX/Cartón) procesará automáticamente los ítems y actualizará el estado de la cuenta.'
+                        : '✨ [Modo de Teste / Presets] A interface de pagamento unificado está pronta! Assim que a chave API for conectada, o pagamento em BRL (PIX/Cartão) processará os itens e atualizará o status da conta automaticamente.'
                     );
                   }}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer"
                 >
-                  <span>✨</span>
                   <span>
                     {lang === 'es'
-                      ? `Proceder al Pago Stripe (R$ ${totalBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
-                      : `Ir para Pagamento Stripe (R$ ${totalBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
+                      ? `Proceder al Pago (R$ ${formatBrlModal(totalBrl)})`
+                      : `Ir para Pagamento (R$ ${formatBrlModal(totalBrl)})`}
                   </span>
                 </button>
               </div>
