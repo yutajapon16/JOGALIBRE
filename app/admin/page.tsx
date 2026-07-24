@@ -276,16 +276,30 @@ export default function AdminDashboard() {
   const [depositFilterMonth, setDepositFilterMonth] = useState<string>('all');
 
   // 入金登録フォーム用および編集モーダル用のB001紐づき・ブラジルAGT判定
-  const selectedCustInfoForForm = customersList.find(c => c.customerId === depositForm.customerId);
-  const isB001LinkedForForm = selectedCustInfoForForm?.agentCustomerId === 'B001';
-  const isBrasilAgentForForm = selectedCustInfoForForm?.customerId?.startsWith('A') && 
+  const selectedCustInfoForForm = customersList.find(c => c.customerId === depositForm.customerId) || agentsList.find(a => a.customerId === depositForm.customerId);
+  const parentAgentForForm = selectedCustInfoForForm?.agentCustomerId ? agentsList.find(a => a.customerId === selectedCustInfoForForm.agentCustomerId) : null;
+  const isB001LinkedForForm = selectedCustInfoForForm?.customerId === 'B001' || selectedCustInfoForForm?.agentCustomerId === 'B001';
+  const isBrasilAgentForForm = 
+    (selectedCustInfoForForm?.customerId?.startsWith('A') && 
+      ((selectedCustInfoForForm?.country || '').trim().toLowerCase() === 'brasil' || 
+       (selectedCustInfoForForm?.country || '').trim().toLowerCase() === 'brazil')) ||
+    (parentAgentForForm?.customerId?.startsWith('A') &&
+      ((parentAgentForForm?.country || '').trim().toLowerCase() === 'brasil' || 
+       (parentAgentForForm?.country || '').trim().toLowerCase() === 'brazil')) ||
     ((selectedCustInfoForForm?.country || '').trim().toLowerCase() === 'brasil' || 
      (selectedCustInfoForForm?.country || '').trim().toLowerCase() === 'brazil');
   const isB001LinkedOrBrasilForForm = isB001LinkedForForm || isBrasilAgentForForm;
 
-  const selectedCustInfoForEdit = editingDeposit ? customersList.find(c => c.customerId === editingDeposit.customer_id) : null;
-  const isB001LinkedForEdit = selectedCustInfoForEdit?.agentCustomerId === 'B001';
-  const isBrasilAgentForEdit = selectedCustInfoForEdit?.customerId?.startsWith('A') && 
+  const selectedCustInfoForEdit = editingDeposit ? (customersList.find(c => c.customerId === editingDeposit.customer_id) || agentsList.find(a => a.customerId === editingDeposit.customer_id)) : null;
+  const parentAgentForEdit = selectedCustInfoForEdit?.agentCustomerId ? agentsList.find(a => a.customerId === selectedCustInfoForEdit.agentCustomerId) : null;
+  const isB001LinkedForEdit = selectedCustInfoForEdit?.customerId === 'B001' || selectedCustInfoForEdit?.agentCustomerId === 'B001';
+  const isBrasilAgentForEdit = 
+    (selectedCustInfoForEdit?.customerId?.startsWith('A') && 
+      ((selectedCustInfoForEdit?.country || '').trim().toLowerCase() === 'brasil' || 
+       (selectedCustInfoForEdit?.country || '').trim().toLowerCase() === 'brazil')) ||
+    (parentAgentForEdit?.customerId?.startsWith('A') &&
+      ((parentAgentForEdit?.country || '').trim().toLowerCase() === 'brasil' || 
+       (parentAgentForEdit?.country || '').trim().toLowerCase() === 'brazil')) ||
     ((selectedCustInfoForEdit?.country || '').trim().toLowerCase() === 'brasil' || 
      (selectedCustInfoForEdit?.country || '').trim().toLowerCase() === 'brazil');
   const isB001LinkedOrBrasilForEdit = isB001LinkedForEdit || isBrasilAgentForEdit;
