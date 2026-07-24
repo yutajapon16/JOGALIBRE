@@ -4542,11 +4542,17 @@ export default function Home() {
                 return sum + price;
               }, 0);
               const brlRate = (exchangeRates && exchangeRates['BRL']) ? exchangeRates['BRL'] : 5.65;
-              const totalBrl = totalUsd * brlRate;
+
+              // BRL金額算出：個々のアイテムを10の位で繰り上げて合計
+              const totalBrl = selectedItems.reduce((sum, item) => {
+                const price = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0));
+                return sum + Math.ceil((price * brlRate) / 10) * 10;
+              }, 0);
+
               const allSelected = unpaidItems.length > 0 && selectedBrlItemIds.length === unpaidItems.length;
 
               const formatBrlCurrency = (val: number) => {
-                return val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return val.toLocaleString('pt-BR');
               };
 
               const formatUsdCurrency = (val: number) => {
@@ -4556,16 +4562,8 @@ export default function Home() {
               return (
                 <div className="bg-white rounded-xl shadow-md p-4 sm:p-5 mb-6 border border-emerald-200 font-sans">
                   <div className="flex flex-col gap-4">
-                    {/* ヘッダータイトル・選択数 */}
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-emerald-600 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wide">
-                          Stripe Checkout (BRL)
-                        </span>
-                        <span className="text-xs font-bold text-gray-500">
-                          {selectedBrlItemIds.length} / {unpaidItems.length} {lang === 'es' ? 'ítems seleccionados' : 'itens selecionados'}
-                        </span>
-                      </div>
+                    {/* ヘッダー: 全選択/全解除ボタン ＋ 右側に件数表示を1行で配置 */}
+                    <div className="flex items-center gap-3 border-b border-gray-100 pb-3 flex-wrap">
                       {unpaidItems.length > 0 && (
                         <button
                           type="button"
@@ -4576,23 +4574,26 @@ export default function Home() {
                               setSelectedBrlItemIds(unpaidItems.map(i => i.id));
                             }
                           }}
-                          className="text-xs font-bold text-emerald-700 hover:text-emerald-800 underline cursor-pointer"
+                          className="px-3 py-1.5 border border-emerald-600 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-xs font-bold transition cursor-pointer shrink-0"
                         >
                           {allSelected
                             ? (lang === 'es' ? 'Deseleccionar todo' : 'Desmarcar todos')
                             : (lang === 'es' ? 'Seleccionar todo' : 'Selecionar todos')}
                         </button>
                       )}
+                      <span className="text-xs font-bold text-gray-600">
+                        {selectedBrlItemIds.length}/{unpaidItems.length} {lang === 'es' ? 'ítems seleccionados' : 'itens selecionados'}
+                      </span>
                     </div>
 
-                    {/* 金額表示ブロック (指定フォーマット: USD $1,000 / BRL R$5.000,50) */}
+                    {/* 金額表示ブロック (指定フォーマット: $310 / R$1.570) */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-emerald-50/50 p-3.5 rounded-lg border border-emerald-100/80">
                       <div>
                         <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5">
                           {lang === 'es' ? 'Total Seleccionado (USD)' : 'Total Selecionado (USD)'}
                         </span>
                         <span className="text-xl sm:text-2xl font-black text-indigo-700">
-                          USD ${formatUsdCurrency(totalUsd)}
+                          ${formatUsdCurrency(totalUsd)}
                         </span>
                       </div>
                       <div>
@@ -4600,17 +4601,13 @@ export default function Home() {
                           {lang === 'es' ? 'Total a Pagar en BRL' : 'Total a Pagar em BRL'}
                         </span>
                         <span className="text-xl sm:text-2xl font-black text-emerald-700">
-                          BRL R${formatBrlCurrency(totalBrl)}
+                          R${formatBrlCurrency(totalBrl)}
                         </span>
                       </div>
                     </div>
 
-                    {/* レート情報と一括決済ボタン */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
-                      <span className="text-xs text-gray-500 font-medium">
-                        {lang === 'es' ? 'Tipo de cambio:' : 'Taxa de câmbio:'} 1 USD = R$ {brlRate.toFixed(2)} (BRL)
-                      </span>
-
+                    {/* レート表示なし、一括決済ボタン */}
+                    <div className="flex justify-end pt-1">
                       <button
                         type="button"
                         disabled={selectedBrlItemIds.length === 0}
