@@ -41,6 +41,9 @@ export default function AdminDashboard() {
   const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
   const [finalPriceInput, setFinalPriceInput] = useState('');
   const [totalJpyInput, setTotalJpyInput] = useState('');
+  const [wonPriceJpyInput, setWonPriceJpyInput] = useState('');
+  const [wonShippingJpyInput, setWonShippingJpyInput] = useState('');
+  const [wonFobJpyInput, setWonFobJpyInput] = useState('');
   const [exchangeRate, setExchangeRate] = useState(150);
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({ JPY: 150, BRL: 5.6, PYG: 7500 });
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
@@ -2593,7 +2596,11 @@ export default function AdminDashboard() {
                               ? (request.counterOffer || request.maxBid || 0)
                               : (request.customerCounterOffer || request.counterOffer || request.maxBid || 0);
                             setFinalPriceInput(Math.round(suggestedPrice).toString());
-                            setTotalJpyInput((request.total_jpy || '').toString());
+                            const defaultShipping = request.productUrl?.includes('mercari') ? 0 : 1500;
+                            const defaultFob = request.productUrl?.includes('mercari') ? 500 : 1500;
+                            setWonPriceJpyInput((request.productPrice || 0).toString());
+                            setWonShippingJpyInput(defaultShipping.toString());
+                            setWonFobJpyInput(defaultFob.toString());
                             setActionType('won');
                           }}
                           className="w-full sm:flex-1 bg-green-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
@@ -4674,17 +4681,49 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600 font-semibold">落札合計金額 (JPY):</span>
+                <span className="text-sm text-gray-600 font-semibold">落札金額 (JPY):</span>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">¥</span>
                   <input
                     type="number"
-                    value={totalJpyInput}
-                    onChange={(e) => setTotalJpyInput(e.target.value)}
-                    className="w-36 h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-bold text-indigo-600 text-right focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white"
+                    value={wonPriceJpyInput}
+                    onChange={(e) => setWonPriceJpyInput(e.target.value)}
+                    className="w-36 h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-bold text-gray-800 text-right focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white"
                     placeholder="0"
                   />
                 </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 font-semibold">送料 (JPY):</span>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">¥</span>
+                  <input
+                    type="number"
+                    value={wonShippingJpyInput}
+                    onChange={(e) => setWonShippingJpyInput(e.target.value)}
+                    className="w-36 h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-bold text-gray-800 text-right focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 font-semibold">FOB費用 (JPY):</span>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">¥</span>
+                  <input
+                    type="number"
+                    value={wonFobJpyInput}
+                    onChange={(e) => setWonFobJpyInput(e.target.value)}
+                    className="w-36 h-12 border border-gray-300 rounded-lg pl-7 pr-3 py-0 text-base font-bold text-gray-800 text-right focus:ring-2 focus:ring-indigo-500 outline-none box-border bg-white"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-between items-center bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                <span className="text-sm text-indigo-900 font-bold">落札合計金額 (JPY):</span>
+                <span className="text-lg font-black text-indigo-700">
+                  ¥ {((parseFloat(wonPriceJpyInput) || 0) + (parseFloat(wonShippingJpyInput) || 0) + (parseFloat(wonFobJpyInput) || 0)).toLocaleString()}
+                </span>
               </div>
               <p className="text-[10px] text-gray-500 text-right italic leading-relaxed">
                 ※入力された日本円金額は、B001紐づき顧客やブラジルエージェントの正確な日本支払額の計算に利用されます。
@@ -4698,6 +4737,9 @@ export default function AdminDashboard() {
                   setActionType(null);
                   setFinalPriceInput('');
                   setTotalJpyInput('');
+                  setWonPriceJpyInput('');
+                  setWonShippingJpyInput('');
+                  setWonFobJpyInput('');
                 }}
                 className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
               >
@@ -4707,7 +4749,7 @@ export default function AdminDashboard() {
                 onClick={() => {
                   if (selectedRequest) {
                     const price = parseFloat(finalPriceInput);
-                    const totalJpy = totalJpyInput.trim() ? parseFloat(totalJpyInput) : undefined;
+                    const totalJpy = (parseFloat(wonPriceJpyInput) || 0) + (parseFloat(wonShippingJpyInput) || 0) + (parseFloat(wonFobJpyInput) || 0);
                     if (isNaN(price)) {
                       alert('有効な金額を入力してください');
                       return;
