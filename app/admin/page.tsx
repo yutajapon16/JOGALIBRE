@@ -2596,8 +2596,8 @@ export default function AdminDashboard() {
                               ? (request.counterOffer || request.maxBid || 0)
                               : (request.customerCounterOffer || request.counterOffer || request.maxBid || 0);
                             setFinalPriceInput(Math.round(suggestedPrice).toString());
-                            const defaultShipping = request.productUrl?.includes('mercari') ? 0 : 1500;
-                            const defaultFob = request.productUrl?.includes('mercari') ? 500 : 1500;
+                            const defaultShipping = calculateDefaultShippingCost(request.productTitle, request.productUrl);
+                            const defaultFob = calculateDefaultFobCost(request.productTitle, request.productUrl);
                             setWonPriceJpyInput((request.productPrice || 0).toString());
                             setWonShippingJpyInput(defaultShipping.toString());
                             setWonFobJpyInput(defaultFob.toString());
