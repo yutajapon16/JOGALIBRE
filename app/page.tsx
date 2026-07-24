@@ -4369,85 +4369,6 @@ export default function Home() {
               </a>
             </div>
 
-            {/* B001傘下顧客・ブラジルエージェント向け Stripe一括決済サマリーカード */}
-            {isBrlUser && (() => {
-              const filteredPurchased = getFilteredPurchasedItems();
-              const unpaidItems = filteredPurchased.filter(item => !item.paid && !item.cancelledAt);
-              const selectedItems = unpaidItems.filter(item => selectedBrlItemIds.includes(item.id));
-              const totalUsd = selectedItems.reduce((sum, item) => {
-                const price = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0));
-                return sum + price;
-              }, 0);
-              const brlRate = exchangeRate || 5.65;
-              const totalBrl = totalUsd * brlRate;
-              const allSelected = unpaidItems.length > 0 && selectedBrlItemIds.length === unpaidItems.length;
-
-              return (
-                <div className="mb-6 bg-gradient-to-r from-emerald-50 to-indigo-50 border border-emerald-200 rounded-xl p-4 sm:p-5 shadow-sm font-sans">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          Stripe Checkout (BRL)
-                        </span>
-                        <span className="text-xs text-gray-600 font-semibold">
-                          {selectedBrlItemIds.length} / {unpaidItems.length} {lang === 'es' ? 'ítems seleccionados' : 'itens selecionados'}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-2xl sm:text-3xl font-black text-indigo-600">
-                          ${Math.round(totalUsd).toLocaleString('en-US')} USD
-                        </span>
-                        <span className="text-lg sm:text-xl font-bold text-emerald-600">
-                          ≈ R$ {totalBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BRL
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-gray-500 mt-1">
-                        {lang === 'es' ? 'Tipo de cambio' : 'Taxa de câmbio'}: 1 USD = R$ {brlRate.toFixed(2)} (BRL)
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      {unpaidItems.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (allSelected) {
-                              setSelectedBrlItemIds([]);
-                            } else {
-                              setSelectedBrlItemIds(unpaidItems.map(i => i.id));
-                            }
-                          }}
-                          className="px-3 py-2.5 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 rounded-lg text-xs font-bold transition shadow-sm whitespace-nowrap cursor-pointer"
-                        >
-                          {allSelected
-                            ? (lang === 'es' ? 'Deseleccionar todo' : 'Desmarcar todos')
-                            : (lang === 'es' ? 'Seleccionar todo' : 'Selecionar todos')}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        disabled={selectedBrlItemIds.length === 0}
-                        onClick={() => setShowBrlBatchPaymentModal(true)}
-                        className={`flex-1 sm:flex-initial px-5 py-3 rounded-lg text-sm font-bold shadow-md transition flex items-center justify-center gap-2 whitespace-nowrap ${
-                          selectedBrlItemIds.length > 0
-                            ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 cursor-pointer'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
-                      >
-                        <span>💳</span>
-                        <span>
-                          {lang === 'es'
-                            ? `Pagar Seleccionados (${selectedBrlItemIds.length})`
-                            : `Pagar Selecionados (${selectedBrlItemIds.length})`}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
             {/* 未払い合計金額サマリー */}
             {purchasedItems.length > 0 && (() => {
               const filteredItemsForSummary = getFilteredPurchasedItems();
@@ -4610,6 +4531,108 @@ export default function Home() {
               }
             })()}
             </div>
+
+            {/* B001傘下顧客・ブラジルエージェント向け Stripe一括決済サマリーカード (集計ボックスと商品カードの間の独立カード) */}
+            {isBrlUser && (() => {
+              const filteredPurchased = getFilteredPurchasedItems();
+              const unpaidItems = filteredPurchased.filter(item => !item.paid && !item.cancelledAt);
+              const selectedItems = unpaidItems.filter(item => selectedBrlItemIds.includes(item.id));
+              const totalUsd = selectedItems.reduce((sum, item) => {
+                const price = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0));
+                return sum + price;
+              }, 0);
+              const brlRate = (exchangeRates && exchangeRates['BRL']) ? exchangeRates['BRL'] : 5.65;
+              const totalBrl = totalUsd * brlRate;
+              const allSelected = unpaidItems.length > 0 && selectedBrlItemIds.length === unpaidItems.length;
+
+              const formatBrlCurrency = (val: number) => {
+                return val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              };
+
+              const formatUsdCurrency = (val: number) => {
+                return Math.round(val).toLocaleString('en-US');
+              };
+
+              return (
+                <div className="bg-white rounded-xl shadow-md p-4 sm:p-5 mb-6 border border-emerald-200 font-sans">
+                  <div className="flex flex-col gap-4">
+                    {/* ヘッダータイトル・選択数 */}
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-emerald-600 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wide">
+                          Stripe Checkout (BRL)
+                        </span>
+                        <span className="text-xs font-bold text-gray-500">
+                          {selectedBrlItemIds.length} / {unpaidItems.length} {lang === 'es' ? 'ítems seleccionados' : 'itens selecionados'}
+                        </span>
+                      </div>
+                      {unpaidItems.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (allSelected) {
+                              setSelectedBrlItemIds([]);
+                            } else {
+                              setSelectedBrlItemIds(unpaidItems.map(i => i.id));
+                            }
+                          }}
+                          className="text-xs font-bold text-emerald-700 hover:text-emerald-800 underline cursor-pointer"
+                        >
+                          {allSelected
+                            ? (lang === 'es' ? 'Deseleccionar todo' : 'Desmarcar todos')
+                            : (lang === 'es' ? 'Seleccionar todo' : 'Selecionar todos')}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 金額表示ブロック (指定フォーマット: USD $1,000 / BRL R$5.000,50) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-emerald-50/50 p-3.5 rounded-lg border border-emerald-100/80">
+                      <div>
+                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5">
+                          {lang === 'es' ? 'Total Seleccionado (USD)' : 'Total Selecionado (USD)'}
+                        </span>
+                        <span className="text-xl sm:text-2xl font-black text-indigo-700">
+                          USD ${formatUsdCurrency(totalUsd)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5">
+                          {lang === 'es' ? 'Total a Pagar en BRL' : 'Total a Pagar em BRL'}
+                        </span>
+                        <span className="text-xl sm:text-2xl font-black text-emerald-700">
+                          BRL R${formatBrlCurrency(totalBrl)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* レート情報と一括決済ボタン */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+                      <span className="text-xs text-gray-500 font-medium">
+                        {lang === 'es' ? 'Tipo de cambio:' : 'Taxa de câmbio:'} 1 USD = R$ {brlRate.toFixed(2)} (BRL)
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={selectedBrlItemIds.length === 0}
+                        onClick={() => setShowBrlBatchPaymentModal(true)}
+                        className={`w-full sm:w-auto px-6 py-3 rounded-lg text-sm font-bold shadow-md transition flex items-center justify-center gap-2 ${
+                          selectedBrlItemIds.length > 0
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer active:scale-95'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <span>💳</span>
+                        <span>
+                          {lang === 'es'
+                            ? `Pagar Seleccionados (${selectedBrlItemIds.length})`
+                            : `Pagar Selecionados (${selectedBrlItemIds.length})`}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
 
             {purchasedItems.length === 0 ? (
@@ -4921,12 +4944,32 @@ export default function Home() {
                                     </span>
                                   </>
                                 ) : !item.paid ? (
-                                  <button
-                                    onClick={() => openPaymentModal(item)}
-                                    className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 transition shadow-sm font-sans flex items-center justify-center"
-                                  >
-                                    {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
-                                  </button>
+                                  (isBrlUser || item.agentCustomerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.customerId?.startsWith('A') && (currentUser?.country?.toLowerCase() === 'brasil' || currentUser?.country?.toLowerCase() === 'brazil'))) ? (
+                                    <label className={`flex items-center gap-2 cursor-pointer select-none py-1.5 px-3 rounded-lg border transition-all shadow-sm ${
+                                      selectedBrlItemIds.includes(item.id)
+                                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-extrabold'
+                                        : 'bg-white border-gray-300 hover:border-emerald-400 text-gray-700'
+                                    }`}>
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedBrlItemIds.includes(item.id)}
+                                        onChange={() => toggleBrlItemSelection(item.id)}
+                                        className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                                      />
+                                      <span className="text-xs font-bold font-sans whitespace-nowrap">
+                                        {selectedBrlItemIds.includes(item.id)
+                                          ? (lang === 'es' ? 'Seleccionado para Pagar' : 'Selecionado para Pagamento')
+                                          : (lang === 'es' ? 'Seleccionar para Pagar' : 'Selecionar para Pagamento')}
+                                      </span>
+                                    </label>
+                                  ) : (
+                                    <button
+                                      onClick={() => openPaymentModal(item)}
+                                      className="text-center text-xs text-white font-bold py-1.5 bg-green-600 hover:bg-green-700 rounded px-3 transition shadow-sm font-sans flex items-center justify-center"
+                                    >
+                                      {lang === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
+                                    </button>
+                                  )
                                 ) : (
                                   <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold rounded-full whitespace-nowrap shrink-0 font-sans">
                                     ✓ {lang === 'es' ? 'Pagado' : 'Pago'}{item.paidAt ? ` ${formatDateTime(item.paidAt, 'customer')}` : ''}
@@ -7383,7 +7426,7 @@ export default function Home() {
           const price = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0));
           return sum + price;
         }, 0);
-        const brlRate = exchangeRate || 5.65;
+        const brlRate = (exchangeRates && exchangeRates['BRL']) ? exchangeRates['BRL'] : 5.65;
         const totalBrl = totalUsd * brlRate;
 
         return (
@@ -7417,10 +7460,10 @@ export default function Home() {
                       {lang === 'es' ? 'Total a Pagar' : 'Total a Pagar'}
                     </p>
                     <p className="text-2xl font-black text-indigo-600">
-                      ${Math.round(totalUsd).toLocaleString('en-US')} USD
+                      USD ${Math.round(totalUsd).toLocaleString('en-US')}
                     </p>
                     <p className="text-sm font-bold text-emerald-600">
-                      ≈ R$ {totalBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BRL
+                      BRL R${totalBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div className="text-right">
