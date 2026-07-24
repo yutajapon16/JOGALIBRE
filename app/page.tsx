@@ -2473,7 +2473,7 @@ export default function Home() {
 
   const convertUSDToSelectedCurrency = (usdAmount: number, targetCurrency: string = selectedCurrency) => {
     if (targetCurrency === 'USD') {
-      return `${getCurrencySymbol(targetCurrency)}${Math.round(usdAmount).toLocaleString('en-US')}`;
+      return `${getCurrencySymbol(targetCurrency)} ${Math.round(usdAmount).toLocaleString('en-US')}`;
     }
     const rate = exchangeRates[targetCurrency] || 1;
     const rawConverted = usdAmount * rate;
@@ -4447,7 +4447,7 @@ export default function Home() {
                         {lang === 'es' ? 'Monto Total' : 'Valor Total'}
                       </span>
                       <span className="text-base font-black text-indigo-600">
-                        {convertUSDToSelectedCurrency(summaryTotal)}
+                        $ {Math.round(summaryTotal).toLocaleString('en-US')}
                       </span>
                     </div>
 
@@ -4457,11 +4457,9 @@ export default function Home() {
                         {lang === 'es' ? 'Monto Pendiente Total' : 'Valor Pendente Total'}
                       </span>
                       <span className="text-base font-black text-red-600">
-                        {convertUSDToSelectedCurrency(unpaidSummaryTotal)}
+                        $ {Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
                       </span>
                     </div>
-
-
 
                     {/* 現地費用合計金額 */}
                     <div className="bg-white border border-green-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
@@ -4469,7 +4467,7 @@ export default function Home() {
                         {lang === 'es' ? 'Costo Local Total' : 'Custo Local Total'}
                       </span>
                       <span className="text-base font-black text-black font-sans">
-                        {convertUSDToSelectedCurrency(localCostTotal)}
+                        $ {Math.round(localCostTotal).toLocaleString('en-US')}
                       </span>
                     </div>
 
@@ -4479,7 +4477,7 @@ export default function Home() {
                         {lang === 'es' ? 'Costo Local Pendiente' : 'Custo Local Pendente'}
                       </span>
                       <span className="text-base font-black text-red-600 font-sans">
-                        {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
+                        $ {Math.round(unpaidLocalCostTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                   </div>
@@ -4497,7 +4495,7 @@ export default function Home() {
                         {lang === 'es' ? 'Monto Total' : 'Valor Total'}
                       </span>
                       <span className="text-base font-black text-indigo-600">
-                        {convertUSDToSelectedCurrency(summaryTotal)}
+                        $ {Math.round(summaryTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                     <div className="bg-white border border-red-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
@@ -4505,7 +4503,7 @@ export default function Home() {
                         {lang === 'es' ? 'Monto Pendiente' : 'Valor Pendente'}
                       </span>
                       <span className="text-base font-black text-red-600">
-                        {convertUSDToSelectedCurrency(unpaidSummaryTotal)}
+                        $ {Math.round(unpaidSummaryTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                     {/* 現地費用合計金額 */}
@@ -4514,7 +4512,7 @@ export default function Home() {
                         {lang === 'es' ? 'Costo Local Total' : 'Custo Local Total'}
                       </span>
                       <span className="text-base font-black text-black font-sans">
-                        {convertUSDToSelectedCurrency(localCostTotal)}
+                        $ {Math.round(localCostTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                     {/* 現地費用未入金額 */}
@@ -4523,7 +4521,7 @@ export default function Home() {
                         {lang === 'es' ? 'Costo Local Pendiente' : 'Custo Local Pendente'}
                       </span>
                       <span className="text-base font-black text-red-600 font-sans">
-                        {convertUSDToSelectedCurrency(unpaidLocalCostTotal)}
+                        $ {Math.round(unpaidLocalCostTotal).toLocaleString('en-US')}
                       </span>
                     </div>
                   </div>
@@ -5198,14 +5196,14 @@ export default function Home() {
               }, 0);
 
               const formattedBalanceUsd = isNegativeUsd
-                ? `- $${Math.abs(Math.round(balanceUsd)).toLocaleString('en-US')}`
-                : `$${Math.round(balanceUsd).toLocaleString('en-US')}`;
+                ? `- $ ${Math.abs(Math.round(balanceUsd)).toLocaleString('en-US')}`
+                : `$ ${Math.round(balanceUsd).toLocaleString('en-US')}`;
 
               const localCostBalanceUsd = totalLocalCostDepositsUsd - localCostTotal;
               const isLocalCostNegativeUsd = localCostBalanceUsd < 0;
               const formattedLocalCostBalanceUsd = isLocalCostNegativeUsd
-                ? `- $${Math.abs(Math.round(localCostBalanceUsd)).toLocaleString('en-US')}`
-                : `$${Math.round(localCostBalanceUsd).toLocaleString('en-US')}`;
+                ? `- $ ${Math.abs(Math.round(localCostBalanceUsd)).toLocaleString('en-US')}`
+                : `$ ${Math.round(localCostBalanceUsd).toLocaleString('en-US')}`;
 
               return (
                 <div className="flex flex-col gap-3 mb-6 font-sans">
@@ -5215,7 +5213,7 @@ export default function Home() {
                       {lang === 'es' ? 'Total USD' : 'Total USD'}
                     </span>
                     <span className="text-base font-black text-indigo-600">
-                      ${Math.round(filteredDepositsTotalUsd).toLocaleString('en-US')}
+                      $ {Math.round(filteredDepositsTotalUsd).toLocaleString('en-US')}
                     </span>
                   </div>
 
@@ -5235,7 +5233,7 @@ export default function Home() {
                       {lang === 'es' ? 'Costo Local Total USD' : 'Custo Local Total USD'}
                     </span>
                     <span className="text-base font-black text-black font-sans">
-                      ${Math.round(filteredDepositsTotalLocalCostUsd).toLocaleString('en-US')}
+                      $ {Math.round(filteredDepositsTotalLocalCostUsd).toLocaleString('en-US')}
                     </span>
                   </div>
 
@@ -5317,7 +5315,7 @@ export default function Home() {
                             {isBrl ? 'BRL' : 'USD'}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
-                            {isBrl ? `R$ ${formatBrl(Number(item.amount))}` : `$${Number(item.amount).toLocaleString('en-US')}`}
+                            {isBrl ? `R$ ${formatBrl(Number(item.amount))}` : `$ ${Number(item.amount).toLocaleString('en-US')}`}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
                             {item.deposit_type === '現地費用' ? (lang === 'es' ? 'Costo Local' : 'Custo Local') : (lang === 'es' ? 'Producto' : 'Produto')}
@@ -5326,7 +5324,7 @@ export default function Home() {
                             {paymentMethodNames[item.payment_method] || item.payment_method}
                           </td>
                           <td className={`px-4 py-3 whitespace-nowrap font-bold text-indigo-600 ${(!isBrl || !item.usd_amount) ? 'text-center' : 'text-right'}`}>
-                            {isBrl ? (item.usd_amount ? `$${Number(item.usd_amount).toLocaleString('en-US')}` : '-') : '-'}
+                            {isBrl ? (item.usd_amount ? `$ ${Number(item.usd_amount).toLocaleString('en-US')}` : '-') : '-'}
                           </td>
                         </tr>
                       );
@@ -7146,7 +7144,7 @@ export default function Home() {
                     {lang === 'es' ? 'Monto a Pagar' : 'Valor a Pagar'}
                   </p>
                   <p className="text-2xl font-black text-indigo-600">
-                    ${Math.round(
+                    $ {Math.round(
                       selectedPaymentItem.finalPrice ||
                       (selectedPaymentItem.customerCounterOffer && !selectedPaymentItem.customerCounterOfferUsed ? selectedPaymentItem.customerCounterOffer : (selectedPaymentItem.counterOffer || selectedPaymentItem.maxBid || 0))
                     ).toLocaleString('en-US')}

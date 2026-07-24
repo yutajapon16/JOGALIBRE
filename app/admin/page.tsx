@@ -138,7 +138,7 @@ export default function AdminDashboard() {
 
   const convertUSDToSelectedCurrency = (usdAmount: number, targetCurrency: string = selectedCurrency) => {
     if (targetCurrency === 'USD') {
-      return `${getCurrencySymbol(targetCurrency)}${Math.round(usdAmount).toLocaleString('en-US')}`;
+      return `${getCurrencySymbol(targetCurrency)} ${Math.round(usdAmount).toLocaleString('en-US')}`;
     }
     const rate = exchangeRates[targetCurrency] || 1;
     const rawConverted = usdAmount * rate;
@@ -3937,21 +3937,21 @@ export default function AdminDashboard() {
                   const balance = totalDeposits - totalPurchased;
                   const isNegative = balance < 0;
                   const formattedBalance = isNegative 
-                    ? `- $${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
-                    : `$${Math.round(balance).toLocaleString('en-US')}`;
+                    ? `- $ ${Math.abs(Math.round(balance)).toLocaleString('en-US')}`
+                    : `$ ${Math.round(balance).toLocaleString('en-US')}`;
 
                   const localCostBalance = totalLocalCostDeposits - localCostTotal;
                   const isLocalCostNegative = localCostBalance < 0;
                   const formattedLocalCostBalance = isLocalCostNegative 
-                    ? `- $${Math.abs(Math.round(localCostBalance)).toLocaleString('en-US')}`
-                    : `$${Math.round(localCostBalance).toLocaleString('en-US')}`;
+                    ? `- $ ${Math.abs(Math.round(localCostBalance)).toLocaleString('en-US')}`
+                    : `$ ${Math.round(localCostBalance).toLocaleString('en-US')}`;
 
                   return (
                     <div className="flex flex-col gap-3 mb-6">
                       <div className="bg-white border border-indigo-50 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
                         <span className="text-xs font-bold text-indigo-500">合計金額 USD</span>
                         <span className="text-base font-black text-indigo-600">
-                          ${Math.round(currentFilteredTotalUsd).toLocaleString('en-US')}
+                          $ {Math.round(currentFilteredTotalUsd).toLocaleString('en-US')}
                         </span>
                       </div>
                       <div className={`bg-white border ${isNegative ? 'border-red-100' : 'border-green-100'} rounded-lg h-12 px-3 flex items-center justify-between shadow-sm`}>
@@ -4034,7 +4034,7 @@ export default function AdminDashboard() {
                               {isBrl ? 'BRL' : 'USD'}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-green-600">
-                              {isBrl ? `R$ ${formatBrl(Number(item.amount))}` : `$${Number(item.amount).toLocaleString('en-US')}`}
+                              {isBrl ? `R$ ${formatBrl(Number(item.amount))}` : `$ ${Number(item.amount).toLocaleString('en-US')}`}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-center text-gray-700 font-medium">
                               {item.deposit_type || '商品代金'}
@@ -4047,7 +4047,7 @@ export default function AdminDashboard() {
                               {paymentMethodNames[item.payment_method] || item.payment_method}
                             </td>
                             <td className={`px-4 py-3 whitespace-nowrap font-bold text-indigo-600 ${(!isBrl || !item.usd_amount) ? 'text-center' : 'text-right'}`}>
-                              {isBrl ? (item.usd_amount ? `$${Number(item.usd_amount).toLocaleString('en-US')}` : '-') : '-'}
+                              {isBrl ? (item.usd_amount ? `$ ${Number(item.usd_amount).toLocaleString('en-US')}` : '-') : '-'}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-center">
                               <button
