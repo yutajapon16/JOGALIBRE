@@ -5155,6 +5155,8 @@ export default function Home() {
                         bank: 'Banco',
                         paypal: 'PayPal',
                         usdt: 'USDT',
+                        card: lang === 'es' ? 'Tarjeta' : 'Cartão',
+                        card_brl: lang === 'es' ? 'Tarjeta (BRL)' : 'Cartão (BRL)',
                         pix: 'PIX',
                         pix_brl: 'PIX',
                         cash: lang === 'es' ? 'Efectivo' : 'Dinheiro',

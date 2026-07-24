@@ -664,6 +664,8 @@ export default function AdminDashboard() {
       bank: '銀行',
       paypal: 'PayPal',
       usdt: 'USDT',
+      card: 'カード',
+      card_brl: 'カード (BRL)',
       pix_brl: 'PIX',
       cash_brl: '現金 (BRL)',
       cash: '現金',
@@ -3702,6 +3704,7 @@ export default function AdminDashboard() {
                             return (
                               <>
                                 <option value="pix">PIX</option>
+                                <option value="card">カード</option>
                                 <option value="cash">現金</option>
                                 <option value="bank">銀行</option>
                               </>
@@ -3712,6 +3715,7 @@ export default function AdminDashboard() {
                                 <option value="bank">銀行</option>
                                 <option value="paypal">PayPal</option>
                                 <option value="usdt">USDT</option>
+                                <option value="card">カード</option>
                                 <option value="cash">現金</option>
                               </>
                             );
@@ -4007,6 +4011,8 @@ export default function AdminDashboard() {
                           bank: '銀行',
                           paypal: 'PayPal',
                           usdt: 'USDT',
+                          card: 'カード',
+                          card_brl: 'カード (BRL)',
                           pix_brl: 'PIX',
                           cash_brl: '現金 (BRL)',
                           cash: '現金',
@@ -5011,6 +5017,7 @@ export default function AdminDashboard() {
                         return (
                           <>
                             <option value="pix">PIX</option>
+                            <option value="card">カード</option>
                             <option value="cash">現金</option>
                             <option value="bank">銀行</option>
                           </>
@@ -5021,6 +5028,7 @@ export default function AdminDashboard() {
                             <option value="bank">銀行</option>
                             <option value="paypal">PayPal</option>
                             <option value="usdt">USDT</option>
+                            <option value="card">カード</option>
                             <option value="cash">現金</option>
                           </>
                         );
