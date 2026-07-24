@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
+import { translateTitle } from '@/lib/translate';
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +34,16 @@ export async function POST(request: Request) {
     const deliveryCountry = formData.get('deliveryCountry') as string | null;
     const deliveryCity = formData.get('deliveryCity') as string | null;
     const shippingMethod = formData.get('shippingMethod') as string | null;
+
+    // タイトルの翻訳
+    let productTitleEs = null;
+    let productTitlePt = null;
+    if (productTitle) {
+      [productTitleEs, productTitlePt] = await Promise.all([
+        translateTitle(productTitle, 'es'),
+        translateTitle(productTitle, 'pt')
+      ]);
+    }
     const imageFile = formData.get('image') as File | null;
 
     if (!productTitle || !customerId || !finalPriceVal || !createdAt) {
@@ -120,6 +131,8 @@ export async function POST(request: Request) {
       id: recordId,
       product_id: 'm-' + recordId, // NOT NULL制約を回避するためのダミー商品ID
       product_title: productTitle,
+      product_title_es: productTitleEs,
+      product_title_pt: productTitlePt,
       product_url: productUrl || '', // NOT NULL制約を回避するために空文字を設定
       product_image: productImageUrl || null,
       product_price: finalPrice,

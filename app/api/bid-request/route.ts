@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
+import { translateTitle } from '@/lib/translate';
 
 export async function POST(request: Request) {
   try {
@@ -27,10 +28,22 @@ export async function POST(request: Request) {
     // 顧客の場合は自身のメールアドレスを強制使用
     const finalEmail = isAdmin ? customerEmail : effectiveUser.email;
 
+    // 非同期でタイトルを翻訳 (並列で実行)
+    let productTitleEs = null;
+    let productTitlePt = null;
+    if (productTitle) {
+      [productTitleEs, productTitlePt] = await Promise.all([
+        translateTitle(productTitle, 'es'),
+        translateTitle(productTitle, 'pt')
+      ]);
+    }
+
     const bidRequest = {
       id: Date.now().toString() + Math.floor(1000 + Math.random() * 9000).toString(),
       product_id: productId,
       product_title: productTitle,
+      product_title_es: productTitleEs,
+      product_title_pt: productTitlePt,
       product_url: productUrl,
       product_image: productImage,
       product_price: productPrice,

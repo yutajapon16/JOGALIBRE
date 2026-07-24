@@ -1799,6 +1799,8 @@ export default function Home() {
       const convertedItems = (data.purchasedItems || []).map((item: Record<string, unknown>) => ({
         id: item.id as string,
         productTitle: item.product_title as string,
+        productTitleEs: item.product_title_es as string | null,
+        productTitlePt: item.product_title_pt as string | null,
         productImage: item.product_image as string,
         productUrl: item.product_url as string,
         finalPrice: item.final_price as number,
@@ -1837,12 +1839,17 @@ export default function Home() {
         estimatedArrivalDate: item.estimated_arrival_date as string | null | undefined
       }));
 
-      // 商品タイトルを選択言語に翻訳
-      const titles = convertedItems.map((item: BidRequest) => item.productTitle || '');
-      const translatedTitles = await translateTitles(titles, lang);
-      const itemsWithTranslation = convertedItems.map((item: BidRequest, i: number) => ({
-        ...item,
-        productTitle: translatedTitles[i] || item.productTitle
+      // DBの翻訳結果を優先し、無い場合のみ翻訳APIを叩く
+      const itemsWithTranslation = await Promise.all(convertedItems.map(async (item: any) => {
+        let title = item.productTitle || '';
+        if (lang === 'es') {
+          if (item.productTitleEs) title = item.productTitleEs;
+          else if (title) title = await translateSingleTitle(title, lang);
+        } else if (lang === 'pt' || lang === 'pt-BR') {
+          if (item.productTitlePt) title = item.productTitlePt;
+          else if (title) title = await translateSingleTitle(title, lang);
+        }
+        return { ...item, productTitle: title };
       }));
 
       setPurchasedItems(itemsWithTranslation);
@@ -2573,6 +2580,8 @@ export default function Home() {
         id: req.id as string,
         productId: req.product_id as string,
         productTitle: req.product_title as string,
+        productTitleEs: req.product_title_es as string | null,
+        productTitlePt: req.product_title_pt as string | null,
         productUrl: req.product_url as string,
         productImage: req.product_image as string,
         productPrice: req.product_price,
@@ -2605,12 +2614,17 @@ export default function Home() {
         paid_local_at: req.paid_local_at as string | null | undefined,
       }));
 
-      // 商品タイトルを選択言語に翻訳
-      const titles = convertedRequests.map((req: BidRequest) => req.productTitle || '');
-      const translatedTitles = await translateTitles(titles, lang);
-      const requestsWithTranslation = convertedRequests.map((req: BidRequest, i: number) => ({
-        ...req,
-        productTitle: translatedTitles[i] || req.productTitle
+      // DBの翻訳結果を優先し、無い場合のみ翻訳APIを叩く
+      const requestsWithTranslation = await Promise.all(convertedRequests.map(async (req: any) => {
+        let title = req.productTitle || '';
+        if (lang === 'es') {
+          if (req.productTitleEs) title = req.productTitleEs;
+          else if (title) title = await translateSingleTitle(title, lang);
+        } else if (lang === 'pt' || lang === 'pt-BR') {
+          if (req.productTitlePt) title = req.productTitlePt;
+          else if (title) title = await translateSingleTitle(title, lang);
+        }
+        return { ...req, productTitle: title };
       }));
 
       setMyRequests(requestsWithTranslation);
