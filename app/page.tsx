@@ -2351,13 +2351,16 @@ export default function Home() {
       if (res.ok) {
         // 管理者へ通知
         if (currentUser) {
+          const itemTitle = selectedProduct?.title || bidForm.name || 'リクエスト商品';
+          const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
+          const custName = currentUser.fullName || finalCustomerName;
           fetch('/api/push-send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               sendToAdmins: true,
-              title: 'JOGALIBRE',
-              body: `更新通知： ${currentUser.fullName || finalCustomerName}`,
+              title: `📩 【新規申請】${custName} ${custId}`.trim(),
+              body: `商品: ${itemTitle}${bidForm.maxBid ? `\n希望額: $${bidForm.maxBid}` : ''}`,
               url: '/admin'
             })
           }).catch(e => console.error('Admin push error', e));
@@ -2896,13 +2899,18 @@ export default function Home() {
 
       // 管理者へ通知
       if (currentUser) {
+        const targetReq = myRequests.find(r => r.id === requestId);
+        const itemTitle = targetReq?.productTitle || '対象商品';
+        const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
+        const custName = currentUser.fullName || currentUser.email;
+
         fetch('/api/push-send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sendToAdmins: true,
-            title: 'JOGALIBRE',
-            body: `更新通知： ${currentUser.fullName || currentUser.email}`,
+            title: `💬 【オファー回答】${custName} ${custId}`.trim(),
+            body: `商品: ${itemTitle}\n顧客回答額: $${counterAmount}`,
             url: '/admin'
           })
         }).catch(e => console.error('Admin push error', e));
@@ -2934,13 +2942,18 @@ export default function Home() {
 
       // 管理者へ通知
       if (currentUser) {
+        const targetReq = myRequests.find(r => r.id === requestId);
+        const itemTitle = targetReq?.productTitle || '対象商品';
+        const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
+        const custName = currentUser.fullName || currentUser.email;
+
         fetch('/api/push-send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sendToAdmins: true,
-            title: 'JOGALIBRE',
-            body: `Result Confirm: ${currentUser.fullName || currentUser.email}`,
+            title: `✅ 【結果確認完了】${custName} ${custId}`.trim(),
+            body: `商品: ${itemTitle}${message ? `\nメッセージ: ${message}` : ''}`,
             url: '/admin'
           })
         }).catch(e => console.error('Admin push error', e));

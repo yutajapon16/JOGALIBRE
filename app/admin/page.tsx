@@ -1272,18 +1272,28 @@ export default function AdminDashboard() {
         // プッシュ通知を送信（対象顧客のリクエストを特定）
         const targetRequest = bidRequests.find(r => r.id === id);
         if (targetRequest?.customerEmail) {
-          const statusMessages: Record<string, string> = {
-            approved: 'Solicitud aprobada / Solicitação aprovada',
-            rejected: 'Solicitud rechazada / Solicitação rejeitada',
-            counter_offer: 'Tienes contraoferta / Você tem contraoferta',
-          };
+          const itemTitle = targetRequest.productTitle || 'Item';
+          let notifyTitle = 'Administrador';
+          let notifyBody = `Producto: ${itemTitle}`;
+
+          if (status === 'approved') {
+            notifyTitle = '✅ Solicitud Aprobada';
+            notifyBody = `Producto / Produto: ${itemTitle}\nEstado: Aprobado / Aprovado`;
+          } else if (status === 'rejected') {
+            notifyTitle = '❌ Solicitud Rechazada';
+            notifyBody = `Producto / Produto: ${itemTitle}\nEstado: Rechazado / Rejeitado`;
+          } else if (status === 'counter_offer') {
+            notifyTitle = `💬 Contraoferta: $${counterPriceInput}`;
+            notifyBody = `Producto / Produto: ${itemTitle}\nContraoferta: $${counterPriceInput}`;
+          }
+
           fetch('/api/push-send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: targetRequest.customerEmail,
-              title: 'Administrador',
-              body: statusMessages[status] || 'Estado actualizado / Estado atualizado',
+              title: notifyTitle,
+              body: notifyBody,
               url: '/',
             }),
           }).catch(err => console.error('Push notification error:', err));
@@ -1321,17 +1331,25 @@ export default function AdminDashboard() {
         // プッシュ通知を送信（対象顧客のリクエストを特定）
         const targetRequest = bidRequests.find(r => r.id === id);
         if (targetRequest?.customerEmail) {
-          const statusMessages: Record<string, string> = {
-            won: 'Ganado / Ganhado',
-            lost: 'Perdido / Perdido',
-          };
+          const itemTitle = targetRequest.productTitle || 'Item';
+          let notifyTitle = 'Resultado de Leilão';
+          let notifyBody = `Producto: ${itemTitle}`;
+
+          if (finalStatus === 'won') {
+            notifyTitle = '🎉 ¡Ganado / Ganhado!';
+            notifyBody = `Producto / Produto: ${itemTitle}${finalPrice ? `\nPrecio final: $${finalPrice}` : ''}`;
+          } else if (finalStatus === 'lost') {
+            notifyTitle = '😢 Perdido / Perdido';
+            notifyBody = `Producto / Produto: ${itemTitle}`;
+          }
+
           fetch('/api/push-send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: targetRequest.customerEmail,
-              title: 'Administrador',
-              body: statusMessages[finalStatus] || 'Resultado actualizado / Resultado atualizado',
+              title: notifyTitle,
+              body: notifyBody,
               url: '/',
             }),
           }).catch(err => console.error('Push notification error:', err));
@@ -5481,7 +5499,7 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                       <p className="text-xs sm:text-sm text-gray-700 font-semibold leading-relaxed whitespace-pre-wrap">
-                        {n.message}
+                        {n.body || n.message}
                       </p>
                     </div>
                   ))}
