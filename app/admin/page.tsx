@@ -1271,9 +1271,9 @@ export default function AdminDashboard() {
 
         // プッシュ通知を送信（対象顧客のリクエストを特定）
         const targetRequest = bidRequests.find(r => r.id === id);
-        const email = targetRequest?.customer_email || targetRequest?.customerEmail;
+        const email = targetRequest?.customerEmail;
         if (email) {
-          const itemTitle = targetRequest?.product_title || targetRequest?.productTitle || 'Item';
+          const itemTitle = targetRequest?.productTitle || 'Item';
           let notifyTitle = 'Administrador';
           let notifyBody = `Producto: ${itemTitle}`;
 
@@ -1331,9 +1331,9 @@ export default function AdminDashboard() {
 
         // プッシュ通知を送信（対象顧客のリクエストを特定）
         const targetRequest = bidRequests.find(r => r.id === id);
-        const email = targetRequest?.customer_email || targetRequest?.customerEmail;
+        const email = targetRequest?.customerEmail;
         if (email) {
-          const itemTitle = targetRequest?.product_title || targetRequest?.productTitle || 'Item';
+          const itemTitle = targetRequest?.productTitle || 'Item';
           let notifyTitle = 'Resultado de Leilão';
           let notifyBody = `Producto: ${itemTitle}`;
 

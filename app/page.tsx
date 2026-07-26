@@ -2900,7 +2900,7 @@ export default function Home() {
       // 管理者へ通知
       if (currentUser) {
         const targetReq = myRequests.find(r => r.id === requestId);
-        const itemTitle = targetReq?.product_title || targetReq?.productTitle || '対象商品';
+        const itemTitle = targetReq?.productTitle || '対象商品';
         const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
         const custName = currentUser.fullName || currentUser.email;
 
@@ -2943,7 +2943,7 @@ export default function Home() {
       // 管理者へ通知
       if (currentUser) {
         const targetReq = myRequests.find(r => r.id === requestId);
-        const itemTitle = targetReq?.product_title || targetReq?.productTitle || '対象商品';
+        const itemTitle = targetReq?.productTitle || '対象商品';
         const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
         const custName = currentUser.fullName || currentUser.email;
 
