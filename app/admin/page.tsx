@@ -1271,8 +1271,9 @@ export default function AdminDashboard() {
 
         // プッシュ通知を送信（対象顧客のリクエストを特定）
         const targetRequest = bidRequests.find(r => r.id === id);
-        if (targetRequest?.customerEmail) {
-          const itemTitle = targetRequest.productTitle || 'Item';
+        const email = targetRequest?.customer_email || targetRequest?.customerEmail;
+        if (email) {
+          const itemTitle = targetRequest?.product_title || targetRequest?.productTitle || 'Item';
           let notifyTitle = 'Administrador';
           let notifyBody = `Producto: ${itemTitle}`;
 
@@ -1291,7 +1292,7 @@ export default function AdminDashboard() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              email: targetRequest.customerEmail,
+              email,
               title: notifyTitle,
               body: notifyBody,
               url: '/',
@@ -1330,8 +1331,9 @@ export default function AdminDashboard() {
 
         // プッシュ通知を送信（対象顧客のリクエストを特定）
         const targetRequest = bidRequests.find(r => r.id === id);
-        if (targetRequest?.customerEmail) {
-          const itemTitle = targetRequest.productTitle || 'Item';
+        const email = targetRequest?.customer_email || targetRequest?.customerEmail;
+        if (email) {
+          const itemTitle = targetRequest?.product_title || targetRequest?.productTitle || 'Item';
           let notifyTitle = 'Resultado de Leilão';
           let notifyBody = `Producto: ${itemTitle}`;
 
@@ -1347,7 +1349,7 @@ export default function AdminDashboard() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              email: targetRequest.customerEmail,
+              email,
               title: notifyTitle,
               body: notifyBody,
               url: '/',
