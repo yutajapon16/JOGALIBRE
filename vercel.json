@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/check-items",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron/export-orders",
       "schedule": "0 0 * * *"
     },
