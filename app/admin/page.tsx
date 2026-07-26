@@ -1299,8 +1299,8 @@ export default function AdminDashboard() {
         const targetRequest = bidRequests.find(r => r.id === id);
         const email = targetRequest?.customerEmail;
         if (email) {
-          const itemTitle = targetRequest?.productTitle || 'Item';
           const lang = targetRequest?.language || 'es';
+          const itemTitle = (lang === 'pt' ? (targetRequest as any)?.productTitlePt : (targetRequest as any)?.productTitleEs) || targetRequest?.productTitle || 'Item';
           let notifyTitle = 'Administrador';
           let notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
 
@@ -1311,10 +1311,10 @@ export default function AdminDashboard() {
             notifyTitle = lang === 'pt' ? '❌ Solicitação Rejeitada' : '❌ Solicitud Rechazada';
             notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
           } else if (status === 'counter_offer') {
-            notifyTitle = `💬 Contraoferta: $${counterOfferAmount || ''}`;
+            notifyTitle = lang === 'pt' ? '💬 Contra-oferta' : '💬 Contraoferta';
             notifyBody = lang === 'pt'
-              ? `Produto: ${itemTitle}\nContra-oferta: $${counterOfferAmount || ''}`
-              : `Producto: ${itemTitle}\nContraoferta: $${counterOfferAmount || ''}`;
+              ? `Produto: ${itemTitle}`
+              : `Producto: ${itemTitle}`;
           }
 
           fetch('/api/push-send', {
@@ -5539,7 +5539,7 @@ export default function AdminDashboard() {
                           })}
                         </span>
                       </div>
-                      <p className="text-xs sm:text-sm text-gray-700 font-semibold leading-relaxed whitespace-pre-wrap">
+                      <p className="text-xs sm:text-sm text-gray-700 font-semibold truncate block">
                         {n.body || n.message}
                       </p>
                     </div>

@@ -2374,7 +2374,7 @@ export default function Home() {
       if (res.ok) {
         // 管理者へ通知
         if (currentUser) {
-          const itemTitle = selectedProduct?.title || bidForm.name || 'リクエスト商品';
+          const itemTitle = (selectedProduct as any)?.titleEs || (selectedProduct as any)?.titlePt || selectedProduct?.title || bidForm.name || 'リクエスト商品';
           const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
           const custName = currentUser.fullName || finalCustomerName;
           fetch('/api/push-send', {
@@ -2383,7 +2383,7 @@ export default function Home() {
             body: JSON.stringify({
               sendToAdmins: true,
               title: `📩 【新規申請】${custName} ${custId}`.trim(),
-              body: `商品: ${itemTitle}${bidForm.maxBid ? `\n希望額: $${bidForm.maxBid}` : ''}`,
+              body: `商品: ${itemTitle}`,
               url: '/admin'
             })
           }).catch(e => console.error('Admin push error', e));
@@ -2923,7 +2923,7 @@ export default function Home() {
       // 管理者へ通知
       if (currentUser) {
         const targetReq = myRequests.find(r => r.id === requestId);
-        const itemTitle = targetReq?.productTitle || '対象商品';
+        const itemTitle = (targetReq as any)?.productTitleEs || (targetReq as any)?.productTitlePt || targetReq?.productTitle || '対象商品';
         const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
         const custName = currentUser.fullName || currentUser.email;
 
@@ -2933,7 +2933,7 @@ export default function Home() {
           body: JSON.stringify({
             sendToAdmins: true,
             title: `💬 【オファー回答】${custName} ${custId}`.trim(),
-            body: `商品: ${itemTitle}\n顧客回答額: $${counterAmount}`,
+            body: `商品: ${itemTitle}`,
             url: '/admin'
           })
         }).catch(e => console.error('Admin push error', e));
@@ -7166,7 +7166,7 @@ export default function Home() {
                           })}
                         </span>
                       </div>
-                      <p className="text-xs sm:text-sm text-gray-700 font-semibold leading-relaxed whitespace-pre-wrap">
+                      <p className="text-xs sm:text-sm text-gray-700 font-semibold truncate block">
                         {n.body}
                       </p>
                     </div>
