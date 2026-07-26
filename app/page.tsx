@@ -2374,7 +2374,7 @@ export default function Home() {
       if (res.ok) {
         // 管理者へ通知
         if (currentUser) {
-          const itemTitle = (selectedProduct as any)?.titleEs || (selectedProduct as any)?.titlePt || selectedProduct?.title || bidForm.name || 'リクエスト商品';
+          const itemTitle = selectedProduct?.title || bidForm.name || 'リクエスト商品';
           const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
           const custName = currentUser.fullName || finalCustomerName;
           fetch('/api/push-send', {
@@ -2923,7 +2923,7 @@ export default function Home() {
       // 管理者へ通知
       if (currentUser) {
         const targetReq = myRequests.find(r => r.id === requestId);
-        const itemTitle = (targetReq as any)?.productTitleEs || (targetReq as any)?.productTitlePt || targetReq?.productTitle || '対象商品';
+        const itemTitle = targetReq?.productTitle || '対象商品';
         const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
         const custName = currentUser.fullName || currentUser.email;
 
