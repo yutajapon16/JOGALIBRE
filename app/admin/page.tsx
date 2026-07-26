@@ -974,8 +974,10 @@ export default function AdminDashboard() {
         console.error('Push subscription cleanup error:', err);
       }
     }
+    // 直ちにログアウト完了状態にしてログイン画面を表示（ページリロードや読み込み中画面を出さない）
+    setLoading(false);
+    setCurrentUser(null);
     await signOut();
-    window.location.href = '/admin';
   };
 
   const fetchExchangeRate = async () => {

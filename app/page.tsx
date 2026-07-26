@@ -2244,9 +2244,9 @@ export default function Home() {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('joga_terms_accepted');
     }
+    setIsAuthChecking(false);
+    setCurrentUser(null);
     await signOut();
-    // cookieベースセッションのため、ページリロードで確実にクリア
-    window.location.href = '/';
   };
 
   const handleCopyTrackingNumber = (itemId: string, trackingNumber: string) => {
