@@ -1274,18 +1274,21 @@ export default function AdminDashboard() {
         const email = targetRequest?.customerEmail;
         if (email) {
           const itemTitle = targetRequest?.productTitle || 'Item';
+          const lang = targetRequest?.language || 'es';
           let notifyTitle = 'Administrador';
-          let notifyBody = `Producto: ${itemTitle}`;
+          let notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
 
           if (status === 'approved') {
-            notifyTitle = '✅ Solicitud Aprobada';
-            notifyBody = `Producto / Produto: ${itemTitle}\nEstado: Aprobado / Aprovado`;
+            notifyTitle = lang === 'pt' ? '✅ Solicitação Aprovada' : '✅ Solicitud Aprobada';
+            notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
           } else if (status === 'rejected') {
-            notifyTitle = '❌ Solicitud Rechazada';
-            notifyBody = `Producto / Produto: ${itemTitle}\nEstado: Rechazado / Rejeitado`;
+            notifyTitle = lang === 'pt' ? '❌ Solicitação Rejeitada' : '❌ Solicitud Rechazada';
+            notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
           } else if (status === 'counter_offer') {
             notifyTitle = `💬 Contraoferta: $${counterOfferAmount || ''}`;
-            notifyBody = `Producto / Produto: ${itemTitle}\nContraoferta: $${counterOfferAmount || ''}`;
+            notifyBody = lang === 'pt'
+              ? `Produto: ${itemTitle}\nContra-oferta: $${counterOfferAmount || ''}`
+              : `Producto: ${itemTitle}\nContraoferta: $${counterOfferAmount || ''}`;
           }
 
           fetch('/api/push-send', {
@@ -1334,15 +1337,18 @@ export default function AdminDashboard() {
         const email = targetRequest?.customerEmail;
         if (email) {
           const itemTitle = targetRequest?.productTitle || 'Item';
-          let notifyTitle = 'Resultado de Leilão';
-          let notifyBody = `Producto: ${itemTitle}`;
+          const lang = targetRequest?.language || 'es';
+          let notifyTitle = 'Resultado';
+          let notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
 
           if (finalStatus === 'won') {
-            notifyTitle = '🎉 ¡Ganado / Ganhado!';
-            notifyBody = `Producto / Produto: ${itemTitle}${finalPrice ? `\nPrecio final: $${finalPrice}` : ''}`;
+            notifyTitle = lang === 'pt' ? '🎉 Ganhado!' : '🎉 ¡Ganado!';
+            notifyBody = lang === 'pt'
+              ? `Produto: ${itemTitle}${finalPrice ? `\nPreço final: $${finalPrice}` : ''}`
+              : `Producto: ${itemTitle}${finalPrice ? `\nPrecio final: $${finalPrice}` : ''}`;
           } else if (finalStatus === 'lost') {
-            notifyTitle = '😢 Perdido / Perdido';
-            notifyBody = `Producto / Produto: ${itemTitle}`;
+            notifyTitle = '😢 Perdido';
+            notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
           }
 
           fetch('/api/push-send', {
