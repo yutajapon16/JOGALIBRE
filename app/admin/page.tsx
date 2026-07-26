@@ -763,16 +763,22 @@ export default function AdminDashboard() {
   const clearAllNotifications = async () => {
     if (!currentUser) return;
     try {
-      await supabase
-        .from('app_notifications')
-        .delete()
-        .eq('user_id', currentUser.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      await fetch('/api/notifications', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ userId: currentUser.id })
+      });
       setNotifications([]);
       setUnreadCount(0);
-      setShowNotifications(false);
     } catch (e) {
       console.error('Error clearing notifications:', e);
-      setShowNotifications(false);
+      setNotifications([]);
+      setUnreadCount(0);
     }
   };
 
@@ -5545,9 +5551,9 @@ export default function AdminDashboard() {
             <div className="p-4 border-t bg-white safe-area-bottom">
               <button
                 onClick={clearAllNotifications}
-                className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors shadow-sm active:scale-[0.99]"
+                className="w-full py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-colors shadow-sm active:scale-[0.99]"
               >
-                閉じる・通知履歴をクリア
+                通知履歴をクリア
               </button>
             </div>
           </div>
@@ -5556,7 +5562,7 @@ export default function AdminDashboard() {
 
       {/* ログアウト確認モーダル */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in duration-150 text-center">
             <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
               🚪
