@@ -14,12 +14,15 @@ export async function requestNotificationPermission(): Promise<string | null> {
     }
 
     const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-            VAPID_PUBLIC_KEY
-        ) as unknown as BufferSource,
-    });
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(
+                VAPID_PUBLIC_KEY
+            ) as unknown as BufferSource,
+        });
+    }
 
     return JSON.stringify(subscription);
 }

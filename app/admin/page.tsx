@@ -918,19 +918,13 @@ export default function AdminDashboard() {
           setNotificationStatus('enabled');
           (async () => {
             try {
-              if ('serviceWorker' in navigator) {
-                const reg = await navigator.serviceWorker.ready;
-                const existingSub = await reg.pushManager.getSubscription();
-                if (!existingSub) {
-                  const subscription = await requestNotificationPermission();
-                  if (subscription) {
-                    await fetch('/api/push-subscribe', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ userId: currentUser.id, subscription }),
-                    });
-                  }
-                }
+              const subscription = await requestNotificationPermission();
+              if (subscription) {
+                await fetch('/api/push-subscribe', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: currentUser.id, subscription }),
+                });
               }
             } catch (err) {
               console.warn('Background push sync error:', err);

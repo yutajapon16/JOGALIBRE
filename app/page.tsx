@@ -1346,19 +1346,13 @@ export default function Home() {
           setNotificationStatus('enabled');
           (async () => {
             try {
-              if ('serviceWorker' in navigator) {
-                const reg = await navigator.serviceWorker.ready;
-                const existingSub = await reg.pushManager.getSubscription();
-                if (!existingSub) {
-                  const sub = await requestNotificationPermission();
-                  if (sub) {
-                    await fetch('/api/push-subscribe', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ userId: currentUser.id, subscription: sub }),
-                    });
-                  }
-                }
+              const sub = await requestNotificationPermission();
+              if (sub) {
+                await fetch('/api/push-subscribe', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: currentUser.id, subscription: sub }),
+                });
               }
             } catch (err) {
               console.warn('Background push sync error:', err);

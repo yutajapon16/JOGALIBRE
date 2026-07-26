@@ -61,6 +61,27 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // DBに通知履歴を常に記録（端末へPushが届くか否かにかかわらず、Webアプリ上の「Avisos/通知内容確認」モーダルで確実に履歴を閲覧可能にする）
+        try {
+            const logs = targetUserIds.map(uid => ({
+                user_id: uid,
+                title: title || 'JOGALIBRE',
+                body: body || '',
+                url: url || '/',
+                is_read: false
+            }));
+
+            if (logs.length > 0) {
+                const { error: logError } = await supabaseAdmin
+                    .from('app_notifications')
+                    .insert(logs);
+
+                if (logError) console.error('通知履歴保存エラー:', logError);
+            }
+        } catch (dbErr) {
+            console.error('DB保存クリティカルエラー:', dbErr);
+        }
+
         // 対象ユーザーのプッシュサブスクリプションを一括取得
         const { data: subscriptions, error: fetchError } = await supabaseAdmin
             .from('push_subscriptions')
@@ -74,7 +95,7 @@ export async function POST(request: NextRequest) {
 
         if (!subscriptions || subscriptions.length === 0) {
             return NextResponse.json(
-                { error: 'プッシュ通知が登録されていません', sent: false },
+                { error: 'プッシュ通知が登録されていません（アプリ内通知履歴は保存されました）', sent: false },
                 { status: 200 }
             );
         }
@@ -112,27 +133,6 @@ export async function POST(request: NextRequest) {
 
         const sentCount = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
         const sent = sentCount > 0;
-
-        // DBに通知履歴を保存
-        try {
-            const logs = targetUserIds.map(uid => ({
-                user_id: uid,
-                title: title || 'JOGALIBRE',
-                body: body || '',
-                url: url || '/',
-                is_read: false
-            }));
-
-            if (logs.length > 0) {
-                const { error: logError } = await supabaseAdmin
-                    .from('app_notifications')
-                    .insert(logs);
-
-                if (logError) console.error('通知履歴保存エラー:', logError);
-            }
-        } catch (dbErr) {
-            console.error('DB保存クリティカルエラー:', dbErr);
-        }
 
         return NextResponse.json({ success: true, sent, sentCount });
     } catch (error) {
