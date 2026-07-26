@@ -722,6 +722,7 @@ export default function AdminDashboard() {
       const { data, error } = await supabase
         .from('app_notifications')
         .select('*')
+        .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -732,6 +733,7 @@ export default function AdminDashboard() {
         await supabase
           .from('app_notifications')
           .update({ is_read: true })
+          .eq('user_id', currentUser.id)
           .eq('is_read', false);
         fetchUnreadCount();
       }
@@ -746,6 +748,7 @@ export default function AdminDashboard() {
       const { count, error } = await supabase
         .from('app_notifications')
         .select('*', { count: 'exact', head: true })
+        .eq('user_id', currentUser.id)
         .eq('is_read', false);
 
       if (!error && count !== null) {
@@ -753,6 +756,22 @@ export default function AdminDashboard() {
       }
     } catch (e) {
       console.error('Error fetching unread count:', e);
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    if (!currentUser) return;
+    try {
+      await supabase
+        .from('app_notifications')
+        .delete()
+        .eq('user_id', currentUser.id);
+      setNotifications([]);
+      setUnreadCount(0);
+      setShowNotifications(false);
+    } catch (e) {
+      console.error('Error clearing notifications:', e);
+      setShowNotifications(false);
     }
   };
 
@@ -5520,6 +5539,15 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="p-4 border-t bg-white safe-area-bottom">
+              <button
+                onClick={clearAllNotifications}
+                className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors shadow-sm active:scale-[0.99]"
+              >
+                閉じる・通知履歴をクリア
+              </button>
             </div>
           </div>
         </div>

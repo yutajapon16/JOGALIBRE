@@ -1478,6 +1478,22 @@ export default function Home() {
     }
   };
 
+  const clearAllNotifications = async () => {
+    if (!currentUser) return;
+    try {
+      await supabase
+        .from('app_notifications')
+        .delete()
+        .eq('user_id', currentUser.id);
+      setNotifications([]);
+      setUnreadCount(0);
+      setShowNotifications(false);
+    } catch (e) {
+      console.error('Error clearing notifications:', e);
+      setShowNotifications(false);
+    }
+  };
+
   // PWA (ホーム画面追加時) 向けのカスタム Pull-to-Refresh 実装
   useEffect(() => {
     let startY = 0;
@@ -7143,7 +7159,7 @@ export default function Home() {
                           })}
                         </span>
                       </div>
-                      <p className="text-xs sm:text-sm text-gray-700 font-semibold leading-relaxed line-clamp-3">
+                      <p className="text-xs sm:text-sm text-gray-700 font-semibold leading-relaxed whitespace-pre-wrap">
                         {n.body}
                       </p>
                     </div>
@@ -7154,10 +7170,10 @@ export default function Home() {
 
             <div className="p-4 border-t bg-white safe-area-bottom">
               <button
-                onClick={() => setShowNotifications(false)}
-                className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors shadow-sm"
+                onClick={clearAllNotifications}
+                className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors shadow-sm active:scale-[0.99]"
               >
-                {lang === 'es' ? 'Cerrar' : 'Fechar'}
+                {lang === 'es' ? 'Cerrar y borrar avisos' : lang === 'pt' ? 'Fechar e limpar avisos' : '閉じる・通知を消去'}
               </button>
             </div>
           </div>
