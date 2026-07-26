@@ -1972,11 +1972,10 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-black">管理者ログイン</h1>
-            <Image src="/icons/admin-icon.png" alt="管理画面" width={40} height={40} className="rounded" />
+          <div className="flex items-center mb-2">
+            <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={200} height={35} className="h-auto w-auto object-contain" priority />
           </div>
-          <p className="text-gray-600 mb-6">JOGALIBRE 管理画面</p>
+          <p className="text-gray-600 mb-6">管理者ログイン</p>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -2031,9 +2030,9 @@ export default function AdminDashboard() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">管理画面</h1>
-              <Image src="/icons/admin-icon.png" alt="管理画面" width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded" />
+            <div className="flex items-center gap-3">
+              <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={140} height={24} className="h-6 sm:h-7 w-auto object-contain" priority />
+              <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">管理画面</span>
             </div>
             <div className="flex flex-col items-end gap-1">
               <button
