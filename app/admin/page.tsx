@@ -715,6 +715,7 @@ export default function AdminDashboard() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const fetchNotifications = async () => {
     if (!currentUser) return;
@@ -2136,7 +2137,7 @@ export default function AdminDashboard() {
             </div>
             <div className="flex flex-col items-end gap-1">
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="text-red-600 hover:text-red-700 font-semibold"
               >
                 ログアウト
@@ -5547,6 +5548,40 @@ export default function AdminDashboard() {
                 className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors shadow-sm active:scale-[0.99]"
               >
                 閉じる・通知履歴をクリア
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ログアウト確認モーダル */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in duration-150 text-center">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
+              🚪
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              ログアウトの確認
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              管理画面からログアウトしますか？
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  handleLogout();
+                }}
+                className="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors shadow-sm"
+              >
+                ログアウト
               </button>
             </div>
           </div>

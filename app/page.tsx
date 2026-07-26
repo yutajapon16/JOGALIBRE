@@ -1253,6 +1253,7 @@ export default function Home() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const [termsChecked, setTermsChecked] = useState({
@@ -3568,7 +3569,7 @@ export default function Home() {
             </div>
 
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogoutConfirm(true)}
               className="px-2.5 py-1 text-xs sm:text-sm text-red-600 hover:text-red-800 font-extrabold transition-colors hover:bg-red-50 rounded-lg"
             >
               {t.logout}
@@ -6162,7 +6163,7 @@ export default function Home() {
             {/* ログアウト */}
             <div className="border-t pt-6 mt-6">
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition"
               >
                 {t.logout}
@@ -7877,6 +7878,40 @@ export default function Home() {
                   {(currentUser?.language || lang) === 'es' ? 'Método de Pago' : 'Método de Pagamento'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ログアウト確認モーダル */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in duration-150 text-center">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
+              🚪
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              {lang === 'es' ? 'Confirmar cierre de sesión' : lang === 'pt' ? 'Confirmar saída' : 'ログアウトの確認'}
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              {lang === 'es' ? '¿Estás seguro de que deseas cerrar sesión?' : lang === 'pt' ? 'Tem certeza de que deseja sair?' : 'ログアウトしてもよろしいですか？'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors text-sm"
+              >
+                {lang === 'es' ? 'Cancelar' : lang === 'pt' ? 'Cancelar' : 'キャンセル'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  handleLogout();
+                }}
+                className="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors shadow-sm text-sm"
+              >
+                {lang === 'es' ? 'Cerrar sesión' : lang === 'pt' ? 'Sair' : 'ログアウト'}
+              </button>
             </div>
           </div>
         </div>
