@@ -712,6 +712,58 @@ export default function AdminDashboard() {
   const [notificationStatus, setNotificationStatus] = useState<'loading' | 'enabled' | 'disabled' | 'unsupported'>('loading');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchNotifications = async () => {
+    if (!currentUser) return;
+    try {
+      const { data, error } = await supabase
+        .from('app_notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      setNotifications(data || []);
+
+      if (data && data.some((n: any) => !n.is_read)) {
+        await supabase
+          .from('app_notifications')
+          .update({ is_read: true })
+          .eq('is_read', false);
+        fetchUnreadCount();
+      }
+    } catch (e) {
+      console.error('Error fetching admin notifications:', e);
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    if (!currentUser) return;
+    try {
+      const { count, error } = await supabase
+        .from('app_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_read', false);
+
+      if (!error && count !== null) {
+        setUnreadCount(count);
+      }
+    } catch (e) {
+      console.error('Error fetching unread count:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [currentUser]);
+
 
   // 全ボタンに触覚フィードバック（振動）を適用
   useEffect(() => {
@@ -2052,12 +2104,32 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <div className="text-sm sm:text-base text-gray-600">
-              保留中: <span className="font-bold text-indigo-600">
-                {bidRequests.filter(req => req.status === 'pending').length}
-              </span>
-              {' '}
-              合計: <span className="font-bold">{bidRequests.length}件</span>
+            <div className="flex justify-between items-center text-sm sm:text-base text-gray-600">
+              <div>
+                保留中: <span className="font-bold text-indigo-600">
+                  {bidRequests.filter(req => req.status === 'pending').length}
+                </span>
+                {' '}
+                合計: <span className="font-bold">{bidRequests.length}件</span>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowNotifications(true);
+                  fetchNotifications();
+                }}
+                className="relative flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs sm:text-sm font-bold hover:bg-indigo-100 transition-colors"
+              >
+                <span>通知内容確認</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white animate-pulse font-bold">
+                    {unreadCount}
+                  </span>
+                )}
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </button>
             </div>
 
             {/* WhatsApp + プッシュ通知ボタン（半幅ずつ） */}
@@ -5360,6 +5432,66 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* 通知一覧モーダル */}
+      {showNotifications && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl shadow-xl flex flex-col max-h-[90vh] sm:max-h-[80vh] overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+            <div className="p-4 border-b flex justify-between items-center bg-white sticky top-0 z-10">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                通知履歴一覧
+              </h2>
+              <button
+                onClick={() => setShowNotifications(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-gray-50">
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                  <svg className="w-12 h-12 mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p className="text-sm font-medium">新しい通知はありません</p>
+                </div>
+              ) : (
+                <div className="space-y-2 sm:space-y-3">
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className={`p-3 sm:p-4 rounded-xl border transition-all ${!n.is_read ? 'bg-white border-indigo-100 shadow-sm ring-1 ring-indigo-50' : 'bg-gray-50/50 border-gray-100 opacity-80'}`}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${!n.is_read ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'}`}>
+                          {n.title}
+                        </span>
+                        <span className="text-[9px] text-gray-400 font-medium">
+                          {new Date(n.created_at || '').toLocaleString('ja-JP', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-700 font-semibold leading-relaxed whitespace-pre-wrap">
+                        {n.message}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

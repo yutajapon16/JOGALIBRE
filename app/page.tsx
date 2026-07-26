@@ -3538,34 +3538,30 @@ export default function Home() {
       )}
       <header className="bg-white shadow pt-safe">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
-          {/* 1行目: ロゴ & 言語選択 & ログアウト */}
+          {/* 1行目: ロゴ & ログアウト */}
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center">
-              <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={110} height={18} className="h-5 sm:h-6 w-auto object-contain" priority />
+              <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={140} height={24} className="h-6 sm:h-7 w-auto object-contain" priority />
             </div>
 
-            <div className="flex items-center gap-2">
-              {currentUser && (
-                <span className="text-[10px] sm:text-xs text-gray-700 font-bold truncate max-w-[150px] sm:max-w-[250px]">
-                  {currentUser.customerId && <span className="text-indigo-600">{currentUser.customerId}</span>}
-                  {currentUser.customerId && currentUser.fullName && ' '}
-                  {currentUser.fullName}
-                </span>
-              )}
-              <button
-                onClick={handleLogout}
-                className="px-2 py-1 text-[10px] sm:text-xs text-red-600 hover:text-red-800 font-extrabold transition-colors hover:bg-red-50 rounded-lg"
-              >
-                {t.logout}
-              </button>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="px-2.5 py-1 text-xs sm:text-sm text-red-600 hover:text-red-800 font-extrabold transition-colors hover:bg-red-50 rounded-lg"
+            >
+              {t.logout}
+            </button>
           </div>
 
-          {/* 2行目: サブタイトル & お知らせボタン */}
+          {/* 2行目: 顧客ID/氏名 & 言語選択 & お知らせボタン */}
           <div className="flex justify-between items-center">
-            <p className="text-[8.5px] min-[375px]:text-[9.5px] sm:text-[10px] text-gray-400 font-bold tracking-normal whitespace-nowrap truncate mr-2 flex-1 min-w-0" title={t.subtitle}>
-              {t.subtitle}
-            </p>
+            {currentUser ? (
+              <span className="text-xs sm:text-sm text-gray-700 font-bold truncate max-w-[180px] min-[375px]:max-w-[220px] sm:max-w-[360px] mr-2 flex-1 min-w-0">
+                {currentUser.customerId && <span className="text-indigo-600 font-extrabold mr-1.5">{currentUser.customerId}</span>}
+                {currentUser.fullName}
+              </span>
+            ) : (
+              <div className="flex-1 min-w-0" />
+            )}
 
             <div className="flex items-center gap-2">
               <select
