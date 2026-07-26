@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { parseDbDateTime } from '@/lib/utils';
+import { parseAnyDateTime } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 
                 if (!item.product_end_time) continue;
 
-                const endDate = parseDbDateTime(item.product_end_time);
+                const endDate = parseAnyDateTime(item.product_end_time);
                 if (!endDate) continue;
 
                 // 残り時間（時間単位）を算出

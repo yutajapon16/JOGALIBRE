@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
+import { parseAnyDateTime } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
@@ -83,6 +84,47 @@ export async function POST(request: Request) {
         { error: 'Failed' + error.message, details: error },
         { status: 500 }
       );
+    }
+
+    // 申請作成時点で残り12時間以内の場合、即座に管理者へ通知を送信
+    if (productEndTime) {
+      const endDate = parseAnyDateTime(productEndTime);
+      if (endDate) {
+        const diffMs = endDate.getTime() - Date.now();
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        if (diffHours > 0 && diffHours <= 12) {
+          const { data: userRole } = await supabaseAdmin
+            .from('user_roles')
+            .select('customer_id')
+            .eq('email', finalEmail)
+            .single();
+
+          const customerId = userRole?.customer_id || '不明';
+          const title = '⏰ 【残り12時間】未確認の申請あり';
+          const bodyText = `商品: ${productTitle || productId} (ID: ${customerId})`;
+
+          try {
+            await fetch(`${new URL(request.url).origin}/api/push-send`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sendToAdmins: true,
+                title,
+                body: bodyText,
+                url: '/admin'
+              })
+            });
+
+            await supabaseAdmin
+              .from('bid_requests')
+              .update({ reminded_12h_admin: true })
+              .eq('id', data.id);
+          } catch (pushErr) {
+            console.error('Instant 12h push error:', pushErr);
+          }
+        }
+      }
     }
 
     return NextResponse.json({

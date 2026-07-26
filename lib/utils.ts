@@ -172,13 +172,20 @@ export const parseJstDateTime = (dateStr: string): Date | null => {
     cleanStr = cleanStr.replace(' ', 'T');
     // JST タイムゾーンを付与
     cleanStr = cleanStr + '+09:00';
-  } else {
-    // タイムゾーンがある場合も、スペースを 'T' に置換しておくことで Safari 等でのパースエラーを防ぐ
-    cleanStr = cleanStr.replace(' ', 'T');
   }
 
   const parsed = new Date(cleanStr);
   return isNaN(parsed.getTime()) ? null : parsed;
+};
+
+export const parseAnyDateTime = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
+  const d1 = parseDbDateTime(dateStr);
+  if (d1 && !isNaN(d1.getTime())) return d1;
+  const d2 = parseJstDateTime(dateStr);
+  if (d2 && !isNaN(d2.getTime())) return d2;
+  const d3 = new Date(dateStr);
+  return isNaN(d3.getTime()) ? null : d3;
 };
 
 export const getTimeRemaining = (endTime: string, lang: 'ja' | 'es' | 'pt', timeLeftStr?: string) => {
