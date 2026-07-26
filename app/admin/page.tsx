@@ -862,22 +862,27 @@ export default function AdminDashboard() {
       // ブラウザの許可状態を確認
       if (typeof window !== 'undefined' && 'Notification' in window) {
         if (Notification.permission === 'granted') {
-          // サーバー側の登録状況を確認し、自動再登録
+          // ブラウザ許可済みの場合は即座に通知有効（🔕 通知停止）状態を保持
+          setNotificationStatus('enabled');
           (async () => {
             try {
-              const subscription = await requestNotificationPermission();
-              if (subscription) {
-                await fetch('/api/push-subscribe', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: currentUser.id, subscription }),
-                });
-                setNotificationStatus('enabled');
-              } else {
-                setNotificationStatus('disabled');
+              if ('serviceWorker' in navigator) {
+                const reg = await navigator.serviceWorker.ready;
+                const existingSub = await reg.pushManager.getSubscription();
+                if (!existingSub) {
+                  const subscription = await requestNotificationPermission();
+                  if (subscription) {
+                    await fetch('/api/push-subscribe', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: currentUser.id, subscription }),
+                    });
+                  }
+                }
               }
-            } catch {
-              setNotificationStatus('disabled');
+            } catch (err) {
+              console.warn('Background push sync error:', err);
+              // permission === 'granted' の間は表示を disabled に落とさない
             }
           })();
         } else if (Notification.permission === 'denied') {
@@ -1968,6 +1973,17 @@ export default function AdminDashboard() {
   };
 
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="text-center">
+          <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={200} height={35} className="mx-auto mb-4 animate-pulse" priority />
+          <div className="text-gray-500 text-sm font-bold">読み込み中...</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -2006,14 +2022,6 @@ export default function AdminDashboard() {
             </button>
           </form>
         </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-xl">読み込み中...</div>
       </div>
     );
   }

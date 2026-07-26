@@ -967,6 +967,7 @@ export default function Home() {
   const [isOfferUpdating, setIsOfferUpdating] = useState(false);
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [showSignUp, setShowSignUp] = useState(false);
   const [isEditOfferModalOpen, setIsEditOfferModalOpen] = useState(false);
   const [editingOfferRequest, setEditingOfferRequest] = useState<BidRequest | null>(null);
@@ -1292,6 +1293,8 @@ export default function Home() {
       }
     }).catch(err => {
       console.error('Fast failure in initial getCurrentUser:', err);
+    }).finally(() => {
+      setIsAuthChecking(false);
     });
 
     // セッション変更を監視
@@ -1329,6 +1332,7 @@ export default function Home() {
           }
         }
       }
+      setIsAuthChecking(false);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -1338,22 +1342,27 @@ export default function Home() {
     if (currentUser) {
       if (typeof window !== 'undefined' && 'Notification' in window) {
         if (Notification.permission === 'granted') {
-          // サーバー側の登録状況を確認し、自動再登録
+          // ブラウザ許可済みの場合は即座に通知有効状態を保持
+          setNotificationStatus('enabled');
           (async () => {
             try {
-              const sub = await requestNotificationPermission();
-              if (sub) {
-                await fetch('/api/push-subscribe', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: currentUser.id, subscription: sub }),
-                });
-                setNotificationStatus('enabled');
-              } else {
-                setNotificationStatus('disabled');
+              if ('serviceWorker' in navigator) {
+                const reg = await navigator.serviceWorker.ready;
+                const existingSub = await reg.pushManager.getSubscription();
+                if (!existingSub) {
+                  const sub = await requestNotificationPermission();
+                  if (sub) {
+                    await fetch('/api/push-subscribe', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: currentUser.id, subscription: sub }),
+                    });
+                  }
+                }
               }
-            } catch {
-              setNotificationStatus('disabled');
+            } catch (err) {
+              console.warn('Background push sync error:', err);
+              // permission === 'granted' の間は表示を disabled に落とさない
             }
           })();
         } else if (Notification.permission === 'denied') {
@@ -3034,6 +3043,17 @@ export default function Home() {
       console.error('Error confirming rejection:', error);
     }
   };
+
+  if (isAuthChecking && !currentUser) {
+    return (
+      <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
+        <div className="text-center">
+          <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={220} height={37} className="mx-auto mb-4 animate-pulse" priority />
+          <div className="text-gray-500 text-sm font-bold">Carregando... / Cargando...</div>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return (
