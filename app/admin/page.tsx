@@ -2030,9 +2030,8 @@ export default function AdminDashboard() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center">
               <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={140} height={24} className="h-6 sm:h-7 w-auto object-contain" priority />
-              <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">管理画面</span>
             </div>
             <div className="flex flex-col items-end gap-1">
               <button
