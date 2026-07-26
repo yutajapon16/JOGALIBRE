@@ -1283,8 +1283,8 @@ export default function AdminDashboard() {
             notifyTitle = '❌ Solicitud Rechazada';
             notifyBody = `Producto / Produto: ${itemTitle}\nEstado: Rechazado / Rejeitado`;
           } else if (status === 'counter_offer') {
-            notifyTitle = `💬 Contraoferta: $${counterPriceInput}`;
-            notifyBody = `Producto / Produto: ${itemTitle}\nContraoferta: $${counterPriceInput}`;
+            notifyTitle = `💬 Contraoferta: $${counterOfferAmount || ''}`;
+            notifyBody = `Producto / Produto: ${itemTitle}\nContraoferta: $${counterOfferAmount || ''}`;
           }
 
           fetch('/api/push-send', {
