@@ -5487,7 +5487,14 @@ export default function AdminDashboard() {
                     >
                       <div className="flex justify-between items-start mb-1">
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${!n.is_read ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'}`}>
-                          {n.title}
+                          {(() => {
+                            if (n.title && n.title !== 'JOGALIBRE') return n.title;
+                            const b = n.body || n.message || '';
+                            if (b.includes('新規')) return '📩 新規申請通知';
+                            if (b.includes('オファー')) return '💬 オファー回答';
+                            if (b.includes('Result Confirm') || b.includes('結果確認')) return '✅ 結果確認完了';
+                            return '🔔 システム通知';
+                          })()}
                         </span>
                         <span className="text-[9px] text-gray-400 font-medium">
                           {new Date(n.created_at || '').toLocaleString('ja-JP', {

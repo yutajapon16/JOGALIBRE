@@ -7119,7 +7119,16 @@ export default function Home() {
                       <div className="flex justify-between items-start mb-1">
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${!n.is_read ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'
                           }`}>
-                          {n.title}
+                          {(() => {
+                            if (n.title && n.title !== 'Administrador' && n.title !== 'JOGALIBRE') return n.title;
+                            const b = n.body || '';
+                            if (b.includes('Aprobada') || b.includes('aprovada')) return '✅ Solicitud Aprobada / Aprovada';
+                            if (b.includes('Rechazada') || b.includes('rejeitada')) return '❌ Solicitud Rechazada / Rejeitada';
+                            if (b.includes('Contraoferta') || b.includes('contraoferta')) return '💬 Contraoferta';
+                            if (b.includes('Ganado') || b.includes('Ganhado')) return '🎉 ¡Ganado! / Ganhado!';
+                            if (b.includes('Perdido') || b.includes('perdido')) return '😢 Perdido / Perdido';
+                            return '🔔 Notificación / Notificação';
+                          })()}
                         </span>
                         <span className="text-[9px] text-gray-400 font-medium">
                           {new Date(n.created_at || '').toLocaleString(lang === 'es' ? 'es-ES' : 'pt-BR', {
