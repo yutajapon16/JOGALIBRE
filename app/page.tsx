@@ -1409,8 +1409,9 @@ export default function Home() {
     if (currentUser && isProfileLoaded) {
       const hasAcceptedLocal = typeof localStorage !== 'undefined' && localStorage.getItem('joga_terms_accepted') === 'true';
       const hasAcceptedDb = currentUser.termsAcceptedAt !== null && currentUser.termsAcceptedAt !== undefined;
+      const isAdmin = currentUser.role === 'admin';
 
-      if (hasAcceptedDb || hasAcceptedLocal) {
+      if (hasAcceptedDb || hasAcceptedLocal || isAdmin) {
         setShowTermsModal(false);
       } else {
         setShowTermsModal(true);
@@ -1418,7 +1419,7 @@ export default function Home() {
     } else {
       setShowTermsModal(false);
     }
-  }, [currentUser?.termsAcceptedAt, currentUser?.id, isProfileLoaded]);
+  }, [currentUser?.termsAcceptedAt, currentUser?.id, currentUser?.role, isProfileLoaded]);
 
   useEffect(() => {
     if (currentUser && isProfileLoaded) {
@@ -7663,7 +7664,7 @@ export default function Home() {
       })()}
 
       {/* 利用規約同意モーダル */}
-      {showTermsModal && (
+      {showTermsModal && !currentUser?.termsAcceptedAt && (typeof localStorage === 'undefined' || localStorage.getItem('joga_terms_accepted') !== 'true') && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col my-8 animate-in fade-in zoom-in duration-300 max-h-[90vh]">
             {/* ヘッダー */}
