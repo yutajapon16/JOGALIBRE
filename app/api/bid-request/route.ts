@@ -116,9 +116,10 @@ export async function POST(request: Request) {
               })
             });
 
+            const updatedMsg = ((data.customer_message || '') + ' [12h_notified]').trim();
             await supabaseAdmin
               .from('bid_requests')
-              .update({ reminded_12h_admin: true })
+              .update({ customer_message: updatedMsg })
               .eq('id', data.id);
           } catch (pushErr) {
             console.error('Instant 12h push error:', pushErr);

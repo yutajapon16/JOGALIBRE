@@ -17,7 +17,7 @@ export async function GET(request: Request) {
         // 1. 12時間前通知チェック（未完了の全申請対象）
         const { data: allActiveItems, error: activeError } = await supabaseAdmin
             .from('bid_requests')
-            .select('id, product_id, product_title, product_url, product_end_time, status, customer_email, reminded_12h_admin')
+            .select('id, product_id, product_title, product_url, product_end_time, status, customer_email, customer_message')
             .is('final_status', null);
 
         if (activeError) {
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
 
             for (const item of allActiveItems) {
                 // すでに12時間前通知済みの場合はスキップ
-                if (item.reminded_12h_admin) continue;
+                if (item.customer_message && item.customer_message.includes('[12h_notified]')) continue;
 
                 if (!item.product_end_time) continue;
 
@@ -80,10 +80,11 @@ export async function GET(request: Request) {
                             })
                         });
 
-                        // 通知済みフラグを更新
+                        // 重複送信を防止するため customer_message に追記
+                        const updatedMsg = ((item.customer_message || '') + ' [12h_notified]').trim();
                         await supabaseAdmin
                             .from('bid_requests')
-                            .update({ reminded_12h_admin: true })
+                            .update({ customer_message: updatedMsg })
                             .eq('id', item.id);
                     } catch (e) {
                         console.error(`Failed to send 12h notification for item ${item.id}:`, e);
