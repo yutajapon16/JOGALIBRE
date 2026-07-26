@@ -7166,8 +7166,8 @@ export default function Home() {
                           })}
                         </span>
                       </div>
-                      <p className="text-xs sm:text-sm text-gray-700 font-semibold truncate block">
-                        {n.body}
+                      <p className="text-xs sm:text-sm text-gray-700 font-semibold truncate overflow-hidden text-ellipsis whitespace-nowrap block w-full">
+                        {((n.body || '') as string).replace(/\n+/g, ' ')}
                       </p>
                     </div>
                   ))}
