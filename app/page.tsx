@@ -7137,39 +7137,19 @@ export default function Home() {
                   {notifications.map((n) => (
                     <div
                       key={n.id}
-                      className={`p-3 sm:p-4 rounded-xl border transition-all ${!n.is_read ? 'bg-white border-indigo-100 shadow-sm ring-1 ring-indigo-50' : 'bg-gray-50/50 border-gray-100 opacity-80'
-                        }`}
+                      className={`p-3 sm:p-4 rounded-xl border transition-all flex justify-between items-center gap-3 ${!n.is_read ? 'bg-white border-indigo-100 shadow-sm ring-1 ring-indigo-50' : 'bg-gray-50/50 border-gray-100 opacity-80'}`}
                     >
-                      <div className="flex justify-between items-start mb-1">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${!n.is_read ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'
-                          }`}>
-                          {(() => {
-                            let title = n.title || '';
-                            title = title.replace(/\s*\/\s*(Perdido|Ganhado|Aprovada|Rejeitada)/gi, '');
-                            if (title === 'Administrador' || title === 'JOGALIBRE' || !title) {
-                              const b = n.body || '';
-                              if (b.includes('Aprobada') || b.includes('aprovada')) return lang === 'pt' ? '✅ Solicitação Aprovada' : '✅ Solicitud Aprobada';
-                              if (b.includes('Rechazada') || b.includes('rejeitada')) return lang === 'pt' ? '❌ Solicitação Rejeitada' : '❌ Solicitud Rechazada';
-                              if (b.includes('Contraoferta') || b.includes('contraoferta')) return '💬 Contraoferta';
-                              if (b.includes('Ganado') || b.includes('Ganhado')) return lang === 'pt' ? '🎉 Ganhado!' : '🎉 ¡Ganado!';
-                              if (b.includes('Perdido') || b.includes('perdido')) return '😢 Perdido';
-                              return lang === 'pt' ? '🔔 Notificação' : '🔔 Notificación';
-                            }
-                            return title;
-                          })()}
-                        </span>
-                        <span className="text-[9px] text-gray-400 font-medium">
-                          {new Date(n.created_at || '').toLocaleString(lang === 'es' ? 'es-ES' : 'pt-BR', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-gray-700 font-semibold truncate overflow-hidden text-ellipsis whitespace-nowrap block w-full">
+                      <p className="text-xs sm:text-sm text-gray-700 font-semibold truncate overflow-hidden text-ellipsis whitespace-nowrap block flex-1">
                         {((n.body || '') as string).replace(/\n+/g, ' ')}
                       </p>
+                      <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap shrink-0">
+                        {new Date(n.created_at || '').toLocaleString(lang === 'es' ? 'es-ES' : 'pt-BR', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
                     </div>
                   ))}
                 </div>

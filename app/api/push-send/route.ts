@@ -15,7 +15,7 @@ webpush.setVapidDetails(
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId, email, title, body, url, sendToAdmins } = await request.json();
+        const { userId, email, title, body, url, sendToAdmins, bidRequestId } = await request.json();
 
         let targetUserIds: string[] = [];
 
@@ -61,15 +61,69 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // DBに通知履歴を常に記録（端末へPushが届くか否かにかかわらず、Webアプリ上の「Avisos/通知内容確認」モーダルで確実に履歴を閲覧可能にする）
+        // オプション: bidRequestIdが指定されている場合、DBから正確な商品名と翻訳を取得
+        let bidReq: any = null;
+        if (bidRequestId) {
+            const { data: reqData } = await supabaseAdmin
+                .from('bid_requests')
+                .select('product_title, product_title_es, product_title_pt')
+                .eq('id', bidRequestId)
+                .single();
+            if (reqData) bidReq = reqData;
+        }
+
+        // ユーザー権限と言語マップを取得
+        const { data: targetRoles } = await supabaseAdmin
+            .from('user_roles')
+            .select('id, role, language')
+            .in('id', targetUserIds);
+        
+        const roleMap = new Map();
+        if (targetRoles) {
+            targetRoles.forEach(r => roleMap.set(r.id, r));
+        }
+
+        // DBに通知履歴を各受診者の言語に合わせて記録
         try {
-            const logs = targetUserIds.map(uid => ({
-                user_id: uid,
-                title: title || 'JOGALIBRE',
-                body: body || '',
-                url: url || '/',
-                is_read: false
-            }));
+            const logs = targetUserIds.map(uid => {
+                const uInfo = roleMap.get(uid);
+                const isAdmin = uInfo?.role === 'admin';
+                const uLang = uInfo?.language || 'es';
+
+                let formattedBody = body || '';
+                if (bidReq) {
+                    if (isAdmin) {
+                        formattedBody = `商品: ${bidReq.product_title || 'リクエスト商品'}`;
+                    } else if (uLang === 'pt') {
+                        formattedBody = `Produto: ${bidReq.product_title_pt || bidReq.product_title_es || bidReq.product_title}`;
+                    } else {
+                        formattedBody = `Producto: ${bidReq.product_title_es || bidReq.product_title_pt || bidReq.product_title}`;
+                    }
+                } else {
+                    // bidReqがない場合もプレフィックスを受信者言語に強制補正
+                    if (isAdmin) {
+                        formattedBody = formattedBody.replace(/^(Producto|Produto):\s*/i, '商品: ');
+                    } else if (uLang === 'pt') {
+                        formattedBody = formattedBody.replace(/^(商品|Producto):\s*/i, 'Produto: ');
+                    } else {
+                        formattedBody = formattedBody.replace(/^(商品|Produto):\s*/i, 'Producto: ');
+                    }
+                }
+
+                // 不要な「JOGALIBRE」「From 管理画面」「Administrador」タイトルを除正
+                let cleanTitle = title || '';
+                if (!cleanTitle || cleanTitle === 'JOGALIBRE' || cleanTitle === 'Administrador' || cleanTitle === '管理画面') {
+                    cleanTitle = isAdmin ? '🔔 通知' : (uLang === 'pt' ? '🔔 Notificação' : '🔔 Notificación');
+                }
+
+                return {
+                    user_id: uid,
+                    title: cleanTitle,
+                    body: formattedBody,
+                    url: url || '/',
+                    is_read: false
+                };
+            });
 
             if (logs.length > 0) {
                 const { error: logError } = await supabaseAdmin
@@ -100,18 +154,45 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 通知ペイロード
-        const payload = JSON.stringify({
-            title: title !== undefined ? title : 'JOGALIBRE',
-            body: body || '新しい通知があります',
-            icon: '/icons/customer-icon.png',
-            url: url || '/',
-        });
-
-        // 各サブスクリプションに通知を送信
+        // 各サブスクリプションに通知を送信（受信者の言語に合わせてペイロード作成）
         const results = await Promise.allSettled(
             subscriptions.map(async (sub) => {
                 try {
+                    const uInfo = roleMap.get(sub.user_id);
+                    const isAdmin = uInfo?.role === 'admin';
+                    const uLang = uInfo?.language || 'es';
+
+                    let formattedBody = body || '新しい通知があります';
+                    if (bidReq) {
+                        if (isAdmin) {
+                            formattedBody = `商品: ${bidReq.product_title || 'リクエスト商品'}`;
+                        } else if (uLang === 'pt') {
+                            formattedBody = `Produto: ${bidReq.product_title_pt || bidReq.product_title_es || bidReq.product_title}`;
+                        } else {
+                            formattedBody = `Producto: ${bidReq.product_title_es || bidReq.product_title_pt || bidReq.product_title}`;
+                        }
+                    } else {
+                        if (isAdmin) {
+                            formattedBody = formattedBody.replace(/^(Producto|Produto):\s*/i, '商品: ');
+                        } else if (uLang === 'pt') {
+                            formattedBody = formattedBody.replace(/^(商品|Producto):\s*/i, 'Produto: ');
+                        } else {
+                            formattedBody = formattedBody.replace(/^(商品|Produto):\s*/i, 'Producto: ');
+                        }
+                    }
+
+                    let cleanTitle = title || '';
+                    if (!cleanTitle || cleanTitle === 'JOGALIBRE' || cleanTitle === 'Administrador' || cleanTitle === '管理画面') {
+                        cleanTitle = isAdmin ? '🔔 通知' : (uLang === 'pt' ? '🔔 Notificação' : '🔔 Notificación');
+                    }
+
+                    const payload = JSON.stringify({
+                        title: cleanTitle,
+                        body: formattedBody,
+                        icon: '/icons/customer-icon.png',
+                        url: url || '/',
+                    });
+
                     const pushSubscription = JSON.parse(sub.subscription);
                     await webpush.sendNotification(pushSubscription, payload);
                     return { success: true };
