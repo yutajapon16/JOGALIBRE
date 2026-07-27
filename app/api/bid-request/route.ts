@@ -359,7 +359,7 @@ export async function DELETE(request: Request) {
     if (!isAdmin) {
       const { data: bidRequest } = await supabaseAdmin
         .from('bid_requests')
-        .select('customer_email, status')
+        .select('customer_email, status, admin_needs_confirm, final_status')
         .eq('id', id)
         .single();
 
@@ -367,9 +367,13 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
 
-      // 顧客は保留中のリクエストのみ削除可能
-      if (bidRequest.status !== 'pending') {
-        return NextResponse.json({ error: 'Only pending requests can be deleted' }, { status: 403 });
+      // 顧客は保留中・却下済み・確認済みのリクエストを削除可能
+      const canDelete = bidRequest.status === 'pending' || 
+                        bidRequest.status === 'rejected' || 
+                        bidRequest.admin_needs_confirm || 
+                        bidRequest.final_status !== null;
+      if (!canDelete) {
+        return NextResponse.json({ error: 'Only pending or rejected requests can be deleted' }, { status: 403 });
       }
     }
 

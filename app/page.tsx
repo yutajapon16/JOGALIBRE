@@ -4326,7 +4326,7 @@ export default function Home() {
                             {t.accept}
                           </button>
                           <button
-                            onClick={() => confirmRejection(request.id)}
+                            onClick={() => handleCounterOfferResponse(request.id, 'reject')}
                             className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
                           >
                             {t.reject}
