@@ -2100,7 +2100,7 @@ export default function AdminDashboard() {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-100 flex items-start justify-center p-4 pt-20">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
           <div className="flex items-center mb-2">
             <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={200} height={35} className="h-auto w-auto object-contain" priority />
