@@ -2300,7 +2300,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* タブナビゲーション */}
-        <nav className="bg-white border rounded-xl overflow-hidden shadow-sm">
+      <nav className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex">
             {[
@@ -2323,8 +2323,8 @@ export default function AdminDashboard() {
               >
                 <span className="block text-lg">{tab.icon}</span>
                 {tab.label}
-               </button>
-             ))}
+              </button>
+            ))}
           </div>
         </div>
       </nav>
