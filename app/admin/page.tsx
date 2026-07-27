@@ -2149,7 +2149,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <header className="bg-white shadow pt-7 sm:pt-4">
+      <header className="bg-white shadow pt-3.5 sm:pt-4">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ & ログアウト */}
           <div className="flex justify-between items-center mb-2">

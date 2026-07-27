@@ -593,7 +593,9 @@ export async function PATCH(request: Request) {
 
     // 顧客がカウンターオファーを却下した場合
     if (customerAction === 'reject_counter') {
+      updateData.status = 'rejected';
       updateData.admin_needs_confirm = true;
+      updateData.customer_counter_offer_used = true;
     }
 
     if (
