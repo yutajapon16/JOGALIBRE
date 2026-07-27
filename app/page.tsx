@@ -1009,6 +1009,17 @@ export default function Home() {
   const [selectedBrlItemIds, setSelectedBrlItemIds] = useState<string[]>([]);
   const [showBrlBatchPaymentModal, setShowBrlBatchPaymentModal] = useState(false);
   const [brlPaymentMethod, setBrlPaymentMethod] = useState<'pix' | 'card'>('pix');
+  const [isProcessingBrlPayment, setIsProcessingBrlPayment] = useState(false);
+  const [brlPaymentCpf, setBrlPaymentCpf] = useState('');
+  const [brlPaymentError, setBrlPaymentError] = useState<string | null>(null);
+  
+  // PIX支払い完了時のQRコード表示用ステート
+  const [pixPaymentResult, setPixPaymentResult] = useState<{
+    qrCodeImage: string;
+    qrCodeText: string;
+    value: number;
+    expirationDate: string;
+  } | null>(null);
 
   const isBrlUser = !!(
     currentUser && (
@@ -1023,6 +1034,83 @@ export default function Home() {
     setSelectedBrlItemIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
+  };
+
+  // モーダルを開くときに既存のCPFをセット
+  useEffect(() => {
+    if (showBrlBatchPaymentModal && currentUser?.cpf) {
+      setBrlPaymentCpf(currentUser.cpf);
+    } else if (showBrlBatchPaymentModal) {
+      setBrlPaymentCpf('');
+    }
+    
+    if (showBrlBatchPaymentModal) {
+      setBrlPaymentError(null);
+      setPixPaymentResult(null);
+    }
+  }, [showBrlBatchPaymentModal, currentUser?.cpf]);
+
+  // ASAAS決済実行
+  const handleProcessBrlPayment = async (totalAmount: number, items: any[]) => {
+    if (!currentUser) return;
+    
+    // CPFチェック（未入力の場合はエラー）
+    if (!currentUser.cpf && !brlPaymentCpf.trim()) {
+      setBrlPaymentError(lang === 'es' ? 'Por favor, ingrese su CPF o CNPJ' : 'Por favor, informe seu CPF ou CNPJ');
+      return;
+    }
+
+    setIsProcessingBrlPayment(true);
+    setBrlPaymentError(null);
+
+    try {
+      // 決済リクエスト
+      const reqBody = {
+        billingType: brlPaymentMethod === 'pix' ? 'PIX' : 'CREDIT_CARD',
+        items: items.map(i => ({ id: i.id, amount: i.finalPrice || (i.customerCounterOffer && !i.customerCounterOfferUsed ? i.customerCounterOffer : (i.counterOffer || i.maxBid || 0)) })),
+        totalAmount: totalAmount,
+        cpfCnpj: brlPaymentCpf.trim() || undefined
+      };
+
+      const res = await fetch('/api/asaas-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        body: JSON.stringify(reqBody)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Payment failed');
+      }
+
+      if (data.billingType === 'PIX') {
+        if (data.pix) {
+          // QRコード画面を表示
+          setPixPaymentResult({
+            qrCodeImage: data.pix.qrCodeImage,
+            qrCodeText: data.pix.qrCodeText,
+            value: data.value,
+            expirationDate: data.pix.expirationDate
+          });
+        } else {
+          throw new Error('PIX QR Code não retornado pela API');
+        }
+      } else if (data.billingType === 'CREDIT_CARD' && data.invoiceUrl) {
+        // カード決済画面へリダイレクト
+        window.open(data.invoiceUrl, '_blank');
+        setShowBrlBatchPaymentModal(false);
+        alert(lang === 'es' ? 'Por favor complete el pago en la nueva ventana.' : 'Por favor complete o pagamento na nova janela.');
+        // 状態を更新するために一覧を再取得
+        await fetchPurchasedItems();
+      }
+
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      setBrlPaymentError(err.message || (lang === 'es' ? 'Error al procesar el pago' : 'Erro ao processar o pagamento'));
+    } finally {
+      setIsProcessingBrlPayment(false);
+    }
   };
 
   // 支払い設定をAPIからフェッチする関数
@@ -7653,23 +7741,97 @@ export default function Home() {
 
               {/* フッターアクションボタン */}
               <div className="p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-                <button
-                  type="button"
-                  onClick={() => {
-                    alert(
-                      lang === 'es'
-                        ? '✨ [Modo de Prueba / Presets] La interfaz de pago unificado está lista. Una vez conectada la API Key, el pago en BRL (PIX/Cartón) procesará automáticamente los ítems y actualizará el estado de la cuenta.'
-                        : '✨ [Modo de Teste / Presets] A interface de pagamento unificado está pronta! Assim que a chave API for conectada, o pagamento em BRL (PIX/Cartão) processará os itens e atualizará o status da conta automaticamente.'
-                    );
-                  }}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer"
-                >
-                  <span>
-                    {lang === 'es'
-                      ? `Proceder al Pago (R$ ${formatBrlModal(totalBrl)})`
-                      : `Ir para Pagamento (R$ ${formatBrlModal(totalBrl)})`}
-                  </span>
-                </button>
+                {!currentUser?.cpf && !pixPaymentResult && (
+                  <div className="mb-4">
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      {lang === 'es' ? 'CPF o CNPJ (Requerido para pago)' : 'CPF ou CNPJ (Obrigatório para pagamento)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={brlPaymentCpf}
+                      onChange={(e) => setBrlPaymentCpf(e.target.value)}
+                      placeholder="000.000.000-00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                )}
+                
+                {brlPaymentError && (
+                  <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100">
+                    {brlPaymentError}
+                  </div>
+                )}
+
+                {pixPaymentResult ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-white border-2 border-emerald-500 rounded-xl flex flex-col items-center justify-center">
+                      <p className="text-sm font-bold text-gray-700 mb-2">Escaneie o QR Code</p>
+                      {/* base64画像を表示 */}
+                      <img src={`data:image/jpeg;base64,${pixPaymentResult.qrCodeImage}`} alt="PIX QR Code" className="w-48 h-48 mb-2" />
+                      <p className="text-xs text-gray-500">
+                        {lang === 'es' ? 'Válido hasta:' : 'Válido até:'} {new Date(pixPaymentResult.expirationDate).toLocaleString()}
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <p className="text-sm font-bold text-gray-700 text-center">PIX Copia e Cola</p>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          readOnly 
+                          value={pixPaymentResult.qrCodeText} 
+                          className="flex-1 px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-xs font-mono text-gray-600 outline-none"
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(pixPaymentResult.qrCodeText);
+                            alert(lang === 'es' ? '¡Código copiado!' : 'Código copiado!');
+                          }}
+                          className="px-4 py-2 bg-gray-800 text-white text-xs font-bold rounded-lg hover:bg-gray-900 transition"
+                        >
+                          Copiar
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        setShowBrlBatchPaymentModal(false);
+                        fetchPurchasedItems(); // リストを更新
+                      }}
+                      className="w-full py-3 bg-gray-200 text-gray-700 font-bold rounded-xl mt-4 hover:bg-gray-300 transition"
+                    >
+                      {lang === 'es' ? 'Cerrar' : 'Fechar'}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isProcessingBrlPayment || (!currentUser?.cpf && !brlPaymentCpf.trim())}
+                    onClick={() => handleProcessBrlPayment(totalBrl, selectedItems)}
+                    className={`w-full font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-sm sm:text-base ${
+                      isProcessingBrlPayment || (!currentUser?.cpf && !brlPaymentCpf.trim())
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                    }`}
+                  >
+                    {isProcessingBrlPayment ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {lang === 'es' ? 'Procesando...' : 'Processando...'}
+                      </span>
+                    ) : (
+                      <span>
+                        {lang === 'es'
+                          ? `Proceder al Pago (R$ ${formatBrlModal(totalBrl)})`
+                          : `Ir para Pagamento (R$ ${formatBrlModal(totalBrl)})`}
+                      </span>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
