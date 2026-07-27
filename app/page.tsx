@@ -5447,6 +5447,9 @@ export default function Home() {
                       <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
                         USD
                       </th>
+                      <th className="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                        {lang === 'es' ? 'Recibo' : 'Recibo'}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
@@ -5462,9 +5465,11 @@ export default function Home() {
                         pix: 'PIX',
                         pix_brl: 'PIX',
                         cash: lang === 'es' ? 'Efectivo' : 'Dinheiro',
-                        cash_brl: lang === 'es' ? 'Efectivo (BRL)' : 'Dinheiro (BRL)'
+                        cash_brl: lang === 'es' ? 'Efectivo (BRL)' : 'Dinheiro (BRL)',
+                        asaas_pix: 'PIX',
+                        asaas_credit_card: lang === 'es' ? 'Tarjeta' : 'Cartão'
                       };
-                      const isBrl = item.payment_method?.endsWith('_brl');
+                      const isBrl = item.payment_method?.includes('_brl') || item.payment_method?.startsWith('asaas_');
                       const formatBrl = (amount: number) => {
                         const formatted = amount.toFixed(2);
                         const [integerPart, decimalPart] = formatted.split('.');
@@ -5490,6 +5495,21 @@ export default function Home() {
                           </td>
                           <td className={`px-4 py-3 whitespace-nowrap font-bold text-indigo-600 ${(!isBrl || !item.usd_amount) ? 'text-center' : 'text-right'}`}>
                             {isBrl ? (item.usd_amount ? `$ ${Number(item.usd_amount).toLocaleString('en-US')}` : '-') : '-'}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-center">
+                            {item.receipt_url ? (
+                              <a 
+                                href={item.receipt_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center p-2 text-indigo-600 hover:bg-indigo-50 rounded-full transition"
+                                title={lang === 'es' ? 'Descargar Recibo' : 'Baixar Recibo'}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                              </a>
+                            ) : '-'}
                           </td>
                         </tr>
                       );

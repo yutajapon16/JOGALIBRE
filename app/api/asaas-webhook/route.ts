@@ -141,42 +141,159 @@ export async function POST(request: Request) {
   }
 }
 
+import { generateAndUploadReceipt } from '@/lib/receipt-generator';
+import { sendReceiptEmail } from '@/lib/resend';
+
 /**
  * 支払い確認時の処理
  * externalReferenceにbid_requestのIDが設定されている場合、
- * 該当するbid_requestのpaid_brazilフラグをtrueに更新する
+ * 該当するbid_requestを更新し、入金データを作成、領収書を発行する
  */
 async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
-  const bidRequestId = payment.externalReference;
+  const bidRequestIds = payment.externalReference?.split(',').map(id => id.trim()).filter(id => id);
 
-  if (!bidRequestId) {
-    console.log(`[ASAAS Webhook] externalReferenceが設定されていないため、bid_requestの更新をスキップ: ${payment.id}`);
+  if (!bidRequestIds || bidRequestIds.length === 0) {
+    console.log(`[ASAAS Webhook] externalReferenceが設定されていないため、更新をスキップ: ${payment.id}`);
     return;
   }
 
   try {
-    // bid_requestsテーブルの支払いステータスを更新
-    const { data, error } = await supabaseAdmin
+    // 1. 対象の bid_requests を取得
+    const { data: items, error: itemsError } = await supabaseAdmin
       .from('bid_requests')
-      .update({
-        paid_brazil: true,
-        paid_brazil_at: new Date().toISOString(),
-        payment_method: `asaas_${payment.billingType.toLowerCase()}`
-      })
-      .eq('id', bidRequestId)
-      .select('id, product_title, customer_email')
-      .single();
+      .select('id, total_jpy, customer_email, customer_name, finalPrice, customerCounterOffer, counterOffer, maxBid, user_id, customerId')
+      .in('id', bidRequestIds);
 
-    if (error) {
-      console.error(`[ASAAS Webhook] bid_request更新エラー (ID: ${bidRequestId}):`, error);
+    if (itemsError || !items || items.length === 0) {
+      console.error(`[ASAAS Webhook] bid_requests 取得エラー:`, itemsError);
       return;
     }
 
-    if (data) {
-      console.log(`[ASAAS Webhook] 支払い確認完了: bid_request=${data.id}, 商品=${data.product_title}, 金額=${payment.value} BRL`);
+    // 2. payment_settings を取得して為替レートを確認
+    const { data: settings } = await supabaseAdmin
+      .from('payment_settings')
+      .select('rates')
+      .single();
+
+    const brlRate = settings?.rates?.BRL || 5.65;
+    const jpyRate = settings?.rates?.JPY || 150;
+
+    // 3. 内訳（Line A / Line B）の計算
+    // JOGA立替金（日本支払額）の合計を計算
+    const totalJpySum = items.reduce((sum, item) => sum + (Number(item.total_jpy) || 0), 0);
+    
+    // BRLでの立替金額 = (JPY / JPYレート) * BRLレート
+    let thirdPartyRepasseBrl = (totalJpySum / jpyRate) * brlRate;
+    
+    // もし総支払額より立替金が上回ってしまうなどの異常があれば調整
+    if (thirdPartyRepasseBrl > payment.value) {
+      thirdPartyRepasseBrl = payment.value * 0.9; // セーフティ（本来は起こらない）
     }
+
+    const systemFeeBrl = payment.value - thirdPartyRepasseBrl;
+
+    // 4. deposits テーブルに入金レコードを作成
+    const usdEquivalent = payment.value / brlRate;
+    const { data: newDeposit, error: depositError } = await supabaseAdmin
+      .from('deposits')
+      .insert({
+        user_id: items[0].user_id, // 代表ユーザーのID
+        amount: payment.value,
+        usd_amount: usdEquivalent,
+        currency: 'BRL',
+        payment_method: `asaas_${payment.billingType.toLowerCase()}`,
+        status: 'approved',
+        deposit_type: '商品代金',
+        confirmed_at: new Date().toISOString(),
+        customer_id: items[0].customerId,
+      })
+      .select('id')
+      .single();
+
+    if (depositError || !newDeposit) {
+      console.error('[ASAAS Webhook] deposits 作成エラー:', depositError);
+      return;
+    }
+
+    // 5. bid_requests のステータスを更新
+    const { error: updateError } = await supabaseAdmin
+      .from('bid_requests')
+      .update({
+        status: 'won', // 支払済（落札済）ステータスへ
+        finalStatus: 'won',
+        paid_brazil: true,
+        paid_brazil_at: new Date().toISOString(),
+        payment_method: `asaas_${payment.billingType.toLowerCase()}`,
+        deposit_id: newDeposit.id,
+      })
+      .in('id', bidRequestIds);
+
+    if (updateError) {
+      console.error('[ASAAS Webhook] bid_requests 更新エラー:', updateError);
+    }
+
+    // 6. 領収書 (PDF) の生成と保存
+    const customerName = items[0].customer_name || 'Cliente';
+    const customerEmail = items[0].customer_email;
+    
+    const receiptUrl = await generateAndUploadReceipt({
+      receiptNumber: payment.id.replace('pay_', '').substring(0, 8).toUpperCase(),
+      customerName: customerName,
+      customerCpfCnpj: '', // ASAAS payloadに無いため省略、またはAPIで顧客情報を引くことも可能
+      paymentDate: new Date().toLocaleDateString('pt-BR'),
+      totalAmountBrl: payment.value,
+      systemFeeBrl: systemFeeBrl,
+      thirdPartyRepasseBrl: thirdPartyRepasseBrl,
+      paymentMethod: payment.billingType === 'PIX' ? 'PIX' : 'Cartão de Crédito',
+    });
+
+    if (receiptUrl) {
+      // 7. deposits に receipt_url を保存
+      await supabaseAdmin
+        .from('deposits')
+        .update({ receipt_url: receiptUrl })
+        .eq('id', newDeposit.id);
+
+      // 8. 顧客へメール送信
+      if (customerEmail) {
+        try {
+          await sendReceiptEmail(customerEmail, receiptUrl, payment.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
+        } catch (emailErr) {
+          console.error('[ASAAS Webhook] メール送信エラー:', emailErr);
+        }
+      }
+    }
+
+    // 9. NFS-e (Nota Fiscal) 自動発行APIの呼び出し（現在はコメントアウト）
+    /*
+    try {
+      // ASAAS APIで NFS-e を発行する処理
+      // SystemFeeBrl (Line A) に対してのみ発行する
+      const invoicePayload = {
+        payment: payment.id,
+        installment: null,
+        customer: payment.customer,
+        serviceDescription: 'Taxa de Serviço do Sistema (Intermediação)',
+        observations: 'Emissão automática via JOGALIBRE',
+        value: systemFeeBrl,
+        deductions: 0,
+        effectiveDate: new Date().toISOString().split('T')[0],
+        municipalServiceId: '10.02', // ※実際の市役所のサービスコード（仲介業など）に変更が必要
+        municipalServiceCode: '10.02',
+        municipalServiceName: 'Agenciamento, corretagem ou intermediação',
+        updatePayment: false, // 支払金額自体は変更しない
+      };
+      
+      // await asaasRequest('/invoices', 'POST', invoicePayload);
+      console.log(`[ASAAS Webhook] NFS-e emissão (desativada). Valor: R$ ${systemFeeBrl}`);
+    } catch (nfsErr) {
+      console.error('[ASAAS Webhook] NFS-e erro:', nfsErr);
+    }
+    */
+
+    console.log(`[ASAAS Webhook] 支払い確認・全処理完了: payment=${payment.id}, items=${bidRequestIds.length}件`);
   } catch (err) {
-    console.error(`[ASAAS Webhook] handlePaymentConfirmed エラー:`, err);
+    console.error(`[ASAAS Webhook] handlePaymentConfirmed 致命的エラー:`, err);
   }
 }
 

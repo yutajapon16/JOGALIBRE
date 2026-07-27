@@ -38,3 +38,35 @@ export async function sendOrderCsvEmail(to: string, csvContent: string, dateStr:
     throw error;
   }
 }
+
+export async function sendReceiptEmail(to: string, receiptUrl: string, amount: string) {
+  try {
+    const resend = getResend();
+    const { data, error } = await resend.emails.send({
+      from: 'JOGALIBRE Pagamentos <pagamentos@jogalibre.com>', // 独自ドメイン推奨。テスト時は resend 登録ドメインに変更
+      to: [to],
+      subject: `[JOGALIBRE] Recibo de Pagamento - R$ ${amount}`,
+      html: `
+        <h2>Pagamento Confirmado!</h2>
+        <p>Olá,</p>
+        <p>Recebemos o seu pagamento no valor de <strong>R$ ${amount}</strong>.</p>
+        <p>O seu <strong>Recibo de Intermediação e Repasse</strong> já está disponível.</p>
+        <br/>
+        <a href="${receiptUrl}" style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Baixar Recibo em PDF</a>
+        <br/><br/>
+        <p>Você também pode encontrar este recibo na aba "Deposits" do seu painel.</p>
+        <p>Obrigado por utilizar a JOGALIBRE.</p>
+      `,
+    });
+
+    if (error) {
+      console.error('Resend receipt email error:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Failed to send receipt email via Resend:', error);
+    throw error;
+  }
+}
