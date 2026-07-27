@@ -4334,6 +4334,16 @@ export default function Home() {
                         </div>
                       )}
 
+                      {/* ケース4B拒否完了後の削除ボタン */}
+                      {request.status === 'rejected' && request.customerCounterOffer && request.customerCounterOfferUsed && (
+                        <button
+                          onClick={() => confirmRejection(request.id)}
+                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
+                        >
+                          {t.deleteCard}
+                        </button>
+                      )}
+
                       {/* 落札（won）時の確認ボタン */}
                       {request.finalStatus === 'won' && !request.customerConfirmed && (
                         <button
