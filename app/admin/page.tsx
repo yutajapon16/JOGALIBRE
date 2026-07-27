@@ -1362,8 +1362,8 @@ export default function AdminDashboard() {
         const targetRequest = bidRequests.find(r => r.id === id);
         const email = targetRequest?.customerEmail;
         if (email) {
-          const itemTitle = targetRequest?.productTitle || 'Item';
           const lang = targetRequest?.language || 'es';
+          const itemTitle = (lang === 'pt' ? (targetRequest as any)?.productTitlePt : (targetRequest as any)?.productTitleEs) || targetRequest?.productTitle || 'Item';
           let notifyTitle = 'Resultado';
           let notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
 
@@ -2135,7 +2135,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <header className="bg-white shadow pt-safe">
+      <header className="bg-white shadow pt-7 sm:pt-4">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ & ログアウト */}
           <div className="flex justify-between items-center mb-2">
