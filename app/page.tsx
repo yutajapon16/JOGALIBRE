@@ -1064,6 +1064,10 @@ export default function Home() {
     setBrlPaymentError(null);
 
     try {
+      // accessTokenの取得を追加
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
       // 決済リクエスト
       const reqBody = {
         billingType: brlPaymentMethod === 'pix' ? 'PIX' : 'CREDIT_CARD',
@@ -1074,7 +1078,7 @@ export default function Home() {
 
       const res = await fetch('/api/asaas-payment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': accessToken ? `Bearer ${accessToken}` : '' },
         body: JSON.stringify(reqBody)
       });
 
