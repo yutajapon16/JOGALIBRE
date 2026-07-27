@@ -5536,19 +5536,31 @@ export default function AdminDashboard() {
                   {notifications.map((n) => (
                     <div
                       key={n.id}
-                      className={`p-3 sm:p-4 rounded-xl border transition-all flex justify-between items-center gap-3 ${!n.is_read ? 'bg-white border-indigo-100 shadow-sm ring-1 ring-indigo-50' : 'bg-gray-50/50 border-gray-100 opacity-80'}`}
+                      className={`p-3 sm:p-4 rounded-xl border transition-all ${!n.is_read ? 'bg-white border-indigo-100 shadow-sm ring-1 ring-indigo-50' : 'bg-gray-50/50 border-gray-100 opacity-80'}`}
                     >
-                      <p className="text-xs sm:text-sm text-gray-700 font-semibold truncate overflow-hidden text-ellipsis whitespace-nowrap block flex-1">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${!n.is_read ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'}`}>
+                          {(() => {
+                            if (n.title && n.title !== 'JOGALIBRE' && n.title !== 'Administrador' && n.title !== '管理画面') return n.title;
+                            const b = n.body || n.message || '';
+                            if (b.includes('新規')) return '📩 新規申請通知';
+                            if (b.includes('オファー')) return '💬 オファー回答';
+                            if (b.includes('Result Confirm') || b.includes('結果確認')) return '✅ 結果確認完了';
+                            return '🔔 システム通知';
+                          })()}
+                        </span>
+                        <span className="text-[9px] text-gray-400 font-medium">
+                          {new Date(n.created_at || '').toLocaleString('ja-JP', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-700 font-semibold truncate overflow-hidden text-ellipsis whitespace-nowrap block w-full">
                         {((n.body || n.message || '') as string).replace(/\n+/g, ' ')}
                       </p>
-                      <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap shrink-0">
-                        {new Date(n.created_at || '').toLocaleString('ja-JP', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
                     </div>
                   ))}
                 </div>
