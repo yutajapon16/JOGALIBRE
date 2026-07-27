@@ -220,11 +220,9 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
       .from('bid_requests')
       .update({
         status: 'won', // 支払済（落札済）ステータスへ
-        finalStatus: 'won',
+        final_status: 'won', // DBのカラム名はスネークケース
         paid_brazil: true,
         paid_brazil_at: new Date().toISOString(),
-        payment_method: `asaas_${payment.billingType.toLowerCase()}`,
-        deposit_id: newDeposit.id,
       })
       .in('id', bidRequestIds);
 
