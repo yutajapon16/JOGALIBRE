@@ -2299,7 +2299,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* タブナビゲーション */}
+      {/* タブナビゲーション */}
       <nav className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex">
@@ -2329,7 +2329,7 @@ export default function AdminDashboard() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="pt-2">
         {activeTab === 'requests' && (
           <div className="flex flex-col gap-4 w-full">
             <button
@@ -4607,7 +4607,7 @@ export default function AdminDashboard() {
             )}
           </>
         )}
-      </main>
+      </div>
 
       {selectedRequest && actionType === 'reject' && (
         <div
