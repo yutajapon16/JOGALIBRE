@@ -809,13 +809,20 @@ export default function AdminDashboard() {
     getCurrentUser().then(user => {
       if (user?.role === 'admin') {
         setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
       }
+    }).catch(() => {
+      setCurrentUser(null);
+    }).finally(() => {
+      setLoading(false);
     });
 
     // セッション変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
+        setLoading(false);
       } else if (session?.user) {
         // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
         const user = await getCurrentUser(session.user);
@@ -826,6 +833,9 @@ export default function AdminDashboard() {
           await supabase.auth.signOut({ scope: 'local' });
           alert('管理者アカウントでログインしてください');
         }
+        setLoading(false);
+      } else {
+        setLoading(false);
       }
     });
 

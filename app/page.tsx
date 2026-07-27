@@ -2247,24 +2247,24 @@ export default function Home() {
   };
 
   const handleLogout = async () => {
-    // ログアウト前にPushサブスクリプションを削除
-    if (currentUser) {
-      try {
-        await fetch('/api/push-subscribe', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUser.id }),
-        });
-      } catch (err) {
-        console.error('Push subscription cleanup error:', err);
-      }
-    }
+    setShowLogoutConfirm(false);
+    const userId = currentUser?.id;
+    setCurrentUser(null);
+    setIsAuthChecking(false);
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('joga_terms_accepted');
     }
-    setIsAuthChecking(false);
-    setCurrentUser(null);
-    await signOut();
+    if (userId) {
+      fetch('/api/push-subscribe', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      }).catch(err => console.error('Push subscription cleanup error:', err));
+    }
+    signOut().catch(err => console.error('Signout error:', err));
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   const handleCopyTrackingNumber = (itemId: string, trackingNumber: string) => {
@@ -3571,7 +3571,7 @@ export default function Home() {
           </div>
         </div>
       )}
-      <header className="bg-white shadow pt-7 sm:pt-4">
+      <header className="bg-white shadow pt-safe">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ & ログアウト */}
           <div className="flex justify-between items-center mb-2">
