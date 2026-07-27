@@ -161,7 +161,7 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
     // 1. 対象の bid_requests を取得
     const { data: items, error: itemsError } = await supabaseAdmin
       .from('bid_requests')
-      .select('id, total_jpy, customer_email, customer_name, finalPrice, customerCounterOffer, counterOffer, maxBid, user_id, customerId')
+      .select('id, total_jpy, customer_email, customer_name, final_price, customer_counter_offer, counter_offer, max_bid, customer_id')
       .in('id', bidRequestIds);
 
     if (itemsError || !items || items.length === 0) {
@@ -194,18 +194,29 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
 
     // 4. deposits テーブルに入金レコードを作成
     const usdEquivalent = payment.value / brlRate;
+    
+    // customer_id が bid_requests にない場合は user_roles から取得
+    let customerId = items[0].customer_id;
+    if (!customerId && items[0].customer_email) {
+      const { data: userRole } = await supabaseAdmin
+        .from('user_roles')
+        .select('customer_id')
+        .eq('email', items[0].customer_email)
+        .single();
+      if (userRole?.customer_id) {
+        customerId = userRole.customer_id;
+      }
+    }
+
     const { data: newDeposit, error: depositError } = await supabaseAdmin
       .from('deposits')
       .insert({
-        user_id: items[0].user_id, // 代表ユーザーのID
+        customer_id: customerId || 'UNKNOWN',
         amount: payment.value,
         usd_amount: usdEquivalent,
-        currency: 'BRL',
+        deposit_date: new Date().toISOString().split('T')[0],
         payment_method: `asaas_${payment.billingType.toLowerCase()}`,
-        status: 'approved',
         deposit_type: '商品代金',
-        confirmed_at: new Date().toISOString(),
-        customer_id: items[0].customerId,
       })
       .select('id')
       .single();
