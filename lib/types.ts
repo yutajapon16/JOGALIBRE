@@ -28,6 +28,8 @@ export interface BidRequest {
   id: string;
   productId?: string;
   productTitle: string;
+  productTitleEs?: string;
+  productTitlePt?: string;
   productUrl: string;
   productImage: string;
   productPrice: number | null;

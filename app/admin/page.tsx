@@ -1143,6 +1143,8 @@ export default function AdminDashboard() {
         id: req.id as string,
         productId: req.product_id as string,
         productTitle: req.product_title as string,
+        productTitleEs: req.product_title_es as string,
+        productTitlePt: req.product_title_pt as string,
         productUrl: req.product_url as string,
         productImage: req.product_image as string,
         productPrice: req.product_price,
@@ -1321,6 +1323,7 @@ export default function AdminDashboard() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              bidRequestId: id,
               email,
               title: notifyTitle,
               body: notifyBody,
@@ -1363,7 +1366,7 @@ export default function AdminDashboard() {
         const email = targetRequest?.customerEmail;
         if (email) {
           const lang = targetRequest?.language || 'es';
-          const itemTitle = (lang === 'pt' ? (targetRequest as any)?.productTitlePt : (targetRequest as any)?.productTitleEs) || targetRequest?.productTitle || 'Item';
+          const itemTitle = (lang === 'pt' ? targetRequest?.productTitlePt : targetRequest?.productTitleEs) || targetRequest?.productTitle || 'Item';
           let notifyTitle = 'Resultado';
           let notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
 
@@ -1381,6 +1384,7 @@ export default function AdminDashboard() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              bidRequestId: id,
               email,
               title: notifyTitle,
               body: notifyBody,
