@@ -1101,12 +1101,9 @@ export default function Home() {
           throw new Error('PIX QR Code não retornado pela API');
         }
       } else if (data.billingType === 'CREDIT_CARD' && data.invoiceUrl) {
-        // カード決済画面へリダイレクト
-        window.open(data.invoiceUrl, '_blank');
-        setShowBrlBatchPaymentModal(false);
-        alert(lang === 'es' ? 'Por favor complete el pago en la nueva ventana.' : 'Por favor complete o pagamento na nova janela.');
-        // 状態を更新するために一覧を再取得
-        await fetchPurchasedItems();
+        // カード決済画面へリダイレクト (モバイルブラウザのポップアップブロックを回避するため現在のタブで遷移)
+        window.location.href = data.invoiceUrl;
+        return; // 遷移するので以降の処理はスキップ
       }
 
     } catch (err: any) {
