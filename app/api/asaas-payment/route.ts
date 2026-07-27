@@ -72,6 +72,7 @@ async function findOrCreateAsaasCustomer(
     cpfCnpj: cpfCnpj.replace(/[.\-\/]/g, ''), // フォーマット文字を除去
     mobilePhone: phone?.replace(/[^0-9]/g, '') || undefined,
     externalReference: email, // 自システムのメールアドレスで紐づけ
+    notificationDisabled: true // ASAASからの自動通知（SMS/Email等）を無効化
   });
 
   if (createResult.error) {
