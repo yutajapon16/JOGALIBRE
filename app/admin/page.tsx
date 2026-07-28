@@ -5588,8 +5588,8 @@ export default function AdminDashboard() {
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in duration-150 text-center">
-            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
-              🚪
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Image src="/icons/logo-mark.png" alt="Logo" width={28} height={28} className="object-contain" />
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               ログアウトの確認
