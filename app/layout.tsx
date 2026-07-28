@@ -72,6 +72,22 @@ export default function RootLayout({
         <meta name="color-scheme" content="light" />
         <link rel="icon" href="/icons/customer-icon.png" type="image/png" />
         <link rel="apple-touch-icon" href="/icons/customer-icon.png" />
+
+        {/* Fallback explicit Open Graph Meta Tags for WhatsApp & Social Web Crawlers */}
+        <meta property="og:title" content="JOGALIBRE" />
+        <meta property="og:description" content="Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão" />
+        <meta property="og:image" content="https://www.jogalibre.com/icons/customer-icon.png" />
+        <meta property="og:image:secure_url" content="https://www.jogalibre.com/icons/customer-icon.png" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="512" />
+        <meta property="og:image:height" content="512" />
+        <meta property="og:site_name" content="JOGALIBRE" />
+        <meta property="og:type" content="website" />
+
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="JOGALIBRE" />
+        <meta name="twitter:description" content="Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão" />
+        <meta name="twitter:image" content="https://www.jogalibre.com/icons/customer-icon.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
