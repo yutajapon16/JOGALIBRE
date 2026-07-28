@@ -409,8 +409,8 @@ export async function PATCH(request: Request) {
       .single();
 
     const isAdmin = roleData?.role === 'admin';
-    const body = await request.json();
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, maxBid, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber, totalJpy, cancelledAt,
+    const body = await request.json();    
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, maxBid, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber, totalJpy, japanSendUsd, cancelledAt,
       // 発送追跡
       shipping_status, shipped_at, carrier, tracking_number, tracking_url, estimated_arrival_date
     } = body;
@@ -448,6 +448,7 @@ export async function PATCH(request: Request) {
       if (shippingCostJpy !== undefined) updateData.shipping_cost_jpy = shippingCostJpy;
       if (finalStatus !== undefined) updateData.final_status = finalStatus;
       if (totalJpy !== undefined) updateData.total_jpy = totalJpy ? Number(totalJpy) : null;
+    if (japanSendUsd !== undefined) updateData.japan_send_usd = japanSendUsd ? Number(japanSendUsd) : null;
       if (stockNumber !== undefined) updateData.stock_number = stockNumber ? stockNumber.trim() : null;
       if (invoiceNumber !== undefined) updateData.invoice_number = invoiceNumber ? invoiceNumber.trim() : null;
 

@@ -5628,7 +5628,7 @@ export default function Home() {
                     const brlRate = exchangeRates['BRL'] || 5.6;
                     const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
                     const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
-                    const japanSendAmount = calculateJapanSendAmount(item, totalSalePrice, exchangeRates['JPY'] || exchangeRate || 150);
+                    const japanSendAmount = item.japan_send_usd ?? calculateJapanSendAmount(item, totalSalePrice, exchangeRates['JPY'] || exchangeRate || 150);
 
                     const halfBrlStr = paidBrazilBrl.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
                     const halfPrice = paidParaguayUsd;
