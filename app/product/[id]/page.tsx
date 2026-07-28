@@ -386,6 +386,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     
     return `${getCurrencySymbol(targetCurrency)} ${finalConverted.toLocaleString('en-US').replace(/,/g, '.')}`;
   };
+  useEffect(() => {
+    if (product?.currentPrice && bidForm.maxBid === '') {
+      setBidForm(prev => ({ 
+        ...prev, 
+        maxBid: calculateConvertedPrice(product.currentPrice, 'USD').toString().replace(/,/g, '') 
+      }));
+    }
+  }, [product, exchangeRates]);
 
   // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)
   const formatLocalCost = (cost: number | string): string => {

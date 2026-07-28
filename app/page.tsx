@@ -3635,7 +3635,7 @@ export default function Home() {
                   name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
                     ? (currentUser?.agentFullName || '')
                     : (currentUser?.fullName || ''),
-                  maxBid: '' 
+                  maxBid: calculateConvertedPrice(product.currentPrice, 'USD', product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id).toString().replace(/,/g, '')
                 });
                 if (product.url) {
                   fetchProductDetailForOfferSilent(product.url);
