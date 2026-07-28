@@ -3173,11 +3173,9 @@ export default function Home() {
     return (
       <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
           <div className="text-center">
-          <div className="flex justify-center items-center gap-1.5 mb-6 mt-2">
-            <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={56} height={56} className="object-contain animate-pulse" priority />
-            <div className="relative h-14 w-[280px] overflow-hidden animate-pulse">
-              <Image src="/icons/logo-text.png" alt="JOGALIBRE" fill className="object-cover object-center" priority />
-            </div>
+          <div className="flex justify-center items-center gap-1.5 sm:gap-2 mb-6 mt-2 max-w-full">
+            <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={32} height={32} className="object-contain w-auto h-6 sm:h-8 animate-pulse flex-shrink-0" priority />
+            <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={428} height={32} className="object-contain w-auto h-6 sm:h-8 animate-pulse flex-shrink min-w-[120px]" priority />
           </div>
           <div className="text-gray-500 text-sm font-bold">Carregando... / Cargando...</div>
         </div>
@@ -3188,13 +3186,11 @@ export default function Home() {
   if (!currentUser) {
     return (
       <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full relative z-10 pt-safe">
+        <div className="bg-white p-4 sm:p-8 rounded-xl shadow-xl max-w-md w-full relative z-10 pt-safe">
 
-          <div className="flex justify-center items-center gap-1.5 mb-6 mt-2">
-            <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={56} height={56} className="object-contain" priority />
-            <div className="relative h-14 w-[280px] overflow-hidden">
-              <Image src="/icons/logo-text.png" alt="JOGALIBRE" fill className="object-cover object-center" priority />
-            </div>
+          <div className="flex justify-center items-center gap-1.5 sm:gap-2 mb-6 mt-2 max-w-full">
+            <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={32} height={32} className="object-contain w-auto h-6 sm:h-8 flex-shrink-0" priority />
+            <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={428} height={32} className="object-contain w-auto h-6 sm:h-8 flex-shrink min-w-[120px]" priority />
           </div>
           <p className="text-gray-600 mb-6 text-center font-bold">{t.subtitle}</p>
 
@@ -3673,11 +3669,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ & ログアウト */}
           <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center gap-1">
-              <Image src="/icons/logo-mark.png" alt="JOGALIBRE Mark" width={32} height={32} className="object-contain" priority />
-              <div className="relative h-8 w-[160px] overflow-hidden">
-                <Image src="/icons/logo-text.png" alt="JOGALIBRE Text" fill className="object-cover object-center" priority />
-              </div>
+            <div className="flex items-center gap-2 min-w-0 flex-shrink">
+              <Image src="/icons/logo-mark.png" alt="JOGALIBRE Mark" width={24} height={24} className="object-contain h-5 sm:h-6 w-5 sm:w-6 flex-shrink-0" priority />
+              <Image src="/icons/logo-text.png" alt="JOGALIBRE Text" width={321} height={24} className="object-contain h-5 sm:h-6 w-auto flex-shrink min-w-[120px] max-w-[180px] min-[375px]:max-w-[220px] sm:max-w-none" priority />
             </div>
 
             <button
