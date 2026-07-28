@@ -19,6 +19,7 @@ interface AsaasWebhookPayload {
     status: string;
     dueDate: string;
     paymentDate?: string;
+    clientPaymentDate?: string;
     confirmedDate?: string;
     externalReference?: string;
     description?: string;
