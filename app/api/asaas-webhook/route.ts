@@ -162,7 +162,7 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
     // 1. 対象の bid_requests を取得
     const { data: items, error: itemsError } = await supabaseAdmin
       .from('bid_requests')
-      .select('id, total_jpy, customer_email, customer_name, final_price, customer_counter_offer, customer_counter_offer_used, counter_offer, max_bid, customer_id')
+      .select('id, total_jpy, customer_email, customer_name, final_price, customer_counter_offer, customer_counter_offer_used, counter_offer, max_bid, customer_id, japan_send_usd, product_title_pt, stock_number')
       .in('id', bidRequestIds);
 
     if (itemsError || !items || items.length === 0) {
@@ -170,45 +170,55 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
       return;
     }
 
-    // 2. payment_settings を取得して為替レートを確認
-    const { data: settings } = await supabaseAdmin
-      .from('payment_settings')
-      .select('rates')
-      .single();
-
-    const brlRate = settings?.rates?.BRL || 5.65;
-    const jpyRate = settings?.rates?.JPY || 150;
+    // 2. USD合計額 (usdEquivalent) の計算
+    const usdEquivalent = items.reduce((sum, item) => {
+      const price = item.final_price || (item.customer_counter_offer && !item.customer_counter_offer_used ? item.customer_counter_offer : (item.counter_offer || item.max_bid || 0));
+      return sum + price;
+    }, 0) || (payment.value / 5.65); // フォールバック
 
     // 3. 内訳（Line A / Line B）の計算
-    // JOGA立替金（日本支払額）の合計を計算
-    const totalJpySum = items.reduce((sum, item) => sum + (Number(item.total_jpy) || 0), 0);
+    // ASAASで請求された総額と、全商品のUSD総額から、この決済の実効為替レートを逆算
+    const exactExchangeRate = payment.value / usdEquivalent;
+
+    // 日本への支払USD額の合計
+    const japanSendUsdSum = items.reduce((sum, item) => sum + (Number(item.japan_send_usd) || 0), 0);
     
-    // BRLでの立替金額 = (JPY / JPYレート) * BRLレート
-    let thirdPartyRepasseBrl = (totalJpySum / jpyRate) * brlRate;
+    // 商品立替分 (BRL) = 日本支払額(USD) * 実効為替レート
+    let thirdPartyRepasseBrl = japanSendUsdSum * exactExchangeRate;
     
     // もし総支払額より立替金が上回ってしまうなどの異常があれば調整
     if (thirdPartyRepasseBrl > payment.value) {
-      thirdPartyRepasseBrl = payment.value * 0.9; // セーフティ（本来は起こらない）
+      thirdPartyRepasseBrl = payment.value * 0.9;
     }
 
     const systemFeeBrl = payment.value - thirdPartyRepasseBrl;
 
-    // 4. deposits テーブルに入金レコードを作成
-    const usdEquivalent = items.reduce((sum, item) => {
+    // 領収書用のアイテムリスト作成
+    const receiptItems = items.map(item => {
       const price = item.final_price || (item.customer_counter_offer && !item.customer_counter_offer_used ? item.customer_counter_offer : (item.counter_offer || item.max_bid || 0));
-      return sum + price;
-    }, 0) || (payment.value / brlRate);
+      return {
+        stockNumber: item.stock_number || '',
+        productTitlePt: item.product_title_pt || '',
+        amountBrl: price * exactExchangeRate
+      };
+    });
+
+    // 4. deposits テーブルに入金レコードを作成
     
-    // customer_id が bid_requests にない場合は user_roles から取得
-    let customerId = items[0].customer_id;
-    if (!customerId && items[0].customer_email) {
+    // customer情報 (ID, CPF, WhatsApp) を user_roles から取得
+    let customerId = items[0].customer_id || '';
+    let customerCpf = '';
+    let customerPhone = '';
+    if (items[0].customer_email) {
       const { data: userRole } = await supabaseAdmin
         .from('user_roles')
-        .select('customer_id')
+        .select('customer_id, cpf, whatsapp')
         .eq('email', items[0].customer_email)
         .single();
-      if (userRole?.customer_id) {
-        customerId = userRole.customer_id;
+      if (userRole) {
+        if (!customerId && userRole.customer_id) customerId = userRole.customer_id;
+        customerCpf = userRole.cpf || '';
+        customerPhone = userRole.whatsapp || '';
       }
     }
 
@@ -254,13 +264,17 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
     
     const receiptUrl = await generateAndUploadReceipt({
       receiptNumber: payment.id.replace('pay_', '').substring(0, 8).toUpperCase(),
+      customerId: customerId,
       customerName: customerName,
-      customerCpfCnpj: '', // ASAAS payloadに無いため省略、またはAPIで顧客情報を引くことも可能
+      customerEmail: customerEmail,
+      customerPhone: customerPhone,
+      customerCpfCnpj: customerCpf,
       paymentDate: new Date().toLocaleDateString('pt-BR'),
       totalAmountBrl: payment.value,
       systemFeeBrl: systemFeeBrl,
       thirdPartyRepasseBrl: thirdPartyRepasseBrl,
       paymentMethod: payment.billingType === 'PIX' ? 'PIX' : 'Cartão de Crédito',
+      items: receiptItems,
     });
 
     if (receiptUrl) {
