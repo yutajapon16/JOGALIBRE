@@ -3171,7 +3171,7 @@ export default function Home() {
 
   if (isAuthChecking && !currentUser) {
     return (
-      <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen-safe bg-white flex items-center justify-center p-4">
           <div className="text-center">
           <div className="flex justify-center items-center gap-1.5 sm:gap-2 mb-3 mt-6 sm:mt-8 max-w-full">
             <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={32} height={32} className="object-contain w-auto h-6 sm:h-8 animate-pulse flex-shrink-0" priority />

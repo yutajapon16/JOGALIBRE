@@ -2089,7 +2089,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="text-center">
           <div className="flex justify-center items-center gap-1.5 sm:gap-2 mb-6 mt-2 max-w-full">
             <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={32} height={32} className="object-contain w-auto h-6 sm:h-8 animate-pulse flex-shrink-0" priority />
