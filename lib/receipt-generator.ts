@@ -66,8 +66,8 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       
       const headerY = 50;
       if (fs.existsSync(logoMarkPath) && fs.existsSync(logoTextPath)) {
-        doc.image(logoMarkPath, 212, headerY, { width: 30 });
-        doc.image(logoTextPath, 252, headerY + 4, { height: 22 });
+        doc.image(logoMarkPath, 131, headerY, { width: 30 });
+        doc.image(logoTextPath, 171, headerY + 4, { height: 22 });
       } else {
         doc.fontSize(20).font('Helvetica-Bold').text('JOGALIBRE', { align: 'center' });
       }
@@ -108,6 +108,7 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       if (data.items && data.items.length > 0) {
         data.items.forEach((item, index) => {
           doc.font('Helvetica-Bold').text(`N° de stock: `, { continued: true }).font('Helvetica').text(item.stockNumber || '-');
+          doc.moveDown(0.5);
           
           doc.font('Helvetica-Bold').text(`Nome do Produto: `, { continued: true }).font('Helvetica').text(item.productTitlePt || 'Produto', { width: 350 });
           
@@ -116,7 +117,7 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
           doc.font('Helvetica').text(`Valor: R$ ${item.amountBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 50, priceY, { align: 'right' });
           
           doc.x = 50; // Reset X
-          doc.moveDown(0.8);
+          doc.moveDown(1.5);
         });
       }
       doc.moveDown(1);
@@ -124,7 +125,7 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       // Total
       const boxY = doc.y;
       doc.fillColor('black').font('Helvetica-Bold').fontSize(12);
-      doc.text(`TOTAL PAGO: R$ ${data.totalAmountBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 60, boxY + 8, { align: 'right', width: 475 });
+      doc.text(`TOTAL PAGO: R$ ${data.totalAmountBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 50, boxY + 8, { align: 'right', width: 495 });
       
       doc.y = boxY + 35; // Reset Y below the total line
       doc.x = 50; // Reset X
