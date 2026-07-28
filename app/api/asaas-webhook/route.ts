@@ -161,7 +161,7 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
     // 1. 対象の bid_requests を取得
     const { data: items, error: itemsError } = await supabaseAdmin
       .from('bid_requests')
-      .select('id, total_jpy, customer_email, customer_name, final_price, customer_counter_offer, counter_offer, max_bid, customer_id')
+      .select('id, total_jpy, customer_email, customer_name, final_price, customer_counter_offer, customer_counter_offer_used, counter_offer, max_bid, customer_id')
       .in('id', bidRequestIds);
 
     if (itemsError || !items || items.length === 0) {
@@ -193,7 +193,10 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
     const systemFeeBrl = payment.value - thirdPartyRepasseBrl;
 
     // 4. deposits テーブルに入金レコードを作成
-    const usdEquivalent = payment.value / brlRate;
+    const usdEquivalent = items.reduce((sum, item) => {
+      const price = item.final_price || (item.customer_counter_offer && !item.customer_counter_offer_used ? item.customer_counter_offer : (item.counter_offer || item.max_bid || 0));
+      return sum + price;
+    }, 0) || (payment.value / brlRate);
     
     // customer_id が bid_requests にない場合は user_roles から取得
     let customerId = items[0].customer_id;
@@ -234,6 +237,9 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
         final_status: 'won', // DBのカラム名はスネークケース
         paid_brazil: true,
         paid_brazil_at: new Date().toISOString(),
+        paid: true,
+        is_paid: true,
+        paid_at: new Date().toISOString(),
       })
       .in('id', bidRequestIds);
 
