@@ -13,9 +13,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.jogalibre.com"),
   title: "JOGALIBRE",
   description: "Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/customer-icon.png", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" }
+    ],
+    shortcut: "/icons/customer-icon.png",
+    apple: "/icons/customer-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -24,7 +33,22 @@ export const metadata: Metadata = {
   openGraph: {
     title: "JOGALIBRE",
     description: "Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão",
+    siteName: "JOGALIBRE",
     type: "website",
+    images: [
+      {
+        url: "/icons/customer-icon.png",
+        width: 512,
+        height: 512,
+        alt: "JOGALIBRE Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JOGALIBRE",
+    description: "Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão",
+    images: ["/icons/customer-icon.png"],
   },
 };
 
