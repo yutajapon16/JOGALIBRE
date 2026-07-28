@@ -3172,8 +3172,13 @@ export default function Home() {
   if (isAuthChecking && !currentUser) {
     return (
       <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
-        <div className="text-center">
-          <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={220} height={37} className="mx-auto mb-4 animate-pulse" priority />
+          <div className="text-center">
+          <div className="flex justify-center items-center gap-3 mb-4">
+            <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={48} height={48} className="object-contain animate-pulse" priority />
+            <div className="relative h-10 w-[180px] overflow-hidden animate-pulse">
+              <Image src="/icons/logo-text.png" alt="JOGALIBRE" fill className="object-cover object-center" priority />
+            </div>
+          </div>
           <div className="text-gray-500 text-sm font-bold">Carregando... / Cargando...</div>
         </div>
       </div>
@@ -3185,10 +3190,13 @@ export default function Home() {
       <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full relative z-10 pt-safe">
 
-          <div className="flex items-center mb-2 mt-4 max-w-full">
-            <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={220} height={37} className="h-auto w-auto object-contain" priority />
+          <div className="flex justify-center items-center gap-3 mb-6 mt-2">
+            <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={56} height={56} className="object-contain" priority />
+            <div className="relative h-12 w-[220px] overflow-hidden">
+              <Image src="/icons/logo-text.png" alt="JOGALIBRE" fill className="object-cover object-center" priority />
+            </div>
           </div>
-          <p className="text-gray-600 mb-6">{t.subtitle}</p>
+          <p className="text-gray-600 mb-6 text-center font-bold">{t.subtitle}</p>
 
           <form onSubmit={showSignUp ? handleSignUp : handleLogin} className="space-y-4">
             {showSignUp && (
@@ -3665,8 +3673,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ & ログアウト */}
           <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center">
-              <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={140} height={24} className="h-6 sm:h-7 w-auto object-contain" priority />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Image src="/icons/logo-mark.png" alt="JOGALIBRE Mark" width={28} height={28} className="object-contain" priority />
+              <div className="relative h-6 w-[120px] overflow-hidden">
+                <Image src="/icons/logo-text.png" alt="JOGALIBRE Text" fill className="object-cover object-center" priority />
+              </div>
             </div>
 
             <button
