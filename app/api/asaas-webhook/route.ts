@@ -215,7 +215,7 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
         amount: payment.value,
         usd_amount: usdEquivalent,
         deposit_date: new Date().toISOString().split('T')[0],
-        payment_method: `asaas_${payment.billingType.toLowerCase()}`,
+        payment_method: payment.billingType === 'PIX' ? 'pix_brl' : 'card_brl',
         deposit_type: '商品代金',
       })
       .select('id')
