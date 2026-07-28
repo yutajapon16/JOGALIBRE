@@ -217,7 +217,7 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
         customer_id: customerId || 'UNKNOWN',
         amount: payment.value,
         usd_amount: usdEquivalent,
-        deposit_date: new Date().toISOString().split('T')[0],
+        deposit_date: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }),
         payment_method: payment.billingType === 'PIX' ? 'pix_brl' : 'card_brl',
         deposit_type: '商品代金',
       })
