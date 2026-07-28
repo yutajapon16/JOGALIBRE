@@ -12,8 +12,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL 
+  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://jogalibre.vercel.app");
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.jogalibre.com"),
+  metadataBase: new URL(siteUrl),
   title: "JOGALIBRE",
   description: "Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão",
   manifest: "/manifest.json",
@@ -37,7 +40,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/icons/customer-icon.png",
+        url: `${siteUrl}/icons/customer-icon.png`,
         width: 512,
         height: 512,
         alt: "JOGALIBRE Logo",
@@ -45,10 +48,10 @@ export const metadata: Metadata = {
     ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "JOGALIBRE",
     description: "Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão",
-    images: ["/icons/customer-icon.png"],
+    images: [`${siteUrl}/icons/customer-icon.png`],
   },
 };
 
@@ -66,6 +69,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const imageUrl = `${siteUrl}/icons/customer-icon.png`;
+
   return (
     <html lang="en">
       <head>
@@ -76,8 +81,8 @@ export default function RootLayout({
         {/* Fallback explicit Open Graph Meta Tags for WhatsApp & Social Web Crawlers */}
         <meta property="og:title" content="JOGALIBRE" />
         <meta property="og:description" content="Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão" />
-        <meta property="og:image" content="https://www.jogalibre.com/icons/customer-icon.png" />
-        <meta property="og:image:secure_url" content="https://www.jogalibre.com/icons/customer-icon.png" />
+        <meta property="og:image" content={imageUrl} />
+        <meta property="og:image:secure_url" content={imageUrl} />
         <meta property="og:image:type" content="image/png" />
         <meta property="og:image:width" content="512" />
         <meta property="og:image:height" content="512" />
@@ -87,7 +92,7 @@ export default function RootLayout({
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content="JOGALIBRE" />
         <meta name="twitter:description" content="Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão" />
-        <meta name="twitter:image" content="https://www.jogalibre.com/icons/customer-icon.png" />
+        <meta name="twitter:image" content={imageUrl} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
