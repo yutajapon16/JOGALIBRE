@@ -66,13 +66,13 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       
       const headerY = 50;
       if (fs.existsSync(logoMarkPath) && fs.existsSync(logoTextPath)) {
-        doc.image(logoMarkPath, 200, headerY, { width: 30 });
-        doc.image(logoTextPath, 235, headerY + 4, { height: 22 });
+        doc.image(logoMarkPath, 212, headerY, { width: 30 });
+        doc.image(logoTextPath, 252, headerY + 4, { height: 22 });
       } else {
         doc.fontSize(20).font('Helvetica-Bold').text('JOGALIBRE', { align: 'center' });
       }
 
-      doc.moveDown(1.5);
+      doc.y = headerY + 45; // Move Y down past the logo
       doc.fontSize(14).font('Helvetica').text('Recibo de Intermediação e Repasse', { align: 'center' });
       doc.moveDown(2);
 
@@ -91,13 +91,13 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       doc.font('Helvetica-Bold').text('DADOS DO CLIENTE');
       doc.moveDown(0.5);
       doc.font('Helvetica-Bold').text(`ID do Cliente: `, { continued: true }).font('Helvetica').text(data.customerId || '-');
-      doc.moveDown(0.2);
+      doc.moveDown(0.5);
       doc.font('Helvetica-Bold').text(`Nome: `, { continued: true }).font('Helvetica').text(data.customerName || '-');
-      doc.moveDown(0.2);
+      doc.moveDown(0.5);
       doc.font('Helvetica-Bold').text(`CPF / CNPJ: `, { continued: true }).font('Helvetica').text(data.customerCpfCnpj || '-');
-      doc.moveDown(0.2);
+      doc.moveDown(0.5);
       doc.font('Helvetica-Bold').text(`Telefone: `, { continued: true }).font('Helvetica').text(data.customerPhone || '-');
-      doc.moveDown(0.2);
+      doc.moveDown(0.5);
       doc.font('Helvetica-Bold').text(`E-mail: `, { continued: true }).font('Helvetica').text(data.customerEmail || '-');
       doc.moveDown(2);
 
@@ -109,10 +109,11 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
         data.items.forEach((item, index) => {
           doc.font('Helvetica-Bold').text(`N° de stock: `, { continued: true }).font('Helvetica').text(item.stockNumber || '-');
           
-          const yBeforeProduct = doc.y;
           doc.font('Helvetica-Bold').text(`Nome do Produto: `, { continued: true }).font('Helvetica').text(item.productTitlePt || 'Produto', { width: 350 });
           
-          doc.font('Helvetica').text(`Valor: R$ ${item.amountBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 50, yBeforeProduct, { align: 'right' });
+          // Print price on the same Y line where the product title ended (or wrapped to)
+          const priceY = doc.y - doc.currentLineHeight();
+          doc.font('Helvetica').text(`Valor: R$ ${item.amountBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 50, priceY, { align: 'right' });
           
           doc.x = 50; // Reset X
           doc.moveDown(0.8);
@@ -121,22 +122,26 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       doc.moveDown(1);
 
       // Total
-      doc.rect(50, doc.y, 495, 30).fillAndStroke('#f3f4f6', '#e5e7eb');
+      const boxY = doc.y;
       doc.fillColor('black').font('Helvetica-Bold').fontSize(12);
-      doc.text(`TOTAL PAGO: R$ ${data.totalAmountBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 60, doc.y - 20, { align: 'right', width: 475 });
+      doc.text(`TOTAL PAGO: R$ ${data.totalAmountBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 60, boxY + 8, { align: 'right', width: 475 });
       
-      doc.moveDown(1.5);
+      doc.y = boxY + 35; // Reset Y below the total line
       doc.x = 50; // Reset X
 
       // Line A
-      doc.font('Helvetica-Bold').fontSize(10).text(`Taxa de Serviço do Sistema (Intermediação): `, { continued: true })
-         .font('Helvetica').text(`R$ ${data.systemFeeBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      doc.font('Helvetica-Bold').fontSize(10).text(`Taxa de Serviço do Sistema (Intermediação):`, { continued: false });
+      const feeY = doc.y - doc.currentLineHeight();
+      doc.font('Helvetica').text(`R$ ${data.systemFeeBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 50, feeY, { align: 'right' });
+      doc.x = 50;
       doc.fontSize(8).fillColor('gray').text('* Uma Nota Fiscal de Serviços (NFS-e) referente a este valor será emitida separadamente.');
       doc.fillColor('black').fontSize(10).moveDown(0.5);
 
       // Line B
-      doc.font('Helvetica-Bold').text(`Repasse de Valores de Terceiros (Custo de Produtos): `, { continued: true })
-         .font('Helvetica').text(`R$ ${data.thirdPartyRepasseBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      doc.font('Helvetica-Bold').text(`Repasse de Valores de Terceiros (Custo de Produtos):`, { continued: false });
+      const repasseY = doc.y - doc.currentLineHeight();
+      doc.font('Helvetica').text(`R$ ${data.thirdPartyRepasseBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 50, repasseY, { align: 'right' });
+      doc.x = 50;
       doc.moveDown(3);
 
       // Footer

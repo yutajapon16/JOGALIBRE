@@ -4902,7 +4902,7 @@ export default function AdminDashboard() {
                       alert('有効な金額を入力してください');
                       return;
                     }
-                    const japanSendAmount = calculateJapanSendAmount(selectedRequest, totalJpy, exchangeRates['JPY'] || exchangeRate || 150);
+                    const japanSendAmount = calculateJapanSendAmount({ ...selectedRequest, total_jpy: totalJpy }, price, exchangeRates['JPY'] || exchangeRate || 150);
                     updateFinalStatus(selectedRequest.id, 'won', price, totalJpy, Math.round(japanSendAmount));
                   }
                 }}
