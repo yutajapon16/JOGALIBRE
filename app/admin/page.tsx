@@ -2091,9 +2091,9 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="flex justify-center items-center gap-3 mb-4">
-            <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={48} height={48} className="object-contain animate-pulse" priority />
-            <div className="relative h-10 w-[180px] overflow-hidden animate-pulse">
+          <div className="flex justify-center items-center gap-1.5 mb-6 mt-2">
+            <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={56} height={56} className="object-contain animate-pulse" priority />
+            <div className="relative h-14 w-[280px] overflow-hidden animate-pulse">
               <Image src="/icons/logo-text.png" alt="JOGALIBRE" fill className="object-cover object-center" priority />
             </div>
           </div>
@@ -2107,9 +2107,9 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-gray-100 flex items-start justify-center p-4 pt-20">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-          <div className="flex justify-center items-center gap-3 mb-6 mt-2">
+          <div className="flex justify-center items-center gap-1.5 mb-6 mt-2">
             <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={56} height={56} className="object-contain" priority />
-            <div className="relative h-12 w-[220px] overflow-hidden">
+            <div className="relative h-14 w-[280px] overflow-hidden">
               <Image src="/icons/logo-text.png" alt="JOGALIBRE" fill className="object-cover object-center" priority />
             </div>
           </div>
@@ -2161,9 +2161,9 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
           {/* 1行目: ロゴ & ログアウト */}
           <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <Image src="/icons/logo-mark.png" alt="JOGALIBRE Mark" width={28} height={28} className="object-contain" priority />
-              <div className="relative h-6 w-[120px] overflow-hidden">
+            <div className="flex items-center gap-1">
+              <Image src="/icons/logo-mark.png" alt="JOGALIBRE Mark" width={32} height={32} className="object-contain" priority />
+              <div className="relative h-8 w-[160px] overflow-hidden">
                 <Image src="/icons/logo-text.png" alt="JOGALIBRE Text" fill className="object-cover object-center" priority />
               </div>
             </div>
