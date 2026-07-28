@@ -4712,7 +4712,7 @@ export default function Home() {
                 return sum + Math.ceil((price * brlRate) / 10) * 10;
               }, 0);
 
-              const allSelected = unpaidItems.length > 0 && selectedBrlItemIds.length === unpaidItems.length;
+              const allSelected = unpaidItems.length > 0 && selectedItems.length === unpaidItems.length;
 
               const formatBrlCurrency = (val: number) => {
                 return val.toLocaleString('pt-BR');
@@ -4745,7 +4745,7 @@ export default function Home() {
                         </button>
                       )}
                       <span className="text-xs font-bold text-gray-600">
-                        {selectedBrlItemIds.length}/{unpaidItems.length} {lang === 'es' ? 'ítems seleccionados' : 'itens selecionados'}
+                        {selectedItems.length}/{unpaidItems.length} {lang === 'es' ? 'ítems seleccionados' : 'itens selecionados'}
                       </span>
                     </div>
 
@@ -4773,10 +4773,10 @@ export default function Home() {
                     <div className="flex justify-end pt-1">
                       <button
                         type="button"
-                        disabled={selectedBrlItemIds.length === 0}
+                        disabled={selectedItems.length === 0}
                         onClick={() => setShowBrlBatchPaymentModal(true)}
                         className={`w-full sm:w-auto px-6 py-3 rounded-lg text-sm font-bold shadow-md transition flex items-center justify-center gap-2 ${
-                          selectedBrlItemIds.length > 0
+                          selectedItems.length > 0
                             ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer active:scale-95'
                             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         }`}
@@ -4784,8 +4784,8 @@ export default function Home() {
                         <span>💳</span>
                         <span>
                           {lang === 'es'
-                            ? `Pagar Seleccionados (${selectedBrlItemIds.length})`
-                            : `Pagar Selecionados (${selectedBrlItemIds.length})`}
+                            ? `Pagar Seleccionados (${selectedItems.length})`
+                            : `Pagar Selecionados (${selectedItems.length})`}
                         </span>
                       </button>
                     </div>
