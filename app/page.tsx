@@ -3173,7 +3173,7 @@ export default function Home() {
     return (
       <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
           <div className="text-center">
-          <div className="flex justify-center items-center gap-1.5 sm:gap-2 mb-6 mt-2 max-w-full">
+          <div className="flex justify-center items-center gap-1.5 sm:gap-2 mb-3 mt-6 sm:mt-8 max-w-full">
             <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={32} height={32} className="object-contain w-auto h-6 sm:h-8 animate-pulse flex-shrink-0" priority />
             <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={428} height={32} className="object-contain w-auto h-6 sm:h-8 animate-pulse flex-shrink min-w-[120px]" priority />
           </div>
@@ -3188,7 +3188,7 @@ export default function Home() {
       <div className="min-h-screen-safe bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-4 sm:p-8 rounded-xl shadow-xl max-w-md w-full relative z-10 pt-safe">
 
-          <div className="flex justify-center items-center gap-1.5 sm:gap-2 mb-6 mt-2 max-w-full">
+          <div className="flex justify-center items-center gap-1.5 sm:gap-2 mb-3 mt-6 sm:mt-8 max-w-full">
             <Image src="/icons/logo-mark.png" alt="JOGALIBRE" width={32} height={32} className="object-contain w-auto h-6 sm:h-8 flex-shrink-0" priority />
             <Image src="/icons/logo-text.png" alt="JOGALIBRE" width={428} height={32} className="object-contain w-auto h-6 sm:h-8 flex-shrink min-w-[120px]" priority />
           </div>
