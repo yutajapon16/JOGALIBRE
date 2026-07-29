@@ -147,15 +147,29 @@ async function main() {
   const { data: items } = await supabaseAdmin
     .from('bid_requests')
     .select('id, total_jpy, customer_email, customer_name, final_price, customer_id, japan_send_usd, product_title_pt, stock_number')
-    .in('stock_number', ['A003S001', 'A003S002']);
+    .in('stock_number', ['A003S009', 'A003S010', 'A003S009']);
 
   if (!items || items.length === 0) return console.log('No items found');
 
-  const paymentValue = 4590.00;
+  const paymentValue = 5390.00;
   
   // Calculate exactExchangeRate
   const totalUsdPrice = items.reduce((sum, item) => sum + (Number(item.final_price) || 0), 0);
-  const exactExchangeRate = totalUsdPrice > 0 ? paymentValue / totalUsdPrice : 5.10;
+  
+  let baseRate = paymentValue / totalUsdPrice;
+  let exactExchangeRate = baseRate;
+
+  for (let r = baseRate - 0.1; r <= baseRate + 0.1; r += 0.0001) {
+    const testSum = items.reduce((sum, item) => {
+      const p = item.final_price || 0;
+      return sum + Math.ceil((p * r) / 10) * 10;
+    }, 0);
+    
+    if (testSum === paymentValue) {
+      exactExchangeRate = r;
+      break;
+    }
+  }
 
   let customerId = items[0].customer_id || '';
   let customerCpf = '';
@@ -173,15 +187,26 @@ async function main() {
     }
   }
 
-  const japanSendUsdSum = items.reduce((sum, item) => sum + (Number(item.japan_send_usd) || 0), 0);
-  let thirdPartyRepasseBrl = japanSendUsdSum * exactExchangeRate;
-  if (thirdPartyRepasseBrl > paymentValue) {
-    thirdPartyRepasseBrl = paymentValue * 0.9;
-  }
+  let thirdPartyRepasseBrl = 0;
+  
+  const receiptItems = items.map(item => {
+    const p = Number(item.final_price) || 0;
+    const roundedBrl = Math.ceil((p * exactExchangeRate) / 10) * 10;
+    const itemEffectiveRate = p > 0 ? roundedBrl / p : exactExchangeRate;
+    const itemRepasse = (Number(item.japan_send_usd) || 0) * itemEffectiveRate;
+    thirdPartyRepasseBrl += itemRepasse;
+    
+    return {
+      stockNumber: item.stock_number || '',
+      productTitlePt: item.product_title_pt || '',
+      amountBrl: roundedBrl
+    };
+  });
+
   const systemFeeBrl = paymentValue - thirdPartyRepasseBrl;
 
   const receiptData = {
-    receiptNumber: '9JPJO92M',
+    receiptNumber: '9D6RAFGF',
     totalAmountBrl: paymentValue,
     systemFeeBrl,
     thirdPartyRepasseBrl,
@@ -190,13 +215,9 @@ async function main() {
     customerId,
     customerPhone,
     customerCpfCnpj: customerCpf,
-    paymentDate: '28/07/2026',
+    paymentDate: '29/07/2026',
     paymentMethod: 'PIX',
-    items: items.map(item => ({
-      stockNumber: item.stock_number || '',
-      productTitlePt: item.product_title_pt || '',
-      amountBrl: (Number(item.final_price) || 0) * exactExchangeRate
-    }))
+    items: receiptItems
   };
 
   const url = await generateAndUploadReceipt(receiptData);

@@ -177,31 +177,46 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
     }, 0) || (payment.value / 5.65); // フォールバック
 
     // 3. 内訳（Line A / Line B）の計算
-    // ASAASで請求された総額と、全商品のUSD総額から、この決済の実効為替レートを逆算
-    const exactExchangeRate = payment.value / usdEquivalent;
+    let baseRate = payment.value / usdEquivalent;
+    let originalRate = baseRate;
 
-    // 日本への支払USD額の合計
-    const japanSendUsdSum = items.reduce((sum, item) => sum + (Number(item.japan_send_usd) || 0), 0);
-    
-    // 商品立替分 (BRL) = 日本支払額(USD) * 実効為替レート
-    let thirdPartyRepasseBrl = japanSendUsdSum * exactExchangeRate;
-    
-    // もし総支払額より立替金が上回ってしまうなどの異常があれば調整
-    if (thirdPartyRepasseBrl > payment.value) {
-      thirdPartyRepasseBrl = payment.value * 0.9;
+    // 決済時に使用された実際の為替レート（丸め計算により生じる逆算誤差をなくすため）を探索
+    for (let r = baseRate - 0.1; r <= baseRate + 0.1; r += 0.0001) {
+      const testSum = items.reduce((sum, item) => {
+        const p = item.final_price || (item.customer_counter_offer && !item.customer_counter_offer_used ? item.customer_counter_offer : (item.counter_offer || item.max_bid || 0));
+        return sum + Math.ceil((p * r) / 10) * 10;
+      }, 0);
+      
+      if (testSum === payment.value) {
+        originalRate = r;
+        break;
+      }
     }
 
-    const systemFeeBrl = payment.value - thirdPartyRepasseBrl;
+    let thirdPartyRepasseBrl = 0;
 
-    // 領収書用のアイテムリスト作成
+    // 領収書用のアイテムリスト作成と、各商品ごとの厳密な立替分計算
     const receiptItems = items.map(item => {
-      const price = item.final_price || (item.customer_counter_offer && !item.customer_counter_offer_used ? item.customer_counter_offer : (item.counter_offer || item.max_bid || 0));
+      const p = item.final_price || (item.customer_counter_offer && !item.customer_counter_offer_used ? item.customer_counter_offer : (item.counter_offer || item.max_bid || 0));
+      
+      // 1. 当時のレートで丸められた正確なレアル価格を算出
+      const roundedBrl = Math.ceil((p * originalRate) / 10) * 10;
+      
+      // 2. この商品単体の「実効為替レート」を計算（R$ ÷ USD）
+      const itemEffectiveRate = p > 0 ? roundedBrl / p : originalRate;
+      
+      // 3. 日本支払額(USD) × 実効為替レート ＝ この商品の立替分(R$)
+      const itemRepasse = (Number(item.japan_send_usd) || 0) * itemEffectiveRate;
+      thirdPartyRepasseBrl += itemRepasse;
+
       return {
         stockNumber: item.stock_number || '',
         productTitlePt: item.product_title_pt || '',
-        amountBrl: price * exactExchangeRate
+        amountBrl: roundedBrl
       };
     });
+
+    const systemFeeBrl = payment.value - thirdPartyRepasseBrl;
 
     // 4. deposits テーブルに入金レコードを作成
     
