@@ -74,11 +74,11 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
 
       doc.y = headerY + 45; // Move Y down past the logo
       doc.fontSize(14).font('Helvetica').text('Recibo de Intermediação e Repasse', { align: 'center' });
-      doc.moveDown(2);
+      doc.moveDown(1);
 
       // Receipt Info
       doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-      doc.moveDown(1);
+      doc.moveDown(0.5);
       doc.fontSize(12).font('Helvetica-Bold');
       doc.text(`Recibo N°: `, { continued: true }).font('Helvetica').text(data.receiptNumber);
       doc.fontSize(10);
@@ -88,11 +88,11 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       doc.font('Helvetica-Bold').text(`Data do Pagamento: `, { continued: true }).font('Helvetica').text(data.paymentDate);
       doc.moveDown(0.5);
       doc.font('Helvetica-Bold').text(`Método: `, { continued: true }).font('Helvetica').text(data.paymentMethod);
-      doc.moveDown(1.5);
+      doc.moveDown(0.5);
 
       // Customer Info
       doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-      doc.moveDown(1);
+      doc.moveDown(0.5);
       doc.fontSize(12).font('Helvetica-Bold').text('DADOS DO CLIENTE');
       doc.fontSize(10);
       doc.moveDown(0.5);
@@ -105,11 +105,11 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       doc.font('Helvetica-Bold').text(`Telefone: `, { continued: true }).font('Helvetica').text(data.customerPhone || '-');
       doc.moveDown(0.5);
       doc.font('Helvetica-Bold').text(`E-mail: `, { continued: true }).font('Helvetica').text(data.customerEmail || '-');
-      doc.moveDown(1.5);
+      doc.moveDown(0.5);
 
       // Breakdown
       doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-      doc.moveDown(1);
+      doc.moveDown(0.5);
       doc.fontSize(12).font('Helvetica-Bold').text('DESCRIÇÃO');
       doc.fontSize(10);
       doc.moveDown(0.5);
@@ -123,7 +123,9 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
           doc.font('Helvetica-Bold').text(`N° de stock: `, { continued: true }).font('Helvetica').text(item.stockNumber || '-');
           doc.moveDown(0.5);
           
-          doc.font('Helvetica-Bold').text(`Nome do Produto: `, { continued: true }).font('Helvetica').text(item.productTitlePt || 'Produto', { lineBreak: false, ellipsis: true, width: 475 });
+          let pTitle = item.productTitlePt || 'Produto';
+          if (pTitle.length > 70) pTitle = pTitle.substring(0, 70) + '...';
+          doc.font('Helvetica-Bold').text(`Nome do Produto: `, { continued: true }).font('Helvetica').text(pTitle);
           doc.moveDown(0.5);
           
           // Print price on the next line, right aligned
@@ -134,24 +136,24 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
           doc.rect(50, startY, 495, endY - startY).stroke();
 
           doc.x = 50; // Reset X
-          doc.y = endY + 15; // Space between items
+          doc.y = endY + 8; // Space between items
         });
       }
-      doc.moveDown(1);
+      doc.moveDown(0.5);
 
       // Totals Box
       const totalsStartY = doc.y;
-      doc.y += 15;
+      doc.y += 10;
       
       doc.fillColor('black').font('Helvetica-Bold').fontSize(12);
       doc.text(`TOTAL PAGO: R$ ${data.totalAmountBrl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 60, doc.y, { align: 'right', width: 475 });
       
-      doc.moveDown(1);
+      doc.moveDown(0.5);
       
       // Dashed line below TOTAL PAGO
       doc.moveTo(60, doc.y).lineTo(535, doc.y).dash(5, { space: 5 }).stroke();
       doc.undash(); // Reset to solid line for future strokes
-      doc.moveDown(1);
+      doc.moveDown(0.5);
 
       doc.x = 60; // Indent inside box
 
@@ -173,11 +175,11 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       doc.rect(50, totalsStartY, 495, totalsEndY - totalsStartY).stroke();
       
       doc.x = 50;
-      doc.y = totalsEndY + 20;
+      doc.y = totalsEndY + 10;
 
       // Footer
       doc.fontSize(9).font('Helvetica').fillColor('#666666');
-      doc.text('Este documento serve como comprovante de repasse de valores e pagamento de taxa de serviço de intermediação, não substituindo a Nota Fiscal de Serviço (NFS-e) que será enviada posteriormente.', { align: 'center' });
+      doc.text('Este documento serve como comprovante de repasse de valores e pagamento de taxa de serviço de intermediação, não substituindo a Nota Fiscal de Serviço (NFS-e) que será enviada posteriormente.', { align: 'left' });
 
       doc.end();
 
