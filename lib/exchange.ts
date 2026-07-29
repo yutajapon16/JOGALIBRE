@@ -47,8 +47,8 @@ export async function getResilientExchangeRate(): Promise<{
       throw new Error('Invalid rate structure from external API');
     }
 
-    // BRLレートに対してスプレッド・手数料バッファを加算 (現在は +0.03)
-    const brlBuffer = 0.03;
+    // BRLレートに対してスプレッド・手数料バッファを加算
+    const brlBuffer = 0.05;
     
     const newRates: ExchangeRates = {
       JPY: jpyTtbRate,
