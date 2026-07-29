@@ -65,12 +65,18 @@ async function findOrCreateAsaasCustomer(
     return { customerId: searchResult.data.data[0].id };
   }
 
+  // 電話番号の整形（ブラジルの国番号 55 を除去する）
+  let formattedPhone = phone?.replace(/[^0-9]/g, '') || undefined;
+  if (formattedPhone && formattedPhone.startsWith('55') && (formattedPhone.length === 12 || formattedPhone.length === 13)) {
+    formattedPhone = formattedPhone.substring(2);
+  }
+
   // 2. 新規顧客を作成
   const createResult = await asaasRequest('/customers', 'POST', {
     name,
     email,
     cpfCnpj: cpfCnpj.replace(/[.\-\/]/g, ''), // フォーマット文字を除去
-    mobilePhone: phone?.replace(/[^0-9]/g, '') || undefined,
+    mobilePhone: formattedPhone,
     externalReference: email, // 自システムのメールアドレスで紐づけ
     notificationDisabled: true // ASAASからの自動通知（SMS/Email等）を無効化
   });

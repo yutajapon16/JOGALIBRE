@@ -56,6 +56,11 @@ export async function sendReceiptEmail(to: string, receiptUrl: string, amount: s
         <br/><br/>
         <p>Você também pode encontrar este recibo na aba "Deposits" do seu painel.</p>
         <p>Obrigado por utilizar a JOGALIBRE.</p>
+        <br/>
+        <div style="margin-top: 20px;">
+          <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://jogalibre.vercel.app'}/icons/logo-mark.png" alt="" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 12px;" />
+          <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://jogalibre.vercel.app'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 29px; vertical-align: middle;" />
+        </div>
       `,
     });
 
