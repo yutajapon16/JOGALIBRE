@@ -33,9 +33,6 @@ async function getSupabaseServer() {
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const isDownload = searchParams.get('download') === '1';
-
     const supabase = await getSupabaseServer();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -211,7 +208,7 @@ export async function GET(req: Request) {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': isDownload ? 'attachment; filename="termos_jogalibre.pdf"' : 'inline; filename="termos_jogalibre.pdf"'
+        'Content-Disposition': 'inline; filename="termos_jogalibre.pdf"'
       }
     });
 
