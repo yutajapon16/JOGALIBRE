@@ -41,13 +41,14 @@ export async function GET(req: Request) {
     }
 
     // Fetch user details from user_roles
-    const { data: roleData } = await supabaseAdmin
+    const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single();
 
-    if (!roleData) {
+    if (roleError || !roleData) {
+      console.error('Error fetching user role:', roleError);
       return new NextResponse('User data not found', { status: 404 });
     }
 
