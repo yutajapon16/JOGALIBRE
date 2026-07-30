@@ -48,10 +48,19 @@ export default function AdminDashboard() {
   const [exchangeRate, setExchangeRate] = useState(150);
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({ JPY: 150, BRL: 5.6, PYG: 7500 });
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
-  const [activeTab, setActiveTab] = useState<'requests' | 'purchased' | 'deposits' | 'shipping' | 'customers' | 'agents'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'purchased' | 'deposits' | 'shipping' | 'customers' | 'agents' | 'financials'>('requests');
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   const [customersList, setCustomersList] = useState<any[]>([]);
   const [agentsList, setAgentsList] = useState<any[]>([]);
+  
+  // Financials State
+  const [financialMonth, setFinancialMonth] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [financialData, setFinancialData] = useState<any>(null);
+  const [isLoadingFinancials, setIsLoadingFinancials] = useState(false);
+  
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [editForm, setEditForm] = useState({
@@ -536,6 +545,30 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchFinancials = async (month: string) => {
+    setIsLoadingFinancials(true);
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+      const res = await fetch(`/api/admin/financials?month=${month}`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFinancialData(data);
+      } else {
+        setFinancialData(null);
+      }
+    } catch (error) {
+      console.error('Error fetching financials:', error);
+      setFinancialData(null);
+    } finally {
+      setIsLoadingFinancials(false);
+    }
+  };
+
   const handleUpdateDeposit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingDeposit) return;
@@ -862,6 +895,8 @@ export default function AdminDashboard() {
         fetchPurchasedItems();
         fetchUsersData();
         fetchShippingContainers();
+      } else if (activeTab === 'financials') {
+        fetchFinancials(financialMonth);
       } else {
         fetchUsersData();
         if (activeTab === 'agents') {
@@ -1747,6 +1782,51 @@ export default function AdminDashboard() {
       if (res.ok) {
         alert('発送情報を更新しました。');
         await fetchPurchasedItems();
+
+        // 発送ステータスが変更されている場合、プッシュ通知を送信
+        const previousStatus = item.shippingStatus || 'not_shipped';
+        const newStatus = payload.shipping_status;
+        if (newStatus !== previousStatus && newStatus !== 'not_shipped') {
+          const email = item.customerEmail;
+          if (email) {
+            const lang = item.language || 'es';
+            const itemTitle = (lang === 'pt' ? (item as any).productTitlePt : (item as any).productTitleEs) || item.productTitle || 'Item';
+            
+            let notifyTitle = '';
+            let notifyBody = '';
+
+            if (newStatus === 'arrived_jp') {
+              notifyTitle = lang === 'pt' ? '📦 Chegou ao armazém no Japão' : '📦 Llegó al almacén en Japón';
+              notifyBody = lang === 'pt' ? `O produto [${itemTitle}] chegou ao armazém no Japão.` : `El producto [${itemTitle}] llegó al almacén en Japón.`;
+            } else if (newStatus === 'in_transit') {
+              notifyTitle = lang === 'pt' ? '🚢 Em trânsito' : '🚢 En tránsito';
+              notifyBody = lang === 'pt' ? `O produto [${itemTitle}] está a caminho da América do Sul.` : `El producto [${itemTitle}] está en camino a Sudamérica.`;
+            } else if (newStatus === 'arrived_local') {
+              notifyTitle = lang === 'pt' ? '📍 Chegou ao local' : '📍 Llegó al destino local';
+              notifyBody = lang === 'pt' ? `O produto [${itemTitle}] chegou à região local.` : `El producto [${itemTitle}] llegó a la región local.`;
+            } else if (newStatus === 'ready_for_delivery') {
+              notifyTitle = lang === 'pt' ? '✅ Pronto para retirada' : '✅ Listo para entrega';
+              notifyBody = lang === 'pt' ? `O produto [${itemTitle}] está pronto para ser retirado.` : `El producto [${itemTitle}] está listo para ser entregado.`;
+            } else if (newStatus === 'delivered') {
+              notifyTitle = lang === 'pt' ? '🎉 Entrega concluída' : '🎉 Entrega completada';
+              notifyBody = lang === 'pt' ? `O produto [${itemTitle}] foi entregue com sucesso.` : `El producto [${itemTitle}] ha sido entregado con éxito.`;
+            }
+
+            if (notifyTitle) {
+              fetch('/api/push-send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  bidRequestId: itemId,
+                  email,
+                  title: notifyTitle,
+                  body: notifyBody,
+                  url: '/',
+                }),
+              }).catch(err => console.error('Shipping push notification error:', err));
+            }
+          }
+        }
       } else {
         const err = await res.json().catch(() => ({}));
         alert('更新に失敗しました: ' + (err.error || ''));
@@ -2286,8 +2366,8 @@ export default function AdminDashboard() {
         </div>
 
       {/* タブナビゲーション */}
-      <nav className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4">
+      <nav className="bg-white border-b sticky top-0 z-10 w-full overflow-x-auto overflow-y-hidden no-scrollbar">
+        <div className="max-w-7xl mx-auto px-4 min-w-max">
           <div className="flex">
             {[
               { key: 'requests' as const, label: '申請', icon: '📋' },
@@ -2296,13 +2376,14 @@ export default function AdminDashboard() {
               { key: 'shipping' as const, label: '発送', icon: '📦' },
               { key: 'customers' as const, label: '顧客', icon: '👥' },
               { key: 'agents' as const, label: 'AGT', icon: '👔' },
+              { key: 'financials' as const, label: '財務', icon: '📊' },
             ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => {
                   setActiveTab(tab.key);
                 }}
-                className={`flex-1 py-3 text-center text-xs sm:text-base font-medium border-b-2 transition ${activeTab === tab.key
+                className={`min-w-[70px] sm:min-w-[100px] flex-1 py-3 px-2 text-center text-xs sm:text-base font-medium border-b-2 transition ${activeTab === tab.key
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
@@ -3682,6 +3763,70 @@ export default function AdminDashboard() {
         )}
 
         {/* 入金タブ */}
+        {activeTab === 'financials' && (
+          <div className="flex flex-col gap-6 w-full p-4 sm:p-6 bg-gray-50 rounded-xl min-h-[500px]">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">📊 財務ダッシュボード</h2>
+                <p className="text-gray-500 text-sm mt-1">B001傘下顧客およびブラジルエージェントの売上集計</p>
+              </div>
+              <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm border">
+                <span className="text-gray-600 font-medium">対象月:</span>
+                <input 
+                  type="month" 
+                  value={financialMonth}
+                  onChange={(e) => {
+                    setFinancialMonth(e.target.value);
+                    fetchFinancials(e.target.value);
+                  }}
+                  className="border-none bg-transparent focus:ring-0 text-indigo-700 font-bold outline-none"
+                />
+              </div>
+            </div>
+
+            {isLoadingFinancials ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+              </div>
+            ) : financialData ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                {/* 顧客支払額 */}
+                <div className="bg-white rounded-xl shadow border border-gray-100 p-6 flex flex-col justify-center">
+                  <div className="text-sm font-bold text-gray-500 mb-2">顧客支払額</div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xl font-bold text-red-500">
+                      未入金 USD {financialData.unpaidCustomerPayment?.toFixed(2)}
+                    </span>
+                    <span className="text-2xl font-black text-gray-800">
+                      / 合計 USD {financialData.totalCustomerPayment?.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* システム利用料 (FFGN売上) */}
+                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow p-6 flex flex-col justify-center text-white">
+                  <div className="text-sm font-bold text-indigo-100 mb-2">システム利用料 (FFGN売上)</div>
+                  <div className="text-3xl font-black">
+                    合計 USD {financialData.systemFee?.toFixed(2)}
+                  </div>
+                </div>
+
+                {/* 商品立替金 (JOGAへの送金) */}
+                <div className="bg-white rounded-xl shadow border border-gray-100 p-6 flex flex-col justify-center">
+                  <div className="text-sm font-bold text-gray-500 mb-2">商品立替金 (株式会社JOGAへ送金する分)</div>
+                  <div className="text-3xl font-black text-blue-600">
+                    合計 USD {financialData.japanPayout?.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-center items-center h-64 text-gray-400">
+                データが取得できませんでした
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'deposits' && (
           <div className="space-y-6">
             {/* 入金登録カード */}
