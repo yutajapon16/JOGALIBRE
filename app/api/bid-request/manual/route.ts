@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     let productImageUrl = '';
     if (imageFile && imageFile.size > 0) {
       // バケットが存在するか確認し、存在しない場合は自動作成
-      const { data: bucketData, error: bucketError } = await supabaseAdmin.storage.getBucket('bid-images');
+      const { error: bucketError } = await supabaseAdmin.storage.getBucket('bid-images');
       if (bucketError) {
         console.log('Bucket "bid-images" not found, creating it...');
         const { error: createError } = await supabaseAdmin.storage.createBucket('bid-images', {

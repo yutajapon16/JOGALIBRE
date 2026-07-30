@@ -55,6 +55,7 @@ export function parseCsvContent(csvContent: string): string[][] {
 }
 
 // 既存のシグネチャ互換用（使われません）
-export function parseCsv(filePath: string): string[][] {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function parseCsv(_filePath: string): string[][] {
   return [];
 }

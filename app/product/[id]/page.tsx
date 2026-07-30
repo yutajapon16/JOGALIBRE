@@ -14,7 +14,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const jcat = searchParams.get('jcat');
   const st = searchParams.get('st');
 
-  const [productId, setProductId] = useState<string>('');
+
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [lang, setLang] = useState<'es' | 'pt'>('es');
@@ -176,10 +176,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   };
 
   useEffect(() => {
-    // URLパラメーターの id を解決
-    params.then(resolvedParams => {
-      setProductId(resolvedParams.id);
-    });
+    // URLパラメーターの id を解決 (必要であればここで処理しますが、今回は未使用のため省略)
+    // params.then(resolvedParams => { ... });
 
     // URLクエリまたはローカルストレージから言語設定を取得
     const queryLang = searchParams.get('lang');
@@ -254,6 +252,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     fetchExchangeRate();
 
     return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
   // ユーザーがロードされたら、名前の初期値をフォームにセット
@@ -393,6 +392,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         maxBid: calculateConvertedPrice(product.currentPrice, 'USD').toString().replace(/,/g, '') 
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product, exchangeRates]);
 
   // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)

@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     // 5日前の境界となる日時を算出
     const fiveDaysAgo = new Date();
     fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-    const thresholdIso = fiveDaysAgo.toISOString();
+
 
     // 2. 5日以上未ログインの対象ユーザーを取得
     // 抽出条件:
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
             <p>Faz tempo que você não entra na plataforma JOGALIBRE.</p>
             <p>Convidamos você a fazer login e enviar suas solicitações de lance para os produtos de seu interesse.</p>
             <div style="margin: 30px 0; text-align: center;">
-              <a href="https://jogalibre.vercel.app/" style="background-color: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Acessar o JOGALIBRE</a>
+              <a href="https://www.jogalibre.com/" style="background-color: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Acessar o JOGALIBRE</a>
             </div>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
             <p style="font-size: 11px; color: #888;">Este é um e-mail automático. Por favor, não responda diretamente a esta mensagem.</p>
@@ -99,7 +99,7 @@ export async function GET(request: Request) {
             <p>Hace tiempo que no ingresas a la plataforma JOGALIBRE.</p>
             <p>Te invitamos a iniciar sesión y realizar tu solicitud de oferta (ofertar) por los productos de tu interés.</p>
             <div style="margin: 30px 0; text-align: center;">
-              <a href="https://jogalibre.vercel.app/" style="background-color: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Acceder a JOGALIBRE</a>
+              <a href="https://www.jogalibre.com/" style="background-color: #4f46e5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Acceder a JOGALIBRE</a>
             </div>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
             <p style="font-size: 11px; color: #888;">Este es un correo automático. Por favor, no respondas directamente a este mensaje.</p>

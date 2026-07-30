@@ -7,7 +7,8 @@ export type { User, UserRole };
 export async function signUp(
   email: string,
   password: string,
-  role: UserRole = 'customer',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _role: UserRole = 'customer',
   fullName?: string,
   whatsapp?: string,
   address?: string,

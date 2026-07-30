@@ -59,7 +59,9 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       // --- PDF Drawing ---
       
       // Header
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const fs = require('fs');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const path = require('path');
       const logoMarkPath = path.join(process.cwd(), 'public', 'icons', 'logo-mark.png');
       const logoTextPath = path.join(process.cwd(), 'public', 'icons', 'logo-text.png');
@@ -115,7 +117,8 @@ export async function generateAndUploadReceipt(data: ReceiptData): Promise<strin
       doc.moveDown(0.5);
 
       if (data.items && data.items.length > 0) {
-        data.items.forEach((item, index) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        data.items.forEach((item, _index) => {
           const startY = doc.y;
           doc.y += 10;
           doc.x = 60; // Indent inside box

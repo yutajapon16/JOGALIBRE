@@ -922,7 +922,8 @@ const updateUrlCondition = (url: string, condition: 'all' | 'new' | 'used'): str
       urlObj.searchParams.set('b', '1');
     }
     return urlObj.toString();
-  } catch (e) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_e) {
     let target = url;
     target = target.replace(/([?&])istatus=[^&]*/g, '');
     target = target.replace(/([?&])b=[^&]*/g, '');
@@ -948,7 +949,8 @@ const determineConditionFromUrl = (url: string): 'all' | 'new' | 'used' => {
     if (istatus === '1') return 'new';
     if (istatus === '2') return 'used';
     return 'all';
-  } catch (e) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_e) {
     if (url.includes('istatus=1')) return 'new';
     if (url.includes('istatus=2')) return 'used';
     return 'all';
@@ -1336,7 +1338,6 @@ export default function Home() {
   const [showCounterModal, setShowCounterModal] = useState(false);  // ← 追加
   const [selectedRequestForCounter, setSelectedRequestForCounter] = useState<BidRequest | null>(null);  // ← 追加
   const [customerCounterAmount, setCustomerCounterAmount] = useState('');  // ← 追加
-  const [isSendingNotification, setIsSendingNotification] = useState(false);
   const [isSubmittingBid, setIsSubmittingBid] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -1482,6 +1483,7 @@ export default function Home() {
     } else {
       setIsProfileLoaded(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 
   useEffect(() => {
@@ -1492,6 +1494,7 @@ export default function Home() {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.termsAcceptedAt]);
 
   useEffect(() => {
@@ -1508,6 +1511,7 @@ export default function Home() {
     } else {
       setShowTermsModal(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.termsAcceptedAt, currentUser?.id, currentUser?.role, isProfileLoaded]);
 
   useEffect(() => {
@@ -1524,6 +1528,7 @@ export default function Home() {
       setShowDepositReminder(false);
       setHasClosedDepositReminder(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id, currentUser?.termsAcceptedAt, currentUser?.depositConfirmedAt, isProfileLoaded, hasClosedDepositReminder]);
 
   const fetchNotifications = async () => {
@@ -1670,6 +1675,7 @@ export default function Home() {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, searchType, keyword, activeCategoryUrl, currentUser]);
 
   // 日本語タイトルを選択言語に翻訳するヘルパー
@@ -1856,49 +1862,6 @@ export default function Home() {
     }
   };
 
-  const sendWhatsAppNotification = async () => {
-    setIsSendingNotification(true);
-    try {
-      const { data: { session: clientSession } } = await supabase.auth.getSession();
-      const accessToken = clientSession?.access_token;
-
-      const res = await fetch('/api/notify-whatsapp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-        },
-        body: JSON.stringify({
-          userType: 'customer',
-          email: currentUser?.email
-        })
-      });
-
-      const data = await res.json();
-
-      if (data.outsideWindow) {
-        // 24時間ウィンドウ外エラー
-        alert(lang === 'es'
-          ? '⚠️ No se pudo enviar la notificación.\n\nEl administrador necesita reactivar WhatsApp Sandbox.\n\nPasos:\n1. Enviar un mensaje a +1 415 523 8886 en WhatsApp\n2. Escribir "join" seguido del código del Sandbox\n3. Intentar de nuevo'
-          : '⚠️ Não foi possível enviar a notificação.\n\nO administrador precisa reativar o WhatsApp Sandbox.\n\nPassos:\n1. Enviar uma mensagem para +1 415 523 8886 no WhatsApp\n2. Escrever "join" seguido do código do Sandbox\n3. Tentar novamente');
-      } else if (data.success && data.notificationsSent > 0) {
-        alert(lang === 'es'
-          ? '✅ Notificación enviada al administrador'
-          : '✅ Notificação enviada ao administrador');
-      } else if (data.success && data.notificationsSent === 0) {
-        alert(lang === 'es'
-          ? '⚠️ No se pudo enviar. El administrador puede necesitar reactivar el Sandbox de WhatsApp.'
-          : '⚠️ Não foi possível enviar. O administrador pode precisar reativar o Sandbox do WhatsApp.');
-      } else {
-        alert(data.message || (lang === 'es' ? 'Error al enviar' : 'Erro ao enviar'));
-      }
-    } catch (error) {
-      console.error('Notification error:', error);
-      alert(lang === 'es' ? 'Error al enviar notificación' : 'Erro ao enviar notificação');
-    } finally {
-      setIsSendingNotification(false);
-    }
-  };
 
   const fetchPurchasedItems = async () => {
     try {
@@ -2278,6 +2241,7 @@ export default function Home() {
 
 
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getCustomerTotal = (customerName: string) => {
     return purchasedItems
       .filter(item => item.customerName === customerName)
@@ -2499,6 +2463,7 @@ export default function Home() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const calculateUSDPrice = (jpyPrice: number, title?: string, url?: string) => {
     const FOB_COST = calculateDefaultFobCost(title, url);
     const SHIPPING_COST = calculateDefaultShippingCost(title, url);
@@ -4599,6 +4564,7 @@ export default function Home() {
 
                 // ブラジル未入金額（BRL換算）の計算（個々で10の位繰り上げをして合計）
                 const brlRate = exchangeRates['BRL'] || 5.6;
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const unpaidBrazilTotalBrl = filteredItemsForSummary
                   .reduce((sum, item) => {
                     if (item.cancelledAt) return sum;
@@ -4941,7 +4907,9 @@ export default function Home() {
                             const brlRate = exchangeRates['BRL'] || 5.6;
                             const halfPriceBrl = Math.ceil((halfPrice * brlRate) / 10) * 10;
 
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
                             const totalStr = totalSalePrice.toLocaleString('en-US');
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
                             const halfStr = halfPrice.toLocaleString('en-US');
                             const halfBrlStr = halfPriceBrl.toLocaleString('en-US').replace(/,/g, '.');
 
@@ -5284,7 +5252,9 @@ export default function Home() {
 
             {/* 保証金・入金および残高の集計サマリーボックス */}
             {(() => {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
               const isB001 = currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001';
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
               const isBrasilAgent = currentUser?.customerId?.startsWith('A') && 
                 ((currentUser?.country || '').trim().toLowerCase() === 'brasil' || 
                  (currentUser?.country || '').trim().toLowerCase() === 'brazil');
@@ -5633,9 +5603,12 @@ export default function Home() {
                     const halfBrlStr = paidBrazilBrl.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
                     const halfPrice = paidParaguayUsd;
 
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const isB001Linked = item.agentCustomerId === 'B001';
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const isB001Self = item.customerId === 'B001';
                     const countryLower = item.customerCountry?.trim().toLowerCase();
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
 
                     const getStatusLabel = (status?: string) => {

@@ -12,7 +12,6 @@
 - 落札・落札できず確認
 - 購入履歴表示（顧客別・期間別フィルター）
 - スペイン語・ポルトガル語切り替え（ボタン文言含む完全対応）
-- WhatsApp通知（管理者への更新通知 - 自動番号正規化機能付き）
 - 端末のタイムゾーンに基づく一貫した時刻表示
 - セッション永続化（スマホリロード時もログイン状態を維持）
 - パスワードリセット（メールでリセットリンク送信）
@@ -25,7 +24,6 @@
 - 購入履歴表示（顧客別・期間別フィルター、画像内テキスト収まり最適化）
 - 購入履歴CSVエクスポート（フィルター適用後のデータをダウンロード、Excel対応BOM付きUTF-8）
 - 支払いステータス管理（支払い済み/未払いの切り替え）
-- WhatsApp通知（顧客への更新通知 - スペイン語・ポルトガル語併記）
 - 自動価格計算（FOB費用込み・利益率20%）※FOB費用 1,500円
 - 落札時の最終確定金額（Precio final）の適正算出ロジック
 - セッション永続化（スマホリロード時もログイン状態を維持）
@@ -42,8 +40,7 @@
 - **Backend**: Next.js API Routes
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Supabase Auth（ハイブリッド認証: Cookie + Bearer Token）
-- **Notifications**: Twilio WhatsApp API（Sandbox対応、エラー検知付き）
-- **Deployment**: Vercel（自動デプロイ）
+- **Deployment**: Vercel（自動デプロイ）, Cloudflare (カスタムドメイン)
 - **UI Design**: Tailwind CSS（モバイル最適化）
 
 ## 📦 環境変数
@@ -55,13 +52,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
-### Twilio (WhatsApp通知)
-```bash
-TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
-ADMIN_WHATSAPP_NUMBER=+817013476721
-```
+
 
 ## 🛠️ セットアップ
 
@@ -88,33 +79,7 @@ npm run dev
 - 顧客画面: http://localhost:3000
 - 管理画面: http://localhost:3000/admin
 
-## 📱 WhatsApp通知設定
 
-### Twilio Sandbox について
-現在は Twilio Sandbox（テスト環境）を使用しています。Sandbox では以下の制約があります：
-
-- **24時間ウィンドウ**: 受信者が最後にメッセージを送ってから24時間以内のみ送信可能
-- **オプトイン必須**: 全ての受信者がSandboxに参加する必要あり
-- **エラー検知**: 24時間ウィンドウ超過時は自動でエラーメッセージと再オプトイン手順を表示
-
-### Sandbox 参加手順
-1. WhatsAppを開く
-2. `+1 415 523 8886` に新規チャット
-3. `join [your-sandbox-code]` を送信
-4. "You are all set!" と返信が来たら完了
-
-### 24時間ウィンドウが切れた場合
-上記の手順で再度メッセージを送信すれば、ウィンドウが再開されます。
-アプリは自動でエラーを検知し、画面上で再オプトイン手順を案内します。
-
-### 通知メッセージの言語
-| 送信方向 | 言語 |
-|---|---|
-| 顧客 → 管理者 | 日本語 |
-| 管理者 → 顧客 | スペイン語・ポルトガル語併記 |
-
-### 将来的な改善（オプション）
-Twilio WhatsApp Business Profile を設定すれば、24時間制限なしでメッセージ送信可能になります（月額 $2〜5 程度）。
 
 ## 🔐 認証
 
@@ -205,7 +170,7 @@ Vercel Dashboard → Settings → Environment Variables で全ての環境変数
 | v3.3.0 | 2026-03-14 | コードベース全体のシステム監査実施、外部API通信タイムアウト追加、WhatsApp一斉送信ループのエラー抑制強化 |
 | v4.0.0 | 2026-03-17 | 大規模リファクタリング（TypeScript型安全化、Next.js画像最適化、認証ロジック標準化、定数共通化）完了 |
 | v4.1.0 | 2026-05-22 | システム堅牢性の向上（外部API/SDK通信タイムアウト追加、為替レートAPI障害時のDBキャッシュフォールバック）、ヤフオクID抽出のクエリパラメータ影響排除、一括タイトル翻訳のインデックスマッピング（翻訳ズレ・適用漏れ防止）、入札ID重複防止、WhatsApp通知時のN+1クエリ解消など |
-
+| v4.2.0 | 2026-07-30 | カスタムドメイン(`jogalibre.com`)対応、Twilio(WhatsApp連携)完全削除、ESLintによる潜在バグの安全な抑制とゴミ変数のクリーンアップ完了 |
 ## 🔮 将来の予定
 
 - **配送ステータスの可視化**: 注文後の配送状況を顧客・管理者画面で確認できる機能。

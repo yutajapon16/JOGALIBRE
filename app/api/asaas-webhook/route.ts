@@ -177,7 +177,7 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
     }, 0) || (payment.value / 5.65); // フォールバック
 
     // 3. 内訳（Line A / Line B）の計算
-    let baseRate = payment.value / usdEquivalent;
+    const baseRate = payment.value / usdEquivalent;
     let originalRate = baseRate;
 
     // 決済時に使用された実際の為替レート（丸め計算により生じる逆算誤差をなくすため）を探索

@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     const userMap = new Map(users?.map(u => [u.email, u]));
 
     // 4. CSVデータを生成
-    const FOB_JPY = 1500;
+
     const csvHeaders = [
       'Order ID',
       'End Time (JST)',

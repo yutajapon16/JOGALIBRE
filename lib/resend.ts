@@ -58,8 +58,8 @@ export async function sendReceiptEmail(to: string, receiptUrl: string, amount: s
         <p>Obrigado por utilizar a JOGALIBRE.</p>
         <br/>
         <div style="margin-top: 20px;">
-          <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://jogalibre.vercel.app'}/icons/logo-mark.png" alt="" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 12px;" />
-          <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://jogalibre.vercel.app'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 29px; vertical-align: middle;" />
+          <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 12px;" />
+          <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 29px; vertical-align: middle;" />
         </div>
       `,
     });

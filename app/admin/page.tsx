@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
   const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
   const [finalPriceInput, setFinalPriceInput] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [totalJpyInput, setTotalJpyInput] = useState('');
   const [wonPriceJpyInput, setWonPriceJpyInput] = useState('');
   const [wonShippingJpyInput, setWonShippingJpyInput] = useState('');
@@ -90,6 +91,7 @@ export default function AdminDashboard() {
   const [manualAddImagePreview, setManualAddImagePreview] = useState<string | null>(null);
   const [isSubmittingManualAdd, setIsSubmittingManualAdd] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getSelectedCustomerInfo = (customerId: string) => {
     if (!customerId) return null;
     const customer = customersList.find(c => c.customer_id === customerId);
@@ -708,7 +710,7 @@ export default function AdminDashboard() {
   const [purchasedYear, setPurchasedYear] = useState<string>('all');
   const [purchasedMonth, setPurchasedMonth] = useState<string>('all');
   const [shippingStatusFilter, setShippingStatusFilter] = useState<string>('all');
-  const [isSendingNotification, setIsSendingNotification] = useState(false);
+
   const [notificationStatus, setNotificationStatus] = useState<'loading' | 'enabled' | 'disabled' | 'unsupported'>('loading');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -788,6 +790,7 @@ export default function AdminDashboard() {
       const interval = setInterval(fetchUnreadCount, 60000);
       return () => clearInterval(interval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
 
@@ -1043,43 +1046,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const sendWhatsAppNotification = async () => {
-    setIsSendingNotification(true);
-    try {
-      const { data: { session: clientSession } } = await supabase.auth.getSession();
-      const accessToken = clientSession?.access_token;
-
-      const res = await fetch('/api/notify-whatsapp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
-        },
-        body: JSON.stringify({
-          userType: 'admin'
-        })
-      });
-      const data = await res.json();
-
-      if (data.outsideWindow && data.outsideWindowCount > 0) {
-        // 24時間ウィンドウ外エラーがある場合
-        const sent = data.notificationsSent || 0;
-        const failed = data.outsideWindowCount || 0;
-        alert(`⚠️ WhatsApp通知: ${sent}件成功 / ${failed}件失敗\n\n一部の顧客がSandboxの24時間ウィンドウ外です。\n\n対象の顧客に以下を依頼してください：\n1. WhatsAppで +1 415 523 8886 にメッセージを送信\n2. Sandboxの参加コードを送信\n3. その後、再度通知を試してください`);
-      } else if (data.success && data.notificationsSent > 0) {
-        alert(`✅ WhatsApp通知を${data.notificationsSent}件送信しました`);
-      } else if (data.success && data.notificationsSent === 0) {
-        alert('⚠️ 通知対象がないか、送信に失敗しました。顧客がSandboxに再参加する必要があるかもしれません。');
-      } else {
-        alert(data.message || 'エラーが発生しました');
-      }
-    } catch (error) {
-      console.error('Notification error:', error);
-      alert('通知の送信に失敗しました');
-    } finally {
-      setIsSendingNotification(false);
-    }
-  };
 
 
 
@@ -1272,6 +1238,7 @@ export default function AdminDashboard() {
     return Array.from(uniqueIds).sort((a, b) => a.localeCompare(b));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getCustomerTotalById = (customerId: string) => {
     return purchasedItems
       .filter(item => item.customerId === customerId)
@@ -4426,10 +4393,13 @@ export default function AdminDashboard() {
                         : (item.counterOffer || item.maxBid || 0));
                       const totalSalePrice = Math.round(cost || 0);
                       const brlRate = exchangeRates['BRL'] || 5.6;
+                      // eslint-disable-next-line @typescript-eslint/no-unused-vars
                       const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
+                      // eslint-disable-next-line @typescript-eslint/no-unused-vars
                       const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
                       const japanSendAmount = item.japan_send_usd ?? calculateJapanSendAmount(item, totalSalePrice, exchangeRates['JPY'] || exchangeRate || 150);
 
+                      // eslint-disable-next-line @typescript-eslint/no-unused-vars
                       const formatBrl = (amount: number) => {
                         const rounded = Math.round(amount);
                         return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');

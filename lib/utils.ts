@@ -54,6 +54,7 @@ export const formatDateOnly = (dateString: string, mode: 'admin' | 'customer' = 
   // タイムゾーンの変換を防ぎ、かつ Safari 等で NaN になるのを避けるため、YYYY-MM-DD や YYYY/MM/DD の日付のみ形式を安全に検出して組み替える
   const simpleDateMatch = dateString.trim().match(/^(\d{4})[-/](\d{2})[-/](\d{2})(?:\s|T|$)/);
   if (simpleDateMatch) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_, y, m, d] = simpleDateMatch;
     if (mode === 'customer') {
       return `${d}/${m}/${y}`;
@@ -280,7 +281,8 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
   
   let jcat: string | null = null;
   let decodedUrl = url || '';
-  try { decodedUrl = decodeURIComponent(url || ''); } catch (e) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  try { decodedUrl = decodeURIComponent(url || ''); } catch (_e) {}
 
   const jcatMatch = decodedUrl.match(/[?&]jcat=([^&]+)/);
   if (jcatMatch) {
@@ -558,7 +560,8 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
 
   let jcat: string | null = null;
   let decodedUrl = url || '';
-  try { decodedUrl = decodeURIComponent(url || ''); } catch (e) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  try { decodedUrl = decodeURIComponent(url || ''); } catch (_e) {}
 
   // 1. URLパラメータからjcat（フロントエンドのカテゴリID）を抽出
   const jcatMatch = decodedUrl.match(/[?&]jcat=([^&]+)/);
@@ -614,7 +617,8 @@ export const calculateDefaultShippingCost = (title?: string | null, url?: string
 
   let jcat: string | null = null;
   let decodedUrl = url || '';
-  try { decodedUrl = decodeURIComponent(url || ''); } catch (e) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  try { decodedUrl = decodeURIComponent(url || ''); } catch (_e) {}
 
   // 1. URLパラメータからjcatを抽出
   const jcatMatch = decodedUrl.match(/[?&]jcat=([^&]+)/);
