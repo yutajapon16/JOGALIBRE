@@ -87,29 +87,35 @@ export async function GET(req: Request) {
         doc.fontSize(20).font('Helvetica-Bold').text('JOGALIBRE', { align: 'center' });
       }
 
-      doc.y = headerY + 55; // Move Y down past the logo
+      doc.y = headerY + 45; // Move Y down past the logo
       doc.fontSize(18).font('Helvetica-Bold').text(
           lang === 'pt' ? 'Termos e Condições de Uso' : 'Términos y Condiciones de Uso', 
           { align: 'center' }
       );
-      doc.moveDown(2.5);
+      // Reduce space between title and first item
+      doc.moveDown(1.2);
 
       // --- Content ---
       doc.fontSize(11).font('Helvetica');
       const marginX = 50;
+      
+      // Reduce line gaps slightly if there are 6 items
+      const pLineGap = isB001RelatedOrBrazilAgent ? 2 : 3;
+      const pMoveDown = isB001RelatedOrBrazilAgent ? 0.5 : 0.7;
+      const itemMoveDown = isB001RelatedOrBrazilAgent ? 0.8 : 1.5;
       
       const printItem = (num: string, title: string, text: string | string[]) => {
           doc.font('Helvetica-Bold').text(`${num}. ${title}`, marginX);
           doc.font('Helvetica');
           if (Array.isArray(text)) {
               text.forEach(p => {
-                  doc.text(p, marginX + 15, doc.y, { width: 480, lineGap: 3 });
-                  doc.moveDown(0.7);
+                  doc.text(p, marginX + 15, doc.y, { width: 480, lineGap: pLineGap });
+                  doc.moveDown(pMoveDown);
               });
           } else {
-              doc.text(text, marginX + 15, doc.y, { width: 480, lineGap: 3 });
+              doc.text(text, marginX + 15, doc.y, { width: 480, lineGap: pLineGap });
           }
-          doc.moveDown(1.5);
+          doc.moveDown(itemMoveDown);
       };
 
       // Item 1

@@ -1010,6 +1010,7 @@ export default function Home() {
   // B001傘下顧客 / ブラジルエージェント用の複数選択・一括決済ステート
   const [selectedBrlItemIds, setSelectedBrlItemIds] = useState<string[]>([]);
   const [showBrlBatchPaymentModal, setShowBrlBatchPaymentModal] = useState(false);
+  const [showPdfViewerModal, setShowPdfViewerModal] = useState(false);
   const [brlPaymentMethod, setBrlPaymentMethod] = useState<'pix' | 'card'>('pix');
   const [isProcessingBrlPayment, setIsProcessingBrlPayment] = useState(false);
   const [brlPaymentCpf, setBrlPaymentCpf] = useState('');
@@ -6014,7 +6015,7 @@ export default function Home() {
             {/* 利用規約 PDFボタン */}
             <div className="mb-8">
               <button
-                onClick={() => window.open('/api/terms-pdf', '_blank')}
+                onClick={() => setShowPdfViewerModal(true)}
                 className="w-full flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-indigo-100 bg-white text-indigo-600 font-bold hover:bg-indigo-50 transition"
               >
                 <span className="text-lg">📄</span>
@@ -8145,6 +8146,33 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* PDF Viewer Modal (For PWA and in-app viewing) */}
+      {showPdfViewerModal && (
+        <div className="fixed inset-0 z-[100] flex flex-col bg-gray-900/90 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center justify-between p-4 bg-white border-b shadow-sm">
+            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+              <span className="text-xl">📄</span>
+              {lang === 'es' ? 'Términos y Condiciones' : 'Termos e Condições'}
+            </h3>
+            <button
+              onClick={() => setShowPdfViewerModal(false)}
+              className="px-5 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg font-bold transition-colors flex items-center gap-1"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              {lang === 'es' ? 'Cerrar' : 'Fechar'}
+            </button>
+          </div>
+          <div className="flex-1 w-full p-2 sm:p-4 md:p-8 flex justify-center items-center">
+            <iframe
+              src="/api/terms-pdf"
+              className="w-full h-full max-w-4xl rounded-xl shadow-2xl bg-white"
+              title="Terms PDF"
+            />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
