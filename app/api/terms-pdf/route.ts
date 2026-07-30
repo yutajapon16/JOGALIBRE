@@ -87,15 +87,15 @@ export async function GET(req: Request) {
         doc.fontSize(20).font('Helvetica-Bold').text('JOGALIBRE', { align: 'center' });
       }
 
-      doc.y = headerY + 45; // Move Y down past the logo
-      doc.fontSize(16).font('Helvetica-Bold').text(
+      doc.y = headerY + 55; // Move Y down past the logo
+      doc.fontSize(18).font('Helvetica-Bold').text(
           lang === 'pt' ? 'Termos e Condições de Uso' : 'Términos y Condiciones de Uso', 
           { align: 'center' }
       );
-      doc.moveDown(2);
+      doc.moveDown(2.5);
 
       // --- Content ---
-      doc.fontSize(10).font('Helvetica');
+      doc.fontSize(11).font('Helvetica');
       const marginX = 50;
       
       const printItem = (num: string, title: string, text: string | string[]) => {
@@ -103,13 +103,13 @@ export async function GET(req: Request) {
           doc.font('Helvetica');
           if (Array.isArray(text)) {
               text.forEach(p => {
-                  doc.text(p, marginX + 15, doc.y, { width: 480 });
-                  doc.moveDown(0.5);
+                  doc.text(p, marginX + 15, doc.y, { width: 480, lineGap: 3 });
+                  doc.moveDown(0.7);
               });
           } else {
-              doc.text(text, marginX + 15, doc.y, { width: 480 });
+              doc.text(text, marginX + 15, doc.y, { width: 480, lineGap: 3 });
           }
-          doc.moveDown(1);
+          doc.moveDown(1.5);
       };
 
       // Item 1
@@ -179,16 +179,16 @@ export async function GET(req: Request) {
 
       // --- Footer ---
       // Draw a line before footer
-      const footerY = 730;
-      doc.moveTo(50, footerY - 10).lineTo(545, footerY - 10).strokeColor('#cccccc').stroke();
+      const footerY = 760;
+      doc.moveTo(50, footerY - 15).lineTo(545, footerY - 15).strokeColor('#cccccc').stroke();
       
       doc.y = footerY;
       doc.fillColor('#333333');
-      doc.fontSize(9).font('Helvetica-Bold');
+      doc.fontSize(10).font('Helvetica-Bold');
       const footerPrefix = lang === 'pt' ? 'Aceito em' : 'Aceptado el';
       const namePrefix = lang === 'pt' ? 'Nome' : 'Nombre';
       
-      const customerName = roleData.name || roleData.given_name || '-';
+      const customerName = roleData.full_name || roleData.name || roleData.given_name || '-';
       const customerId = roleData.customer_id || '-';
 
       doc.text(`${footerPrefix}: `, { continued: true }).font('Helvetica').text(`${acceptedDateStr}   |   `, { continued: true });
