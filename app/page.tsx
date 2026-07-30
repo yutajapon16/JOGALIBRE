@@ -6011,6 +6011,17 @@ export default function Home() {
               </div>
             </div>
 
+            {/* 利用規約 PDFボタン */}
+            <div className="mb-8">
+              <button
+                onClick={() => window.open('/api/terms-pdf', '_blank')}
+                className="w-full flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-indigo-100 bg-white text-indigo-600 font-bold hover:bg-indigo-50 transition"
+              >
+                <span className="text-lg">📄</span>
+                {lang === 'es' ? 'Ver Términos y Condiciones (PDF)' : 'Ver Termos e Condições (PDF)'}
+              </button>
+            </div>
+
             {/* プロフィール編集 */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold mb-4">{t.profile}</h3>
