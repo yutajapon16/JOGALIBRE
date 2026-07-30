@@ -1351,7 +1351,8 @@ export default function Home() {
     item2: false,
     item3: false,
     item4: false,
-    item5: false
+    item5: false,
+    item6: false
   });
 
   const t = translations[lang];
@@ -7981,13 +7982,48 @@ export default function Home() {
                 </div>
               </label>
 
+              {/* 項目6: B001/ブラジルエージェント向け - 現地引き渡し・税関免責 */}
+              {(currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.role === 'agent' && (currentUser?.country?.toLowerCase() === 'brasil' || currentUser?.country?.toLowerCase() === 'brazil'))) && (
+                <label className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={termsChecked.item6}
+                    onChange={(e) => setTermsChecked(prev => ({ ...prev, item6: e.target.checked }))}
+                    className="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <div className="flex-1 text-sm text-gray-700">
+                    <div className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                      <span className="text-indigo-600">6.</span>
+                      {lang === 'es' ? 'Reconocimiento de Retiro Local y Exención Aduanera' : 'Reconhecimento de Retirada Local e Isenção Aduaneira'}
+                    </div>
+                    <div className="space-y-2 text-xs text-gray-600">
+                      {lang === 'es' ? (
+                        <>
+                          <p>1. EL CLIENTE declara estar consciente de que la entrega de las mercancías intermediadas por la plataforma JOGALIBRE ocurrirá exclusivamente en territorio paraguayo, en la dirección indicada al momento del retiro.</p>
+                          <p>2. La responsabilidad de JOGALIBRE (FF GLOBAL NEGOCIOS E INTERMEDIAÇÕES) y de sus socios internacionales se limita estrictamente a la disponibilidad del producto en el lugar de retiro acordado.</p>
+                          <p>3. Toda obligación referente al transporte transfronterizo, tránsito aduanero, declaración de equipaje acompañado y pago de tributos o tasas ante la Receita Federal de Brasil (conforme a la cuota de exención de tributos terrestres vigente) es de responsabilidad única, exclusiva e intransferible del CLIENTE.</p>
+                          <p>4. JOGALIBRE no se responsabiliza por eventuales retenciones, incautaciones, multas o penalidades aplicadas por las autoridades fiscales o policiales en el cruce de la frontera o en territorio brasileño.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p>1. O CLIENTE declara estar ciente de que a entrega das mercadorias intermediadas pela plataforma JOGALIBRE ocorrerá exclusivamente em território paraguaio, no endereço indicado no momento da retirada.</p>
+                          <p>2. A responsabilidade da JOGALIBRE (FF GLOBAL NEGOCIOS E INTERMEDIAÇÕES) e de seus parceiros internacionais limita-se estritamente à disponibilização do produto no local de retirada acordado.</p>
+                          <p>3. Toda e qualquer obrigação referente ao transporte transfronteiriço, trânsito aduaneiro, declaração de bagagem acompanhada e pagamento de tributos ou taxas perante a Receita Federal do Brasil (conforme a cota de isenção de tributos terrestres vigente) é de responsabilidade única, exclusiva e intransferível do CLIENTE.</p>
+                          <p>4. A JOGALIBRE não se responsabiliza por eventuais retenções, apreensões, multas ou penalidades aplicadas pelas autoridades fiscais ou policiais na travessia da fronteira ou em território brasileiro.</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </label>
+              )}
+
               {/* フッター / 送信ボタン */}
               <div className="pt-4 border-t border-gray-100 sticky bottom-0 bg-white">
                 <button
                   type="submit"
-                  disabled={!termsChecked.item1 || !termsChecked.item2 || !termsChecked.item3 || !termsChecked.item4 || !termsChecked.item5}
+                  disabled={!termsChecked.item1 || !termsChecked.item2 || !termsChecked.item3 || !termsChecked.item4 || !termsChecked.item5 || ((currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.role === 'agent' && (currentUser?.country?.toLowerCase() === 'brasil' || currentUser?.country?.toLowerCase() === 'brazil'))) && !termsChecked.item6)}
                   className={`w-full py-4 rounded-xl font-bold text-base transition duration-200 shadow-lg ${
-                    (termsChecked.item1 && termsChecked.item2 && termsChecked.item3 && termsChecked.item4 && termsChecked.item5)
+                    (termsChecked.item1 && termsChecked.item2 && termsChecked.item3 && termsChecked.item4 && termsChecked.item5 && (!(currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.role === 'agent' && (currentUser?.country?.toLowerCase() === 'brasil' || currentUser?.country?.toLowerCase() === 'brazil'))) || termsChecked.item6))
                       ? 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-indigo-200'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
                   }`}
