@@ -10,7 +10,11 @@
     },
     {
       "path": "/api/cron/remind-inactive-users",
-      "schedule": "0 0 * * *"
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron/remind-favorites",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
