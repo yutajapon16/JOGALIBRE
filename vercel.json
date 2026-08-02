@@ -1,28 +1,2 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/check-items",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/export-orders",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/remind-inactive-users",
-      "schedule": "0 21 * * *"
-    },
-    {
-      "path": "/api/cron/remind-favorites",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/remind-unconfirmed-orders",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/remind-unpaid-orders",
-      "schedule": "0 0 * * *"
-    }
-  ]
 }
