@@ -143,8 +143,8 @@ export async function GET(request: Request) {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 sendToAdmins: true,
-                                title: 'Auction Ended',
-                                body: `Check result for: ${item.product_id}`,
+                                title: '🔚 オークション終了',
+                                body: `商品の結果を確認してください: ${item.product_id}`,
                                 url: '/admin'
                             })
                         }).catch(e => console.error('Cron notify error:', e));
