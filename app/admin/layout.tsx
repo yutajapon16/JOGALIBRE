@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-    title: "JOGALIBRE Admin",
+    title: "管理画面 - JOGALIBRE",
     description: "JOGALIBRE 管理者ダッシュボード",
     manifest: "/manifest-admin.json",
     appleWebApp: {
         capable: true,
         statusBarStyle: "default",
-        title: "JOGALIBRE Admin",
+        title: "管理画面",
     },
 };
 
