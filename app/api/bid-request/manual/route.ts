@@ -154,7 +154,8 @@ export async function POST(request: Request) {
       delivery_location: deliveryLocation || 'JP',
       delivery_country: deliveryCountry || null,
       delivery_city: deliveryCity || null,
-      shipping_method: shippingMethod || 'sea'
+      shipping_method: shippingMethod || 'sea',
+      won_at: new Date().toISOString()
     };
 
     if (finalCreatedAt) {

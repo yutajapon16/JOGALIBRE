@@ -446,7 +446,12 @@ export async function PATCH(request: Request) {
       if (rejectReason !== undefined) updateData.reject_reason = rejectReason;
       if (counterOffer !== undefined) updateData.counter_offer = counterOffer;
       if (shippingCostJpy !== undefined) updateData.shipping_cost_jpy = shippingCostJpy;
-      if (finalStatus !== undefined) updateData.final_status = finalStatus;
+      if (finalStatus !== undefined) {
+        updateData.final_status = finalStatus;
+        if (finalStatus === 'won' && currentRequest.final_status !== 'won') {
+          updateData.won_at = new Date().toISOString();
+        }
+      }
       if (totalJpy !== undefined) updateData.total_jpy = totalJpy ? Number(totalJpy) : null;
     if (japanSendUsd !== undefined) updateData.japan_send_usd = japanSendUsd ? Number(japanSendUsd) : null;
       if (stockNumber !== undefined) updateData.stock_number = stockNumber ? stockNumber.trim() : null;

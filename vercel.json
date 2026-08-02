@@ -15,6 +15,14 @@
     {
       "path": "/api/cron/remind-favorites",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/remind-unconfirmed-orders",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/remind-unpaid-orders",
+      "schedule": "0 * * * *"
     }
   ]
 }

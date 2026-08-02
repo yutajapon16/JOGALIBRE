@@ -98,6 +98,23 @@ export async function POST(request: Request) {
       );
     }
 
+    // 管理者へのプッシュ通知送信
+    try {
+      const baseUrl = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+      await fetch(`${baseUrl}/api/push-send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sendToAdmins: true,
+          title: '🔔 新規顧客登録',
+          body: `新しい顧客（${email}）が登録されました。`,
+          url: '/admin'
+        }),
+      });
+    } catch (e) {
+      console.error('Failed to send admin push notification:', e);
+    }
+
     return NextResponse.json({ success: true });
 
   } catch (error) {

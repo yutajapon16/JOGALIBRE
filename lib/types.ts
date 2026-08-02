@@ -60,6 +60,9 @@ export interface BidRequest {
   agentCustomerId?: string | null;
   paidAt?: string | null;
   paid?: boolean;
+  wonAt?: string | null;
+  unconfirmedNotifiedAt?: string | null;
+  unpaidNotifiedAt?: string | null;
   paid_brazil?: boolean;
   paid_brazil_at?: string | null;
   paid_paraguay?: boolean;
