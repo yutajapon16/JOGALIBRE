@@ -144,7 +144,7 @@ export async function GET(request: Request) {
                             body: JSON.stringify({
                                 sendToAdmins: true,
                                 title: '🔚 オークション終了',
-                                body: `商品の結果を確認してください: ${item.product_id}`,
+                                body: `商品の結果を確認してください`,
                                 url: '/admin'
                             })
                         }).catch(e => console.error('Cron notify error:', e));
