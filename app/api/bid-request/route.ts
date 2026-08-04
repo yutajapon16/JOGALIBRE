@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
-import { parseAnyDateTime, parseDbDateTime } from '@/lib/utils';
+import { parseAnyDateTime, parseDbDateTime, parseJstDateTime } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
@@ -545,9 +545,9 @@ export async function PATCH(request: Request) {
             );
           }
 
-          // 2. オークション終了まで15分前チェック
+          // 2. オークション終了まで15分前チェック (ヤフオク終了時刻はJST基準)
           if (currentRequest.product_end_time) {
-            const endDate = parseDbDateTime(currentRequest.product_end_time) || parseAnyDateTime(currentRequest.product_end_time);
+            const endDate = parseJstDateTime(currentRequest.product_end_time) || parseDbDateTime(currentRequest.product_end_time);
             if (endDate) {
               const diffMs = endDate.getTime() - Date.now();
               const fifteenMinsInMs = 15 * 60 * 1000;

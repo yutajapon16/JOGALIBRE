@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
@@ -4332,7 +4332,7 @@ export default function Home() {
                       {request.status === 'approved' && !request.finalStatus && (() => {
                         const isWithin15Mins = request.productEndTime
                           ? (() => {
-                              const endDate = parseDbDateTime(request.productEndTime);
+                              const endDate = parseJstDateTime(request.productEndTime) || parseDbDateTime(request.productEndTime);
                               if (!endDate) return false;
                               return (endDate.getTime() - Date.now()) < (15 * 60 * 1000);
                             })()
