@@ -626,6 +626,40 @@ export async function PATCH(request: Request) {
 
     if (error) throw error;
 
+    // 管理者による手動での支払済更新時、顧客へ通知を送信
+    if (isAdmin && updateData.paid === true && !currentRequest.paid && currentRequest.customer_email) {
+      try {
+        const baseUrl = new URL(request.url).origin;
+        const { data: userRole } = await supabaseAdmin
+          .from('user_roles')
+          .select('language')
+          .eq('email', currentRequest.customer_email)
+          .single();
+
+        const lang = (userRole?.language || 'es').toLowerCase();
+        const isPt = lang === 'pt';
+        const itemTitle = isPt
+          ? currentRequest.product_title_pt || currentRequest.product_title || 'Item'
+          : currentRequest.product_title_es || currentRequest.product_title || 'Item';
+
+        const custTitle = isPt ? '💳 Pagamento Confirmado' : '💳 Pago Confirmado';
+        const custBody = isPt ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
+
+        fetch(`${baseUrl}/api/push-send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: currentRequest.customer_email,
+            title: custTitle,
+            body: custBody,
+            url: '/',
+          }),
+        }).catch(err => console.error('Manual payment customer push error:', err));
+      } catch (pushErr) {
+        console.error('Manual payment notification error:', pushErr);
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error in PATCH /api/bid-request:', error);

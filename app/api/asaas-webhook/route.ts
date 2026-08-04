@@ -309,6 +309,65 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
       }
     }
 
+    // 8.5. プッシュ通知の送信 (顧客宛て + 管理者宛て)
+    if (customerEmail) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jogalibre.com';
+        
+        // 顧客の言語設定とID情報を取得
+        const { data: userRole } = await supabaseAdmin
+          .from('user_roles')
+          .select('language, full_name, customer_id')
+          .eq('email', customerEmail)
+          .single();
+
+        const lang = (userRole?.language || 'es').toLowerCase();
+        const isPt = lang === 'pt';
+        const custName = userRole?.full_name || customerName || customerEmail;
+        const custIdStr = (userRole?.customer_id || customerId) ? `(${userRole?.customer_id || customerId})` : '';
+
+        // (1) 顧客宛て通知 (商品ごとに送信)
+        for (const item of items) {
+          const itemTitle = isPt
+            ? item.product_title_pt || (item as any).product_title || 'Item'
+            : (item as any).product_title_es || (item as any).product_title || 'Item';
+
+          const custTitle = isPt ? '💳 Pagamento Confirmado' : '💳 Pago Confirmado';
+          const custBody = isPt ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
+
+          fetch(`${baseUrl}/api/push-send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: customerEmail,
+              title: custTitle,
+              body: custBody,
+              url: '/',
+            }),
+          }).catch(err => console.error('[ASAAS Webhook] Customer push error:', err));
+        }
+
+        // (2) 管理者宛て通知
+        const adminTitle = `💰 【決済完了】${custName} ${custIdStr}`.trim();
+        const adminBody = `商品: ${(items[0] as any).product_title || 'Item'}`;
+
+        fetch(`${baseUrl}/api/push-send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sendToAdmins: true,
+            bidRequestId: items[0].id,
+            title: adminTitle,
+            body: adminBody,
+            url: '/admin',
+          }),
+        }).catch(err => console.error('[ASAAS Webhook] Admin push error:', err));
+
+      } catch (pushErr) {
+        console.error('[ASAAS Webhook] プッシュ通知送信エラー:', pushErr);
+      }
+    }
+
     // 9. NFS-e (Nota Fiscal) 自動発行APIの呼び出し（現在はコメントアウト）
     /*
     try {
