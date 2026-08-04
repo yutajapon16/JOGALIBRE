@@ -48,9 +48,8 @@ export async function sendReceiptEmail(to: string, receiptUrl: string, amount: s
       subject: `[JOGALIBRE] Recibo de Pagamento - R$ ${amount}`,
       html: `
         <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
-          <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px; white-space: nowrap;">
-            <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" style="height: 26px; width: 26px; vertical-align: middle; margin-right: 8px; display: inline-block;" />
-            <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 18px; vertical-align: middle; display: inline-block;" />
+          <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
+            <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-combination.png" alt="JOGALIBRE" style="height: 32px; max-width: 100%; object-fit: contain; display: block;" />
           </div>
           <h2 style="color: #059669; margin-bottom: 20px; font-size: 20px;">Pagamento Confirmado!</h2>
           <p>Olá,</p>
