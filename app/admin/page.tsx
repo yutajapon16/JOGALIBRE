@@ -1384,9 +1384,7 @@ export default function AdminDashboard() {
 
           if (finalStatus === 'won') {
             notifyTitle = lang === 'pt' ? '🎉 Ganhado!' : '🎉 ¡Ganado!';
-            notifyBody = lang === 'pt'
-              ? `Produto: ${itemTitle}${finalPrice ? `\nPreço final: $${finalPrice}` : ''}`
-              : `Producto: ${itemTitle}${finalPrice ? `\nPrecio final: $${finalPrice}` : ''}`;
+            notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
           } else if (finalStatus === 'lost') {
             notifyTitle = '😢 Perdido';
             notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
