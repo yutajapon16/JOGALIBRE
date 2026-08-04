@@ -81,9 +81,9 @@ export async function GET(request: Request) {
       const html = isPt 
         ? `
           <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
-            <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
-              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" style="height: 36px; width: 36px; vertical-align: middle; margin-right: 10px;" />
-              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 26px; vertical-align: middle;" />
+            <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px; white-space: nowrap;">
+              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" style="height: 26px; width: 26px; vertical-align: middle; margin-right: 8px; display: inline-block;" />
+              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 18px; vertical-align: middle; display: inline-block;" />
             </div>
             <h2 style="color: #4f46e5; margin-bottom: 20px; font-size: 20px;">Sentimos sua falta no JOGALIBRE!</h2>
             <p>Olá, <strong>${user.full_name || 'Usuário'}</strong>,</p>
@@ -98,9 +98,9 @@ export async function GET(request: Request) {
         `
         : `
           <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
-            <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
-              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" style="height: 36px; width: 36px; vertical-align: middle; margin-right: 10px;" />
-              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 26px; vertical-align: middle;" />
+            <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px; white-space: nowrap;">
+              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" style="height: 26px; width: 26px; vertical-align: middle; margin-right: 8px; display: inline-block;" />
+              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 18px; vertical-align: middle; display: inline-block;" />
             </div>
             <h2 style="color: #4f46e5; margin-bottom: 20px; font-size: 20px;">¡Te extrañamos en JOGALIBRE!</h2>
             <p>Hola, <strong>${user.full_name || 'Usuario'}</strong>,</p>
