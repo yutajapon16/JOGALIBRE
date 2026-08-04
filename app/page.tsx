@@ -4331,7 +4331,11 @@ export default function Home() {
                       {/* 承認済みの場合のオファー金額引き上げ（増額）ボタン */}
                       {request.status === 'approved' && !request.finalStatus && (() => {
                         const isWithin15Mins = request.productEndTime
-                          ? (new Date(request.productEndTime).getTime() - Date.now() < 15 * 60 * 1000)
+                          ? (() => {
+                              const endDate = parseDbDateTime(request.productEndTime);
+                              if (!endDate) return false;
+                              return (endDate.getTime() - Date.now()) < (15 * 60 * 1000);
+                            })()
                           : false;
                         return (
                           <div className="flex flex-col gap-2 mb-2 w-full">

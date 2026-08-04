@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
-import { parseAnyDateTime } from '@/lib/utils';
+import { parseAnyDateTime, parseDbDateTime } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
@@ -547,14 +547,16 @@ export async function PATCH(request: Request) {
 
           // 2. オークション終了まで15分前チェック
           if (currentRequest.product_end_time) {
-            const endTime = new Date(currentRequest.product_end_time).getTime();
-            const nowTime = new Date().getTime();
-            const fifteenMinsInMs = 15 * 60 * 1000;
-            if (endTime - nowTime < fifteenMinsInMs) {
-              return NextResponse.json(
-                { error: 'Cannot change bid amount within 15 minutes of auction end' },
-                { status: 400 }
-              );
+            const endDate = parseDbDateTime(currentRequest.product_end_time) || parseAnyDateTime(currentRequest.product_end_time);
+            if (endDate) {
+              const diffMs = endDate.getTime() - Date.now();
+              const fifteenMinsInMs = 15 * 60 * 1000;
+              if (diffMs < fifteenMinsInMs) {
+                return NextResponse.json(
+                  { error: 'Cannot change bid amount within 15 minutes of auction end' },
+                  { status: 400 }
+                );
+              }
             }
           }
 
