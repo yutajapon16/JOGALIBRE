@@ -59,8 +59,8 @@ export async function GET(req: Request) {
       
       const notifyTitle = lang === 'pt' ? '⏳ Leilão terminando em breve!' : '⏳ ¡Subasta terminando pronto!';
       const notifyBody = lang === 'pt' 
-        ? `O leilão do produto [${fav.product_title || 'Item'}] terminará em menos de 1 hora. Já enviou sua solicitação de lance?`
-        : `La subasta del producto [${fav.product_title || 'Item'}] terminará en menos de 1 hora. ¿Ya enviaste tu solicitud de oferta?`;
+        ? `Produto: ${fav.product_title || 'Item'}`
+        : `Producto: ${fav.product_title || 'Item'}`;
 
       // 通知送信リクエストを配列に追加
       notificationsPromises.push(
