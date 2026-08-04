@@ -47,19 +47,21 @@ export async function sendReceiptEmail(to: string, receiptUrl: string, amount: s
       to: [to],
       subject: `[JOGALIBRE] Recibo de Pagamento - R$ ${amount}`,
       html: `
-        <h2>Pagamento Confirmado!</h2>
-        <p>Olá,</p>
-        <p>Recebemos o seu pagamento no valor de <strong>R$ ${amount}</strong>.</p>
-        <p>O seu <strong>Recibo de Intermediação e Repasse</strong> já está disponível.</p>
-        <br/>
-        <a href="${receiptUrl}" style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Baixar Recibo em PDF</a>
-        <br/><br/>
-        <p>Você também pode encontrar este recibo na aba "Deposits" do seu painel.</p>
-        <p>Obrigado por utilizar a JOGALIBRE.</p>
-        <br/>
-        <div style="margin-top: 20px;">
-          <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" style="height: 40px; width: 40px; vertical-align: middle; margin-right: 12px;" />
-          <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 29px; vertical-align: middle;" />
+        <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
+          <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px; white-space: nowrap;">
+            <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" style="height: 26px; width: 26px; vertical-align: middle; margin-right: 8px; display: inline-block;" />
+            <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 18px; vertical-align: middle; display: inline-block;" />
+          </div>
+          <h2 style="color: #059669; margin-bottom: 20px; font-size: 20px;">Pagamento Confirmado!</h2>
+          <p>Olá,</p>
+          <p>Recebemos o seu pagamento no valor de <strong>R$ ${amount}</strong>.</p>
+          <p>O seu <strong>Recibo de Intermediação e Repasse</strong> já está disponível.</p>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${receiptUrl}" style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Baixar Recibo em PDF</a>
+          </div>
+          <p style="font-size: 13px; color: #666;">Você também pode encontrar este recibo na aba "Deposits" do seu painel.</p>
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+          <p style="font-size: 11px; color: #888;">Obrigado por utilizar a JOGALIBRE.</p>
         </div>
       `,
     });
