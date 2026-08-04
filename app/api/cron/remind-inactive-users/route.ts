@@ -80,8 +80,12 @@ export async function GET(request: Request) {
         
       const html = isPt 
         ? `
-          <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #4f46e5; margin-bottom: 20px;">Sentimos sua falta no JOGALIBRE!</h2>
+          <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
+            <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
+              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" style="height: 36px; width: 36px; vertical-align: middle; margin-right: 10px;" />
+              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 26px; vertical-align: middle;" />
+            </div>
+            <h2 style="color: #4f46e5; margin-bottom: 20px; font-size: 20px;">Sentimos sua falta no JOGALIBRE!</h2>
             <p>Olá, <strong>${user.full_name || 'Usuário'}</strong>,</p>
             <p>Faz tempo que você não entra na plataforma JOGALIBRE.</p>
             <p>Convidamos você a fazer login e enviar suas solicitações de lance para os produtos de seu interesse.</p>
@@ -93,8 +97,12 @@ export async function GET(request: Request) {
           </div>
         `
         : `
-          <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #4f46e5; margin-bottom: 20px;">¡Te extrañamos en JOGALIBRE!</h2>
+          <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
+            <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
+              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" style="height: 36px; width: 36px; vertical-align: middle; margin-right: 10px;" />
+              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" style="height: 26px; vertical-align: middle;" />
+            </div>
+            <h2 style="color: #4f46e5; margin-bottom: 20px; font-size: 20px;">¡Te extrañamos en JOGALIBRE!</h2>
             <p>Hola, <strong>${user.full_name || 'Usuario'}</strong>,</p>
             <p>Hace tiempo que no ingresas a la plataforma JOGALIBRE.</p>
             <p>Te invitamos a iniciar sesión y realizar tu solicitud de oferta (ofertar) por los productos de tu interés.</p>
