@@ -81,9 +81,16 @@ export async function GET(request: Request) {
       const html = isPt 
         ? `
           <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
-            <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
-              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-combination.png" alt="JOGALIBRE" style="height: 32px; max-width: 100%; object-fit: contain; display: block;" />
-            </div>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
+              <tr>
+                <td style="vertical-align: middle; padding-right: 8px; line-height: 1;">
+                  <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" width="22" height="22" style="width: 22px; height: 22px; display: block; border: 0;" />
+                </td>
+                <td style="vertical-align: middle; line-height: 1;">
+                  <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" height="15" style="height: 15px; width: auto; max-width: 200px; display: block; border: 0;" />
+                </td>
+              </tr>
+            </table>
             <h2 style="color: #4f46e5; margin-bottom: 20px; font-size: 20px;">Sentimos sua falta no JOGALIBRE!</h2>
             <p>Olá, <strong>${user.full_name || 'Usuário'}</strong>,</p>
             <p>Faz tempo que você não entra na plataforma JOGALIBRE.</p>
@@ -97,9 +104,16 @@ export async function GET(request: Request) {
         `
         : `
           <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
-            <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
-              <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-combination.png" alt="JOGALIBRE" style="height: 32px; max-width: 100%; object-fit: contain; display: block;" />
-            </div>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
+              <tr>
+                <td style="vertical-align: middle; padding-right: 8px; line-height: 1;">
+                  <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" width="22" height="22" style="width: 22px; height: 22px; display: block; border: 0;" />
+                </td>
+                <td style="vertical-align: middle; line-height: 1;">
+                  <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" height="15" style="height: 15px; width: auto; max-width: 200px; display: block; border: 0;" />
+                </td>
+              </tr>
+            </table>
             <h2 style="color: #4f46e5; margin-bottom: 20px; font-size: 20px;">¡Te extrañamos en JOGALIBRE!</h2>
             <p>Hola, <strong>${user.full_name || 'Usuario'}</strong>,</p>
             <p>Hace tiempo que no ingresas a la plataforma JOGALIBRE.</p>

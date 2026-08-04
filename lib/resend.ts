@@ -48,9 +48,16 @@ export async function sendReceiptEmail(to: string, receiptUrl: string, amount: s
       subject: `[JOGALIBRE] Recibo de Pagamento - R$ ${amount}`,
       html: `
         <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
-          <div style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
-            <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-combination.png" alt="JOGALIBRE" style="height: 32px; max-width: 100%; object-fit: contain; display: block;" />
-          </div>
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px;">
+            <tr>
+              <td style="vertical-align: middle; padding-right: 8px; line-height: 1;">
+                <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-mark.png" alt="" width="22" height="22" style="width: 22px; height: 22px; display: block; border: 0;" />
+              </td>
+              <td style="vertical-align: middle; line-height: 1;">
+                <img src="${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.jogalibre.com'}/icons/logo-text.png" alt="JOGALIBRE" height="15" style="height: 15px; width: auto; max-width: 200px; display: block; border: 0;" />
+              </td>
+            </tr>
+          </table>
           <h2 style="color: #059669; margin-bottom: 20px; font-size: 20px;">Pagamento Confirmado!</h2>
           <p>Olá,</p>
           <p>Recebemos o seu pagamento no valor de <strong>R$ ${amount}</strong>.</p>
