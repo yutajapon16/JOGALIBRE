@@ -15,11 +15,12 @@ export async function GET(req: Request) {
     // 2. 48時間前の時刻を計算
     const now = new Date();
     const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jogalibre.com';
 
     // 3. 落札から48時間経過し、まだ未払いの注文を取得
     const { data: requests, error } = await supabaseAdmin
       .from('bid_requests')
-      .select('id, customer_email, product_title')
+      .select('id, customer_email, product_title, product_title_es, product_title_pt')
       .eq('final_status', 'won')
       .is('unpaid_notified_at', null)
       .not('won_at', 'is', null)
@@ -39,16 +40,41 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: 'No unpaid orders to remind', count: 0 });
     }
 
+    // ユーザー言語マッピングの準備
+    const emails = [...new Set(requests.map(r => r.customer_email).filter(Boolean))];
+    const { data: roles } = await supabaseAdmin
+      .from('user_roles')
+      .select('email, language')
+      .in('email', emails);
+
+    const userLangMap = new Map<string, string>();
+    if (roles) {
+      for (const r of roles) {
+        if (r.email) {
+          userLangMap.set(r.email.toLowerCase(), (r.language || 'es').toLowerCase());
+        }
+      }
+    }
+
     const notificationsPromises = [];
     const notifiedIds = [];
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jogalibre.com';
-    
+
     // 4. プッシュ通知の送信処理
     for (const reqData of requests) {
       if (!reqData.customer_email) continue;
-      
-      const notifyTitle = '🔔 未払いのお知らせ';
-      const notifyBody = `落札確定から48時間が経過しました。商品 [${reqData.product_title || 'Item'}] のお支払いをお願いします。`;
+
+      const emailKey = reqData.customer_email.toLowerCase();
+      const lang = userLangMap.get(emailKey) || 'es';
+      const isPt = lang === 'pt';
+
+      const itemTitle = isPt
+        ? reqData.product_title_pt || reqData.product_title || 'Item'
+        : reqData.product_title_es || reqData.product_title || 'Item';
+
+      const notifyTitle = isPt ? '🔔 Lembrete de Pagamento' : '🔔 Recordatorio de Pago';
+      const notifyBody = isPt
+        ? `Pagamento pendente: ${itemTitle}`
+        : `Pago pendiente: ${itemTitle}`;
 
       notificationsPromises.push(
         fetch(`${baseUrl}/api/push-send`, {
@@ -78,7 +104,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       message: 'Unpaid order reminders sent successfully',
-      count: notifiedIds.length
+      count: notifiedIds.length,
     });
   } catch (error) {
     console.error('Remind unpaid orders cron error:', error);
