@@ -525,10 +525,43 @@ export async function PATCH(request: Request) {
     }
 
     // 両方または顧客が更新可能なフィールド
+    let isAdminPushForIncrease = false;
+    let increasedNewAmount = 0;
+
     if (!isAdmin) {
-      // 顧客による金額変更は保留中(pending)の時のみ可能
-      if (maxBid !== undefined && currentRequest.status === 'pending') {
-        updateData.max_bid = Number(maxBid);
+      if (maxBid !== undefined) {
+        const newMaxBid = Number(maxBid);
+        if (currentRequest.status === 'pending') {
+          updateData.max_bid = newMaxBid;
+        } else if (currentRequest.status === 'approved') {
+          // 承認済みの場合の制限チェック
+          const currentMaxBid = Number(currentRequest.max_bid || 0);
+
+          // 1. 増額チェック
+          if (newMaxBid <= currentMaxBid) {
+            return NextResponse.json(
+              { error: 'Approved bid can only be increased' },
+              { status: 400 }
+            );
+          }
+
+          // 2. オークション終了まで15分前チェック
+          if (currentRequest.product_end_time) {
+            const endTime = new Date(currentRequest.product_end_time).getTime();
+            const nowTime = new Date().getTime();
+            const fifteenMinsInMs = 15 * 60 * 1000;
+            if (endTime - nowTime < fifteenMinsInMs) {
+              return NextResponse.json(
+                { error: 'Cannot change bid amount within 15 minutes of auction end' },
+                { status: 400 }
+              );
+            }
+          }
+
+          updateData.max_bid = newMaxBid;
+          isAdminPushForIncrease = true;
+          increasedNewAmount = newMaxBid;
+        }
       }
     }
 
@@ -625,6 +658,38 @@ export async function PATCH(request: Request) {
       .eq('id', id);
 
     if (error) throw error;
+
+    // 顧客が承認済みオファーの金額を引き上げた場合、管理者宛てに即時通知を送信
+    if (isAdminPushForIncrease) {
+      try {
+        const baseUrl = new URL(request.url).origin;
+        const { data: userRole } = await supabaseAdmin
+          .from('user_roles')
+          .select('full_name, customer_id')
+          .eq('email', currentRequest.customer_email)
+          .single();
+
+        const custName = userRole?.full_name || currentRequest.customer_name || currentRequest.customer_email;
+        const custIdStr = userRole?.customer_id ? `(${userRole.customer_id})` : '';
+
+        const adminTitle = `⤴️ 【上限額変更】${custName} ${custIdStr}`.trim();
+        const adminBody = `商品: ${currentRequest.product_title || 'Item'} (新上限: $${increasedNewAmount})`;
+
+        fetch(`${baseUrl}/api/push-send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sendToAdmins: true,
+            bidRequestId: id,
+            title: adminTitle,
+            body: adminBody,
+            url: '/admin',
+          }),
+        }).catch(err => console.error('Admin maxBid increase push error:', err));
+      } catch (pushErr) {
+        console.error('Admin maxBid increase notification error:', pushErr);
+      }
+    }
 
     // 管理者による手動での支払済更新時、顧客へ通知を送信
     if (isAdmin && updateData.paid === true && !currentRequest.paid && currentRequest.customer_email) {

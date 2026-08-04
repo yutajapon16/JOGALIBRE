@@ -4328,6 +4328,26 @@ export default function Home() {
                         </div>
                       )}
 
+                      {/* 承認済みの場合のオファー金額引き上げ（増額）ボタン */}
+                      {request.status === 'approved' && !request.finalStatus && (() => {
+                        const isWithin15Mins = request.product_end_time
+                          ? (new Date(request.product_end_time).getTime() - Date.now() < 15 * 60 * 1000)
+                          : false;
+                        return (
+                          <div className="flex flex-col gap-2 mb-2 w-full">
+                            <button
+                              onClick={() => openEditOfferModal(request)}
+                              disabled={isWithin15Mins}
+                              className="w-full bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isWithin15Mins
+                                ? (lang === 'es' ? '🔒 No se puede modificar (Fin cercano)' : '🔒 Não é possível alterar (Fim próximo)')
+                                : (lang === 'es' ? '⤴️ Aumentar monto de oferta' : '⤴️ Aumentar valor da oferta')}
+                            </button>
+                          </div>
+                        );
+                      })()}
+
                       {/* --- 3. アクションボタンの表示 --- */}
 
                       {/* 却下状態（ケース4A, 4B以外の純粋な却下）の確認ボタン */}
@@ -7196,6 +7216,14 @@ export default function Home() {
               </div>
             </div>
 
+            {editingOfferRequest.status === 'approved' && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                {lang === 'es'
+                  ? `* Para solicitudes aprobadas, el nuevo monto debe ser mayor al actual ($${editingOfferRequest.maxBid || 0}).`
+                  : `* Para solicitações aprovadas, o novo valor deve ser maior que o atual ($${editingOfferRequest.maxBid || 0}).`}
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button
                 onClick={() => {
@@ -7209,7 +7237,12 @@ export default function Home() {
               </button>
               <button
                 onClick={handleEditOfferSubmit}
-                disabled={!editingOfferAmount || isNaN(Number(editingOfferAmount)) || Number(editingOfferAmount) <= 0}
+                disabled={
+                  !editingOfferAmount ||
+                  isNaN(Number(editingOfferAmount)) ||
+                  Number(editingOfferAmount) <= 0 ||
+                  (editingOfferRequest.status === 'approved' && Number(editingOfferAmount) <= (editingOfferRequest.maxBid || 0))
+                }
                 className="flex-1 bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {lang === 'es' ? 'Guardar' : 'Salvar'}
