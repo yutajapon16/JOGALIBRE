@@ -93,10 +93,10 @@ export async function GET(request: Request) {
             }
         }
 
-        // 2. オークション終了チェック（pending または approved のアイテムに対象を限定）
+        // 2. オークション終了および最新価格チェック（pending または approved のアイテムに対象を限定）
         const { data: items, error: fetchError } = await supabaseAdmin
             .from('bid_requests')
-            .select('id, product_id, product_url, status, customer_email')
+            .select('id, product_id, product_url, status, customer_email, product_price')
             .in('status', ['pending', 'approved'])
             .is('final_status', null);
 
@@ -123,33 +123,58 @@ export async function GET(request: Request) {
                 clearTimeout(timeoutId);
                 const html = await res.text();
 
+                // NEXT_DATA から最新価格を抽出
+                let currentPrice = 0;
+                const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
+                if (nextDataMatch) {
+                    try {
+                        const jsonData = JSON.parse(nextDataMatch[1]);
+                        const itemData = jsonData.props?.pageProps?.initialState?.item?.detail?.item || {};
+                        currentPrice = itemData.taxinPrice || itemData.taxinStartPrice || itemData.price || itemData.currentPrice || 0;
+                    } catch (e) {
+                        console.error(`JSON parse error for item ${item.id}:`, e);
+                    }
+                }
+
                 // 終了判定キーワード
                 const isEnded = html.includes('終了しました') ||
                     html.includes('オークションは終了しました') ||
                     html.includes('再出品');
 
+                const updateData: Record<string, any> = {};
+
+                if (currentPrice > 0 && currentPrice !== item.product_price) {
+                    updateData.product_price = currentPrice;
+                }
+
                 if (isEnded) {
+                    updateData.final_status = 'ended_check_needed';
+                    updateData.customer_message = 'Auction ended. Waiting for admin to confirm result.';
+                }
+
+                if (Object.keys(updateData).length > 0) {
                     const { error: updateError } = await supabaseAdmin
                         .from('bid_requests')
-                        .update({
-                            final_status: 'ended_check_needed',
-                            customer_message: 'Auction ended. Waiting for admin to confirm result.'
-                        })
+                        .update(updateData)
                         .eq('id', item.id);
 
                     if (!updateError) {
-                        await fetch(`${new URL(request.url).origin}/api/push-send`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                sendToAdmins: true,
-                                title: '🔚 オークション終了',
-                                body: `商品の結果を確認してください`,
-                                url: '/admin'
-                            })
-                        }).catch(e => console.error('Cron notify error:', e));
+                        if (isEnded) {
+                            await fetch(`${new URL(request.url).origin}/api/push-send`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    sendToAdmins: true,
+                                    title: '🔚 オークション終了',
+                                    body: `商品の結果を確認してください`,
+                                    url: '/admin'
+                                })
+                            }).catch(e => console.error('Cron notify error:', e));
 
-                        results.push({ id: item.id, status: 'updated_to_ended' });
+                            results.push({ id: item.id, status: 'updated_to_ended', updatedPrice: currentPrice });
+                        } else if (updateData.product_price) {
+                            results.push({ id: item.id, status: 'price_updated', updatedPrice: currentPrice });
+                        }
                     }
                 }
             } catch (e) {

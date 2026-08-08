@@ -4020,6 +4020,21 @@ export default function Home() {
                         </div>
                       </div>
 
+                      {/* 現在価格ボックス (h-12) (パターンA計算式) */}
+                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                        <span className="text-xs text-gray-500 font-medium">{t.currentPrice}:</span>
+                        <span className="text-base font-bold text-gray-800">
+                          {request.productPrice && request.productPrice > 0
+                            ? `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(
+                                request.productPrice,
+                                selectedCurrency,
+                                request.productTitle,
+                                request.productUrl
+                              )}`
+                            : '-'}
+                        </span>
+                      </div>
+
                       {/* 希望入札額ボックス (h-12) */}
                       <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                         <span className="text-xs text-gray-500 font-medium">{t.maxBid}:</span>
