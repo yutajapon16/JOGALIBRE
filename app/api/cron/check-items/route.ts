@@ -51,7 +51,7 @@ export async function GET(request: Request) {
         // 顧客ID・言語・ロール等のユーザー情報を一括取得
         const { data: roles } = await supabaseAdmin
             .from('user_roles')
-            .select('email, customer_id, language, role, country, agent_customer_id');
+            .select('email, customer_id, language, role, country, agent_customer_id, full_name');
 
         const userRoleMap = new Map<string, any>();
         if (roles) {
@@ -309,7 +309,7 @@ export async function GET(request: Request) {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 sendToAdmins: true,
-                                title: `🚨 高値更新 ${custName} (${custId})`,
+                                title: `🚨【高値更新】 ${custName} (${custId})`,
                                 body: `商品: ${productTitle}`,
                                 url: '/admin'
                             })
@@ -351,13 +351,14 @@ export async function GET(request: Request) {
 
                 if (!updateError) {
                     if (isEnded) {
+                        const productTitle = item.product_title || item.product_id || '商品';
                         await fetch(`${origin}/api/push-send`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 sendToAdmins: true,
                                 title: '🔚 オークション終了',
-                                body: `商品の結果を確認してください`,
+                                body: `商品: ${productTitle}`,
                                 url: '/admin'
                             })
                         }).catch(e => console.error('Cron notify error:', e));
