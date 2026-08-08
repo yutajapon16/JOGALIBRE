@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { sendAutoConfirmedEmail } from '@/lib/resend';
 
 export async function GET(req: Request) {
   try {
@@ -78,6 +79,13 @@ export async function GET(req: Request) {
                 url: '/',
               }),
             }).catch(err => console.error('Auto-confirm customer push error:', err))
+          );
+
+          // 顧客向け自動確認完了メール送信
+          autoConfirmNotificationsPromises.push(
+            sendAutoConfirmedEmail(reqData.customer_email, itemTitle, userInfo.language || 'es').catch(err =>
+              console.error('Auto-confirm customer email error:', err)
+            )
           );
         }
 

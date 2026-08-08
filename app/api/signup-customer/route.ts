@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { sendWelcomeEmail } from '@/lib/resend';
 
 // アノンキーを使用した通常のクライアントを作成（確認メールの自動送信を有効にするため）
 const supabaseAnon = createClient(
@@ -120,6 +121,12 @@ export async function POST(request: Request) {
           url: '/admin'
         }),
       });
+      // 登録ユーザーへウェルカムメールの送信
+      if (email && createdUser?.customer_id) {
+        sendWelcomeEmail(email, fullName || '', createdUser.customer_id, language || 'es').catch(err =>
+          console.error('Customer welcome email error:', err)
+        );
+      }
     } catch (e) {
       console.error('Failed to send admin push notification:', e);
     }

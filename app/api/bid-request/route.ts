@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
 import { parseAnyDateTime, parseDbDateTime, parseJstDateTime } from '@/lib/utils';
-import { sendWonEmail } from '@/lib/resend';
+import { sendWonEmail, sendShippingInfoEmail } from '@/lib/resend';
 
 export async function POST(request: Request) {
   try {
@@ -748,6 +748,34 @@ export async function PATCH(request: Request) {
         );
       } catch (emailErr) {
         console.error('Won email trigger error:', emailErr);
+      }
+    }
+
+    // 管理者により発送情報（輸送中 status='in_transit' または 追跡番号）が更新された場合、顧客へ発送案内メールを送信
+    if (isAdmin && (shipping_status === 'in_transit' || tracking_number) && currentRequest.customer_email) {
+      try {
+        const { data: userRole } = await supabaseAdmin
+          .from('user_roles')
+          .select('language')
+          .eq('email', currentRequest.customer_email)
+          .single();
+
+        const lang = (userRole?.language || 'es').toLowerCase();
+        const isPt = lang === 'pt';
+        const itemTitle = isPt
+          ? currentRequest.product_title_pt || currentRequest.product_title || 'Item'
+          : currentRequest.product_title_es || currentRequest.product_title || 'Item';
+
+        sendShippingInfoEmail(
+          currentRequest.customer_email,
+          itemTitle,
+          tracking_number || currentRequest.tracking_number,
+          carrier || currentRequest.carrier,
+          tracking_url || currentRequest.tracking_url,
+          lang
+        ).catch(err => console.error('Shipping email send error:', err));
+      } catch (shippingErr) {
+        console.error('Shipping email trigger error:', shippingErr);
       }
     }
 

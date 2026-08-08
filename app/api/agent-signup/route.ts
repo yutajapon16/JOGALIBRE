@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { sendWelcomeEmail } from '@/lib/resend';
 import { cleanExpiredInviteCodes, type InviteCode } from '@/lib/utils';
 
 // エージェント登録用API
@@ -165,6 +166,12 @@ export async function POST(request: Request) {
           url: '/admin'
         }),
       });
+      // 登録エージェントへウェルカムメールの送信
+      if (email && createdUser?.customer_id) {
+        sendWelcomeEmail(email, fullName || '', createdUser.customer_id, language || 'es').catch(err =>
+          console.error('Agent welcome email error:', err)
+        );
+      }
     } catch (e) {
       console.error('Failed to send admin push notification:', e);
     }
