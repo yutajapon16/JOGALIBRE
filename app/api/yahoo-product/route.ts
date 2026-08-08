@@ -555,7 +555,7 @@ ${textToSummarize}`;
       if (response.ok) {
         const resData = await response.json();
         const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text && text.trim() && !/[\u3040-\u30ff\u4e00-\u9faf]/.test(text)) {
+        if (text && text.trim()) {
           return text.trim();
         }
       } else {

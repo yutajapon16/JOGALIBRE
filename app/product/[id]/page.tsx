@@ -757,8 +757,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </h3>
 
           {!showFallbackDescription ? (
-            // AIによる構造化された要約
-            <div className="text-xs text-gray-700 space-y-3 leading-relaxed whitespace-pre-line font-medium">
+            // カラーカードを使わず、シンプルで視認性の高い箇条書き改行デザイン
+            <div className="text-xs text-gray-800 leading-relaxed whitespace-pre-line font-medium bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans">
               {aiSummary}
             </div>
           ) : (
