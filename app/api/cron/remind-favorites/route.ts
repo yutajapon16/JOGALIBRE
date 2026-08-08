@@ -14,17 +14,17 @@ export async function GET(req: Request) {
       console.warn('Warning: CRON_SECRET env variable is not set.');
     }
 
-    // 2. 現在時刻から1時間後の時刻を計算
+    // 2. 現在時刻から2時間後の時刻を計算
     const now = new Date();
-    const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+    const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
 
-    // 3. 終了時刻が現在〜1時間後で、未通知のお気に入りを取得
+    // 3. 終了時刻が現在〜2時間後で、未通知のお気に入りを取得
     const { data: favorites, error } = await supabaseAdmin
       .from('favorites')
       .select('id, user_id, product_title, end_time')
       .eq('notified', false)
       .not('end_time', 'is', null)
-      .lte('end_time', oneHourLater.toISOString())
+      .lte('end_time', twoHoursLater.toISOString())
       .gt('end_time', now.toISOString());
 
     if (error) {
