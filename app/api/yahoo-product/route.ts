@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from 'next/server';
 import { parseJstDateTime, parseDbDateTime } from '@/lib/utils';
 
@@ -23,6 +26,7 @@ export async function POST(request: Request) {
     const lang = (body.lang || 'es').toLowerCase();
     const skipDescription = body.skipDescription || false;
     const skipAiSummary = body.skipAiSummary || false;
+    const forceRefresh = body.forceRefresh || body.refresh || false;
 
     if (!url || !url.includes('auctions.yahoo.co.jp')) {
       return NextResponse.json(
@@ -299,6 +303,11 @@ export async function POST(request: Request) {
       }
     }
 
+    // forceRefreshが指定されている場合は該当商品の古いキャッシュを消去
+    if (forceRefresh) {
+      productAiCache.delete(productId);
+    }
+
     // 商品IDから既存キャッシュを確認（フォールバック用文面や日本語が残っているキャッシュは無効化して再生成）
     const cachedItem = productAiCache.get(productId);
     const now = Date.now();
@@ -308,9 +317,9 @@ export async function POST(request: Request) {
     let translatedTitle = isCacheValid ? (lang === 'pt' ? cachedItem.translatedTitlePt : cachedItem.translatedTitleEs) || title : title;
 
     const isRealSummary = (s?: string) => {
-      if (!s) return false;
-      if (s.includes('Consulte') || s.includes('Resumo da Descrição') || s.includes('Resumen de la Descripción')) return false;
-      // 日本語文字が含まれている場合は不完全と判定
+      if (!s || s.length < 20) return false;
+      if (s.includes('Consulte') || s.includes('Resumo da Descrição') || s.includes('Resumen de la Descripción') || s.includes('Resumo:') || s.includes('Resumen:')) return false;
+      // 日本語文字（ひらがな・カタカナ・漢字）が含まれている場合は不完全と判定
       if (/[\u3040-\u30ff\u4e00-\u9faf]/.test(s)) return false;
       return true;
     };
@@ -384,15 +393,15 @@ export async function POST(request: Request) {
       try {
         const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2500);
         if (needAiEs) {
-          aiSummaryEs = await generateAiSummary(cleanDesc, 'es', translatedDescription).catch(err => {
+          aiSummaryEs = await generateAiSummary(cleanDesc, 'es', translatedDescription).catch(async err => {
             console.error('Gemini ES Summary error:', err);
-            return buildFallbackSummary(translatedDescription || cleanDesc, 'es');
+            return await buildFallbackSummary(translatedDescription || cleanDesc, 'es');
           });
         }
         if (needAiPt) {
-          aiSummaryPt = await generateAiSummary(cleanDesc, 'pt', translatedDescription).catch(err => {
+          aiSummaryPt = await generateAiSummary(cleanDesc, 'pt', translatedDescription).catch(async err => {
             console.error('Gemini PT Summary error:', err);
-            return buildFallbackSummary(translatedDescription || cleanDesc, 'pt');
+            return await buildFallbackSummary(translatedDescription || cleanDesc, 'pt');
           });
         }
       } catch (e) {
@@ -560,12 +569,28 @@ ${textToSummarize}`;
     }
   }
 
-  return buildFallbackSummary(translatedDesc || description, targetLang);
+  return await buildFallbackSummary(translatedDesc || description, targetLang);
 }
 
-function buildFallbackSummary(text: string, targetLang: 'es' | 'pt'): string {
-  const clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  const snippet = clean.substring(0, 800);
+async function buildFallbackSummary(text: string, targetLang: 'es' | 'pt'): Promise<string> {
+  let clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  let snippet = clean.substring(0, 800);
+
+  // もし日本語文字が含まれている場合はGoogle翻訳で即座に翻訳して日本語混ざりを防ぐ
+  if (/[\u3040-\u30ff\u4e00-\u9faf]/.test(snippet)) {
+    try {
+      const transRes = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${targetLang}&dt=t&q=${encodeURIComponent(snippet)}`
+      );
+      const transData = await transRes.json();
+      const translatedSnippet = transData?.[0]?.map((x: string[]) => x[0]).join('');
+      if (translatedSnippet) {
+        snippet = translatedSnippet;
+      }
+    } catch (e) {
+      console.error('Fallback snippet translate error:', e);
+    }
+  }
 
   if (targetLang === 'pt') {
     return `- **Especificações / Detalhes**: Consulte os detalhes traduzidos abaixo\n- **Estado do produto**: Verifique o texto e fotos do anúncio\n- **Resumo**: ${snippet}`;
