@@ -589,7 +589,8 @@ export const calculateProductBidJpy = (
 
   const totalJpyLimit = maxBidUsd * exchangeRate * profitDivisor;
   const maxProductJpy = totalJpyLimit - fob - shipping;
-  return Math.max(0, Math.floor(maxProductJpy));
+  // 千の位で切り捨て (例: 41,895 -> 41,000)
+  return Math.max(0, Math.floor(maxProductJpy / 1000) * 1000);
 };
 
 /**
