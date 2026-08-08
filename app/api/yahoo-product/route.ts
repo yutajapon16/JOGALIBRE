@@ -1,11 +1,26 @@
 import { NextResponse } from 'next/server';
 import { parseJstDateTime, parseDbDateTime } from '@/lib/utils';
 
+// AI要約・翻訳データの高速キャッシュ (6時間TTL)
+interface ProductCacheItem {
+  aiSummaryEs?: string;
+  aiSummaryPt?: string;
+  translatedTitleEs?: string;
+  translatedTitlePt?: string;
+  translatedDescEs?: string;
+  translatedDescPt?: string;
+  description?: string;
+  expiresAt: number;
+}
+
+const productAiCache = new Map<string, ProductCacheItem>();
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6時間
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const url = body.url;
-    const lang = body.lang || 'ja';
+    const lang = (body.lang || 'es').toLowerCase();
     const skipDescription = body.skipDescription || false;
     const skipAiSummary = body.skipAiSummary || false;
 
@@ -284,87 +299,111 @@ export async function POST(request: Request) {
       }
     }
 
-    // タイトルと説明文の翻訳を並列実行
-    let translatedDescription = '';
-    let translatedTitle = title;
+    // 商品IDから既存キャッシュを確認
+    const cachedItem = productAiCache.get(productId);
+    const now = Date.now();
+    const isCacheValid = cachedItem && cachedItem.expiresAt > now;
 
+    let translatedDescription = isCacheValid ? (lang === 'pt' ? cachedItem.translatedDescPt : cachedItem.translatedDescEs) || '' : '';
+    let translatedTitle = isCacheValid ? (lang === 'pt' ? cachedItem.translatedTitlePt : cachedItem.translatedTitleEs) || title : title;
+    let aiSummaryEs = isCacheValid ? cachedItem.aiSummaryEs || '' : '';
+    let aiSummaryPt = isCacheValid ? cachedItem.aiSummaryPt || '' : '';
+
+    // 1. タイトルと説明文の翻訳（キャッシュ未ヒット時のみ実行）
     if (lang !== 'ja') {
-      const translatePromises: Promise<void>[] = [];
+      const needTitleTrans = !translatedTitle || translatedTitle === title;
+      const needDescTrans = !translatedDescription && description && !skipDescription;
 
-      // 説明文の翻訳
-      if (description && !skipDescription) {
-        const translateDesc = async () => {
-          const controllerTranslate = new AbortController();
-          const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
-          try {
-            const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2000); // 2000文字制限
-            const transRes = await fetch(
-              `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(cleanDesc)}`,
-              { signal: controllerTranslate.signal }
-            );
-            const transData = await transRes.json();
-            translatedDescription = transData?.[0]?.map((x: string[]) => x[0]).join('') || '';
-          } catch (e) {
-            console.error('Description translation error:', e);
-          } finally {
-            clearTimeout(timeoutTranslate);
-          }
-        };
-        translatePromises.push(translateDesc());
-      }
+      if (needTitleTrans || needDescTrans) {
+        const translatePromises: Promise<void>[] = [];
 
-      // タイトルの翻訳
-      if (title) {
-        const translateTitle = async () => {
-          const controllerTranslate = new AbortController();
-          const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
-          try {
-            const transRes = await fetch(
-              `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(title)}`,
-              { signal: controllerTranslate.signal }
-            );
-            const transData = await transRes.json();
-            translatedTitle = transData?.[0]?.[0]?.[0] || title;
-          } catch (e) {
-            console.error('Title translation error:', e);
-          } finally {
-            clearTimeout(timeoutTranslate);
-          }
-        };
-        translatePromises.push(translateTitle());
-      }
+        if (needDescTrans) {
+          const translateDesc = async () => {
+            const controllerTranslate = new AbortController();
+            const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 4000);
+            try {
+              const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2000);
+              const transRes = await fetch(
+                `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(cleanDesc)}`,
+                { signal: controllerTranslate.signal }
+              );
+              const transData = await transRes.json();
+              translatedDescription = transData?.[0]?.map((x: string[]) => x[0]).join('') || '';
+            } catch (e) {
+              console.error('Description translation error:', e);
+            } finally {
+              clearTimeout(timeoutTranslate);
+            }
+          };
+          translatePromises.push(translateDesc());
+        }
 
-      if (translatePromises.length > 0) {
-        await Promise.all(translatePromises);
+        if (needTitleTrans && title) {
+          const translateTitleFn = async () => {
+            const controllerTranslate = new AbortController();
+            const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 4000);
+            try {
+              const transRes = await fetch(
+                `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(title)}`,
+                { signal: controllerTranslate.signal }
+              );
+              const transData = await transRes.json();
+              translatedTitle = transData?.[0]?.[0]?.[0] || title;
+            } catch (e) {
+              console.error('Title translation error:', e);
+            } finally {
+              clearTimeout(timeoutTranslate);
+            }
+          };
+          translatePromises.push(translateTitleFn());
+        }
+
+        if (translatePromises.length > 0) {
+          await Promise.all(translatePromises);
+        }
       }
     }
-    // AIによる要約翻訳の生成
-    let aiSummaryEs = '';
-    let aiSummaryPt = '';
 
-    if (description && process.env.GEMINI_API_KEY && !skipAiSummary) {
+    // 2. 顧客の指定言語に応じたAI要約の生成（要求言語のみ高速生成 & キャッシュ活用）
+    const targetLangForAi: 'es' | 'pt' = lang === 'pt' ? 'pt' : 'es';
+    const needAiEs = targetLangForAi === 'es' && !aiSummaryEs;
+    const needAiPt = targetLangForAi === 'pt' && !aiSummaryPt;
+
+    if (description && process.env.GEMINI_API_KEY && !skipAiSummary && (needAiEs || needAiPt)) {
       const controllerAi = new AbortController();
-      const timeoutAi = setTimeout(() => controllerAi.abort(), 6000);
+      const timeoutAi = setTimeout(() => controllerAi.abort(), 5000);
       try {
         const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2500);
-        const [summaryEs, summaryPt] = await Promise.all([
-          generateAiSummary(cleanDesc, 'es').catch(err => {
+        if (needAiEs) {
+          aiSummaryEs = await generateAiSummary(cleanDesc, 'es').catch(err => {
             console.error('Gemini ES Summary error:', err);
             return '';
-          }),
-          generateAiSummary(cleanDesc, 'pt').catch(err => {
+          });
+        }
+        if (needAiPt) {
+          aiSummaryPt = await generateAiSummary(cleanDesc, 'pt').catch(err => {
             console.error('Gemini PT Summary error:', err);
             return '';
-          })
-        ]);
-        aiSummaryEs = summaryEs;
-        aiSummaryPt = summaryPt;
+          });
+        }
       } catch (e) {
         console.error('AI Summary overall error:', e);
       } finally {
         clearTimeout(timeoutAi);
       }
     }
+
+    // 3. キャッシュの更新
+    productAiCache.set(productId, {
+      aiSummaryEs: aiSummaryEs || cachedItem?.aiSummaryEs,
+      aiSummaryPt: aiSummaryPt || cachedItem?.aiSummaryPt,
+      translatedTitleEs: lang === 'es' ? translatedTitle : cachedItem?.translatedTitleEs,
+      translatedTitlePt: lang === 'pt' ? translatedTitle : cachedItem?.translatedTitlePt,
+      translatedDescEs: lang === 'es' ? translatedDescription : cachedItem?.translatedDescEs,
+      translatedDescPt: lang === 'pt' ? translatedDescription : cachedItem?.translatedDescPt,
+      description: description || cachedItem?.description,
+      expiresAt: now + CACHE_TTL_MS
+    });
 
     // 残り時間の計算 (詳細取得用)
     let timeLeft = '-';
@@ -480,7 +519,11 @@ ${description}`;
         parts: [{
           text: prompt
         }]
-      }]
+      }],
+      generationConfig: {
+        maxOutputTokens: 1000,
+        temperature: 0.2
+      }
     })
   });
 
