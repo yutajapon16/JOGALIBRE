@@ -2365,8 +2365,8 @@ export default function AdminDashboard() {
 
       {/* タブナビゲーション */}
       <nav className="bg-white border-b sticky top-0 z-10 w-full overflow-x-auto overflow-y-hidden no-scrollbar">
-        <div className="max-w-7xl mx-auto px-4 min-w-max">
-          <div className="flex">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 min-w-max">
+          <div className="flex justify-center gap-1 sm:gap-3">
             {[
               { key: 'requests' as const, label: '申請', icon: '📋' },
               { key: 'purchased' as const, label: '購入', icon: '🛒' },
@@ -2381,12 +2381,12 @@ export default function AdminDashboard() {
                 onClick={() => {
                   setActiveTab(tab.key);
                 }}
-                className={`min-w-[70px] sm:min-w-[100px] flex-1 py-3 px-2 text-center text-xs sm:text-base font-medium border-b-2 transition ${activeTab === tab.key
+                className={`py-2 px-3 sm:px-5 text-center text-xs sm:text-sm font-semibold border-b-2 transition shrink-0 ${activeTab === tab.key
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
               >
-                <span className="block text-lg">{tab.icon}</span>
+                <span className="block text-base sm:text-lg mb-0.5">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
