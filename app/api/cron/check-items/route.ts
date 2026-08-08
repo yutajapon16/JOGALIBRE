@@ -299,8 +299,24 @@ export async function GET(request: Request) {
 
                     // オファー額（max_bid）を超過しているか判定
                     if (currentCustomerUsd > item.max_bid && !msgStr.includes('[price_exceeded_notified]')) {
+                        const productTitle = item.product_title || item.product_id || '商品';
+                        const custName = userMeta?.full_name || item.customer_email || '顧客';
+                        const custId = userMeta?.customer_id || '不明';
+
+                        // 1. 管理者向け通知
+                        fetch(`${origin}/api/push-send`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                sendToAdmins: true,
+                                title: `🚨 高値更新 ${custName} (${custId})`,
+                                body: `商品: ${productTitle}`,
+                                url: '/admin'
+                            })
+                        }).catch(e => console.error('Admin price exceeded push error:', e));
+
+                        // 2. 顧客向け通知
                         if (item.customer_email) {
-                            const productTitle = item.product_title || item.product_id || '商品';
                             const title = lang === 'es'
                                 ? '⚠️ ¡Tu oferta ha sido superada!'
                                 : '⚠️ Sua oferta foi ultrapassada!';
@@ -319,11 +335,11 @@ export async function GET(request: Request) {
                                     url: '/'
                                 })
                             }).catch(e => console.error('Customer price exceeded push error:', e));
-
-                            // オファー超過通知済みフラグの記録
-                            updatedMsg = `${updatedMsg} [price_exceeded_notified]`.trim();
-                            updateData.customer_message = updatedMsg;
                         }
+
+                        // オファー超過通知済みフラグの記録
+                        updatedMsg = `${updatedMsg} [price_exceeded_notified]`.trim();
+                        updateData.customer_message = updatedMsg;
                     }
                 }
 
