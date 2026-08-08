@@ -254,8 +254,8 @@ export async function GET(request: Request) {
                             ? '⏰ ¡Quedan menos de 2 horas!'
                             : '⏰ Faltam menos de 2 horas!';
                         const custBody = lang === 'es'
-                            ? `La subasta de "${productTitle}" termina pronto. ¡Revisa tu oferta en la app!`
-                            : `O leilão de "${productTitle}" termina em breve. Verifique sua oferta no app!`;
+                            ? `Producto: ${productTitle}`
+                            : `Produto: ${productTitle}`;
 
                         fetch(`${origin}/api/push-send`, {
                             method: 'POST',
