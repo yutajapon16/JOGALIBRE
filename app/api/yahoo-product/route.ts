@@ -369,21 +369,21 @@ export async function POST(request: Request) {
     const needAiEs = targetLangForAi === 'es' && !aiSummaryEs;
     const needAiPt = targetLangForAi === 'pt' && !aiSummaryPt;
 
-    if (description && process.env.GEMINI_API_KEY && !skipAiSummary && (needAiEs || needAiPt)) {
+    if (description && !skipAiSummary && (needAiEs || needAiPt)) {
       const controllerAi = new AbortController();
-      const timeoutAi = setTimeout(() => controllerAi.abort(), 5000);
+      const timeoutAi = setTimeout(() => controllerAi.abort(), 6000);
       try {
         const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2500);
         if (needAiEs) {
-          aiSummaryEs = await generateAiSummary(cleanDesc, 'es').catch(err => {
+          aiSummaryEs = await generateAiSummary(cleanDesc, 'es', translatedDescription).catch(err => {
             console.error('Gemini ES Summary error:', err);
-            return '';
+            return buildFallbackSummary(translatedDescription || cleanDesc, 'es');
           });
         }
         if (needAiPt) {
-          aiSummaryPt = await generateAiSummary(cleanDesc, 'pt').catch(err => {
+          aiSummaryPt = await generateAiSummary(cleanDesc, 'pt', translatedDescription).catch(err => {
             console.error('Gemini PT Summary error:', err);
-            return '';
+            return buildFallbackSummary(translatedDescription || cleanDesc, 'pt');
           });
         }
       } catch (e) {
@@ -471,13 +471,11 @@ export async function POST(request: Request) {
   }
 }
 
-async function generateAiSummary(description: string, targetLang: 'es' | 'pt'): Promise<string> {
+async function generateAiSummary(description: string, targetLang: 'es' | 'pt', translatedDesc?: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('Gemini API key is not configured');
+    return buildFallbackSummary(translatedDesc || description, targetLang);
   }
-
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const promptEs = `Eres un asistente de compras experto. Tu tarea es traducir y resumir la siguiente descripción de producto en japonés al español.
 Genera un resumen conciso usando viñetas (bullet points) en el siguiente formato, basándote únicamente en la información proporcionada (si un dato no está en el texto, escribe "No especificado"):
@@ -508,35 +506,54 @@ Descrição do produto:
 ${description}`;
 
   const prompt = targetLang === 'es' ? promptEs : promptPt;
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: prompt
-        }]
-      }],
-      generationConfig: {
-        maxOutputTokens: 1000,
-        temperature: 0.2
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            maxOutputTokens: 1000,
+            temperature: 0.2
+          }
+        })
+      });
+
+      if (response.ok) {
+        const resData = await response.json();
+        const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text && text.trim()) {
+          return text.trim();
+        }
+      } else {
+        const errBody = await response.text();
+        console.warn(`Gemini model ${model} status ${response.status}:`, errBody.substring(0, 200));
       }
-    })
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Gemini API error: ${response.status} - ${errText}`);
+    } catch (e) {
+      console.warn(`Gemini model ${model} fetch error:`, e);
+    }
   }
 
-  const resData = await response.json();
-  const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error('Empty response from Gemini API');
-  }
+  return buildFallbackSummary(translatedDesc || description, targetLang);
+}
 
-  return text.trim();
+function buildFallbackSummary(text: string, targetLang: 'es' | 'pt'): string {
+  const clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const snippet = clean.substring(0, 800);
+
+  if (targetLang === 'pt') {
+    return `- **Especificações / Detalhes**: Consulte a descrição do produto\n- **Estado do produto**: Verifique o texto e fotos\n- **Resumo da Descrição**: ${snippet}`;
+  } else {
+    return `- **Especificaciones / Detalles**: Consulte la descripción del producto\n- **Estado del producto**: Revise el texto y las fotos\n- **Resumen de la Descripción**: ${snippet}`;
+  }
 }
