@@ -262,7 +262,7 @@ export async function GET(request: Request) {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 sendToCustomer: true,
-                                customerEmail: item.customer_email,
+                                email: item.customer_email,
                                 title: custTitle,
                                 body: custBody,
                                 url: '/'
@@ -329,7 +329,7 @@ export async function GET(request: Request) {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     sendToCustomer: true,
-                                    customerEmail: item.customer_email,
+                                    email: item.customer_email,
                                     title,
                                     body,
                                     url: '/'

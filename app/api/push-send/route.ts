@@ -15,7 +15,8 @@ webpush.setVapidDetails(
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId, email, title, body, url, sendToAdmins, bidRequestId } = await request.json();
+        const { userId, email, customerEmail, title, body, url, sendToAdmins, bidRequestId } = await request.json();
+        const targetEmail = email || customerEmail;
 
         let targetUserIds: string[] = [];
 
@@ -38,11 +39,11 @@ export async function POST(request: NextRequest) {
             let targetUserId = userId;
 
             // emailが指定された場合、user_rolesからuser_idを検索
-            if (!targetUserId && email) {
+            if (!targetUserId && targetEmail) {
                 const { data: userData } = await supabaseAdmin
                     .from('user_roles')
                     .select('id')
-                    .eq('email', email)
+                    .eq('email', targetEmail)
                     .single();
                 if (userData) {
                     targetUserId = userData.id;
