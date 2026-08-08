@@ -299,15 +299,24 @@ export async function POST(request: Request) {
       }
     }
 
-    // 商品IDから既存キャッシュを確認
+    // 商品IDから既存キャッシュを確認（フォールバック用文面や日本語が残っているキャッシュは無効化して再生成）
     const cachedItem = productAiCache.get(productId);
     const now = Date.now();
     const isCacheValid = cachedItem && cachedItem.expiresAt > now;
 
     let translatedDescription = isCacheValid ? (lang === 'pt' ? cachedItem.translatedDescPt : cachedItem.translatedDescEs) || '' : '';
     let translatedTitle = isCacheValid ? (lang === 'pt' ? cachedItem.translatedTitlePt : cachedItem.translatedTitleEs) || title : title;
-    let aiSummaryEs = isCacheValid ? cachedItem.aiSummaryEs || '' : '';
-    let aiSummaryPt = isCacheValid ? cachedItem.aiSummaryPt || '' : '';
+
+    const isRealSummary = (s?: string) => {
+      if (!s) return false;
+      if (s.includes('Consulte') || s.includes('Resumo da Descrição') || s.includes('Resumen de la Descripción')) return false;
+      // 日本語文字が含まれている場合は不完全と判定
+      if (/[\u3040-\u30ff\u4e00-\u9faf]/.test(s)) return false;
+      return true;
+    };
+
+    let aiSummaryEs = isCacheValid && isRealSummary(cachedItem.aiSummaryEs) ? cachedItem.aiSummaryEs || '' : '';
+    let aiSummaryPt = isCacheValid && isRealSummary(cachedItem.aiSummaryPt) ? cachedItem.aiSummaryPt || '' : '';
 
     // 1. タイトルと説明文の翻訳（キャッシュ未ヒット時のみ実行）
     if (lang !== 'ja') {
@@ -393,10 +402,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. キャッシュの更新
+    // 3. キャッシュの更新（本物のAI要約のみキャッシュに記憶し、フォールバック文面はキャッシュしない）
     productAiCache.set(productId, {
-      aiSummaryEs: aiSummaryEs || cachedItem?.aiSummaryEs,
-      aiSummaryPt: aiSummaryPt || cachedItem?.aiSummaryPt,
+      aiSummaryEs: isRealSummary(aiSummaryEs) ? aiSummaryEs : (isRealSummary(cachedItem?.aiSummaryEs) ? cachedItem?.aiSummaryEs : undefined),
+      aiSummaryPt: isRealSummary(aiSummaryPt) ? aiSummaryPt : (isRealSummary(cachedItem?.aiSummaryPt) ? cachedItem?.aiSummaryPt : undefined),
       translatedTitleEs: lang === 'es' ? translatedTitle : cachedItem?.translatedTitleEs,
       translatedTitlePt: lang === 'pt' ? translatedTitle : cachedItem?.translatedTitlePt,
       translatedDescEs: lang === 'es' ? translatedDescription : cachedItem?.translatedDescEs,
@@ -477,8 +486,13 @@ async function generateAiSummary(description: string, targetLang: 'es' | 'pt', t
     return buildFallbackSummary(translatedDesc || description, targetLang);
   }
 
-  const promptEs = `Eres un asistente de compras experto. Tu tarea es traducir y resumir la siguiente descripción de producto en japonés al español.
-Genera un resumen conciso usando viñetas (bullet points) en el siguiente formato, basándote únicamente en la información proporcionada (si un dato no está en el texto, escribe "No especificado"):
+  // Google翻訳済みの文章があれば優先して渡し、無ければ原文を渡す
+  const textToSummarize = translatedDesc && translatedDesc.length > 50 ? translatedDesc : description;
+
+  const promptEs = `Eres un asistente de compras experto. Tu tarea es traducir y resumir la siguiente descripción de producto al español.
+IMPORTANTE: Debes traducir ABSOLUTAMENTE TODO el contenido al español. No dejes ninguna palabra, frase o carácter en japonés.
+
+Genera un resumen conciso usando viñetas (bullet points) en el siguiente formato, basándote en la información proporcionada (si un dato no está en el texto, escribe "No especificado"):
 
 - **Especificaciones / Detalles**: (tamaño, color, modelo, etc.)
 - **Estado del producto**: (daños, suciedad, desgaste, etc.)
@@ -486,13 +500,15 @@ Genera un resumen conciso usando viñetas (bullet points) en el siguiente format
 - **Accesorios**: (lo que se incluye en el paquete)
 - **Envío**: (empresa de envío o método de envío en Japón, si se indica)
 
-No agregues conclusiones ni comentarios personales. Limítate a resumir los datos reales.
+No agregues conclusiones ni comentarios personales. Limítate a resumir los datos reales en español.
 
 Descripción del producto:
-${description}`;
+${textToSummarize}`;
 
-  const promptPt = `Você é um assistente de compras especializado. Sua tarefa é traduzir e resumir a seguinte descrição de produto em japonês para o português.
-Gere um resumo conciso usando marcadores (bullet points) no formato a seguir, baseando-se apenas nas informações fornecidas (se uma informação não estiver no texto, escreva "Não especificado"):
+  const promptPt = `Você é um assistente de compras especializado. Sua tarefa é traduzir e resumir a seguinte descrição de produto para o português.
+IMPORTANTE: Você deve traduzir ABSOLUTAMENTE TODO o conteúdo para o português. Não deixe nenhuma palavra, frase ou caractere em japonês.
+
+Gere um resumo conciso usando marcadores (bullet points) no formato a seguir, baseando-se nas informações fornecidas (se uma informação não estiver no texto, escreva "Não especificado"):
 
 - **Especificações / Detalhes**: (tamanho, cor, modelo, etc.)
 - **Estado do produto**: (danos, sujeira, desgaste, etc.)
@@ -500,10 +516,10 @@ Gere um resumo conciso usando marcadores (bullet points) no formato a seguir, ba
 - **Acessórios**: (o que está incluído no pacote)
 - **Envío**: (empresa de envio ou método de envio no Japão, se indicado)
 
-Não adicione conclusões ou comentários pessoais. Limite-se a resumir os dados reais.
+Não adicione conclusões ou comentários pessoais. Limite-se a resumir os dados reais em português.
 
 Descrição do produto:
-${description}`;
+${textToSummarize}`;
 
   const prompt = targetLang === 'es' ? promptEs : promptPt;
   const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
@@ -523,7 +539,7 @@ ${description}`;
             }]
           }],
           generationConfig: {
-            maxOutputTokens: 1000,
+            maxOutputTokens: 1200,
             temperature: 0.2
           }
         })
@@ -532,7 +548,7 @@ ${description}`;
       if (response.ok) {
         const resData = await response.json();
         const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text && text.trim()) {
+        if (text && text.trim() && !/[\u3040-\u30ff\u4e00-\u9faf]/.test(text)) {
           return text.trim();
         }
       } else {
@@ -552,8 +568,8 @@ function buildFallbackSummary(text: string, targetLang: 'es' | 'pt'): string {
   const snippet = clean.substring(0, 800);
 
   if (targetLang === 'pt') {
-    return `- **Especificações / Detalhes**: Consulte a descrição do produto\n- **Estado do produto**: Verifique o texto e fotos\n- **Resumo da Descrição**: ${snippet}`;
+    return `- **Especificações / Detalhes**: Consulte os detalhes traduzidos abaixo\n- **Estado do produto**: Verifique o texto e fotos do anúncio\n- **Resumo**: ${snippet}`;
   } else {
-    return `- **Especificaciones / Detalles**: Consulte la descripción del producto\n- **Estado del producto**: Revise el texto y las fotos\n- **Resumen de la Descripción**: ${snippet}`;
+    return `- **Especificaciones / Detalles**: Consulte los detalles traducidos a continuación\n- **Estado del producto**: Revise el texto y las fotos del anuncio\n- **Resumen**: ${snippet}`;
   }
 }
