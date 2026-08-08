@@ -109,17 +109,14 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
-  try {
-    await supabase.auth.signOut();
-  } catch (error) {
-    console.warn('signOut error (continuing with cleanup):', error);
-  }
-  // キャッシュクリア
+  // 1. キャッシュ・ローカルストレージ・クッキーの即時消去（ネットワーク非依存で0秒処理）
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem('joga_user_cache');
     localStorage.removeItem('joga_terms_accepted');
   }
-  // cookieベースセッションの場合、Supabase関連cookieを手動クリア
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.clear();
+  }
   if (typeof document !== 'undefined') {
     const cookies = document.cookie.split(';');
     for (const cookie of cookies) {
@@ -128,6 +125,23 @@ export async function signOut() {
         document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
       }
     }
+  }
+
+  // 2. ローカルスコープでのSupabaseセッション即時破棄
+  try {
+    await supabase.auth.signOut({ scope: 'local' });
+  } catch (error) {
+    console.warn('signOut local error (continuing cleanup):', error);
+  }
+
+  // 3. バックグラウンドでサーバー側のトークン無効化を非同期実行（UIをブロックしない）
+  try {
+    Promise.race([
+      supabase.auth.signOut({ scope: 'global' }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Signout network timeout')), 1000))
+    ]).catch(err => console.warn('Global signOut background error:', err));
+  } catch (error) {
+    console.warn('signOut global trigger error:', error);
   }
 }
 

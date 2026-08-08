@@ -2302,8 +2302,11 @@ export default function Home() {
   };
 
   const handleLogout = async () => {
+    // モーダルを閉じ、画面UIを0秒で即座にログアウト状態（ログイン画面）にする
     setShowLogoutConfirm(false);
     const userId = currentUser?.id;
+    setCurrentUser(null);
+
     if (userId) {
       fetch('/api/push-subscribe', {
         method: 'DELETE',
@@ -2318,8 +2321,6 @@ export default function Home() {
       await signOut();
     } catch (err) {
       console.error('Signout error:', err);
-    } finally {
-      setCurrentUser(null);
     }
   };
 
