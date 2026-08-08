@@ -2579,7 +2579,7 @@ export default function AdminDashboard() {
 
                       return (
                         <div className="mb-2 h-12 px-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between">
-                          <span className="text-xs text-emerald-800 font-semibold">商品入札額 (ヤフオク上限):</span>
+                          <span className="text-xs text-emerald-800 font-semibold">商品入札額:</span>
                           <span className="text-base font-extrabold text-emerald-700">
                             ¥ {productBidJpy.toLocaleString('ja-JP')}
                           </span>
