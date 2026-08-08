@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { sendUnpaidReminderEmail } from '@/lib/resend';
 
 export async function GET(req: Request) {
   try {
@@ -87,6 +88,13 @@ export async function GET(req: Request) {
             url: '/',
           }),
         }).catch(err => console.error('Unpaid order push error:', err))
+      );
+
+      // メール通知も合わせて送信
+      notificationsPromises.push(
+        sendUnpaidReminderEmail(reqData.customer_email, itemTitle, lang).catch(err =>
+          console.error('Unpaid order email error:', err)
+        )
       );
 
       notifiedIds.push(reqData.id);

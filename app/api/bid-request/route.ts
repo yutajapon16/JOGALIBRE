@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
 import { parseAnyDateTime, parseDbDateTime, parseJstDateTime } from '@/lib/utils';
+import { sendWonEmail } from '@/lib/resend';
 
 export async function POST(request: Request) {
   try {
@@ -724,6 +725,29 @@ export async function PATCH(request: Request) {
         }).catch(err => console.error('Manual payment customer push error:', err));
       } catch (pushErr) {
         console.error('Manual payment notification error:', pushErr);
+      }
+    }
+
+    // 管理者により落札成功（Won）へステータス変更された場合、顧客へ落札完了メールを送信
+    if (isAdmin && finalStatus === 'won' && currentRequest.final_status !== 'won' && currentRequest.customer_email) {
+      try {
+        const { data: userRole } = await supabaseAdmin
+          .from('user_roles')
+          .select('language')
+          .eq('email', currentRequest.customer_email)
+          .single();
+
+        const lang = (userRole?.language || 'es').toLowerCase();
+        const isPt = lang === 'pt';
+        const itemTitle = isPt
+          ? currentRequest.product_title_pt || currentRequest.product_title || 'Item'
+          : currentRequest.product_title_es || currentRequest.product_title || 'Item';
+
+        sendWonEmail(currentRequest.customer_email, itemTitle, lang).catch(err =>
+          console.error('Won email send error:', err)
+        );
+      } catch (emailErr) {
+        console.error('Won email trigger error:', emailErr);
       }
     }
 

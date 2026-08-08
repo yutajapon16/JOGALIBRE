@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
+import { sendWonEmail } from '@/lib/resend';
 
 export async function POST(request: Request) {
   try {
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
     // 3. 顧客情報の取得（email, 氏名）
     const { data: customerRoleData, error: customerRoleError } = await supabaseAdmin
       .from('user_roles')
-      .select('email, full_name')
+      .select('email, full_name, language')
       .eq('customer_id', customerId)
       .single();
 
@@ -189,6 +190,16 @@ export async function POST(request: Request) {
           bidRequest: updatedData
         });
       }
+    }
+
+    // 顧客へ落札完了メールを送信
+    if (customerRoleData?.email) {
+      const lang = (customerRoleData.language || 'es').toLowerCase();
+      const isPt = lang === 'pt';
+      const itemTitle = isPt ? (productTitlePt || productTitle) : (productTitleEs || productTitle);
+      sendWonEmail(customerRoleData.email, itemTitle, lang).catch(err =>
+        console.error('Manual won email send error:', err)
+      );
     }
 
     return NextResponse.json({
