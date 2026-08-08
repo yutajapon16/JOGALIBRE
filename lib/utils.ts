@@ -550,6 +550,49 @@ export const calculateJapanSendAmount = (item: any, totalSalePrice: number, exch
 };
 
 /**
+ * 顧客のドルオファー上限額（maxBid）から、ヤフオクで入札可能な商品本体価格（JPY）の上限を逆算する関数
+ * @param maxBidUsd ドルでの上限額
+ * @param customerId 顧客ID
+ * @param agentCustomerId 担当エージェント顧客ID
+ * @param country 顧客の国名
+ * @param title 商品タイトル
+ * @param url 商品URL
+ * @param exchangeRate JPY為替レート
+ * @returns ヤフオク入札可能本体価格 (JPY)
+ */
+export const calculateProductBidJpy = (
+  maxBidUsd: number,
+  customerId?: string | null,
+  agentCustomerId?: string | null,
+  country?: string | null,
+  title?: string | null,
+  url?: string | null,
+  exchangeRate: number = 150
+): number => {
+  if (!maxBidUsd || maxBidUsd <= 0) return 0;
+
+  const fob = calculateDefaultFobCost(title, url);
+  const shipping = calculateDefaultShippingCost(title, url);
+
+  const profitDivisor = (() => {
+    if (customerId === 'B001') return 0.9;
+    if (agentCustomerId === 'B001') return 0.5;
+    if (customerId?.startsWith('A')) {
+      const countryLower = (country || '').trim().toLowerCase();
+      if (countryLower === 'brasil' || countryLower === 'brazil') {
+        return 0.7;
+      }
+      return 0.8;
+    }
+    return 0.6;
+  })();
+
+  const totalJpyLimit = maxBidUsd * exchangeRate * profitDivisor;
+  const maxProductJpy = totalJpyLimit - fob - shipping;
+  return Math.max(0, Math.floor(maxProductJpy));
+};
+
+/**
  * 商品タイトルやURLから、カテゴリに応じたFOB費用（JPY）を判定して返す関数
  * @param title 商品タイトル
  * @param url 商品のURL

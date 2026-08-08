@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, calculateProductBidJpy, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
 import { BidRequest } from '@/lib/types';
 
 // 管理者画面用のPWA manifest差し替え
@@ -2559,6 +2559,33 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </div>
+
+                    {/* 商品入札額 (日本円表示) */}
+                    {(() => {
+                      const activeMaxBidUsd = request.customerCounterOffer && !request.customerCounterOfferUsed
+                        ? request.customerCounterOffer
+                        : (request.counterOffer || request.maxBid || 0);
+
+                      const jpyRate = exchangeRates['JPY'] || exchangeRate || 150;
+                      const productBidJpy = calculateProductBidJpy(
+                        activeMaxBidUsd,
+                        request.customerId,
+                        request.agentCustomerId,
+                        request.customerCountry,
+                        request.productTitle,
+                        request.productUrl,
+                        jpyRate
+                      );
+
+                      return (
+                        <div className="mb-2 h-12 px-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between">
+                          <span className="text-xs text-emerald-800 font-semibold">商品入札額 (ヤフオク上限):</span>
+                          <span className="text-base font-extrabold text-emerald-700">
+                            ¥ {productBidJpy.toLocaleString('ja-JP')}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                       <div className="flex items-center gap-1">
