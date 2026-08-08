@@ -318,9 +318,7 @@ export async function POST(request: Request) {
 
     const isRealSummary = (s?: string) => {
       if (!s || s.length < 20) return false;
-      if (s.includes('Consulte') || s.includes('Resumo da Descrição') || s.includes('Resumen de la Descripción') || s.includes('Resumo:') || s.includes('Resumen:')) return false;
-      // 日本語文字（ひらがな・カタカナ・漢字）が含まれている場合は不完全と判定
-      if (/[\u3040-\u30ff\u4e00-\u9faf]/.test(s)) return false;
+      if (s.includes('Consulte os detalhes') || s.includes('Consulte los detalles') || s.includes('Resumo:') || s.includes('Resumen:')) return false;
       return true;
     };
 
