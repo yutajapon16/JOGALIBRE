@@ -3038,7 +3038,7 @@ export default function Home() {
             sendToAdmins: true,
             bidRequestId: requestId,
             title: `✅ 【結果確認完了】${custName} ${custId}`.trim(),
-            body: `商品: ${itemTitle}${message ? `\nメッセージ: ${message}` : ''}`,
+            body: `商品: ${itemTitle}`,
             url: '/admin'
           })
         }).catch(e => console.error('Admin push error', e));

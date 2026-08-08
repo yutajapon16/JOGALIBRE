@@ -94,7 +94,7 @@ export async function GET(request: Request) {
                         ? '⏰ 【残り12時間】未確認の申請あり'
                         : '🔔 【残り12時間】オークション終了間近';
 
-                    const body = `商品: ${productTitle} (ID: ${customerId})`;
+                    const body = `商品: ${productTitle} (顧客: ${customerId})`;
 
                     try {
                         await fetch(`${origin}/api/push-send`, {

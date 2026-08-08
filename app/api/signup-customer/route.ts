@@ -100,6 +100,15 @@ export async function POST(request: Request) {
 
     // 管理者へのプッシュ通知送信
     try {
+      const { data: createdUser } = await supabaseAdmin
+        .from('user_roles')
+        .select('customer_id')
+        .eq('id', authData.user.id)
+        .single();
+
+      const custName = fullName || email;
+      const custIdStr = createdUser?.customer_id ? `(${createdUser.customer_id})` : '';
+
       const baseUrl = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
       await fetch(`${baseUrl}/api/push-send`, {
         method: 'POST',
@@ -107,7 +116,7 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           sendToAdmins: true,
           title: '🔔 新規顧客登録',
-          body: `新しい顧客（${email}）が登録されました。`,
+          body: `${custName} ${custIdStr}`.trim(),
           url: '/admin'
         }),
       });

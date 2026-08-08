@@ -102,7 +102,7 @@ export async function POST(request: Request) {
 
           const customerId = userRole?.customer_id || '不明';
           const title = '⏰ 【残り12時間】未確認の申請あり';
-          const bodyText = `商品: ${productTitle || productId} (ID: ${customerId})`;
+          const bodyText = `商品: ${productTitle || productId} (顧客: ${customerId})`;
 
           try {
             await fetch(`${new URL(request.url).origin}/api/push-send`, {
