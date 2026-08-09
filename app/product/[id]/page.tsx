@@ -273,6 +273,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
 
     const fetchProduct = async () => {
+      const cacheKey = `joga_prod_cache_${encodeURIComponent(targetUrl)}_${lang}`;
+
+      // 1. まずブラウザのsessionStorageキャッシュを確認（戻るボタンで即時表示）
+      if (typeof window !== 'undefined') {
+        try {
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            const summaryText = lang === 'es' ? parsed.aiSummaryEs : parsed.aiSummaryPt;
+            const isValidSummary = summaryText && summaryText.length > 20 && !summaryText.includes('Consulte los detalles') && !summaryText.includes('Consulte os detalhes');
+            if (isValidSummary) {
+              setProduct(parsed);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('SessionStorage cache read error:', e);
+        }
+      }
+
       setLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -291,6 +312,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         const data = await res.json();
         if (data.product) {
           setProduct(data.product);
+
+          // 良いAI要約が含まれる場合、ブラウザのsessionStorageに保管
+          const summaryText = lang === 'es' ? data.product.aiSummaryEs : data.product.aiSummaryPt;
+          const isValidSummary = summaryText && summaryText.length > 20 && !summaryText.includes('Consulte los detalles') && !summaryText.includes('Consulte os detalhes');
+          if (isValidSummary && typeof window !== 'undefined') {
+            try {
+              sessionStorage.setItem(cacheKey, JSON.stringify(data.product));
+            } catch (e) {
+              console.warn('SessionStorage set error:', e);
+            }
+          }
         } else {
           throw new Error('No product data');
         }

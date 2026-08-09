@@ -387,7 +387,7 @@ export async function POST(request: Request) {
 
     if (description && !skipAiSummary && (needAiEs || needAiPt)) {
       const controllerAi = new AbortController();
-      const timeoutAi = setTimeout(() => controllerAi.abort(), 6000);
+      const timeoutAi = setTimeout(() => controllerAi.abort(), 12000);
       try {
         const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2500);
         if (needAiEs) {
