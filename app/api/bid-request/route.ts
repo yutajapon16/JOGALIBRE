@@ -548,7 +548,7 @@ export async function PATCH(request: Request) {
 
           // 2. オークション終了まで15分前チェック (ヤフオク終了時刻はJST基準)
           if (currentRequest.product_end_time) {
-            const endDate = parseJstDateTime(currentRequest.product_end_time) || parseDbDateTime(currentRequest.product_end_time);
+            const endDate = parseDbDateTime(currentRequest.product_end_time) || parseJstDateTime(currentRequest.product_end_time);
             if (endDate) {
               const diffMs = endDate.getTime() - Date.now();
               const fifteenMinsInMs = 15 * 60 * 1000;

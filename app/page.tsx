@@ -4348,7 +4348,7 @@ export default function Home() {
                       {request.status === 'approved' && !request.finalStatus && (() => {
                         const isWithin15Mins = request.productEndTime
                           ? (() => {
-                              const endDate = parseJstDateTime(request.productEndTime) || parseDbDateTime(request.productEndTime);
+                              const endDate = parseDbDateTime(request.productEndTime) || parseJstDateTime(request.productEndTime);
                               if (!endDate) return false;
                               return (endDate.getTime() - Date.now()) < (15 * 60 * 1000);
                             })()
