@@ -336,7 +336,7 @@ export async function POST(request: Request) {
         if (needDescTrans) {
           const translateDesc = async () => {
             const controllerTranslate = new AbortController();
-            const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 4000);
+            const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 7000);
             try {
               const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2000);
               const transRes = await fetch(
@@ -529,7 +529,7 @@ Descrição do produto:
 ${textToSummarize}`;
 
   const prompt = targetLang === 'es' ? promptEs : promptPt;
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
 
   for (const model of models) {
     try {
@@ -546,7 +546,7 @@ ${textToSummarize}`;
             }]
           }],
           generationConfig: {
-            maxOutputTokens: 1200,
+            maxOutputTokens: 3000,
             temperature: 0.2
           }
         })
