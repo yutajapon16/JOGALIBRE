@@ -2519,7 +2519,29 @@ export default function Home() {
     }
   };
 
-  const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency, title?: string, url?: string, explicitJcat?: string) => {
+  const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency, title?: string, url?: string, explicitJcat?: string, productId?: string) => {
+    // ヤフオク以外の商品（手動登録商品や非ヤフオクドメインURL）の場合、jpyPrice には管理者が登録した販売価格（USD建て）が入っているため、それを基に通貨換算を行う
+    const isNonYahoo = (productId && productId.startsWith('m-')) || (url && !url.includes('auctions.yahoo.co.jp') && !url.includes('page.auctions.yahoo.co.jp'));
+    if (isNonYahoo) {
+      const usdPrice = jpyPrice;
+      if (targetCurrency === 'USD') {
+        return Math.round(usdPrice).toLocaleString('en-US');
+      } else {
+        const rate = exchangeRates[targetCurrency] || 1;
+        const rawConverted = usdPrice * rate;
+        const rounded = Math.round(rawConverted);
+        let finalConverted = rounded;
+        if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
+          finalConverted = Math.ceil(rounded / 10) * 10;
+        } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
+          finalConverted = Math.ceil(rounded / 1000) * 1000;
+        } else {
+          finalConverted = Math.ceil(rounded);
+        }
+        return finalConverted.toLocaleString('en-US').replace(/,/g, '.');
+      }
+    }
+
     let urlWithJcat = url || '';
     if (explicitJcat) {
       urlWithJcat += (urlWithJcat.includes('?') ? '&' : '?') + `jcat=${explicitJcat}`;
@@ -3556,8 +3578,8 @@ export default function Home() {
                     {getCurrencySymbol(selectedCurrency)}
                   </span>
                   {currentUser?.agentCustomerId === 'B001'
-                    ? calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id)
-                    : calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id)}
+                    ? calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id, product.id)
+                    : calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id, product.id)}
                 </span>
                 {selectedCurrency === 'USD' && (
                   <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">
@@ -4026,12 +4048,16 @@ export default function Home() {
                         <span className="text-xs text-gray-500 font-medium">{t.currentPrice}:</span>
                         <span className="text-base font-bold text-gray-800">
                           {request.productPrice && request.productPrice > 0
-                            ? `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(
-                                request.productPrice,
-                                selectedCurrency,
-                                request.productTitle,
-                                request.productUrl
-                              )}`
+                            ? (request.productId?.startsWith('m-') || (request.productUrl && !request.productUrl.includes('auctions.yahoo.co.jp') && !request.productUrl.includes('page.auctions.yahoo.co.jp')))
+                              ? convertUSDToSelectedCurrency(request.productPrice)
+                              : `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(
+                                  request.productPrice,
+                                  selectedCurrency,
+                                  request.productTitle,
+                                  request.productUrl,
+                                  undefined,
+                                  request.productId
+                                )}`
                             : '-'}
                         </span>
                       </div>
@@ -7036,7 +7062,7 @@ export default function Home() {
                       )}
                     </span>
                     <span className={`font-extrabold text-sm text-indigo-700 transition-opacity duration-200 ${isOfferUpdating ? 'opacity-50' : ''}`}>
-                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id)}
+                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id, selectedProduct.id)}
                     </span>
                   </div>
                   {deliveryCountry !== 'JP' && (() => {

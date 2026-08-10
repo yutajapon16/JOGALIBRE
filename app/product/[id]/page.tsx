@@ -351,6 +351,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   // 通貨換算の計算ロジック（トップページと完全同期）
   const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency) => {
+    const isNonYahoo = (product?.id && product.id.startsWith('m-')) || (product?.url && !product.url.includes('auctions.yahoo.co.jp') && !product.url.includes('page.auctions.yahoo.co.jp'));
+    if (isNonYahoo) {
+      const usdPrice = jpyPrice;
+      if (targetCurrency === 'USD') {
+        return Math.round(usdPrice).toLocaleString('en-US');
+      } else {
+        const rate = exchangeRates[targetCurrency] || 1;
+        const rawConverted = usdPrice * rate;
+        const rounded = Math.round(rawConverted);
+        let finalConverted = rounded;
+        if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
+          finalConverted = Math.ceil(rounded / 10) * 10;
+        } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
+          finalConverted = Math.ceil(rounded / 1000) * 1000;
+        } else {
+          finalConverted = Math.ceil(rounded);
+        }
+        return finalConverted.toLocaleString('en-US').replace(/,/g, '.');
+      }
+    }
+
     let productUrlWithCategory = product ? (product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : '')) : '';
     if (jcat) {
       productUrlWithCategory += (productUrlWithCategory.includes('?') ? '&' : '?') + `jcat=${jcat}`;
@@ -745,7 +766,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between text-green-700 font-bold">
             <span className="text-xs">{t.currentPrice}: {selectedCurrency}</span>
             <span className="text-sm sm:text-base font-extrabold">
-              {getCurrencySymbol(selectedCurrency)} {calculateConvertedPrice(product.currentPrice)}
+              {(product?.id?.startsWith('m-') || (product?.url && !product.url.includes('auctions.yahoo.co.jp') && !product.url.includes('page.auctions.yahoo.co.jp')))
+                ? convertUSDToSelectedCurrency(product.currentPrice)
+                : `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(product.currentPrice)}`}
             </span>
           </div>
           
