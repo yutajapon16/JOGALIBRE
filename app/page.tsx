@@ -1394,6 +1394,10 @@ export default function Home() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
+        setMyRequests([]);
+        setPurchasedItems([]);
+        setFavorites([]);
+        setDepositsList([]);
         if (typeof localStorage !== 'undefined') {
           localStorage.removeItem('joga_user_cache');
           localStorage.removeItem('joga_terms_accepted');
@@ -1480,6 +1484,17 @@ export default function Home() {
       fetchUnreadCount();
       // セッション確立後にプロフィールを取得
       fetchUserProfile();
+
+      // ログイン直後に各タブのデータをバックグラウンドで並列事前取得（プリフェッチ）
+      if (currentUser.email) {
+        Promise.allSettled([
+          fetchMyRequests(currentUser.email),
+          fetchPurchasedItems(currentUser.email),
+          fetchFavorites(),
+          fetchDeposits(),
+        ]).catch(err => console.warn('Background prefetch error:', err));
+      }
+
       const interval = setInterval(fetchUnreadCount, 60000);
       return () => clearInterval(interval);
     } else {
@@ -1865,12 +1880,15 @@ export default function Home() {
   };
 
 
-  const fetchPurchasedItems = async () => {
+  const fetchPurchasedItems = async (overrideEmail?: string) => {
     try {
+      const email = overrideEmail || currentUser?.email;
+      if (!email) return;
+
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
-      const res = await fetch(`/api/bid-request?email=${currentUser?.email}&purchased=true`, {
+      const res = await fetch(`/api/bid-request?email=${encodeURIComponent(email)}&purchased=true`, {
         headers: {
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         }
@@ -2306,6 +2324,10 @@ export default function Home() {
     setShowLogoutConfirm(false);
     const userId = currentUser?.id;
     setCurrentUser(null);
+    setMyRequests([]);
+    setPurchasedItems([]);
+    setFavorites([]);
+    setDepositsList([]);
 
     if (userId) {
       fetch('/api/push-subscribe', {
@@ -2676,12 +2698,15 @@ export default function Home() {
     return calculateLocalCost(loc, { productTitle: product.titleJa || product.title, productUrl: finalUrl }, shippingMethod);
   };
 
-  const fetchMyRequests = async () => {
+  const fetchMyRequests = async (overrideEmail?: string) => {
     try {
+      const email = overrideEmail || currentUser?.email;
+      if (!email) return;
+
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
-      const res = await fetch(`/api/bid-request?email=${currentUser?.email}`, {
+      const res = await fetch(`/api/bid-request?email=${encodeURIComponent(email)}`, {
         headers: {
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         }
