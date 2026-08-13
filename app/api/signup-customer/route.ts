@@ -21,7 +21,14 @@ export async function POST(request: Request) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'メールアドレスとパスワードは必須です' },
+        { error: 'メールアドレスとパスワードは必須です', errorCode: 'MISSING_FIELDS' },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'パスワードは6文字以上必要です', errorCode: 'PASSWORD_TOO_SHORT' },
         { status: 400 }
       );
     }
@@ -50,21 +57,34 @@ export async function POST(request: Request) {
 
     if (authError) {
       console.error('Auth customer creation error:', authError);
-      if (authError.message?.includes('already') || authError.message?.includes('exists')) {
+      const msg = (authError.message || '').toLowerCase();
+      if (msg.includes('already') || msg.includes('exists') || msg.includes('registered')) {
         return NextResponse.json(
-          { error: 'このメールアドレスは既に使用されています' },
+          { error: 'このメールアドレスは既に使用されています', errorCode: 'EMAIL_ALREADY_EXISTS' },
           { status: 409 }
         );
       }
+      if (msg.includes('password') && (msg.includes('short') || msg.includes('least') || msg.includes('character') || msg.includes('6'))) {
+        return NextResponse.json(
+          { error: 'パスワードは6文字以上必要です', errorCode: 'PASSWORD_TOO_SHORT' },
+          { status: 400 }
+        );
+      }
+      if (msg.includes('valid email') || msg.includes('invalid email')) {
+        return NextResponse.json(
+          { error: 'メールアドレスの形式が正しくありません', errorCode: 'INVALID_EMAIL' },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
-        { error: 'ユーザー作成に失敗しました: ' + authError.message },
+        { error: 'ユーザー作成に失敗しました: ' + authError.message, errorCode: 'AUTH_ERROR' },
         { status: 500 }
       );
     }
 
     if (!authData.user) {
       return NextResponse.json(
-        { error: 'ユーザー作成に失敗しました' },
+        { error: 'ユーザー作成に失敗しました', errorCode: 'USER_CREATION_FAILED' },
         { status: 500 }
       );
     }

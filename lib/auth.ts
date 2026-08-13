@@ -41,8 +41,11 @@ export async function signUp(
   });
   
   if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.error || '登録処理に失敗しました');
+    const errorData = await res.json().catch(() => ({}));
+    const err = new Error(errorData.error || '登録処理に失敗しました');
+    (err as any).errorCode = errorData.errorCode;
+    (err as any).details = errorData;
+    throw err;
   }
 
   // 呼び出し元との互換性のためにダミーデータを返す

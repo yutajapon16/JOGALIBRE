@@ -2311,11 +2311,36 @@ export default function Home() {
 
       setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '', city: '' });
       setShowSignUp(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign up error:', error);
-      alert(lang === 'es'
-        ? 'Error al crear cuenta. El email puede estar en uso.'
-        : 'Erro ao criar conta. O email pode já estar em uso.');
+      const isEs = lang === 'es';
+      const code = error?.errorCode || '';
+      const msg = (error?.message || '').toLowerCase();
+
+      let userMessage = '';
+      if (code === 'EMAIL_ALREADY_EXISTS' || msg.includes('already') || msg.includes('exists') || msg.includes('既に使用') || msg.includes('registered')) {
+        userMessage = isEs
+          ? 'Este correo electrónico ya está registrado. Por favor, inicia sesión o utiliza otro correo.'
+          : 'Este e-mail já está cadastrado. Por favor, faça login ou utilize outro e-mail.';
+      } else if (code === 'PASSWORD_TOO_SHORT' || msg.includes('password') || msg.includes('6文字') || msg.includes('caracter')) {
+        userMessage = isEs
+          ? 'La contraseña debe tener al menos 6 caracteres.'
+          : 'A senha deve ter pelo menos 6 caracteres.';
+      } else if (code === 'INVALID_EMAIL' || msg.includes('invalid email') || msg.includes('valid email')) {
+        userMessage = isEs
+          ? 'El formato del correo electrónico no es válido.'
+          : 'O formato do e-mail não é válido.';
+      } else if (code === 'MISSING_FIELDS' || msg.includes('必須')) {
+        userMessage = isEs
+          ? 'Por favor, completa todos los campos requeridos.'
+          : 'Por favor, preencha todos os campos obrigatórios.';
+      } else {
+        userMessage = isEs
+          ? `Error al crear la cuenta: ${error?.message || 'Error inesperado. Inténtalo de nuevo.'}`
+          : `Erro ao criar a conta: ${error?.message || 'Erro inesperado. Tente novamente.'}`;
+      }
+
+      alert(userMessage);
     }
   };
 
