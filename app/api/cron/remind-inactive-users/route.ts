@@ -11,9 +11,11 @@ function getResend() {
 }
 
 /**
- * 最終ログイン（または登録）から5日以上経過しており、
- * まだリマインドメールが送信されていないユーザー（顧客・エージェント）を抽出し、
+ * 最終ログイン（または登録）から7日以上経過しているユーザー（顧客・エージェント）を抽出し、
  * info@jogalibre.com からログインとオファーを促すメールを送信するCronジョブ。
+ * 
+ * 未ログイン状態が続く場合、7日おきに再度リマインドメールを送信します。
+ * （ユーザーがログインするとカウントおよびリマインド状態はリセットされます）
  */
 export async function GET(request: Request) {
   // 1. Vercel Cron からの認証チェック
@@ -30,35 +32,45 @@ export async function GET(request: Request) {
   try {
     const resend = getResend();
     
-    // 5日前の境界となる日時を算出
-    const fiveDaysAgo = new Date();
-    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    // 7日前の境界となる日時を算出
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-
-    // 2. 5日以上未ログインの対象ユーザーを取得
+    // 2. 7日以上未ログインの対象ユーザーを取得
     // 抽出条件:
     // - role が 'customer' または 'agent'
-    // - last_login_reminded_at が NULL（送信済みでない）
-    // - かつ、(last_login_at が5日前以前) OR (last_login_at がNULLで、かつ created_at が5日前以前)
+    // - (last_login_at または created_at が7日前以前)
+    // - かつ [未リマインド] または [前回リマインド送信から7日以上経過]
     const { data: users, error: fetchError } = await supabaseAdmin
       .from('user_roles')
-      .select('id, email, full_name, role, language, last_login_at, created_at')
-      .in('role', ['customer', 'agent'])
-      .is('last_login_reminded_at', null);
+      .select('id, email, full_name, role, language, last_login_at, last_login_reminded_at, created_at')
+      .in('role', ['customer', 'agent']);
 
     if (fetchError) throw fetchError;
     if (!users || users.length === 0) {
       return NextResponse.json({ message: 'No inactive users to remind' });
     }
 
-    // JS側で日付条件のフィルタリングを行う（Supabase REST APIのORクエリの複雑さを避けるため）
+    // 日付条件のフィルタリング（7日以上未ログイン ＆ 7日おきの送信間隔）
     const targetUsers = users.filter(user => {
-      if (user.last_login_at) {
-        return new Date(user.last_login_at).getTime() <= fiveDaysAgo.getTime();
-      } else if (user.created_at) {
-        return new Date(user.created_at).getTime() <= fiveDaysAgo.getTime();
+      const lastActiveDate = user.last_login_at
+        ? new Date(user.last_login_at)
+        : (user.created_at ? new Date(user.created_at) : null);
+
+      if (!lastActiveDate) return false;
+
+      // 最終ログイン（または登録）から7日以上経過しているか
+      const isInactive7Days = lastActiveDate.getTime() <= sevenDaysAgo.getTime();
+      if (!isInactive7Days) return false;
+
+      // 初回リマインドの場合（まだリマインド送信されていない）
+      if (!user.last_login_reminded_at) {
+        return true;
       }
-      return false;
+
+      // 過去にリマインド送信済みの場合：前回リマインド送信からさらに7日以上経過しているか
+      const lastRemindedDate = new Date(user.last_login_reminded_at);
+      return lastRemindedDate.getTime() <= sevenDaysAgo.getTime();
     });
 
     if (targetUsers.length === 0) {
