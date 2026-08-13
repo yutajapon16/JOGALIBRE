@@ -982,6 +982,8 @@ export default function Home() {
     fullName: '',
     whatsapp: '',
     address: '',
+    addressNumber: '',
+    complement: '',
     zipCode: '',
     country: '',
     agentCustomerId: '',
@@ -1223,7 +1225,8 @@ export default function Home() {
             ...prev,
             state: data.uf,
             city: data.localidade,
-            address: `${data.logradouro || ''}${data.logradouro && data.bairro ? ', ' : ''}${data.bairro || ''}`
+            address: `${data.logradouro || ''}${data.logradouro && data.bairro ? ', ' : ''}${data.bairro || ''}`,
+            complement: data.complemento || prev.complement || ''
           }));
         }
       } catch (e) {
@@ -2277,7 +2280,7 @@ export default function Home() {
     try {
       await signIn(email, password);
       // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '', city: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', addressNumber: '', complement: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '', city: '' });
     } catch (error) {
       console.error('Login error:', error);
       alert(lang === 'es'
@@ -2293,13 +2296,20 @@ export default function Home() {
     const password = (formData.get('password') as string) || loginForm.password;
     const fullName = (formData.get('fullName') as string) || loginForm.fullName;
     const whatsapp = (formData.get('whatsapp') as string) || loginForm.whatsapp;
-    const address = (formData.get('address') as string) || loginForm.address;
+    const rawAddress = (formData.get('address') as string) || loginForm.address;
+    const addressNumber = (formData.get('addressNumber') as string) || loginForm.addressNumber;
+    const complement = (formData.get('complement') as string) || loginForm.complement;
     const zipCode = (formData.get('zipCode') as string) || loginForm.zipCode;
     const country = (formData.get('country') as string) || loginForm.country;
     const agentCustomerId = (formData.get('agentCustomerId') as string) || loginForm.agentCustomerId;
     const cpf = (formData.get('cpf') as string) || loginForm.cpf;
     const state = (formData.get('state') as string) || loginForm.state;
     const city = (formData.get('city') as string) || loginForm.city;
+
+    // ブラジルの場合は 番号と補足情報を含めた完全な住所を作成
+    const address = country === 'Brasil' && addressNumber
+      ? `${rawAddress}, ${addressNumber}${complement ? ', ' + complement : ''}`.trim()
+      : rawAddress;
 
     try {
       await signUp(email, password, 'customer', fullName, whatsapp, address, zipCode, country, agentCustomerId, cpf, state, city, lang);
@@ -2309,7 +2319,7 @@ export default function Home() {
         ? '¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta.'
         : 'Conta criada! Por favor, verifique seu e-mail para confirmar sua conta.');
 
-      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '', city: '' });
+      setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', addressNumber: '', complement: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '', city: '' });
       setShowSignUp(false);
     } catch (error: any) {
       console.error('Sign up error:', error);
@@ -3282,7 +3292,7 @@ export default function Home() {
                   <select
                     name="country"
                     value={loginForm.country}
-                    onChange={(e) => setLoginForm({ ...loginForm, country: e.target.value, state: '', city: '', zipCode: '', address: '', cpf: '' })}
+                    onChange={(e) => setLoginForm({ ...loginForm, country: e.target.value, state: '', city: '', zipCode: '', address: '', addressNumber: '', complement: '', cpf: '' })}
                     className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
                     required
                   >
@@ -3405,20 +3415,68 @@ export default function Home() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    {lang === 'es' ? 'Dirección' : 'Endereço'}
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={loginForm.address}
-                    onChange={(e) => setLoginForm({ ...loginForm, address: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                    placeholder={lang === 'es' ? 'Calle, Número, Barrio' : 'Rua, Número, Bairro'}
-                    required
-                  />
-                </div>
+                {loginForm.country === 'Brasil' ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        {lang === 'es' ? 'Avenida' : 'Rua'}
+                      </label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={loginForm.address}
+                        onChange={(e) => setLoginForm({ ...loginForm, address: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                        placeholder={lang === 'es' ? 'Nombre de la calle o avenida' : 'Nome da rua ou avenida'}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        {lang === 'es' ? 'Número' : 'Número'}
+                      </label>
+                      <input
+                        type="text"
+                        name="addressNumber"
+                        value={loginForm.addressNumber || ''}
+                        onChange={(e) => setLoginForm({ ...loginForm, addressNumber: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                        placeholder="123"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Complemento (opcional)
+                      </label>
+                      <input
+                        type="text"
+                        name="complement"
+                        value={loginForm.complement || ''}
+                        onChange={(e) => setLoginForm({ ...loginForm, complement: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                        placeholder="Exemplo: Apto 20, Bloco B"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {lang === 'es' ? 'Dirección' : 'Endereço'}
+                    </label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={loginForm.address}
+                      onChange={(e) => setLoginForm({ ...loginForm, address: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                      placeholder={lang === 'es' ? 'Calle, Número, Barrio' : 'Rua, Número, Bairro'}
+                      required
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     {lang === 'es' ? 'ID de Agente (Opcional)' : 'ID do Agente (Opcional)'}

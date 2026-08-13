@@ -16,6 +16,8 @@ export default function AgentRegister() {
     whatsapp: '',
     accessPassword: '',
     address: '',
+    addressNumber: '',
+    complement: '',
     zipCode: '',
     country: '',
     cpf: '',
@@ -25,7 +27,7 @@ export default function AgentRegister() {
   const [cities, setCities] = useState<{ id: number; nome: string }[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
 
-  // 州変更時に市名を取得
+  // 州変更時に市名を取得（ブラジル用）
   useEffect(() => {
     if (form.country === 'Brasil' && form.state) {
       setCitiesLoading(true);
@@ -57,7 +59,8 @@ export default function AgentRegister() {
             ...prev,
             state: data.uf,
             city: data.localidade,
-            address: `${data.logradouro || ''}${data.logradouro && data.bairro ? ', ' : ''}${data.bairro || ''}`
+            address: `${data.logradouro || ''}${data.logradouro && data.bairro ? ', ' : ''}${data.bairro || ''}`,
+            complement: data.complemento || prev.complement || ''
           }));
         }
       } catch (e) {
@@ -73,6 +76,11 @@ export default function AgentRegister() {
     setLoading(true);
 
     try {
+      // ブラジルの場合は 番号と補足情報を含めた完全な住所を作成
+      const finalAddress = form.country === 'Brasil' && form.addressNumber
+        ? `${form.address}, ${form.addressNumber}${form.complement ? ', ' + form.complement : ''}`.trim()
+        : form.address;
+
       // サーバーサイドAPIを呼び出してエージェント登録（RLSを回避）
       const res = await fetch('/api/agent-signup', {
         method: 'POST',
@@ -83,7 +91,7 @@ export default function AgentRegister() {
           fullName: form.fullName,
           whatsapp: form.whatsapp,
           accessPassword: form.accessPassword,
-          address: form.address,
+          address: finalAddress,
           zipCode: form.zipCode,
           country: form.country,
           cpf: form.cpf,
@@ -102,7 +110,7 @@ export default function AgentRegister() {
       }
 
       setSuccess(true);
-      setForm({ email: '', password: '', fullName: '', whatsapp: '', accessPassword: '', address: '', zipCode: '', country: '', cpf: '', state: '', city: '' });
+      setForm({ email: '', password: '', fullName: '', whatsapp: '', accessPassword: '', address: '', addressNumber: '', complement: '', zipCode: '', country: '', cpf: '', state: '', city: '' });
     } catch (error: any) {
       console.error('Agent sign up error:', error);
       const isEs = lang === 'es';
@@ -263,7 +271,7 @@ export default function AgentRegister() {
             </label>
             <select
               value={form.country}
-              onChange={(e) => setForm({ ...form, country: e.target.value, state: '', city: '', zipCode: '', address: '', cpf: '' })}
+              onChange={(e) => setForm({ ...form, country: e.target.value, state: '', city: '', zipCode: '', address: '', addressNumber: '', complement: '', cpf: '' })}
               className="w-full border border-gray-300 rounded-lg px-4 h-12 bg-white"
               required
             >
@@ -382,19 +390,64 @@ export default function AgentRegister() {
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              {lang === 'es' ? 'Dirección' : 'Endereço'}
-            </label>
-            <input
-              type="text"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-4 h-12"
-              placeholder={lang === 'es' ? 'Calle, Número, Barrio' : 'Rua, Número, Bairro'}
-              required
-            />
-          </div>
+          {form.country === 'Brasil' ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  {lang === 'es' ? 'Avenida' : 'Rua'}
+                </label>
+                <input
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                  placeholder={lang === 'es' ? 'Nombre de la calle o avenida' : 'Nome da rua ou avenida'}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  {lang === 'es' ? 'Número' : 'Número'}
+                </label>
+                <input
+                  type="text"
+                  value={form.addressNumber}
+                  onChange={(e) => setForm({ ...form, addressNumber: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                  placeholder="123"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Complemento (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={form.complement}
+                  onChange={(e) => setForm({ ...form, complement: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                  placeholder="Exemplo: Apto 20, Bloco B"
+                />
+              </div>
+            </>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {lang === 'es' ? 'Dirección' : 'Endereço'}
+              </label>
+              <input
+                type="text"
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                placeholder={lang === 'es' ? 'Calle, Número, Barrio' : 'Rua, Número, Bairro'}
+                required
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium mb-1">
