@@ -1166,7 +1166,7 @@ export default function Home() {
   const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   // マイページ用state
-  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', zipCode: '', agentCustomerId: '', cpf: '', state: '', city: '', language: '' });
+  const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', addressNumber: '', complement: '', zipCode: '', agentCustomerId: '', cpf: '', state: '', city: '', language: '' });
   
   // ブラジルの州別市名取得用ステート
   const [signUpCities, setSignUpCities] = useState<{ id: number; nome: string }[]>([]);
@@ -1248,7 +1248,8 @@ export default function Home() {
             ...prev,
             state: data.uf,
             city: data.localidade,
-            address: `${data.logradouro || ''}${data.logradouro && data.bairro ? ', ' : ''}${data.bairro || ''}`
+            address: `${data.logradouro || ''}${data.logradouro && data.bairro ? ', ' : ''}${data.bairro || ''}`,
+            complement: data.complemento || prev.complement || ''
           }));
         }
       } catch (e) {
@@ -1799,10 +1800,27 @@ export default function Home() {
             return nextUser;
           });
 
+          // ブラジル住所のパース（カンマ区切りの場合は Rua, Número, Complemento に分解）
+          const isBrasil = (profile.country || '').trim().toLowerCase() === 'brasil';
+          let parsedAddress = profile.address || '';
+          let parsedNumber = '';
+          let parsedComplement = '';
+
+          if (isBrasil && profile.address && profile.address.includes(',')) {
+            const parts = profile.address.split(',').map((s: string) => s.trim());
+            if (parts.length >= 2) {
+              parsedAddress = parts[0] || '';
+              parsedNumber = parts[1] || '';
+              parsedComplement = parts.slice(2).join(', ') || '';
+            }
+          }
+
           const newForm = {
             fullName: profile.full_name || '',
             whatsapp: profile.whatsapp || '',
-            address: profile.address || '',
+            address: parsedAddress,
+            addressNumber: parsedNumber,
+            complement: parsedComplement,
             zipCode: profile.zip_code || '',
             agentCustomerId: profile.agent_customer_id || '',
             cpf: profile.cpf || '',
@@ -6347,18 +6365,63 @@ export default function Home() {
                     />
                   )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    {lang === 'es' ? 'Dirección' : 'Endereço'}
-                  </label>
-                  <input
-                    type="text"
-                    value={profileForm.address}
-                    onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                    placeholder={lang === 'es' ? 'Calle, Número, Barrio' : 'Rua, Número, Bairro'}
-                  />
-                </div>
+                {currentUser?.country?.trim().toLowerCase() === 'brasil' ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        {lang === 'es' ? 'Avenida' : 'Rua'}
+                      </label>
+                      <input
+                        type="text"
+                        value={profileForm.address}
+                        onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                        placeholder={lang === 'es' ? 'Nombre de la calle o avenida' : 'Nome da rua ou avenida'}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        {lang === 'es' ? 'Número' : 'Número'}
+                      </label>
+                      <input
+                        type="text"
+                        value={profileForm.addressNumber || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, addressNumber: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                        placeholder="123"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Complemento (opcional)
+                      </label>
+                      <input
+                        type="text"
+                        value={profileForm.complement || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, complement: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                        placeholder="Exemplo: Apto 20, Bloco B"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      {lang === 'es' ? 'Dirección' : 'Endereço'}
+                    </label>
+                    <input
+                      type="text"
+                      value={profileForm.address}
+                      onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg px-4 h-12"
+                      placeholder={lang === 'es' ? 'Calle, Número, Barrio' : 'Rua, Número, Bairro'}
+                    />
+                  </div>
+                )}
                 {currentUser?.role === 'customer' && (
                   <div>
                     <label className="block text-sm font-medium mb-1">
@@ -6378,7 +6441,12 @@ export default function Home() {
                     if (profileSaving) return;
                     setProfileSaving(true);
                     try {
-                      await updateProfile(profileForm.fullName, profileForm.whatsapp, profileForm.address, profileForm.zipCode, profileForm.agentCustomerId, profileForm.cpf, profileForm.state, profileForm.city, profileForm.language);
+                      const isBrasil = currentUser?.country?.trim().toLowerCase() === 'brasil';
+                      const finalAddress = isBrasil && profileForm.addressNumber
+                        ? `${profileForm.address}, ${profileForm.addressNumber}${profileForm.complement ? ', ' + profileForm.complement : ''}`.trim()
+                        : profileForm.address;
+
+                      await updateProfile(profileForm.fullName, profileForm.whatsapp, finalAddress, profileForm.zipCode, profileForm.agentCustomerId, profileForm.cpf, profileForm.state, profileForm.city, profileForm.language);
                       const user = await getCurrentUser();
                       setCurrentUser(user);
                       if (user?.language === 'es' || user?.language === 'pt') {
