@@ -912,11 +912,12 @@ const CATEGORIES: Category[] = [
   }
 ];
 
-// プロモーションスライダーバナーの定義（4スライド）
+// プロモーションスライダーバナーの定義（言語別 4スライド × 2言語 ＝ 計8枚）
 const PROMO_BANNERS = [
   {
     id: 'b1',
-    image: '/images/banners/banner_jdm.jpg',
+    imagePt: '/images/banners/banner_jdm_pt.jpg',
+    imageEs: '/images/banners/banner_jdm_es.jpg',
     titlePt: 'Peças JDM Direto do Japão',
     titleEs: 'Piezas JDM Directas de Japón',
     subtitlePt: 'Rodas, volantes e acessórios raros',
@@ -925,7 +926,8 @@ const PROMO_BANNERS = [
   },
   {
     id: 'b2',
-    image: '/images/banners/banner_fishing_instruments.jpg',
+    imagePt: '/images/banners/banner_fishing_instruments_pt.jpg',
+    imageEs: '/images/banners/banner_fishing_instruments_es.jpg',
     titlePt: 'Pesca & Instrumentos Musicais',
     titleEs: 'Pesca e Instrumentos Musicales',
     subtitlePt: 'Shimano, Daiwa, Yamaha e alta precisão',
@@ -934,7 +936,8 @@ const PROMO_BANNERS = [
   },
   {
     id: 'b3',
-    image: '/images/banners/banner_watches.jpg',
+    imagePt: '/images/banners/banner_watches_pt.jpg',
+    imageEs: '/images/banners/banner_watches_es.jpg',
     titlePt: 'Relógios & Colecionáveis Raros',
     titleEs: 'Relojes & Coleccionables Exclusivos',
     subtitlePt: 'Seiko, G-Shock, Games e Figuras originais',
@@ -943,7 +946,8 @@ const PROMO_BANNERS = [
   },
   {
     id: 'b4',
-    image: '/images/banners/banner_direct.jpg',
+    imagePt: '/images/banners/banner_direct_pt.jpg',
+    imageEs: '/images/banners/banner_direct_es.jpg',
     titlePt: 'Direto do Japão para Você',
     titleEs: 'Directo de Japón para Ti',
     subtitlePt: 'Milhões de itens com envio seguro e consolidado',
@@ -7207,7 +7211,7 @@ export default function Home() {
                         <div className="relative rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-gray-900 group">
                           {/* スライダー本体 */}
                           <div 
-                            className="relative h-28 sm:h-36 w-full cursor-pointer select-none"
+                            className="relative aspect-[16/8.8] sm:aspect-[16/8] w-full cursor-pointer select-none bg-slate-100"
                             onTouchStart={(e) => setBannerTouchStartX(e.touches[0].clientX)}
                             onTouchEnd={(e) => {
                               if (bannerTouchStartX !== null) {
@@ -7236,20 +7240,23 @@ export default function Home() {
                               }
                             }}
                           >
-                            {PROMO_BANNERS.map((banner, index) => (
-                              <div
-                                key={banner.id}
-                                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                                  index === currentBannerIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-                                }`}
-                              >
-                                <img
-                                  src={banner.image}
-                                  alt={lang === 'es' ? banner.titleEs : banner.titlePt}
-                                  className="w-full h-full object-cover object-center"
-                                />
-                              </div>
-                            ))}
+                            {PROMO_BANNERS.map((banner, index) => {
+                              const bannerSrc = lang === 'es' ? banner.imageEs : banner.imagePt;
+                              return (
+                                <div
+                                  key={banner.id}
+                                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                                    index === currentBannerIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                                  }`}
+                                >
+                                  <img
+                                    src={bannerSrc}
+                                    alt={lang === 'es' ? banner.titleEs : banner.titlePt}
+                                    className="w-full h-full object-cover object-center"
+                                  />
+                                </div>
+                              );
+                            })}
                           </div>
 
                           {/* スライダー ドットインジケーター */}
