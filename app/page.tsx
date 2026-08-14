@@ -912,40 +912,50 @@ const CATEGORIES: Category[] = [
   }
 ];
 
-// プロモーションスライダーバナーの定義（言語別 4スライド × 2言語 ＝ 計8枚）
+// プロモーションスライダーバナーの定義（言語別 5スライド × 2言語 ＝ 計10枚）
 const PROMO_BANNERS = [
   {
-    id: 'b1',
+    id: 'b_autopartes',
     imagePt: '/images/banners/banner_jdm_pt.jpg',
     imageEs: '/images/banners/banner_jdm_es.jpg',
-    titlePt: 'Peças JDM Direto do Japão',
-    titleEs: 'Piezas JDM Directas de Japón',
-    subtitlePt: 'Rodas, volantes e acessórios raros',
-    subtitleEs: 'Ruedas, volantes y accesorios raros',
+    titlePt: 'Peças Automotivas Direto do Japão',
+    titleEs: 'Autopartes & JDM Directo de Japón',
+    subtitlePt: 'Rodas, suspensão e peças exclusivas',
+    subtitleEs: 'Ruedas, suspensión y piezas exclusivas',
     targetCatId: 'autopartes'
   },
   {
-    id: 'b2',
-    imagePt: '/images/banners/banner_fishing_instruments_pt.jpg',
-    imageEs: '/images/banners/banner_fishing_instruments_es.jpg',
-    titlePt: 'Pesca & Instrumentos Musicais',
-    titleEs: 'Pesca e Instrumentos Musicales',
-    subtitlePt: 'Shimano, Daiwa, Yamaha e alta precisão',
-    subtitleEs: 'Shimano, Daiwa, Yamaha y alta precisión',
+    id: 'b_pesca',
+    imagePt: '/images/banners/banner_fishing_pt.jpg',
+    imageEs: '/images/banners/banner_fishing_es.jpg',
+    titlePt: 'Equipamentos de Pesca',
+    titleEs: 'Equipos de Pesca',
+    subtitlePt: 'Molinetes Shimano, Daiwa e varas',
+    subtitleEs: 'Carretes Shimano, Daiwa y cañas',
+    targetUrl: 'https://auctions.yahoo.co.jp/category/list/25180/'
+  },
+  {
+    id: 'b_instrumentos',
+    imagePt: '/images/banners/banner_instruments_pt.jpg',
+    imageEs: '/images/banners/banner_instruments_es.jpg',
+    titlePt: 'Instrumentos Musicais',
+    titleEs: 'Instrumentos Musicales',
+    subtitlePt: 'Saxofones, trompetes e guitarras',
+    subtitleEs: 'Saxofones, trompetas y guitarras',
     targetCatId: 'instrumentos'
   },
   {
-    id: 'b3',
+    id: 'b_relojes',
     imagePt: '/images/banners/banner_watches_pt.jpg',
     imageEs: '/images/banners/banner_watches_es.jpg',
-    titlePt: 'Relógios & Colecionáveis Raros',
-    titleEs: 'Relojes & Coleccionables Exclusivos',
-    subtitlePt: 'Seiko, G-Shock, Games e Figuras originais',
-    subtitleEs: 'Seiko, G-Shock, Videojuegos y Figuras',
+    titlePt: 'Relógios Japoneses',
+    titleEs: 'Relojes Japoneses',
+    subtitlePt: 'Seiko, G-Shock e edições raras',
+    subtitleEs: 'Seiko, G-Shock y ediciones raras',
     targetCatId: 'relojes'
   },
   {
-    id: 'b4',
+    id: 'b_direct',
     imagePt: '/images/banners/banner_direct_pt.jpg',
     imageEs: '/images/banners/banner_direct_es.jpg',
     titlePt: 'Direto do Japão para Você',
@@ -7233,6 +7243,13 @@ export default function Home() {
                                 if (target) {
                                   setCategoryHistory([target]);
                                 }
+                              } else if ((banner as any).targetUrl) {
+                                const url = (banner as any).targetUrl;
+                                setCategorySearchKeyword('');
+                                setJdmSearchKeyword('');
+                                const cond = determineConditionFromUrl(url);
+                                setSearchCondition(cond);
+                                fetchCategoryItems(url, 1);
                               } else if (banner.targetKeyword) {
                                 setKeyword(banner.targetKeyword);
                                 setSearchType('keyword');
