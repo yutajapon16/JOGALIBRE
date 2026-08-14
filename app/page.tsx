@@ -7444,11 +7444,12 @@ export default function Home() {
                           </div>
                         )}
 
-                        <div className="grid grid-cols-1 gap-2.5">
+                        <div className="grid grid-cols-1 gap-3">
                           {(currentCategory?.sub || CATEGORIES).map((cat) => {
                             const visual = CATEGORY_VISUALS[cat.id];
                             const title = lang === 'es' ? cat.es : cat.pt;
                             const subTag = visual ? (lang === 'es' ? visual.tagEs : visual.tagPt) : '';
+                            const bgImage = visual?.image || '/images/categories/vehiculo.jpg';
 
                             return (
                               <button
@@ -7466,40 +7467,35 @@ export default function Home() {
                                     fetchCategoryItems(cat.url, 1);
                                   }
                                 }}
-                                className="group relative flex items-center gap-3.5 px-3.5 py-2.5 h-14 sm:h-16 bg-white border border-gray-200 hover:border-indigo-500 hover:shadow-md rounded-2xl transition-all duration-200 text-left overflow-hidden active:scale-[0.99]"
+                                className="group relative flex items-center justify-between px-4 py-3.5 h-[76px] sm:h-[84px] rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-gray-200 text-left transition-all duration-300 active:scale-[0.99]"
                               >
-                                {/* サムネイル写真 */}
-                                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden flex-shrink-0 bg-white border border-gray-100 flex items-center justify-center p-0.5 shadow-2xs">
-                                  {visual?.image ? (
-                                    <img
-                                      src={visual.image}
-                                      alt={title}
-                                      className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
-                                      loading="lazy"
-                                    />
-                                  ) : (
-                                    <span className="text-xl">
-                                      {(cat.brand && BRAND_LOGOS[cat.brand]) || '📦'}
-                                    </span>
-                                  )}
-                                </div>
+                                {/* 背景の実物写真 */}
+                                <img
+                                  src={bgImage}
+                                  alt={title}
+                                  className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                                  loading="lazy"
+                                />
+
+                                {/* 上品なダークグラデーションオーバーレイ（文字を際立たせる） */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/25 group-hover:from-black/75 transition-colors duration-300" />
 
                                 {/* カテゴリ名 & サブテキスト */}
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="text-sm sm:text-base font-bold text-gray-800 group-hover:text-indigo-600 truncate transition-colors">
+                                <div className="relative z-10 flex-1 min-w-0 pr-3">
+                                  <h4 className="text-base sm:text-lg font-black text-white group-hover:text-emerald-300 tracking-wide truncate transition-colors drop-shadow-sm">
                                     {title}
                                   </h4>
                                   {subTag && (
-                                    <p className="text-xs text-gray-400 truncate mt-0.5">
+                                    <p className="text-xs text-gray-200 font-medium truncate mt-0.5 max-w-[90%] drop-shadow-xs">
                                       {subTag}
                                     </p>
                                   )}
                                 </div>
 
-                                {/* 矢印 */}
-                                <span className="text-gray-300 group-hover:text-indigo-600 font-bold text-sm flex-shrink-0 group-hover:translate-x-1 transition-transform pr-1">
+                                {/* 矢印ボタン */}
+                                <div className="relative z-10 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 group-hover:bg-emerald-500 group-hover:border-emerald-400 group-hover:translate-x-1 transition-all">
                                   {cat.sub ? '→' : '↓'}
-                                </span>
+                                </div>
                               </button>
                             );
                           })}
