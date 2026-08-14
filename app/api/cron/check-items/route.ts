@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { parseAnyDateTime, calculateDefaultFobCost, calculateDefaultShippingCost } from '@/lib/utils';
+import { getResilientExchangeRate } from '@/lib/exchange';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,19 +34,15 @@ export async function GET(request: Request) {
         const now = new Date();
         const origin = new URL(request.url).origin;
 
-        // 最新の為替レート（USD/JPY）を取得（なければデフォルト 150）
+        // 最新の為替レート（USD/JPY）をリアルタイム取得（フロントエンドと完全一致）
         let jpyRate = 150;
         try {
-            const { data: exData } = await supabaseAdmin
-                .from('exchange_rates')
-                .select('rate')
-                .eq('target_currency', 'JPY')
-                .single();
-            if (exData && exData.rate) {
-                jpyRate = Number(exData.rate);
+            const rateData = await getResilientExchangeRate();
+            if (rateData?.rates?.JPY) {
+                jpyRate = rateData.rates.JPY;
             }
-        } catch {
-            // パース失敗時はデフォルトを使用
+        } catch (e) {
+            console.error('Failed to get exchange rate in check-items:', e);
         }
 
         // 顧客ID・言語・ロール等のユーザー情報を一括取得
