@@ -336,7 +336,7 @@ export async function GET(request: Request) {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     sendToAdmins: true,
-                                    title: `⚠️【高値更新】 ${custName} (${custId})`,
+                                    title: `⚠️ 【高値更新】 ${custName} (${custId})`,
                                     body: `商品: ${productTitle}`,
                                     url: '/admin'
                                 })
