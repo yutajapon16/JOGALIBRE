@@ -986,18 +986,18 @@ const CATEGORY_VISUALS: Record<string, { image: string; tagPt: string; tagEs: st
   // メイン11カテゴリ
   vehiculo: {
     image: '/images/categories/vehiculo.jpg',
-    tagPt: 'Toyota Supra, RX-7, Motos & Bikes',
-    tagEs: 'Toyota Supra, RX-7, Motos y Bicicletas'
+    tagPt: 'Toyota Supra JZA80, RX-7, Motos & Bikes',
+    tagEs: 'Toyota Supra JZA80, RX-7, Motos y Bicicletas'
   },
   autopartes: {
     image: '/images/categories/autopartes.jpg',
-    tagPt: 'Rodas BBS, Motores RB26, TEIN & Brembo',
-    tagEs: 'Ruedas BBS, Motores RB26, TEIN y Brembo'
+    tagPt: 'Rodas BBS, Suspensão TEIN & Motores',
+    tagEs: 'Ruedas BBS, Suspensión TEIN y Motores'
   },
   fashion: {
     image: '/images/categories/fashion.jpg',
-    tagPt: 'Nike, adidas, New Balance & Streetwear',
-    tagEs: 'Nike, adidas, New Balance y Streetwear'
+    tagPt: 'Sneakers, Roupas Nike, adidas & New Balance',
+    tagEs: 'Zapatillas, Ropa Nike, adidas y New Balance'
   },
   relojes: {
     image: '/images/categories/relojes.jpg',
@@ -1006,38 +1006,38 @@ const CATEGORY_VISUALS: Record<string, { image: string; tagPt: string; tagEs: st
   },
   deportes: {
     image: '/images/categories/deportes.jpg',
-    tagPt: 'Futebol, Pesca Shimano, Running & Camping',
-    tagEs: 'Fútbol, Pesca Shimano, Running y Camping'
+    tagPt: 'Bola Trionda, Running, Camping & Pesca',
+    tagEs: 'Balón Trionda, Running, Camping y Pesca'
   },
   hobby: {
     image: '/images/categories/hobby.jpg',
-    tagPt: 'Dragon Ball, One Piece, Gundam & RC',
-    tagEs: 'Dragon Ball, One Piece, Gundam y RC'
+    tagPt: 'Dragon Ball, One Piece & Carros RC',
+    tagEs: 'Dragon Ball, One Piece y Autos RC'
   },
   electronics: {
     image: '/images/categories/electronics.jpg',
-    tagPt: 'iPhone 17 Pro Max, iPad, Apple Watch',
-    tagEs: 'iPhone 17 Pro Max, iPad, Apple Watch'
+    tagPt: 'iPhone 17 Pro Max, iPad & Apple Watch',
+    tagEs: 'iPhone 17 Pro Max, iPad y Apple Watch'
   },
   pc_parts: {
     image: '/images/categories/pc_parts.jpg',
-    tagPt: 'NVIDIA RTX GPU, CPU Intel/AMD, RAM',
-    tagEs: 'NVIDIA RTX GPU, CPU Intel/AMD, RAM'
+    tagPt: 'Desktop Gaming PC, NVIDIA GPU & CPU',
+    tagEs: 'Desktop Gaming PC, NVIDIA GPU y CPU'
   },
   camera: {
     image: '/images/categories/camera.jpg',
-    tagPt: 'Canon EOS DSLR, Mirrorless & Lentes',
-    tagEs: 'Canon EOS DSLR, Mirrorless y Lentes'
+    tagPt: 'Câmeras CANON, NIKON & Lentes',
+    tagEs: 'Cámaras CANON, NIKON y Lentes'
   },
   instrumentos: {
     image: '/images/categories/instrumentos.jpg',
-    tagPt: 'Fender Stratocaster, Saxofone & DJ',
-    tagEs: 'Fender Stratocaster, Saxofón y DJ'
+    tagPt: 'Fender Stratocaster, Sopro & DJ Table',
+    tagEs: 'Fender Stratocaster, Viento y DJ Table'
   },
   home_equipment: {
     image: '/images/categories/home_equipment.jpg',
-    tagPt: 'TOTO Washlet & Móveis do Japão',
-    tagEs: 'TOTO Washlet y Muebles de Japón'
+    tagPt: 'Assentos TOTO Washlet & Móveis Sofá',
+    tagEs: 'Bidets TOTO Washlet y Muebles Sofá'
   },
 
   // 自動車サブ
