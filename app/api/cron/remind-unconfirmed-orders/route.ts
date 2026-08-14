@@ -65,8 +65,8 @@ export async function GET(req: Request) {
         if (reqData.customer_email) {
           const custTitle = isPt ? '✅ Confirmação Automática' : '✅ Confirmación Automática';
           const custBody = isPt
-            ? `Confirmado automaticamente: ${itemTitle}`
-            : `Confirmado automáticamente: ${itemTitle}`;
+            ? `Produto: ${itemTitle}`
+            : `Producto: ${itemTitle}`;
 
           autoConfirmNotificationsPromises.push(
             fetch(`${baseUrl}/api/push-send`, {
@@ -92,8 +92,8 @@ export async function GET(req: Request) {
         // 2. 管理者向け通知
         const custId = userInfo.customerId ? `(${userInfo.customerId})` : '';
         const custName = userInfo.fullName || reqData.customer_email || '顧客';
-        const adminTitle = `✅ 【自動結果確認完了】${custName} ${custId}`.trim();
-        const adminBody = `商品: ${reqData.product_title || 'Item'} (24h自動確認)`;
+        const adminTitle = `✅ 【自動確認完了】${custName} ${custId}`.trim();
+        const adminBody = `商品: ${reqData.product_title || 'Item'} (自動確認)`;
 
         autoConfirmNotificationsPromises.push(
           fetch(`${baseUrl}/api/push-send`, {
@@ -164,8 +164,8 @@ export async function GET(req: Request) {
 
         const notifyTitle = isPt ? '🔔 Confirmação Pendente' : '🔔 Confirmación Pendiente';
         const notifyBody = isPt
-          ? `Por favor, confirme o produto: ${itemTitle}`
-          : `Por favor, confirme el producto: ${itemTitle}`;
+          ? `Produto: ${itemTitle}`
+          : `Producto: ${itemTitle}`;
 
         notificationsPromises.push(
           fetch(`${baseUrl}/api/push-send`, {

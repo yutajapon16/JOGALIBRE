@@ -336,8 +336,8 @@ export async function GET(request: Request) {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     sendToAdmins: true,
-                                    title: `🚨【高値更新】 ${custName} (${custId})`,
-                                    body: `商品: ${productTitle} (現在: $${currentCustomerUsd} / オファー: $${item.max_bid})`,
+                                    title: `⚠️【高値更新】 ${custName} (${custId})`,
+                                    body: `商品: ${productTitle}`,
                                     url: '/admin'
                                 })
                             }).catch(e => console.error('Admin price exceeded push error:', e))

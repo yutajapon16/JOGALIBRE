@@ -3138,7 +3138,7 @@ export default function Home() {
           body: JSON.stringify({
             sendToAdmins: true,
             bidRequestId: requestId,
-            title: `✅ 【結果確認完了】${custName} ${custId}`.trim(),
+            title: `✅ 【確認完了】${custName} ${custId}`.trim(),
             body: `商品: ${itemTitle}`,
             url: '/admin'
           })

@@ -74,8 +74,8 @@ export async function GET(req: Request) {
 
       const notifyTitle = isPt ? '🔔 Lembrete de Pagamento' : '🔔 Recordatorio de Pago';
       const notifyBody = isPt
-        ? `Pagamento pendente: ${itemTitle}`
-        : `Pago pendiente: ${itemTitle}`;
+        ? `Produto: ${itemTitle}`
+        : `Producto: ${itemTitle}`;
 
       notificationsPromises.push(
         fetch(`${baseUrl}/api/push-send`, {
