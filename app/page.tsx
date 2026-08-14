@@ -148,6 +148,9 @@ const translations = {
     statusArrivedLocal: 'Llegado al destino',
     statusReadyForDelivery: 'Listo para retiro',
     statusDelivered: 'Entregado',
+    featuredTitle: 'Destaques do Japão',
+    quickTagsTitle: 'Marcas Populares',
+    categoriesTitle: 'Categorias',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -275,6 +278,9 @@ const translations = {
     statusArrivedLocal: 'Chegou ao destino',
     statusReadyForDelivery: 'Pronto para retirada',
     statusDelivered: 'Entregue',
+    featuredTitle: 'Destaques do Japão',
+    quickTagsTitle: 'Marcas Populares',
+    categoriesTitle: 'Categorias',
   }
 };
 
@@ -906,6 +912,180 @@ const CATEGORIES: Category[] = [
   }
 ];
 
+// プロモーションスライダーバナーの定義（4スライド）
+const PROMO_BANNERS = [
+  {
+    id: 'b1',
+    image: '/images/banners/banner_jdm.jpg',
+    titlePt: 'Peças JDM Direto do Japão',
+    titleEs: 'Piezas JDM Directas de Japón',
+    subtitlePt: 'Rodas, volantes e acessórios raros',
+    subtitleEs: 'Ruedas, volantes y accesorios raros',
+    targetCatId: 'autopartes'
+  },
+  {
+    id: 'b2',
+    image: '/images/banners/banner_fishing_instruments.jpg',
+    titlePt: 'Pesca & Instrumentos Musicais',
+    titleEs: 'Pesca e Instrumentos Musicales',
+    subtitlePt: 'Shimano, Daiwa, Yamaha e alta precisão',
+    subtitleEs: 'Shimano, Daiwa, Yamaha y alta precisión',
+    targetCatId: 'instrumentos'
+  },
+  {
+    id: 'b3',
+    image: '/images/banners/banner_watches.jpg',
+    titlePt: 'Relógios & Colecionáveis Raros',
+    titleEs: 'Relojes & Coleccionables Exclusivos',
+    subtitlePt: 'Seiko, G-Shock, Games e Figuras originais',
+    subtitleEs: 'Seiko, G-Shock, Videojuegos y Figuras',
+    targetCatId: 'relojes'
+  },
+  {
+    id: 'b4',
+    image: '/images/banners/banner_direct.jpg',
+    titlePt: 'Direto do Japão para Você',
+    titleEs: 'Directo de Japón para Ti',
+    subtitlePt: 'Milhões de itens com envio seguro e consolidado',
+    subtitleEs: 'Millones de artículos con envío seguro',
+    targetKeyword: 'Japão'
+  }
+];
+
+// 人気ブランド・クイックタグ定義
+const QUICK_BRAND_TAGS = [
+  { name: 'BBS', keyword: 'BBS', emoji: '🏎️' },
+  { name: 'Shimano', keyword: 'Shimano', emoji: '🎣' },
+  { name: 'Yamaha', keyword: 'Yamaha', emoji: '🎷' },
+  { name: 'G-Shock', keyword: 'G-Shock', emoji: '⌚' },
+  { name: 'Daiwa', keyword: 'Daiwa', emoji: '🐟' },
+  { name: 'Nismo', keyword: 'Nismo', emoji: '🏁' },
+  { name: 'TRD', keyword: 'TRD', emoji: '⚙️' },
+  { name: 'Seiko', keyword: 'Seiko', emoji: '✨' },
+  { name: 'Momo', keyword: 'Momo', emoji: '🏎️' },
+  { name: 'Gundam', keyword: 'Gundam', emoji: '🤖' },
+  { name: 'Pokémon', keyword: 'Pokemon', emoji: '⚡' },
+];
+
+// メインカテゴリのビジュアル情報（丸型写真サムネイル・アイコン・サブテキスト）
+const CATEGORY_VISUALS: Record<string, { icon: string; image: string; tagPt: string; tagEs: string }> = {
+  vehiculo: {
+    icon: '🚗',
+    image: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'JDM, Carros, Motos',
+    tagEs: 'JDM, Autos, Motos'
+  },
+  autopartes: {
+    icon: '⚙️',
+    image: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'Rodas, Motores, Suspensão',
+    tagEs: 'Ruedas, Motores, Suspensión'
+  },
+  fashion: {
+    icon: '👟',
+    image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'Nike, BAPE, Roupas',
+    tagEs: 'Nike, BAPE, Ropa'
+  },
+  relojes: {
+    icon: '⌚',
+    image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'Seiko, G-Shock, Citizen',
+    tagEs: 'Seiko, G-Shock, Citizen'
+  },
+  deportes: {
+    icon: '🎣',
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'Pesca, Futebol, Camping',
+    tagEs: 'Pesca, Fútbol, Camping'
+  },
+  hobby: {
+    icon: '🤖',
+    image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'Figuras, Gundam, RC',
+    tagEs: 'Figuras, Gundam, RC'
+  },
+  electronics: {
+    icon: '📱',
+    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'iPhone, iPad, Smartwatch',
+    tagEs: 'iPhone, iPad, Smartwatch'
+  },
+  pc_parts: {
+    icon: '💻',
+    image: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'GPU, CPU, Memória',
+    tagEs: 'GPU, CPU, Memoria'
+  },
+  camera: {
+    icon: '📷',
+    image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'DSLR, Mirrorless, Lentes',
+    tagEs: 'DSLR, Mirrorless, Lentes'
+  },
+  instrumentos: {
+    icon: '🎷',
+    image: 'https://images.unsplash.com/photo-1525994886773-080587e161c2?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'Sopro, Guitarras, DJ',
+    tagEs: 'Viento, Guitarras, DJ'
+  },
+  home_equipment: {
+    icon: '🏠',
+    image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=120&auto=format&fit=crop&q=80',
+    tagPt: 'Washlet, Acessórios',
+    tagEs: 'Washlet, Accesorios'
+  }
+};
+
+// 注目・おすすめ商品カルーセル（Destaques do Japão）
+const FEATURED_ITEMS = [
+  {
+    id: 'f1',
+    titlePt: 'BBS LM 18" Rodas Forjadas Japão',
+    titleEs: 'BBS LM 18" Ruedas Forjadas Japón',
+    priceUsd: 850,
+    searchKeyword: 'BBS 18インチ',
+    image: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=300&auto=format&fit=crop&q=80',
+    badge: 'JDM'
+  },
+  {
+    id: 'f2',
+    titlePt: 'Seiko Prospex Automático Diver 200M',
+    titleEs: 'Seiko Prospex Automático Diver 200M',
+    priceUsd: 320,
+    searchKeyword: 'SEIKO PROSPEX',
+    image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&auto=format&fit=crop&q=80',
+    badge: 'Relógio'
+  },
+  {
+    id: 'f3',
+    titlePt: 'Shimano Stella SW Molinete Premium',
+    titleEs: 'Shimano Stella SW Carrete Premium',
+    priceUsd: 490,
+    searchKeyword: 'SHIMANO STELLA',
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=300&auto=format&fit=crop&q=80',
+    badge: 'Pesca'
+  },
+  {
+    id: 'f4',
+    titlePt: 'Yamaha YAS-62 Saxofone Alto Profissional',
+    titleEs: 'Yamaha YAS-62 Saxofón Alto Profesional',
+    priceUsd: 1200,
+    searchKeyword: 'YAMAHA YAS-62',
+    image: 'https://images.unsplash.com/photo-1525994886773-080587e161c2?w=300&auto=format&fit=crop&q=80',
+    badge: 'Música'
+  },
+  {
+    id: 'f5',
+    titlePt: 'Bandai PG 1/60 Perfect Grade Gundam',
+    titleEs: 'Bandai PG 1/60 Perfect Grade Gundam',
+    priceUsd: 180,
+    searchKeyword: 'PG ガンダム',
+    image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=300&auto=format&fit=crop&q=80',
+    badge: 'Anime'
+  }
+];
+
 // URLのコンディションパラメータ(istatus)を更新するヘルパー関数
 const updateUrlCondition = (url: string, condition: 'all' | 'new' | 'used'): string => {
   try {
@@ -1360,7 +1540,18 @@ export default function Home() {
     item6: false
   });
 
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [bannerTouchStartX, setBannerTouchStartX] = useState<number | null>(null);
+
   const t = translations[lang];
+
+  // プロモーションバナーの自動スライド（5秒ごと）
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentBannerIndex(prev => (prev + 1) % PROMO_BANNERS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   // 全ボタンに触覚フィードバック（振動）を適用
   useEffect(() => {
@@ -2901,16 +3092,22 @@ export default function Home() {
     }
   };
 
-  const handleKeywordSearch = async (e?: React.FormEvent, page: number = 1, forceCond?: 'all' | 'new' | 'used') => {
-    if (e) e.preventDefault();
-    if (!keyword.trim()) return;
+  const handleKeywordSearch = async (eOrWord?: React.FormEvent | string, page: number = 1, forceCond?: 'all' | 'new' | 'used') => {
+    let searchWord = keyword;
+    if (typeof eOrWord === 'string') {
+      searchWord = eOrWord;
+      setKeyword(eOrWord);
+    } else if (eOrWord && typeof eOrWord === 'object' && 'preventDefault' in eOrWord) {
+      eOrWord.preventDefault();
+    }
+    if (!searchWord.trim()) return;
 
     setIsSearching(true);
     setLoading(true);
     setSearchPage(page);
     const condToUse = forceCond || searchCondition;
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(keyword)}&lang=${lang}&page=${page}&cond=${condToUse}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchWord)}&lang=${lang}&page=${page}&cond=${condToUse}`);
       const data = await res.json();
       if (data.items) {
         setProducts(data.items);
@@ -7004,35 +7201,231 @@ export default function Home() {
 
                   {/* カテゴリグリッド（商品リスト表示中は非表示にする） */}
                   {!activeCategoryUrl && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {(currentCategory?.sub || CATEGORIES).map((cat) => (
-                        <button
-                          key={cat.id}
-                          onClick={async () => {
-                            if (cat.sub) {
-                              setCategoryHistory(prev => [...prev, cat]);
-                            } else if (cat.url) {
-                              setCategoryHistory(prev => [...prev, cat]);
-                              // 以前の検索文字をクリアする
-                              setCategorySearchKeyword('');
-                              setJdmSearchKeyword('');
-                              // URLに含まれる istatus パラメータを読み取ってコンディション選択状態を同期する
-                              const cond = determineConditionFromUrl(cat.url);
-                              setSearchCondition(cond);
-                              fetchCategoryItems(cat.url, 1);
-                            }
-                          }}
-                          className="flex items-center justify-between h-12 px-4 border border-gray-200 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition group shadow-sm bg-white"
-                        >
-                          <span className="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 flex items-center">
-                            {cat.brand && BRAND_LOGOS[cat.brand]}
-                            {lang === 'es' ? cat.es : cat.pt}
-                          </span>
-                          <span className="text-gray-400 group-hover:text-indigo-600 font-bold">
-                            {cat.sub ? '→' : '↓'}
-                          </span>
-                        </button>
-                      ))}
+                    <div className="space-y-5 animate-in fade-in duration-300">
+                      {/* ① トップ・プロモーションバナー (第1階層のトップ時のみ表示・スリム高さ) */}
+                      {!currentCategory && (
+                        <div className="relative rounded-2xl overflow-hidden shadow-sm border border-gray-100 bg-gray-900 group">
+                          {/* スライダー本体 */}
+                          <div 
+                            className="relative h-28 sm:h-36 w-full cursor-pointer select-none"
+                            onTouchStart={(e) => setBannerTouchStartX(e.touches[0].clientX)}
+                            onTouchEnd={(e) => {
+                              if (bannerTouchStartX !== null) {
+                                const diff = bannerTouchStartX - e.changedTouches[0].clientX;
+                                if (diff > 40) {
+                                  // 次へ
+                                  setCurrentBannerIndex((prev) => (prev + 1) % PROMO_BANNERS.length);
+                                } else if (diff < -40) {
+                                  // 前へ
+                                  setCurrentBannerIndex((prev) => (prev - 1 + PROMO_BANNERS.length) % PROMO_BANNERS.length);
+                                }
+                                setBannerTouchStartX(null);
+                              }
+                            }}
+                            onClick={() => {
+                              const banner = PROMO_BANNERS[currentBannerIndex];
+                              if (banner.targetCatId) {
+                                const target = CATEGORIES.find(c => c.id === banner.targetCatId);
+                                if (target) {
+                                  setCategoryHistory([target]);
+                                }
+                              } else if (banner.targetKeyword) {
+                                setKeyword(banner.targetKeyword);
+                                setSearchType('keyword');
+                                handleKeywordSearch(banner.targetKeyword);
+                              }
+                            }}
+                          >
+                            {PROMO_BANNERS.map((banner, index) => (
+                              <div
+                                key={banner.id}
+                                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                                  index === currentBannerIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                                }`}
+                              >
+                                <img
+                                  src={banner.image}
+                                  alt={lang === 'es' ? banner.titleEs : banner.titlePt}
+                                  className="w-full h-full object-cover object-center"
+                                />
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* スライダー ドットインジケーター */}
+                          <div className="absolute bottom-2 right-3 z-20 flex gap-1.5 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
+                            {PROMO_BANNERS.map((_, idx) => (
+                              <button
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCurrentBannerIndex(idx);
+                                }}
+                                className={`h-1.5 rounded-full transition-all duration-300 ${
+                                  idx === currentBannerIndex ? 'w-4 bg-emerald-400' : 'w-1.5 bg-white/60 hover:bg-white'
+                                }`}
+                                aria-label={`Slide ${idx + 1}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ② 人気ブランド・クイックタグ (第1階層のトップ時のみ表示) */}
+                      {!currentCategory && (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                              🏷️ {t.quickTagsTitle || 'Marcas Populares'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-0.5">
+                            {QUICK_BRAND_TAGS.map((tag) => (
+                              <button
+                                key={tag.name}
+                                onClick={() => {
+                                  setKeyword(tag.keyword);
+                                  setSearchType('keyword');
+                                  handleKeywordSearch(tag.keyword);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-400 rounded-full text-xs font-bold text-gray-700 hover:text-indigo-600 shadow-sm transition whitespace-nowrap active:scale-95"
+                              >
+                                <span>{tag.emoji}</span>
+                                <span>{tag.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ③ カテゴリ一覧 (薄型・低めの2列グリッドカード) */}
+                      <div className="space-y-2">
+                        {!currentCategory && (
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                              📂 {t.categoriesTitle || 'Categorias'}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                          {(currentCategory?.sub || CATEGORIES).map((cat) => {
+                            const visual = CATEGORY_VISUALS[cat.id];
+                            const title = lang === 'es' ? cat.es : cat.pt;
+                            const subTag = visual ? (lang === 'es' ? visual.tagEs : visual.tagPt) : '';
+
+                            return (
+                              <button
+                                key={cat.id}
+                                onClick={async () => {
+                                  if (cat.sub) {
+                                    setCategoryHistory(prev => [...prev, cat]);
+                                  } else if (cat.url) {
+                                    setCategoryHistory(prev => [...prev, cat]);
+                                    // 以前の検索文字をクリアする
+                                    setCategorySearchKeyword('');
+                                    setJdmSearchKeyword('');
+                                    const cond = determineConditionFromUrl(cat.url);
+                                    setSearchCondition(cond);
+                                    fetchCategoryItems(cat.url, 1);
+                                  }
+                                }}
+                                className="group relative flex items-center gap-2.5 p-2 h-[62px] sm:h-[68px] bg-white border border-gray-200 hover:border-indigo-500 hover:shadow-md rounded-xl transition-all duration-200 text-left overflow-hidden active:scale-[0.98]"
+                              >
+                                {/* サムネイル写真 / アイコン */}
+                                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg overflow-hidden flex-shrink-0 bg-indigo-50 border border-gray-100 flex items-center justify-center relative">
+                                  {visual?.image ? (
+                                    <img
+                                      src={visual.image}
+                                      alt={title}
+                                      className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <span className="text-lg">
+                                      {visual?.icon || (cat.brand && BRAND_LOGOS[cat.brand]) || '📦'}
+                                    </span>
+                                  )}
+                                  {/* 左上アイコンバッジ */}
+                                  {visual?.icon && visual?.image && (
+                                    <span className="absolute bottom-0.5 right-0.5 text-[10px] bg-black/60 rounded-full w-4 h-4 flex items-center justify-center text-white backdrop-blur-xs">
+                                      {visual.icon}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* カテゴリ名 & サブテキスト */}
+                                <div className="flex-1 min-w-0 pr-1">
+                                  <h4 className="text-xs sm:text-sm font-bold text-gray-800 group-hover:text-indigo-600 truncate transition-colors">
+                                    {title}
+                                  </h4>
+                                  {subTag && (
+                                    <p className="text-[10px] text-gray-400 truncate mt-0.5">
+                                      {subTag}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* 矢印 */}
+                                <span className="text-gray-300 group-hover:text-indigo-600 font-bold text-xs flex-shrink-0 group-hover:translate-x-0.5 transition-transform">
+                                  {cat.sub ? '→' : '↓'}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* ④ 注目・おすすめ商品カルーセル (Destaques do Japão) */}
+                      {!currentCategory && (
+                        <div className="pt-2 space-y-2">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                              🔥 {t.featuredTitle || 'Destaques do Japão'}
+                            </span>
+                            <span className="text-[10px] text-indigo-600 font-bold">
+                              {lang === 'es' ? 'Ver populares' : 'Ver populares'}
+                            </span>
+                          </div>
+
+                          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-0.5">
+                            {FEATURED_ITEMS.map((item) => (
+                              <button
+                                key={item.id}
+                                onClick={() => {
+                                  setKeyword(item.searchKeyword);
+                                  setSearchType('keyword');
+                                  handleKeywordSearch(item.searchKeyword);
+                                }}
+                                className="group flex-shrink-0 w-36 sm:w-44 bg-white border border-gray-200 hover:border-indigo-500 rounded-xl p-2 shadow-sm hover:shadow-md transition text-left active:scale-95"
+                              >
+                                <div className="relative w-full h-28 sm:h-32 rounded-lg overflow-hidden bg-gray-50 mb-2">
+                                  <img
+                                    src={item.image}
+                                    alt={lang === 'es' ? item.titleEs : item.titlePt}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                    loading="lazy"
+                                  />
+                                  <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                    {item.badge}
+                                  </span>
+                                </div>
+                                <h5 className="text-[11px] sm:text-xs font-bold text-gray-800 line-clamp-2 leading-tight group-hover:text-indigo-600 transition">
+                                  {lang === 'es' ? item.titleEs : item.titlePt}
+                                </h5>
+                                <div className="mt-1.5 flex items-center justify-between">
+                                  <span className="text-xs sm:text-sm font-black text-indigo-600">
+                                    ${item.priceUsd} <span className="text-[9px] font-normal text-gray-500">USD</span>
+                                  </span>
+                                  <span className="text-[10px] bg-indigo-50 text-indigo-600 font-bold px-1.5 py-0.5 rounded">
+                                    🇯🇵
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
