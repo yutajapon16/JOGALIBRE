@@ -7477,23 +7477,23 @@ export default function Home() {
                                   loading="lazy"
                                 />
 
-                                {/* 上品なダークグラデーションオーバーレイ（文字を際立たせる） */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/25 group-hover:from-black/75 transition-colors duration-300" />
+                                {/* 明るく爽やかなホワイトグラデーションオーバーレイ */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent/10 group-hover:from-white/90 transition-colors duration-300" />
 
                                 {/* カテゴリ名 & サブテキスト */}
                                 <div className="relative z-10 flex-1 min-w-0 pr-3">
-                                  <h4 className="text-base sm:text-lg font-black text-white group-hover:text-emerald-300 tracking-wide truncate transition-colors drop-shadow-sm">
+                                  <h4 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-indigo-600 tracking-wide truncate transition-colors">
                                     {title}
                                   </h4>
                                   {subTag && (
-                                    <p className="text-xs text-gray-200 font-medium truncate mt-0.5 max-w-[90%] drop-shadow-xs">
+                                    <p className="text-xs text-slate-600 font-semibold truncate mt-0.5 max-w-[85%]">
                                       {subTag}
                                     </p>
                                   )}
                                 </div>
 
                                 {/* 矢印ボタン */}
-                                <div className="relative z-10 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 group-hover:bg-emerald-500 group-hover:border-emerald-400 group-hover:translate-x-1 transition-all">
+                                <div className="relative z-10 w-8 h-8 rounded-full bg-slate-900/10 backdrop-blur-sm border border-slate-900/20 flex items-center justify-center text-slate-800 font-bold text-sm flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-500 group-hover:translate-x-1 transition-all shadow-xs">
                                   {cat.sub ? '→' : '↓'}
                                 </div>
                               </button>
