@@ -135,6 +135,7 @@ export async function GET(request: Request) {
         }
 
         const results = [];
+        const pushPromises: Promise<any>[] = [];
 
         for (const item of items) {
             try {
@@ -161,13 +162,13 @@ export async function GET(request: Request) {
                 const elapsedMs = now.getTime() - lastCheckTs;
 
                 // 残り時間に応じた動的スキップ判定
-                // - 24時間以上: 12時間（12 * 60 * 60 * 1000 ms）経過していなければスキップ
-                // - 2時間〜24時間: 1時間（60 * 60 * 1000 ms）経過していなければスキップ
+                // - 24時間以上: 3時間（3 * 60 * 60 * 1000 ms）経過していなければスキップ
+                // - 2時間〜24時間: 15分（15 * 60 * 1000 ms）経過していなければスキップ
                 // - 2時間以内: 毎実行（スキップなし）
-                if (diffHours > 24 && elapsedMs < 12 * 60 * 60 * 1000) {
-                    continue; // 12時間未経過のためスキップ
-                } else if (diffHours > 2 && diffHours <= 24 && elapsedMs < 60 * 60 * 1000) {
-                    continue; // 1時間未経過のためスキップ
+                if (diffHours > 24 && elapsedMs < 3 * 60 * 60 * 1000) {
+                    continue; // 3時間未経過のためスキップ
+                } else if (diffHours > 2 && diffHours <= 24 && elapsedMs < 15 * 60 * 1000) {
+                    continue; // 15分未経過のためスキップ
                 }
 
                 // -------------------------------------------------------------
@@ -193,9 +194,31 @@ export async function GET(request: Request) {
                     try {
                         const jsonData = JSON.parse(nextDataMatch[1]);
                         const itemData = jsonData.props?.pageProps?.initialState?.item?.detail?.item || {};
-                        currentPrice = itemData.taxinPrice || itemData.taxinStartPrice || itemData.price || itemData.currentPrice || 0;
+                        currentPrice = itemData.taxinPrice ||
+                            itemData.taxinStartPrice ||
+                            itemData.price ||
+                            itemData.currentPrice ||
+                            itemData.currentBidPrice ||
+                            itemData.startPrice ||
+                            0;
                     } catch (e) {
                         console.error(`JSON parse error for item ${item.id}:`, e);
+                    }
+                }
+
+                // フォールバック1: メタタグからの価格抽出
+                if (!currentPrice || currentPrice === 0) {
+                    const ogPriceMatch = html.match(/<meta[^>]*property=["'](?:og:price:amount|product:price:amount)["'][^>]*content=["'](\d+)["']/i);
+                    if (ogPriceMatch && ogPriceMatch[1]) {
+                        currentPrice = parseInt(ogPriceMatch[1], 10);
+                    }
+                }
+
+                // フォールバック2: HTML価格テキストからの抽出
+                if (!currentPrice || currentPrice === 0) {
+                    const priceRegexMatch = html.match(/class=["'][^"']*Price__value[^"']*["'][^>]*>([\d,]+)\s*円/i);
+                    if (priceRegexMatch && priceRegexMatch[1]) {
+                        currentPrice = parseInt(priceRegexMatch[1].replace(/,/g, ''), 10);
                     }
                 }
 
@@ -237,16 +260,18 @@ export async function GET(request: Request) {
                     const productTitle = item.product_title || item.product_id || '商品';
 
                     // 1. 管理者向け通知
-                    fetch(`${origin}/api/push-send`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            sendToAdmins: true,
-                            title: '🚨 【残り2時間】オークション終了間近',
-                            body: `商品: ${productTitle} (顧客: ${customerId})`,
-                            url: '/admin'
-                        })
-                    }).catch(e => console.error('Admin 2h push error:', e));
+                    pushPromises.push(
+                        fetch(`${origin}/api/push-send`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                sendToAdmins: true,
+                                title: '🚨 【残り2時間】オークション終了間近',
+                                body: `商品: ${productTitle} (顧客: ${customerId})`,
+                                url: '/admin'
+                            })
+                        }).catch(e => console.error('Admin 2h push error:', e))
+                    );
 
                     // 2. 顧客向け通知（言語別）
                     if (item.customer_email) {
@@ -257,17 +282,18 @@ export async function GET(request: Request) {
                             ? `Producto: ${productTitle}`
                             : `Produto: ${productTitle}`;
 
-                        fetch(`${origin}/api/push-send`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                sendToCustomer: true,
-                                email: item.customer_email,
-                                title: custTitle,
-                                body: custBody,
-                                url: '/'
-                            })
-                        }).catch(e => console.error('Customer 2h push error:', e));
+                        pushPromises.push(
+                            fetch(`${origin}/api/push-send`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    email: item.customer_email,
+                                    title: custTitle,
+                                    body: custBody,
+                                    url: '/'
+                                })
+                            }).catch(e => console.error('Customer 2h push error:', e))
+                        );
                     }
 
                     // 2時間前通知済みフラグの記録
@@ -276,7 +302,7 @@ export async function GET(request: Request) {
                 }
 
                 // -------------------------------------------------------------
-                // B. オファー金額超過時の顧客向け即時プッシュ通知
+                // B. オファー金額超過時の顧客・管理者向け即時プッシュ通知
                 // -------------------------------------------------------------
                 if (currentPrice > 0 && item.max_bid && !isEnded) {
                     // 利益率（除数）の計算
@@ -304,16 +330,18 @@ export async function GET(request: Request) {
                         const custId = userMeta?.customer_id || '不明';
 
                         // 1. 管理者向け通知
-                        fetch(`${origin}/api/push-send`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                sendToAdmins: true,
-                                title: `🚨【高値更新】 ${custName} (${custId})`,
-                                body: `商品: ${productTitle}`,
-                                url: '/admin'
-                            })
-                        }).catch(e => console.error('Admin price exceeded push error:', e));
+                        pushPromises.push(
+                            fetch(`${origin}/api/push-send`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    sendToAdmins: true,
+                                    title: `🚨【高値更新】 ${custName} (${custId})`,
+                                    body: `商品: ${productTitle} (現在: $${currentCustomerUsd} / オファー: $${item.max_bid})`,
+                                    url: '/admin'
+                                })
+                            }).catch(e => console.error('Admin price exceeded push error:', e))
+                        );
 
                         // 2. 顧客向け通知
                         if (item.customer_email) {
@@ -324,17 +352,18 @@ export async function GET(request: Request) {
                                 ? `"${productTitle}" (Precio actual: $${currentCustomerUsd} / Tu oferta: $${item.max_bid})`
                                 : `"${productTitle}" (Preço atual: $${currentCustomerUsd} / Sua oferta: $${item.max_bid})`;
 
-                            fetch(`${origin}/api/push-send`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    sendToCustomer: true,
-                                    email: item.customer_email,
-                                    title,
-                                    body,
-                                    url: '/'
-                                })
-                            }).catch(e => console.error('Customer price exceeded push error:', e));
+                            pushPromises.push(
+                                fetch(`${origin}/api/push-send`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        email: item.customer_email,
+                                        title,
+                                        body,
+                                        url: '/'
+                                    })
+                                }).catch(e => console.error('Customer price exceeded push error:', e))
+                            );
                         }
 
                         // オファー超過通知済みフラグの記録
@@ -352,16 +381,18 @@ export async function GET(request: Request) {
                 if (!updateError) {
                     if (isEnded) {
                         const productTitle = item.product_title || item.product_id || '商品';
-                        await fetch(`${origin}/api/push-send`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                sendToAdmins: true,
-                                title: '🔚 オークション終了',
-                                body: `商品: ${productTitle}`,
-                                url: '/admin'
-                            })
-                        }).catch(e => console.error('Cron notify error:', e));
+                        pushPromises.push(
+                            fetch(`${origin}/api/push-send`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    sendToAdmins: true,
+                                    title: '🔚 オークション終了',
+                                    body: `商品: ${productTitle}`,
+                                    url: '/admin'
+                                })
+                            }).catch(e => console.error('Cron notify error:', e))
+                        );
 
                         results.push({ id: item.id, status: 'updated_to_ended', updatedPrice: currentPrice });
                     } else {
@@ -372,6 +403,11 @@ export async function GET(request: Request) {
             } catch (e) {
                 console.error(`Error checking item ${item.id}:`, e);
             }
+        }
+
+        // すべてのプッシュ通知送信の完了を確実に待機
+        if (pushPromises.length > 0) {
+            await Promise.allSettled(pushPromises);
         }
 
         return NextResponse.json({

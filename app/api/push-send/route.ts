@@ -38,13 +38,14 @@ export async function POST(request: NextRequest) {
             // 個別ユーザー指定
             let targetUserId = userId;
 
-            // emailが指定された場合、user_rolesからuser_idを検索
+            // emailが指定された場合、user_rolesからuser_idを検索（大文字小文字の差異を許容）
             if (!targetUserId && targetEmail) {
+                const cleanEmail = targetEmail.trim().toLowerCase();
                 const { data: userData } = await supabaseAdmin
                     .from('user_roles')
                     .select('id')
-                    .eq('email', targetEmail)
-                    .single();
+                    .ilike('email', cleanEmail)
+                    .maybeSingle();
                 if (userData) {
                     targetUserId = userData.id;
                 }

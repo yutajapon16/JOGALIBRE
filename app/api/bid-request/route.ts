@@ -534,6 +534,10 @@ export async function PATCH(request: Request) {
         const newMaxBid = Number(maxBid);
         if (currentRequest.status === 'pending') {
           updateData.max_bid = newMaxBid;
+          // オファー金額変更時に高値更新通知フラグをリセット
+          if (currentRequest.customer_message && currentRequest.customer_message.includes('[price_exceeded_notified]')) {
+            updateData.customer_message = currentRequest.customer_message.replace('[price_exceeded_notified]', '').trim();
+          }
         } else if (currentRequest.status === 'approved') {
           // 承認済みの場合の制限チェック
           const currentMaxBid = Number(currentRequest.max_bid || 0);
@@ -564,6 +568,11 @@ export async function PATCH(request: Request) {
           updateData.max_bid = newMaxBid;
           isAdminPushForIncrease = true;
           increasedNewAmount = newMaxBid;
+
+          // 増額時に高値更新通知フラグをリセット（次回超過時に再度通知されるようにする）
+          if (currentRequest.customer_message && currentRequest.customer_message.includes('[price_exceeded_notified]')) {
+            updateData.customer_message = currentRequest.customer_message.replace('[price_exceeded_notified]', '').trim();
+          }
         }
       }
     }
