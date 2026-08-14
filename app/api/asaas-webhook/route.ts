@@ -327,6 +327,8 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
         const custIdStr = (userRole?.customer_id || customerId) ? `(${userRole?.customer_id || customerId})` : '';
 
         // (1) 顧客宛て通知 (商品ごとに送信)
+        const webhookPushPromises: Promise<any>[] = [];
+
         for (const item of items) {
           const itemTitle = isPt
             ? item.product_title_pt || (item as any).product_title || 'Item'
@@ -335,33 +337,39 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
           const custTitle = isPt ? '💳 Pagamento Confirmado' : '💳 Pago Confirmado';
           const custBody = isPt ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
 
-          fetch(`${baseUrl}/api/push-send`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: customerEmail,
-              title: custTitle,
-              body: custBody,
-              url: '/',
-            }),
-          }).catch(err => console.error('[ASAAS Webhook] Customer push error:', err));
+          webhookPushPromises.push(
+            fetch(`${baseUrl}/api/push-send`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: customerEmail,
+                title: custTitle,
+                body: custBody,
+                url: '/',
+              }),
+            }).catch(err => console.error('[ASAAS Webhook] Customer push error:', err))
+          );
         }
 
         // (2) 管理者宛て通知
         const adminTitle = `💰 【決済完了】${custName} ${custIdStr}`.trim();
         const adminBody = `商品: ${(items[0] as any).product_title || 'Item'}`;
 
-        fetch(`${baseUrl}/api/push-send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sendToAdmins: true,
-            bidRequestId: items[0].id,
-            title: adminTitle,
-            body: adminBody,
-            url: '/admin',
-          }),
-        }).catch(err => console.error('[ASAAS Webhook] Admin push error:', err));
+        webhookPushPromises.push(
+          fetch(`${baseUrl}/api/push-send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sendToAdmins: true,
+              bidRequestId: items[0].id,
+              title: adminTitle,
+              body: adminBody,
+              url: '/admin',
+            }),
+          }).catch(err => console.error('[ASAAS Webhook] Admin push error:', err))
+        );
+
+        await Promise.allSettled(webhookPushPromises);
 
       } catch (pushErr) {
         console.error('[ASAAS Webhook] プッシュ通知送信エラー:', pushErr);

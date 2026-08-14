@@ -687,7 +687,7 @@ export async function PATCH(request: Request) {
         const adminTitle = `⤴️ 【上限額変更】${custName} ${custIdStr}`.trim();
         const adminBody = `商品: ${currentRequest.product_title || 'Item'} (新上限: $${increasedNewAmount})`;
 
-        fetch(`${baseUrl}/api/push-send`, {
+        await fetch(`${baseUrl}/api/push-send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -722,7 +722,7 @@ export async function PATCH(request: Request) {
         const custTitle = isPt ? '💳 Pagamento Confirmado' : '💳 Pago Confirmado';
         const custBody = isPt ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
 
-        fetch(`${baseUrl}/api/push-send`, {
+        await fetch(`${baseUrl}/api/push-send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
