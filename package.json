@@ -6,7 +6,8 @@
     "dev": "node scripts/compile-costs.js && next dev",
     "build": "node scripts/compile-costs.js && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "optimize-images": "node scripts/optimize-category-images.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
