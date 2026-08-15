@@ -634,20 +634,20 @@ const CATEGORIES: Category[] = [
             sub: [
               {
                 id: 'spikes',
-                es: 'Botines (Spikes)',
-                pt: 'Chuteiras (Spikes)',
+                es: 'Botines',
+                pt: 'Chuteiras',
                 url: 'https://auctions.yahoo.co.jp/category/list/2084062860/'
               },
               {
                 id: 'training',
-                es: 'Zapatillas de Entrenamiento',
-                pt: 'Tênis de Treino',
+                es: 'Society',
+                pt: 'Society',
                 url: 'https://auctions.yahoo.co.jp/category/list/2084062862/'
               },
               {
                 id: 'futsal',
-                es: 'Zapatillas de Futsal',
-                pt: 'Chuteiras de Futsal',
+                es: 'Futsal',
+                pt: 'Futsal',
                 url: 'https://auctions.yahoo.co.jp/category/list/2084062861/'
               }
             ]
@@ -983,184 +983,138 @@ const QUICK_BRAND_TAGS = [
 
 // カテゴリ・サブカテゴリのビジュアル情報（全白背景スタジオ画像・ロゴ・サブテキスト）
 const CATEGORY_VISUALS: Record<string, { image: string; tagPt: string; tagEs: string }> = {
-  // メイン11カテゴリ
-  vehiculo: {
-    image: '/images/categories/vehiculo.jpg',
-    tagPt: 'Toyota Supra JZA80, RX-7, Motos & Bikes',
-    tagEs: 'Toyota Supra JZA80, RX-7, Motos y Bicicletas'
-  },
-  autopartes: {
-    image: '/images/categories/autopartes.jpg',
-    tagPt: 'Rodas BBS, Suspensão TEIN & Motores',
-    tagEs: 'Ruedas BBS, Suspensión TEIN y Motores'
-  },
-  fashion: {
-    image: '/images/categories/fashion.jpg',
-    tagPt: 'Sneakers, Roupas Nike, adidas & New Balance',
-    tagEs: 'Zapatillas, Ropa Nike, adidas y New Balance'
-  },
-  relojes: {
-    image: '/images/categories/relojes.jpg',
-    tagPt: 'Casio G-Shock, Seiko, Citizen',
-    tagEs: 'Casio G-Shock, Seiko, Citizen'
-  },
-  deportes: {
-    image: '/images/categories/deportes.jpg',
-    tagPt: 'Bola Trionda, Running, Camping & Pesca',
-    tagEs: 'Balón Trionda, Running, Camping y Pesca'
-  },
-  hobby: {
-    image: '/images/categories/hobby.jpg',
-    tagPt: 'Dragon Ball, One Piece & Carros RC',
-    tagEs: 'Dragon Ball, One Piece y Autos RC'
-  },
-  electronics: {
-    image: '/images/categories/electronics.jpg',
-    tagPt: 'iPhone 17 Pro Max, iPad & Apple Watch',
-    tagEs: 'iPhone 17 Pro Max, iPad y Apple Watch'
-  },
-  pc_parts: {
-    image: '/images/categories/pc_parts.jpg',
-    tagPt: 'Desktop Gaming PC, NVIDIA GPU & CPU',
-    tagEs: 'Desktop Gaming PC, NVIDIA GPU y CPU'
-  },
-  camera: {
-    image: '/images/categories/camera.jpg',
-    tagPt: 'Câmeras CANON, NIKON & Lentes',
-    tagEs: 'Cámaras CANON, NIKON y Lentes'
-  },
-  instrumentos: {
-    image: '/images/categories/instrumentos.jpg',
-    tagPt: 'Fender Stratocaster, Sopro & DJ Table',
-    tagEs: 'Fender Stratocaster, Viento y DJ Table'
-  },
-  home_equipment: {
-    image: '/images/categories/home_equipment.jpg',
-    tagPt: 'Assentos TOTO Washlet & Móveis Sofá',
-    tagEs: 'Bidets TOTO Washlet y Muebles Sofá'
-  },
-
-  // 自動車サブ
-  jdm: { image: '/images/categories/jdm.jpg', tagPt: 'Mazda RX-7, Supra, Skyline GT-R', tagEs: 'Mazda RX-7, Supra, Skyline GT-R' },
-  supra: { image: '/images/categories/supra.jpg', tagPt: 'Toyota Supra JZA80 2JZ', tagEs: 'Toyota Supra JZA80 2JZ' },
-  skyline: { image: '/images/categories/skyline.jpg', tagPt: 'Nissan Skyline GT-R R32/R33/R34', tagEs: 'Nissan Skyline GT-R R32/R33/R34' },
-  lancer: { image: '/images/categories/lancer.jpg', tagPt: 'Mitsubishi Lancer Evolution', tagEs: 'Mitsubishi Lancer Evolution' },
-  rx7: { image: '/images/categories/rx7.jpg', tagPt: 'Mazda RX-7 FD3S Rotary 13B', tagEs: 'Mazda RX-7 FD3S Rotary 13B' },
-  silvia: { image: '/images/categories/silvia.jpg', tagPt: 'Nissan Silvia S13/S14/S15 SR20', tagEs: 'Nissan Silvia S13/S14/S15 SR20' },
-  impreza: { image: '/images/categories/impreza.jpg', tagPt: 'Subaru Impreza WRX STI EJ20', tagEs: 'Subaru Impreza WRX STI EJ20' },
-  desarme: { image: '/images/categories/desarme.jpg', tagPt: 'Veículos JDM para Desmanche', tagEs: 'Vehículos JDM para Desarme' },
-  moto: { image: '/images/categories/moto.jpg', tagPt: 'Kawasaki Ninja, Honda & Yamaha', tagEs: 'Kawasaki Ninja, Honda y Yamaha' },
+  // 1. 自動車
+  vehiculo: { image: '/images/categories/vehiculo.jpg', tagPt: 'Carros, Motos & Bicicletas', tagEs: 'Carros, Motos & Bicicletas' },
+  jdm: { image: '/images/categories/jdm.jpg', tagPt: 'Supra, RX-7, Skyline GT-R', tagEs: 'Supra, RX-7, Skyline GT-R' },
+  supra: { image: '/images/categories/supra.jpg', tagPt: 'Supra JZA80 2JZ', tagEs: 'Supra JZA80 2JZ' },
+  skyline: { image: '/images/categories/skyline.jpg', tagPt: 'Skyline GT-R R32/R33/R34', tagEs: 'Skyline GT-R R32/R33/R34' },
+  lancer: { image: '/images/categories/lancer.jpg', tagPt: 'Lancer Evolution', tagEs: 'Lancer Evolution' },
+  rx7: { image: '/images/categories/rx7.jpg', tagPt: 'RX-7 FD3S', tagEs: 'RX-7 FD3S' },
+  silvia: { image: '/images/categories/silvia.jpg', tagPt: 'Silvia S13/S14/S15 SR20', tagEs: 'Silvia S13/S14/S15 SR20' },
+  impreza: { image: '/images/categories/impreza.jpg', tagPt: 'Impreza WRX STI EJ20', tagEs: 'Impreza WRX STI EJ20' },
+  desarme: { image: '/images/categories/desarme.jpg', tagPt: 'Veículos para Desmanche', tagEs: 'Vehículos para Desarme' },
+  moto: { image: '/images/categories/moto.jpg', tagPt: 'Kawasaki, Honda, Yamaha', tagEs: 'Kawasaki, Honda, Yamaha' },
   bicicleta: { image: '/images/categories/bicicleta.jpg', tagPt: 'Shimano, Carbon Road Bikes', tagEs: 'Shimano, Bicicletas de Ruta' },
 
-  // 自動車パーツサブ
-  motor: { image: '/images/categories/motor.jpg', tagPt: 'Nissan RB26DETT, 2JZ, 13B, SR20', tagEs: 'Nissan RB26DETT, 2JZ, 13B, SR20' },
-  transmision: { image: '/images/categories/transmision.jpg', tagPt: 'Câmbio Manual 5 & 6 Marchas', tagEs: 'Transmisión Manual 5 y 6 Velocidades' },
-  llantas: { image: '/images/categories/llantas.jpg', tagPt: 'Jogos de Pneus e Rodas Forjadas', tagEs: 'Juegos de Neumáticos y Ruedas' },
-  ll16: { image: '/images/categories/ll16.jpg', tagPt: 'Aro 16 Polegadas com Pneus', tagEs: 'Aro 16 Pulgadas con Neumáticos' },
-  ll17: { image: '/images/categories/ll17.jpg', tagPt: 'Aro 17 Polegadas com Pneus', tagEs: 'Aro 17 Pulgadas con Neumáticos' },
-  ll18: { image: '/images/categories/ll18.jpg', tagPt: 'Aro 18 Polegadas com Pneus', tagEs: 'Aro 18 Pulgadas con Neumáticos' },
-  aros: { image: '/images/categories/aros.jpg', tagPt: 'BBS, Rays Volk Racing, Work, Enkei', tagEs: 'BBS, Rays Volk Racing, Work, Enkei' },
-  ar16: { image: '/images/categories/ar16.jpg', tagPt: 'Rodas Forjadas 16"', tagEs: 'Ruedas Forjadas 16"' },
-  ar17: { image: '/images/categories/ar17.jpg', tagPt: 'Rodas Forjadas 17"', tagEs: 'Ruedas Forjadas 17"' },
-  ar18: { image: '/images/categories/ar18.jpg', tagPt: 'Rodas Forjadas 18"', tagEs: 'Ruedas Forjadas 18"' },
-  suspension: { image: '/images/categories/suspension.jpg', tagPt: 'Suspensão a Rosca TEIN, HKS, Cusco', tagEs: 'Coilovers TEIN, HKS, Cusco' },
-  asiento: { image: '/images/categories/asiento.jpg', tagPt: 'Bancos Concha RECARO, Bride', tagEs: 'Asientos de Competición RECARO, Bride' },
-  barras: { image: '/images/categories/barras.jpg', tagPt: 'Barras Antitorção TEIN & Cusco', tagEs: 'Barras de Torretas TEIN y Cusco' },
-  freno: { image: '/images/categories/freno.jpg', tagPt: 'Pinças e Discos Brembo, Endless', tagEs: 'Calipers y Discos Brembo, Endless' },
-  caraudio: { image: '/images/categories/caraudio.jpg', tagPt: 'Pioneer Carrozzeria, Alpine, Kenwood', tagEs: 'Pioneer Carrozzeria, Alpine, Kenwood' },
-  reproductor: { image: '/images/categories/reproductor.jpg', tagPt: 'Centrais Multimídia e CD/Bluetooth', tagEs: 'Reproductores y Pantallas' },
-  amplificador: { image: '/images/categories/amplificador.jpg', tagPt: 'Módulos e Amplificadores de Potência', tagEs: 'Amplificadores de Audio' },
-  subwoofer: { image: '/images/categories/subwoofer.jpg', tagPt: 'Caixas Ativas e Subwoofers', tagEs: 'Subwoofers y Bajos' },
-  altavoz: { image: '/images/categories/altavoz.jpg', tagPt: 'Alto-falantes Coaxiais e Triaxiais', tagEs: 'Altavoces Coaxiales' },
+  // 2. 自動車パーツ
+  autopartes: { image: '/images/categories/autopartes.jpg', tagPt: 'Rodas, Suspensão, Motores', tagEs: 'Ruedas, Suspensión, Motores' },
+  motor: { image: '/images/categories/motor.jpg', tagPt: 'RB26, 2JZ, 13B, SR20', tagEs: 'RB26, 2JZ, 13B, SR20' },
+  transmision: { image: '/images/categories/transmision.jpg', tagPt: 'Automatico, Manual, CVT', tagEs: 'Automatico, Manual, CVT' },
+  llantas: { image: '/images/categories/llantas.jpg', tagPt: 'BBS, RAYS, WORK, ENKEI', tagEs: 'BBS, RAYS, WORK, ENKEI' },
+  ll16: { image: '/images/categories/ll16.jpg', tagPt: 'BBS, RAYS, WORK, ENKEI', tagEs: 'BBS, RAYS, WORK, ENKEI' },
+  ll17: { image: '/images/categories/ll17.jpg', tagPt: 'BBS, RAYS, WORK, ENKEI', tagEs: 'BBS, RAYS, WORK, ENKEI' },
+  ll18: { image: '/images/categories/ll18.jpg', tagPt: 'BBS, RAYS, WORK, ENKEI', tagEs: 'BBS, RAYS, WORK, ENKEI' },
+  aros: { image: '/images/categories/aros.jpg', tagPt: 'BBS, RAYS, WORK, ENKEI', tagEs: 'BBS, RAYS, WORK, ENKEI' },
+  ar16: { image: '/images/categories/ar16.jpg', tagPt: 'BBS, RAYS, WORK, ENKEI', tagEs: 'BBS, RAYS, WORK, ENKEI' },
+  ar17: { image: '/images/categories/ar17.jpg', tagPt: 'BBS, RAYS, WORK, ENKEI', tagEs: 'BBS, RAYS, WORK, ENKEI' },
+  ar18: { image: '/images/categories/ar18.jpg', tagPt: 'BBS, RAYS, WORK, ENKEI', tagEs: 'BBS, RAYS, WORK, ENKEI' },
+  suspension: { image: '/images/categories/suspension.jpg', tagPt: 'TEIN, HKS, CUSCO', tagEs: 'TEIN, HKS, CUSCO' },
+  asiento: { image: '/images/categories/asiento.jpg', tagPt: 'RECARO, BRIDE, STI', tagEs: 'RECARO, BRIDE, STI' },
+  barras: { image: '/images/categories/barras.jpg', tagPt: 'TEIN, CUSCO, STI', tagEs: 'TEIN, CUSCO, STI' },
+  freno: { image: '/images/categories/freno.jpg', tagPt: 'BREMBO. ENDLESS', tagEs: 'BREMBO. ENDLESS' },
+  caraudio: { image: '/images/categories/caraudio.jpg', tagPt: 'PIONEER,CARROZZERIA, ALPINE', tagEs: 'PIONEER,CARROZZERIA, ALPINE' },
+  reproductor: { image: '/images/categories/reproductor.jpg', tagPt: 'CD, Bluetooth, Radio', tagEs: 'CD, Bluetooth, Radio' },
+  amplificador: { image: '/images/categories/amplificador.jpg', tagPt: 'CARROZZERIA, ONKYO', tagEs: 'CARROZZERIA, ONKYO' },
+  subwoofer: { image: '/images/categories/subwoofer.jpg', tagPt: 'ALPINE, JVC', tagEs: 'ALPINE, JVC' },
+  altavoz: { image: '/images/categories/altavoz.jpg', tagPt: 'BOSE, KENWOOD, PIONEER', tagEs: 'BOSE,  KENWOOD, PIONEER' },
 
-  // ファッションブランド
-  nike: { image: '/images/categories/nike.jpg', tagPt: 'Air Jordan, Dunk, Air Force 1', tagEs: 'Air Jordan, Dunk, Air Force 1' },
-  nike_men_shoes: { image: '/images/categories/nike_men_shoes.jpg', tagPt: 'Sneakers Masculinos Nike', tagEs: 'Zapatillas de Hombre Nike' },
-  nike_men_clothing: { image: '/images/categories/nike_men_clothing.jpg', tagPt: 'Camisetas & Streetwear Masculino', tagEs: 'Camisetas y Ropa de Hombre' },
-  nike_women_shoes: { image: '/images/categories/nike_women_shoes.jpg', tagPt: 'Sneakers Femininos Nike', tagEs: 'Zapatillas de Mujer Nike' },
-  nike_women_clothing: { image: '/images/categories/nike_women_clothing.jpg', tagPt: 'Roupas & Tops Femininos', tagEs: 'Ropa y Tops de Mujer' },
+  // 3. ファッション
+  fashion: { image: '/images/categories/fashion.jpg', tagPt: 'Tênis, Camiseta, Short', tagEs: 'Zapatillas, Camiseta, Short' },
+  nike: { image: '/images/categories/nike.jpg', tagPt: 'Tênis, Camiseta, Short', tagEs: 'Zapatillas, Camiseta, Short' },
+  nike_men_shoes: { image: '/images/categories/nike_men_shoes.jpg', tagPt: 'Jordan, Dunk, Air Force1', tagEs: 'Jordan, Dunk, Air Force1' },
+  nike_men_clothing: { image: '/images/categories/nike_men_clothing.jpg', tagPt: 'Camiseta, Short', tagEs: 'Camiseta, Short' },
+  nike_women_shoes: { image: '/images/categories/nike_women_shoes.jpg', tagPt: 'Tênis Femininos', tagEs: 'Zapatillas Femininas' },
+  nike_women_clothing: { image: '/images/categories/nike_women_clothing.jpg', tagPt: 'Blusa, Tops', tagEs: 'Blusa, Tops' },
 
-  adidas: { image: '/images/categories/adidas.jpg', tagPt: 'Samba, Superstar, Originals', tagEs: 'Samba, Superstar, Originals' },
-  adidas_men_shoes: { image: '/images/categories/adidas_men_shoes.jpg', tagPt: 'Sneakers Masculinos adidas', tagEs: 'Zapatillas de Hombre adidas' },
-  adidas_men_clothing: { image: '/images/categories/adidas_men_clothing.jpg', tagPt: 'Camisetas & Agasalhos adidas', tagEs: 'Camisetas y Ropa adidas' },
-  adidas_women_shoes: { image: '/images/categories/adidas_women_shoes.jpg', tagPt: 'Sneakers Femininos adidas', tagEs: 'Zapatillas de Mujer adidas' },
-  adidas_women_clothing: { image: '/images/categories/adidas_women_clothing.jpg', tagPt: 'Roupas Femininas adidas', tagEs: 'Ropa de Mujer adidas' },
+  adidas: { image: '/images/categories/adidas.jpg', tagPt: 'Tênis, Camiseta, Short', tagEs: 'Zapatillas, Camiseta, Short' },
+  adidas_men_shoes: { image: '/images/categories/adidas_men_shoes.jpg', tagPt: 'Samba, Superstar', tagEs: 'Samba, Superstar' },
+  adidas_men_clothing: { image: '/images/categories/adidas_men_clothing.jpg', tagPt: 'Camiseta, Short', tagEs: 'Camiseta, Short' },
+  adidas_women_shoes: { image: '/images/categories/adidas_women_shoes.jpg', tagPt: 'Tênis Femininos', tagEs: 'Zapatillas Femininas' },
+  adidas_women_clothing: { image: '/images/categories/adidas_women_clothing.jpg', tagPt: 'Blusa, Tops', tagEs: 'Blusa, Tops' },
 
-  newbalance: { image: '/images/categories/newbalance.jpg', tagPt: '990, 574, 2002R & 1906R', tagEs: '990, 574, 2002R y 1906R' },
-  nb_men_shoes: { image: '/images/categories/nb_men_shoes.jpg', tagPt: 'Sneakers Masculinos New Balance', tagEs: 'Zapatillas de Hombre New Balance' },
-  nb_men_clothing: { image: '/images/categories/nb_men_clothing.jpg', tagPt: 'Camisetas New Balance', tagEs: 'Camisetas New Balance' },
-  nb_women_shoes: { image: '/images/categories/nb_women_shoes.jpg', tagPt: 'Sneakers Femininos New Balance', tagEs: 'Zapatillas de Mujer New Balance' },
-  nb_women_clothing: { image: '/images/categories/nb_women_clothing.jpg', tagPt: 'Roupas Femininas New Balance', tagEs: 'Ropa de Mujer New Balance' },
+  newbalance: { image: '/images/categories/newbalance.jpg', tagPt: 'Tênis, Camiseta, Short', tagEs: 'Zapatillas, Camiseta, Short' },
+  nb_men_shoes: { image: '/images/categories/nb_men_shoes.jpg', tagPt: 'Tênis Masculinos', tagEs: 'Zapatillas Masculinos' },
+  nb_men_clothing: { image: '/images/categories/nb_men_clothing.jpg', tagPt: 'Camiseta, Short', tagEs: 'Camiseta, Short' },
+  nb_women_shoes: { image: '/images/categories/nb_women_shoes.jpg', tagPt: 'Tênis Femininos', tagEs: 'Zapatillas Femininas' },
+  nb_women_clothing: { image: '/images/categories/nb_women_clothing.jpg', tagPt: 'Blusa, Tops', tagEs: 'Blusa, Tops' },
 
-  ape: { image: '/images/categories/ape.jpg', tagPt: 'A Bathing Ape Tokyo Streetwear', tagEs: 'A Bathing Ape Tokyo Streetwear' },
-  abercrombie: { image: '/images/categories/abercrombie.jpg', tagPt: 'Abercrombie & Fitch', tagEs: 'Abercrombie & Fitch' },
-  converse: { image: '/images/categories/converse.jpg', tagPt: 'All Star Chuck Taylor', tagEs: 'All Star Chuck Taylor' },
-  diesel: { image: '/images/categories/diesel.jpg', tagPt: 'DIESEL Jeans & Moda', tagEs: 'DIESEL Jeans y Moda' },
-  gap: { image: '/images/categories/gap.jpg', tagPt: 'GAP Hoodies & Básicos', tagEs: 'GAP Sudaderas y Básicos' },
-  lacoste: { image: '/images/categories/lacoste.jpg', tagPt: 'Polos & Camisas Lacoste', tagEs: 'Polos y Camisas Lacoste' },
-  michaelkors: { image: '/images/categories/michaelkors.jpg', tagPt: 'Bolsas & Acessórios Michael Kors', tagEs: 'Bolsos y Accesorios Michael Kors' },
-  puma: { image: '/images/categories/puma.jpg', tagPt: 'PUMA Suede & Esportes', tagEs: 'PUMA Suede y Deportes' },
-  tommyhilfiger: { image: '/images/categories/tommyhilfiger.jpg', tagPt: 'Tommy Hilfiger Classic', tagEs: 'Tommy Hilfiger Classic' },
+  ape: { image: '/images/categories/ape.jpg', tagPt: 'BAPE', tagEs: 'BAPE' },
+  abercrombie: { image: '/images/categories/abercrombie.jpg', tagPt: 'Tênis, Camiseta, Short', tagEs: 'Zapatillas, Camiseta, Short' },
+  converse: { image: '/images/categories/converse.jpg', tagPt: 'Tênis, Camiseta, Short', tagEs: 'Zapatillas, Camiseta, Short' },
+  diesel: { image: '/images/categories/diesel.jpg', tagPt: 'Jeans, Camiseta', tagEs: 'Jeans, Camiseta' },
+  gap: { image: '/images/categories/gap.jpg', tagPt: 'Básicos', tagEs: 'Básicos' },
+  lacoste: { image: '/images/categories/lacoste.jpg', tagPt: 'Polos, Camisas', tagEs: 'Polos, Camisas' },
+  michaelkors: { image: '/images/categories/michaelkors.jpg', tagPt: 'Bolsas, Acessórios', tagEs: 'Bolsos, Accesorios' },
+  puma: { image: '/images/categories/puma.jpg', tagPt: 'Tênis, Camiseta, Short', tagEs: 'Zapatillas, Camiseta, Short' },
+  tommyhilfiger: { image: '/images/categories/tommyhilfiger.jpg', tagPt: 'Polos, Camisas, Bolsas', tagEs: 'Polos, Camisas, Bolsas' },
   uniqlo: { image: '/images/categories/uniqlo.jpg', tagPt: 'UNIQLO Japão LifeWear', tagEs: 'UNIQLO Japón LifeWear' },
-  vans: { image: '/images/categories/vans.jpg', tagPt: 'Vans Old Skool & Skate', tagEs: 'Vans Old Skool y Skate' },
-  zara: { image: '/images/categories/zara.jpg', tagPt: 'ZARA Coleções Exclusivas', tagEs: 'ZARA Colecciones Exclusivas' },
+  vans: { image: '/images/categories/vans.jpg', tagPt: 'Old School & Skate', tagEs: 'Old School & Skate' },
+  zara: { image: '/images/categories/zara.jpg', tagPt: 'Coleções Exclusivas', tagEs: 'Colecciones Exclusivas' },
 
-  // 時計サブ
-  casio: { image: '/images/categories/casio.jpg', tagPt: 'Casio G-Shock, Baby-G, Edifice', tagEs: 'Casio G-Shock, Baby-G, Edifice' },
-  seiko: { image: '/images/categories/seiko.jpg', tagPt: 'Seiko Prospex, Presage, 5 Sports', tagEs: 'Seiko Prospex, Presage, 5 Sports' },
-  citizen: { image: '/images/categories/citizen.jpg', tagPt: 'Citizen Promaster Eco-Drive', tagEs: 'Citizen Promaster Eco-Drive' },
+  // 4. 時計
+  relojes: { image: '/images/categories/relojes.jpg', tagPt: 'CASIO, SEIKO, CITIZEN', tagEs: 'CASIO, SEIKO, CITIZEN' },
+  casio: { image: '/images/categories/casio.jpg', tagPt: 'G-SHOCK, BABY-G, EDIFICE', tagEs: 'G-SHOCK, BABY-G, EDIFICE' },
+  seiko: { image: '/images/categories/seiko.jpg', tagPt: 'GRAND SEIKO, PROSPEX', tagEs: 'GRAND SEIKO, PROSPEX' },
+  citizen: { image: '/images/categories/citizen.jpg', tagPt: 'PROMASTER, SEVENSTAR', tagEs: 'PROMASTER, SEVENSTAR' },
 
-  // スポーツサブ
-  futbol: { image: '/images/categories/futbol.jpg', tagPt: 'Bolas Oficiais Trionda & Chuteiras', tagEs: 'Balones Oficiales Trionda y Botines' },
-  zapatos_futbol: { image: '/images/categories/zapatos_futbol.jpg', tagPt: 'Chuteiras adidas Predator, Nike', tagEs: 'Botines adidas Predator, Nike' },
-  spikes: { image: '/images/categories/spikes.jpg', tagPt: 'Chuteiras de Campo Nike Mercurial', tagEs: 'Botines con Tapones Nike Mercurial' },
-  training: { image: '/images/categories/training.jpg', tagPt: 'Tênis de Society PUMA Turf', tagEs: 'Zapatillas de Sintético PUMA' },
-  futsal: { image: '/images/categories/futsal.jpg', tagPt: 'Tênis de Futsal adidas Indoor', tagEs: 'Zapatillas de Futsal adidas' },
-  running: { image: '/images/categories/running.jpg', tagPt: 'Nike ZoomX, adidas Adizero', tagEs: 'Nike ZoomX, adidas Adizero' },
-  running_men_shoes: { image: '/images/categories/running_men_shoes.jpg', tagPt: 'Tênis de Corrida adidas Adizero', tagEs: 'Zapatillas de Running adidas' },
-  running_men_clothing: { image: '/images/categories/running_men_clothing.jpg', tagPt: 'Regatas & Shorts New Balance', tagEs: 'Camisetas y Shorts New Balance' },
-  running_women_shoes: { image: '/images/categories/running_women_shoes.jpg', tagPt: 'Tênis de Corrida Feminino Nike', tagEs: 'Zapatillas de Running Mujer Nike' },
-  running_women_clothing: { image: '/images/categories/running_women_clothing.jpg', tagPt: 'Top & Shorts Feminino New Balance', tagEs: 'Top y Shorts de Mujer New Balance' },
-  camping: { image: '/images/categories/camping.jpg', tagPt: 'Barracas, Cadeiras & Equipamentos', tagEs: 'Carpas, Sillas y Equipamiento' },
-  pesca: { image: '/images/categories/pesca.jpg', tagPt: 'Varas de Carbono & Molinetes Shimano', tagEs: 'Cañas de Carbono y Carretes Shimano' },
+  // 5. スポーツ
+  deportes: { image: '/images/categories/deportes.jpg', tagPt: 'Bola, Running, Camping, Pesca', tagEs: 'Balón, Running, Camping, Pesca' },
+  futbol: { image: '/images/categories/futbol.jpg', tagPt: 'Bolas, Chuteiras, Society', tagEs: 'Balon, Botines, Society' },
+  zapatos_futbol: { image: '/images/categories/zapatos_futbol.jpg', tagPt: 'Campo, Futsal, Society', tagEs: 'Campo, Futsal, Society' },
+  spikes: { image: '/images/categories/spikes.jpg', tagPt: 'NIKE, ADIDAS, PUMA', tagEs: 'NIKE, ADIDAS, PUMA' },
+  training: { image: '/images/categories/training.jpg', tagPt: 'NIKE, ADIDAS, PUMA', tagEs: 'NIKE, ADIDAS, PUMA' },
+  futsal: { image: '/images/categories/futsal.jpg', tagPt: 'NIKE, ADIDAS, PUMA', tagEs: 'NIKE, ADIDAS, PUMA' },
+  running: { image: '/images/categories/running.jpg', tagPt: 'Tênis, Camiseta, Short', tagEs: 'Zapatillas, Camiseta, Short' },
+  running_men_shoes: { image: '/images/categories/running_men_shoes.jpg', tagPt: 'NIKE, ADIDAS, PUMA, NB', tagEs: 'NIKE, ADIDAS, PUMA, NB' },
+  running_men_clothing: { image: '/images/categories/running_men_clothing.jpg', tagPt: 'Regatas, Shorts', tagEs: 'Camisetas, Shorts' },
+  running_women_shoes: { image: '/images/categories/running_women_shoes.jpg', tagPt: 'Tênis Femininos', tagEs: 'Zapatillas Femininas' },
+  running_women_clothing: { image: '/images/categories/running_women_clothing.jpg', tagPt: 'Top, Shorts', tagEs: 'Top y Shorts' },
+  camping: { image: '/images/categories/camping.jpg', tagPt: 'Barracas, Cadeiras', tagEs: 'Carpas, Sillas' },
+  pesca: { image: '/images/categories/pesca.jpg', tagPt: 'Varas, Molinetes', tagEs: 'Cañas, Carretes' },
 
-  // ホビーサブ
-  rccar: { image: '/images/categories/rccar.jpg', tagPt: 'Carros RC Tamiya, Kyosho & Yokomo', tagEs: 'Autos RC Tamiya, Kyosho y Yokomo' },
-  rc_engine: { image: '/images/categories/rccar.jpg', tagPt: 'Automodelos a Combustão Nitro', tagEs: 'Automodelos a Combustión Nitro' },
-  rc_electric: { image: '/images/categories/rccar.jpg', tagPt: 'Automodelos Elétricos Brushless', tagEs: 'Automodelos Eléctricos Brushless' },
-  figure: { image: '/images/categories/figure.jpg', tagPt: 'Dragon Ball, One Piece, Gundam, Miku', tagEs: 'Dragon Ball, One Piece, Gundam, Miku' },
-  gundam: { image: '/images/categories/gundam.jpg', tagPt: 'Gunpla Master Grade, Real Grade', tagEs: 'Gunpla Master Grade, Real Grade' },
-  onepiece: { image: '/images/categories/onepiece.jpg', tagPt: 'Luffy, Zoro & Figuras Originais', tagEs: 'Luffy, Zoro y Figuras Originales' },
-  miku: { image: '/images/categories/miku.jpg', tagPt: 'Hatsune Miku Vocaloid', tagEs: 'Hatsune Miku Vocaloid' },
-  madoka: { image: '/images/categories/madoka.jpg', tagPt: 'Madoka Magica Figuras', tagEs: 'Madoka Magica Figuras' },
-  dragonball: { image: '/images/categories/dragonball.jpg', tagPt: 'Goku Super Saiyajin, Vegeta', tagEs: 'Goku Super Saiyajin, Vegeta' },
-  nendoroid: { image: '/images/categories/nendoroid.jpg', tagPt: 'Good Smile Nendoroid Chibi', tagEs: 'Good Smile Nendoroid Chibi' },
+  // 6. ホビー
+  hobby: { image: '/images/categories/hobby.jpg', tagPt: 'Figures, RC', tagEs: 'Figures, RC' },
+  rccar: { image: '/images/categories/rccar.jpg', tagPt: 'TAMIYA, KYOSHO', tagEs: 'TAMIYA, KYOSHO' },
+  rc_engine: { image: '/images/categories/rc_engine.jpg', tagPt: 'TAMIYA, KYOSHO', tagEs: 'TAMIYA, KYOSHO' },
+  rc_electric: { image: '/images/categories/rc_electric.jpg', tagPt: 'TAMIYA, KYOSHO', tagEs: 'TAMIYA, KYOSHO' },
+  figure: { image: '/images/categories/figure.jpg', tagPt: 'Dragon Ball, One Piece', tagEs: 'Dragon Ball, One Piece' },
+  gundam: { image: '/images/categories/gundam.jpg', tagPt: 'Gunpla Master Grade', tagEs: 'Gunpla Master Grade' },
+  onepiece: { image: '/images/categories/onepiece.jpg', tagPt: 'Luffy, Zoro', tagEs: 'Luffy, Zoro' },
+  miku: { image: '/images/categories/miku.jpg', tagPt: 'Miku Vocaloid', tagEs: 'Miku Vocaloid' },
+  madoka: { image: '/images/categories/madoka.jpg', tagPt: 'Madoka Magica', tagEs: 'Madoka Magica' },
+  dragonball: { image: '/images/categories/dragonball.jpg', tagPt: 'Goku, Vegeta', tagEs: 'Goku, Vegeta' },
+  nendoroid: { image: '/images/categories/nendoroid.jpg', tagPt: 'Good Smile Chibi', tagEs: 'Good Smile Chibi' },
 
-  // 電子機器サブ
-  iphone: { image: '/images/categories/iphone.jpg', tagPt: 'iPhone 17 Pro Max, 16, 15 Titanium', tagEs: 'iPhone 17 Pro Max, 16, 15 Titanium' },
-  ipad: { image: '/images/categories/ipad.jpg', tagPt: 'iPad Pro M4, iPad Air, Mini', tagEs: 'iPad Pro M4, iPad Air, Mini' },
-  smartwatch: { image: '/images/categories/smartwatch.jpg', tagPt: 'Apple Watch Ultra, Series 10', tagEs: 'Apple Watch Ultra, Series 10' },
+  // 7. 電子機器
+  electronics: { image: '/images/categories/electronics.jpg', tagPt: 'iPhone, iPad, Apple Watch', tagEs: 'iPhone, iPad, Apple Watch' },
+  iphone: { image: '/images/categories/iphone.jpg', tagPt: 'iPhone 17 Pro Max, 16', tagEs: 'iPhone 17 Pro Max, 16' },
+  ipad: { image: '/images/categories/ipad.jpg', tagPt: 'iPad Pro, iPad Air, Mini', tagEs: 'iPad Pro, iPad Air, Mini' },
+  smartwatch: { image: '/images/categories/smartwatch.jpg', tagPt: 'Ultra, Series 10', tagEs: 'Ultra, Series 10' },
 
-  // PC機器サブ
-  cpu: { image: '/images/categories/cpu.jpg', tagPt: 'Intel Core i9, AMD Ryzen 9', tagEs: 'Intel Core i9, AMD Ryzen 9' },
-  memory: { image: '/images/categories/memory.jpg', tagPt: 'Memória RAM DDR5 / DDR4', tagEs: 'Memoria RAM DDR5 / DDR4' },
-  gpu: { image: '/images/categories/gpu.jpg', tagPt: 'NVIDIA GeForce RTX 4090, 4080', tagEs: 'NVIDIA GeForce RTX 4090, 4080' },
+  // 8. PC機器・パーツ
+  pc_parts: { image: '/images/categories/pc_parts.jpg', tagPt: 'Gaming, GPU, CPU', tagEs: 'Gaming, GPU, CPU' },
+  cpu: { image: '/images/categories/cpu.jpg', tagPt: 'Core i9, Ryzen 9', tagEs: 'Core i9, Ryzen 9' },
+  memory: { image: '/images/categories/memory.jpg', tagPt: 'RAM DDR5 / DDR4', tagEs: 'RAM DDR5 / DDR4' },
+  gpu: { image: '/images/categories/gpu.jpg', tagPt: 'GeForce RTX 4090, 4080', tagEs: 'GeForce RTX 4090, 4080' },
 
-  // カメラサブ
-  digital_camera: { image: '/images/categories/digital_camera.jpg', tagPt: 'Canon EOS, Sony Alpha, Nikon Z', tagEs: 'Canon EOS, Sony Alpha, Nikon Z' },
-  dslr: { image: '/images/categories/dslr.jpg', tagPt: 'Câmeras DSLR Profissionais', tagEs: 'Cámaras DSLR Profesionales' },
-  mirrorless: { image: '/images/categories/mirrorless.jpg', tagPt: 'Câmeras Mirrorless Full-Frame', tagEs: 'Cámaras Mirrorless Full-Frame' },
-  compact_digital: { image: '/images/categories/compact_digital.jpg', tagPt: 'Câmeras Compactas Premium', tagEs: 'Cámaras Compactas Premium' },
-  lens: { image: '/images/categories/lens.jpg', tagPt: 'Lentes Canon L, Sony G Master', tagEs: 'Lentes Canon L, Sony G Master' },
+  // 9. カメラ
+  camera: { image: '/images/categories/camera.jpg', tagPt: 'CANON, NIKON, SONY', tagEs: 'CANON, NIKON, SONY' },
+  digital_camera: { image: '/images/categories/digital_camera.jpg', tagPt: 'CANON, NIKON, SONY', tagEs: 'CANON, NIKON, SONY' },
+  dslr: { image: '/images/categories/dslr.jpg', tagPt: 'CANON, NIKON, SONY', tagEs: 'CANON, NIKON, SONY' },
+  mirrorless: { image: '/images/categories/mirrorless.jpg', tagPt: 'OLYMPUS, SONY', tagEs: 'OLYMPUS, SONY' },
+  compact_digital: { image: '/images/categories/compact_digital.jpg', tagPt: 'NIKON, SONY', tagEs: 'NIKON, SONY' },
+  lens: { image: '/images/categories/lens.jpg', tagPt: 'CANON, NIKON, SONY', tagEs: 'CANON, NIKON, SONY' },
 
-  // 楽器サブ
-  guitarra: { image: '/images/categories/guitarra.jpg', tagPt: 'Fender Stratocaster, Gibson Les Paul', tagEs: 'Fender Stratocaster, Gibson Les Paul' },
-  bajo: { image: '/images/categories/bajo.jpg', tagPt: 'Fender Jazz Bass, Precision Bass', tagEs: 'Fender Jazz Bass, Precision Bass' },
-  viento: { image: '/images/categories/viento.jpg', tagPt: 'Saxofones Yamaha, Trompetes, Flautas', tagEs: 'Saxofones Yamaha, Trompetas, Flautas' },
-  dj: { image: '/images/categories/dj.jpg', tagPt: 'Pioneer DJ CDJ, DDJ Controladores', tagEs: 'Pioneer DJ CDJ, DDJ Controladores' },
+  // 10. 楽器
+  instrumentos: { image: '/images/categories/instrumentos.jpg', tagPt: 'Guitarra, Sopro, DJ', tagEs: 'Guitarra, Viento, DJ' },
+  guitarra: { image: '/images/categories/guitarra.jpg', tagPt: 'FENDER, GIBSON', tagEs: 'FENDER, GIBSON' },
+  bajo: { image: '/images/categories/bajo.jpg', tagPt: 'FENDER, GIBSON', tagEs: 'FENDER, GIBSON' },
+  viento: { image: '/images/categories/viento.jpg', tagPt: 'YAMAHA,BACH', tagEs: 'YAMAHA,BACH' },
+  dj: { image: '/images/categories/dj.jpg', tagPt: 'PIONEER', tagEs: 'PIONEER' },
 
-  // 家財道具サブ
-  washlet: { image: '/images/categories/washlet.jpg', tagPt: 'Assentos Sanitários Eletrônicos TOTO', tagEs: 'Bidets Electrónicos TOTO Washlet' }
+  // 11. 家財道具
+  home_equipment: { image: '/images/categories/home_equipment.jpg', tagPt: 'Washlet', tagEs: 'Washlet' },
+  washlet: { image: '/images/categories/washlet.jpg', tagPt: 'TOTO', tagEs: 'TOTO' }
 };
 
 // 注目・おすすめ商品カルーセル（Destaques do Japão）
