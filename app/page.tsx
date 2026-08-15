@@ -7421,18 +7421,15 @@ export default function Home() {
                                     fetchCategoryItems(cat.url, 1);
                                   }
                                 }}
-                                className="group relative flex items-center justify-between px-4 py-3.5 h-[76px] sm:h-[84px] rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-gray-200 text-left transition-all duration-300 active:scale-[0.99]"
+                                className="group relative flex items-center justify-between px-4 py-3.5 h-[76px] sm:h-[84px] rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-gray-200 text-left transition-all duration-300 active:scale-[0.99] bg-white"
                               >
-                                {/* 背景の実物写真 */}
+                                {/* 右側に配置される商品写真（カード高さ内にフィット・白背景） */}
                                 <img
                                   src={bgImage}
                                   alt={title}
-                                  className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 h-[60px] sm:h-[68px] w-auto max-w-[40%] object-contain opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
                                   loading="lazy"
                                 />
-
-                                {/* 明るく爽やかなホワイトグラデーションオーバーレイ */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent/10 group-hover:from-white/90 transition-colors duration-300" />
 
                                 {/* カテゴリ名 & サブテキスト */}
                                 <div className="relative z-10 flex-1 min-w-0 pr-3">
