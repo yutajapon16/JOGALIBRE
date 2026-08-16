@@ -123,6 +123,46 @@ def process_adidas(filename):
     cv2.imwrite(filepath, resized, [cv2.IMWRITE_JPEG_QUALITY, 96])
     print(f"Adidas processed: {filename} -> {new_w}x{new_h}")
 
+def process_crop_only(filename, max_w=400, max_h=200):
+    """
+    背景色には手を加えず、余白のみをトリミングして最大化
+    """
+    filepath = os.path.join(IMG_DIR, filename)
+    img = cv2.imread(filepath)
+    if img is None:
+        print(f"Error reading {filename}")
+        return
+    
+    h, w = img.shape[:2]
+    bg_color = img[0, 0].astype(int)
+    diff = np.abs(img.astype(int) - bg_color)
+    is_subject = np.any(diff > 10, axis=2)
+    
+    if np.any(is_subject):
+        y_indices, x_indices = np.where(is_subject)
+        min_y, max_y = np.min(y_indices), np.max(y_indices)
+        min_x, max_x = np.min(x_indices), np.max(x_indices)
+        
+        crop_min_y = max(0, min_y - 1)
+        crop_max_y = min(h, max_y + 2)
+        crop_min_x = max(0, min_x - 1)
+        crop_max_x = min(w, max_x + 2)
+        
+        cropped = img[crop_min_y:crop_max_y, crop_min_x:crop_max_x]
+    else:
+        cropped = img
+    
+    ch, cw = cropped.shape[:2]
+    scale = min(max_w / cw, max_h / ch)
+    new_w = max(1, int(cw * scale))
+    new_h = max(1, int(ch * scale))
+    
+    interpolation = cv2.INTER_AREA if scale < 1.0 else cv2.INTER_LANCZOS4
+    resized = cv2.resize(cropped, (new_w, new_h), interpolation=interpolation)
+    
+    cv2.imwrite(filepath, resized, [cv2.IMWRITE_JPEG_QUALITY, 96])
+    print(f"Crop-only processed: {filename} -> {new_w}x{new_h}")
+
 def main():
     # 1. ホイール4枚（背景改善なし、サイズ統一）
     wheel_files = ['ar16.jpg', 'ar17.jpg', 'ar18.jpg', 'aros.jpg']
@@ -133,6 +173,9 @@ def main():
     adidas_files = ['adidas_men_shoes.jpg', 'adidas_women_clothing.jpg']
     for f in adidas_files:
         process_adidas(f)
+
+    # 3. electronics.jpg（背景改善なし、余白トリミング最大化）
+    process_crop_only('electronics.jpg', max_w=400, max_h=200)
 
 if __name__ == '__main__':
     main()
