@@ -7423,18 +7423,18 @@ export default function Home() {
                                 }}
                                 className="group relative flex items-center justify-between px-5 py-3.5 h-[80px] sm:h-[88px] rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-gray-100 hover:border-indigo-200 text-left transition-all duration-300 active:scale-[0.99] bg-white"
                               >
-                                {/* 中央に配置される商品写真（カード高さ内にフィット・白背景） */}
+                                {/* 中央に配置される商品写真（カードサイズギリギリまで最大化・白背景乗算ブレンド） */}
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
                                   <img
                                     src={bgImage}
                                     alt={title}
-                                    className="h-[76%] sm:h-[84%] w-auto max-w-[65%] object-contain opacity-90 group-hover:opacity-100 group-hover:scale-108 transition-all duration-500"
+                                    className="h-[90%] sm:h-[95%] w-auto max-w-[78%] sm:max-w-[82%] object-contain mix-blend-multiply opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
                                     loading="lazy"
                                   />
                                 </div>
 
                                 {/* 爽やかなホワイトグラデーションオーバーレイ（テキストの可読性と画像の引き立ちを両立） */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-white via-white/65 to-white/45 group-hover:from-white/90 group-hover:via-white/55 group-hover:to-white/35 transition-all duration-300 pointer-events-none" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-white via-white/70 to-white/25 group-hover:from-white/85 group-hover:via-white/60 group-hover:to-white/15 transition-all duration-300 pointer-events-none" />
 
                                 {/* カテゴリ名 & サブテキスト */}
                                 <div className="relative z-10 flex-1 min-w-0 pr-3">

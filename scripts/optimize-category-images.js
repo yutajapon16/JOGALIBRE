@@ -12,6 +12,18 @@
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
+
+// 1. Python による被写体オートクロップ＆純白化＆カード最大化
+try {
+  const pyScript = path.join(__dirname, 'clean-and-whiten-all.py');
+  if (fs.existsSync(pyScript)) {
+    console.log('🧹 余白トリミング＆背景純白化スクリプトを実行中...');
+    execSync(`python3 "${pyScript}"`, { stdio: 'inherit' });
+  }
+} catch (e) {
+  console.warn('Python clean script warning:', e.message);
+}
 
 // 設定
 const CATEGORIES_DIR = path.join(__dirname, '..', 'public', 'images', 'categories');
