@@ -35,10 +35,10 @@ export async function GET(request: Request) {
         const origin = new URL(request.url).origin;
 
         // 最新の為替レート（USD/JPY）をリアルタイム取得（フロントエンドと完全一致）
-        let jpyRate = 150;
+        let jpyRate = 155.73;
         try {
             const rateData = await getResilientExchangeRate();
-            if (rateData?.rates?.JPY) {
+            if (rateData?.rates?.JPY && rateData.rates.JPY > 50) {
                 jpyRate = rateData.rates.JPY;
             }
         } catch (e) {
@@ -184,8 +184,11 @@ export async function GET(request: Request) {
                 clearTimeout(timeoutId);
                 const html = await res.text();
 
-                // 最新価格の抽出
+                // 最新価格および開始価格・終了時間の抽出
                 let currentPrice = 0;
+                let initPrice = 0;
+                let latestEndTime: string | null = null;
+
                 const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
                 if (nextDataMatch) {
                     try {
@@ -198,6 +201,14 @@ export async function GET(request: Request) {
                             itemData.currentBidPrice ||
                             itemData.startPrice ||
                             0;
+                        initPrice = itemData.initPrice ||
+                            itemData.lastInitPrice ||
+                            itemData.startPrice ||
+                            itemData.taxinStartPrice ||
+                            0;
+                        if (itemData.endTime) {
+                            latestEndTime = itemData.endTime;
+                        }
                     } catch (e) {
                         console.error(`JSON parse error for item ${item.id}:`, e);
                     }
@@ -217,6 +228,11 @@ export async function GET(request: Request) {
                     if (priceRegexMatch && priceRegexMatch[1]) {
                         currentPrice = parseInt(priceRegexMatch[1].replace(/,/g, ''), 10);
                     }
+                }
+
+                // 初期価格のフォールバック（初期価格が取れなかった場合は申請時の商品価格を使用）
+                if (!initPrice || initPrice === 0) {
+                    initPrice = item.product_price || currentPrice;
                 }
 
                 // 終了判定キーワード
@@ -240,6 +256,16 @@ export async function GET(request: Request) {
 
                 if (currentPrice > 0 && currentPrice !== item.product_price) {
                     updateData.product_price = currentPrice;
+                }
+
+                // ヤフオク終了日時の自動同期（自動延長や出品者による延長を反映）
+                if (latestEndTime && latestEndTime !== item.product_end_time) {
+                    updateData.product_end_time = latestEndTime;
+                    // 最新の終了時間で残り時間 diffHours も再計算
+                    const latestEndDate = parseAnyDateTime(latestEndTime);
+                    if (latestEndDate) {
+                        diffHours = (latestEndDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+                    }
                 }
 
                 if (isEnded) {
@@ -300,8 +326,13 @@ export async function GET(request: Request) {
 
                 // -------------------------------------------------------------
                 // B. オファー金額超過時の顧客・管理者向け即時プッシュ通知
+                // 【厳格化条件】:
+                // 1. ヤフオクの現在価格が開始価格から実際に上昇していること (currentPrice > initPrice)
+                // 2. かつ、必要USD額がお客様のオファー上限額 (max_bid) を超過していること
                 // -------------------------------------------------------------
-                if (currentPrice > 0 && item.max_bid && !isEnded) {
+                const isPriceActuallyIncreased = currentPrice > initPrice;
+
+                if (currentPrice > 0 && item.max_bid && !isEnded && isPriceActuallyIncreased) {
                     // 利益率（除数）の計算
                     let profitDivisor = 0.6;
                     if (userMeta?.customer_id === 'B001') profitDivisor = 0.9;
