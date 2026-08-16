@@ -327,10 +327,12 @@ export async function GET(request: Request) {
                 // -------------------------------------------------------------
                 // B. オファー金額超過時の顧客・管理者向け即時プッシュ通知
                 // 【厳格化条件】:
-                // 1. ヤフオクの現在価格が開始価格から実際に上昇していること (currentPrice > initPrice)
-                // 2. かつ、必要USD額がお客様のオファー上限額 (max_bid) を超過していること
+                // 1. ヤフオクの現在価格が、オファー申請時（または前回記録時）の基準価格から実際に上昇していること (currentPrice > basePrice)
+                //    ※途中から入札された商品でも、申請時の現在価格からの上昇を正確に検知
+                // 2. かつ、最新の必要USD額がお客様のオファー上限額 (max_bid) を超過していること
                 // -------------------------------------------------------------
-                const isPriceActuallyIncreased = currentPrice > initPrice;
+                const basePrice = item.product_price || initPrice || 0;
+                const isPriceActuallyIncreased = currentPrice > basePrice;
 
                 if (currentPrice > 0 && item.max_bid && !isEnded && isPriceActuallyIncreased) {
                     // 利益率（除数）の計算
