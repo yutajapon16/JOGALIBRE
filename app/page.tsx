@@ -7421,15 +7421,20 @@ export default function Home() {
                                     fetchCategoryItems(cat.url, 1);
                                   }
                                 }}
-                                className="group relative flex items-center justify-between px-4 py-3.5 h-[76px] sm:h-[84px] rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-gray-200 text-left transition-all duration-300 active:scale-[0.99] bg-white"
+                                className="group relative flex items-center justify-between px-5 py-3.5 h-[80px] sm:h-[88px] rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-gray-100 hover:border-indigo-200 text-left transition-all duration-300 active:scale-[0.99] bg-white"
                               >
-                                {/* 右側に配置される商品写真（カード高さ内にフィット・白背景） */}
-                                <img
-                                  src={bgImage}
-                                  alt={title}
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 h-[60px] sm:h-[68px] w-auto max-w-[40%] object-contain opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                                  loading="lazy"
-                                />
+                                {/* 中央に配置される商品写真（カード高さ内にフィット・白背景） */}
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+                                  <img
+                                    src={bgImage}
+                                    alt={title}
+                                    className="h-[76%] sm:h-[84%] w-auto max-w-[65%] object-contain opacity-90 group-hover:opacity-100 group-hover:scale-108 transition-all duration-500"
+                                    loading="lazy"
+                                  />
+                                </div>
+
+                                {/* 爽やかなホワイトグラデーションオーバーレイ（テキストの可読性と画像の引き立ちを両立） */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-white via-white/65 to-white/45 group-hover:from-white/90 group-hover:via-white/55 group-hover:to-white/35 transition-all duration-300 pointer-events-none" />
 
                                 {/* カテゴリ名 & サブテキスト */}
                                 <div className="relative z-10 flex-1 min-w-0 pr-3">
@@ -7437,14 +7442,14 @@ export default function Home() {
                                     {title}
                                   </h4>
                                   {subTag && (
-                                    <p className="text-xs text-slate-600 font-semibold truncate mt-0.5 max-w-[85%]">
+                                    <p className="text-xs text-slate-600 font-bold truncate mt-0.5 max-w-[80%]">
                                       {subTag}
                                     </p>
                                   )}
                                 </div>
 
                                 {/* 矢印ボタン */}
-                                <div className="relative z-10 w-8 h-8 rounded-full bg-slate-900/10 backdrop-blur-sm border border-slate-900/20 flex items-center justify-center text-slate-800 font-bold text-sm flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-500 group-hover:translate-x-1 transition-all shadow-xs">
+                                <div className="relative z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur-md border border-gray-200/80 shadow-xs flex items-center justify-center text-slate-700 font-bold text-sm flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 group-hover:translate-x-1 transition-all">
                                   {cat.sub ? '→' : '↓'}
                                 </div>
                               </button>

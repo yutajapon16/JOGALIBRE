@@ -12,6 +12,18 @@
 const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
+
+// 背景削除＆純白化スクリプトを実行
+try {
+  const pyScript = path.join(__dirname, 'remove-bg-and-white.py');
+  if (fs.existsSync(pyScript)) {
+    console.log('🧹 背景削除＆純白化処理を実行中...');
+    execSync(`python3 "${pyScript}"`, { stdio: 'inherit' });
+  }
+} catch (e) {
+  console.warn('Python background removal warning:', e.message);
+}
 
 // 設定
 const CATEGORIES_DIR = path.join(__dirname, '..', 'public', 'images', 'categories');
