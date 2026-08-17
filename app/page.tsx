@@ -915,13 +915,13 @@ const CATEGORIES: Category[] = [
 // プロモーションスライダーバナーの定義（言語別 5スライド × 2言語 ＝ 計10枚）
 const PROMO_BANNERS = [
   {
-    id: 'b_autopartes',
+    id: 'b_jdm',
     imagePt: '/images/banners/banner_jdm_pt.jpg',
     imageEs: '/images/banners/banner_jdm_es.jpg',
-    titlePt: 'Peças Automotivas Direto do Japão',
-    titleEs: 'Autopartes & JDM Directo de Japón',
-    subtitlePt: 'Rodas, suspensão e peças exclusivas',
-    subtitleEs: 'Ruedas, suspensión y piezas exclusivas',
+    titlePt: 'Peças JDM Exclusivas',
+    titleEs: 'Piezas JDM Exclusivas',
+    subtitlePt: 'Rodas forjadas, freios Brembo e motores direto do Japão',
+    subtitleEs: 'Ruedas forjadas, frenos Brembo y motores directo de Japón',
     targetCatId: 'autopartes'
   },
   {
@@ -930,39 +930,39 @@ const PROMO_BANNERS = [
     imageEs: '/images/banners/banner_fishing_es.jpg',
     titlePt: 'Equipamentos de Pesca',
     titleEs: 'Equipos de Pesca',
-    subtitlePt: 'Molinetes Shimano, Daiwa e varas',
-    subtitleEs: 'Carretes Shimano, Daiwa y cañas',
-    targetUrl: 'https://auctions.yahoo.co.jp/category/list/25180/'
+    subtitlePt: 'Molinetes Shimano Stella, Daiwa e varas de alta precisão',
+    subtitleEs: 'Carretes Shimano Stella, Daiwa y cañas de alta precisión',
+    targetCatId: 'pesca'
   },
   {
     id: 'b_instrumentos',
     imagePt: '/images/banners/banner_instruments_pt.jpg',
     imageEs: '/images/banners/banner_instruments_es.jpg',
-    titlePt: 'Instrumentos Musicais',
-    titleEs: 'Instrumentos Musicales',
-    subtitlePt: 'Saxofones, trompetes e guitarras',
-    subtitleEs: 'Saxofones, trompetas y guitarras',
+    titlePt: 'Instrumentos Japoneses',
+    titleEs: 'Instrumentos Japoneses',
+    subtitlePt: 'Saxofones Yamaha, guitarras e áudio profissional',
+    subtitleEs: 'Saxofones Yamaha, guitarras y audio profesional',
     targetCatId: 'instrumentos'
   },
   {
-    id: 'b_relojes',
-    imagePt: '/images/banners/banner_watches_pt.jpg',
-    imageEs: '/images/banners/banner_watches_es.jpg',
-    titlePt: 'Relógios Japoneses',
-    titleEs: 'Relojes Japoneses',
-    subtitlePt: 'Seiko, G-Shock e edições raras',
-    subtitleEs: 'Seiko, G-Shock y ediciones raras',
-    targetCatId: 'relojes'
+    id: 'b_figure',
+    imagePt: '/images/banners/banner_figure_pt.jpg',
+    imageEs: '/images/banners/banner_figure_es.jpg',
+    titlePt: 'Figures & Colecionáveis',
+    titleEs: 'Figuras de Anime',
+    subtitlePt: 'Dragon Ball, One Piece, Gundam 100% originais do Japão',
+    subtitleEs: 'Dragon Ball, One Piece, Gundam 100% originales de Japón',
+    targetCatId: 'hobby'
   },
   {
-    id: 'b_direct',
-    imagePt: '/images/banners/banner_direct_pt.jpg',
-    imageEs: '/images/banners/banner_direct_es.jpg',
-    titlePt: 'Direto do Japão para Você',
-    titleEs: 'Directo de Japón para Ti',
-    subtitlePt: 'Milhões de itens com envio seguro e consolidado',
-    subtitleEs: 'Millones de artículos con envío seguro',
-    targetKeyword: 'Japão'
+    id: 'b_shipping',
+    imagePt: '/images/banners/banner_shipping_pt.jpg',
+    imageEs: '/images/banners/banner_shipping_es.jpg',
+    titlePt: 'Envio Seguro Direto do Japão',
+    titleEs: 'Envío Seguro Directo de Japón',
+    subtitlePt: 'Embalagem reforçada, frete aéreo e marítimo com rastreamento total',
+    subtitleEs: 'Embalaje reforzado, flete aéreo y marítimo con rastreo total'
+    // ※安心配送はタップ遷移なし
   }
 ];
 
@@ -1301,20 +1301,22 @@ export default function Home() {
     );
   };
 
-  // 全カテゴリ画像のバックグラウンド事前読み込み（プリロード）
-  // サイトアクセス時およびログイン完了時に全カテゴリ画像をブラウザキャッシュに先読みし、タップ時の表示遅延を0msにします
+  // 全カテゴリ画像およびプロモーションバナー画像のバックグラウンド事前読み込み（プリロード）
+  // サイトアクセス時およびログイン完了時に全画像をブラウザキャッシュに先読みし、タップ時・スライド時の表示遅延を0msにします
   useEffect(() => {
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       try {
-        const imageUrls = Array.from(new Set(Object.values(CATEGORY_VISUALS).map(v => v.image)));
-        imageUrls.forEach(url => {
+        const catImages = Object.values(CATEGORY_VISUALS).map(v => v.image);
+        const bannerImages = PROMO_BANNERS.flatMap(b => [b.imagePt, b.imageEs]);
+        const allImages = Array.from(new Set([...catImages, ...bannerImages]));
+        allImages.forEach(url => {
           if (url) {
             const img = document.createElement('img');
             img.src = url;
           }
         });
       } catch (e) {
-        console.warn('Category images preloading error:', e);
+        console.warn('Images preloading error:', e);
       }
     }
   }, []);
@@ -7321,14 +7323,14 @@ export default function Home() {
                               }
                             }}
                             onClick={() => {
-                              const banner = PROMO_BANNERS[currentBannerIndex];
+                              const banner = PROMO_BANNERS[currentBannerIndex] as any;
                               if (banner.targetCatId) {
                                 const target = CATEGORIES.find(c => c.id === banner.targetCatId);
                                 if (target) {
                                   setCategoryHistory([target]);
                                 }
-                              } else if ((banner as any).targetUrl) {
-                                const url = (banner as any).targetUrl;
+                              } else if (banner.targetUrl) {
+                                const url = banner.targetUrl;
                                 setCategorySearchKeyword('');
                                 setJdmSearchKeyword('');
                                 const cond = determineConditionFromUrl(url);
