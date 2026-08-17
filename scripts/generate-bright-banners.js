@@ -8,9 +8,9 @@ const bannerDir = '/Users/jogainc./Desktop/yahoo-auction-proxy/public/images/ban
 const baseImages = {
   jdm: path.join(brainDir, 'base_jdm_parts_1786927632599.jpg'),
   fishing: path.join(brainDir, 'base_fishing_clean_1786929528502.jpg'),
-  instruments: path.join(brainDir, 'base_instruments_white_gradient_1786931329794.jpg'),
+  instruments: path.join(brainDir, 'base_instruments_swapped_1786932057972.jpg'),
   figure: path.join(brainDir, 'base_anime_figures_1786927740115.jpg'),
-  shipping: path.join(brainDir, 'base_safe_shipping_plain.jpg')
+  shipping: path.join(brainDir, 'base_shipping_clean_zero_1786932115358.jpg')
 };
 
 function escapeXml(unsafe) {
