@@ -4,6 +4,7 @@ const path = require('path');
 
 const brainDir = '/Users/jogainc./.gemini/antigravity-ide/brain/38c8ffe1-5f37-4e96-ab74-1ea6b2302b7d';
 const bannerDir = '/Users/jogainc./Desktop/yahoo-auction-proxy/public/images/banners';
+const logoPath = '/Users/jogainc./Desktop/yahoo-auction-proxy/public/icons/jogalibre-logo-full.png';
 
 const baseImages = {
   jdm: path.join(brainDir, 'base_jdm_parts_1786927632599.jpg'),
@@ -23,7 +24,6 @@ function escapeXml(unsafe) {
 }
 
 // 1376x768 のキャンバスにレイアウトするSVGオーバーレイ生成関数
-// フォントサイズを大幅に拡大し、視認性・可読性を最大化
 function createBannerSvg({
   badge,
   badgeBg,
@@ -43,15 +43,23 @@ function createBannerSvg({
   const safeSub2 = escapeXml(sub2);
   const safeButtonText = escapeXml(buttonText);
 
+  // バッジ幅の計算（中央揃え用）
+  const badgeWidth = Math.max(160, safeBadge.length * 11 + 44);
+  const badgeHeight = 42;
+
+  // ボタン幅の計算（中央揃え用）
+  const btnWidth = isInfoOnly ? 360 : 200;
+  const btnHeight = 56;
+
   return `
   <svg width="1376" height="768" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <!-- 明るくクリアなホワイトグラデーション (左側50%を白、右側を自然に透過) -->
       <linearGradient id="whiteGrad" x1="0%" y1="0%" x2="100%" y2="0%">
         <stop offset="0%" stop-color="#ffffff" stop-opacity="1.0" />
-        <stop offset="40%" stop-color="#ffffff" stop-opacity="0.97" />
-        <stop offset="55%" stop-color="#ffffff" stop-opacity="0.80" />
-        <stop offset="68%" stop-color="#ffffff" stop-opacity="0.30" />
+        <stop offset="38%" stop-color="#ffffff" stop-opacity="0.97" />
+        <stop offset="54%" stop-color="#ffffff" stop-opacity="0.80" />
+        <stop offset="68%" stop-color="#ffffff" stop-opacity="0.25" />
         <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0" />
       </linearGradient>
     </defs>
@@ -59,48 +67,39 @@ function createBannerSvg({
     <!-- 左側の明るいホワイトグラデーション背景 -->
     <rect x="0" y="0" width="1376" height="768" fill="url(#whiteGrad)" />
 
-    <!-- 上部バッジ -->
-    <g transform="translate(70, 95)">
-      <rect x="0" y="0" width="${safeBadge.length * 13 + 44}" height="44" rx="22" fill="${badgeBg}" />
-      <text x="22" y="28" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#ffffff" letter-spacing="1.2">
+    <!-- 1. 左上 丸囲みタイトルボックス (完全中央揃え) -->
+    <g transform="translate(70, 75)">
+      <rect x="0" y="0" width="${badgeWidth}" height="${badgeHeight}" rx="${badgeHeight / 2}" fill="${badgeBg}" />
+      <text x="${badgeWidth / 2}" y="26" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#ffffff" letter-spacing="1.2">
         ${safeBadge}
       </text>
     </g>
 
-    <!-- メインタイトル 1行目 (大フォント 58px) -->
-    <text x="70" y="215" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="bold" fill="#0f172a" letter-spacing="-0.5">
+    <!-- 2. メインタイトル 1行目 (大フォント 58px) -->
+    <text x="70" y="195" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="bold" fill="#0f172a" letter-spacing="-0.5">
       ${safeTitle1}
     </text>
 
-    <!-- メインタイトル 2行目 (大フォント 58px ハイライトカラー) -->
-    <text x="70" y="288" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="bold" fill="${title2Color}" letter-spacing="-0.5">
+    <!-- 3. メインタイトル 2行目 (大フォント 58px ハイライトカラー) -->
+    <text x="70" y="268" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="bold" fill="${title2Color}" letter-spacing="-0.5">
       ${safeTitle2}
     </text>
 
-    <!-- サブテキスト (大フォント 29px, 高コントラスト #1e293b, 太字) -->
-    <text x="70" y="380" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="bold" fill="#1e293b">
+    <!-- 4. サブテキスト (大フォント 28px, 高コントラスト #1e293b, 太字) -->
+    <text x="70" y="358" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#1e293b">
       ${safeSub1}
     </text>
-    <text x="70" y="426" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="bold" fill="#1e293b">
+    <text x="70" y="402" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#1e293b">
       ${safeSub2}
     </text>
 
-    <!-- アクションボタンまたは信頼バッジ (22px 太字) -->
-    ${isInfoOnly ? `
-    <g transform="translate(70, 495)">
-      <rect x="0" y="0" width="370" height="62" rx="16" fill="#059669" />
-      <text x="28" y="39" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" fill="#ffffff">
+    <!-- 5. 左下の角丸囲みボックス (完全中央揃え) -->
+    <g transform="translate(70, 470)">
+      <rect x="0" y="0" width="${btnWidth}" height="${btnHeight}" rx="16" fill="${isInfoOnly ? '#059669' : buttonBg}" />
+      <text x="${btnWidth / 2}" y="36" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" fill="#ffffff">
         ${safeButtonText}
       </text>
     </g>
-    ` : `
-    <g transform="translate(70, 495)">
-      <rect x="0" y="0" width="270" height="62" rx="16" fill="${buttonBg}" />
-      <text x="32" y="39" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" fill="#ffffff">
-        ${safeButtonText}
-      </text>
-    </g>
-    `}
   </svg>
   `;
 }
@@ -112,8 +111,18 @@ async function buildBanner(baseImagePath, svgOverlay, outputPath) {
 
   const svgBuffer = Buffer.from(svgOverlay);
 
+  // JOGALIBRE フルロゴ（左下に配置）
+  // 高さ 32px にリサイズ
+  const logoBuffer = await sharp(logoPath)
+    .resize({ height: 34 })
+    .toBuffer();
+
   await sharp(resizedBase)
-    .composite([{ input: svgBuffer, top: 0, left: 0 }])
+    .composite([
+      { input: svgBuffer, top: 0, left: 0 },
+      // 左下に JOGALIBRE ロゴを配置 (X: 70, Y: 680)
+      { input: logoBuffer, top: 680, left: 70 }
+    ])
     .jpeg({ quality: 95, mozjpeg: true })
     .toFile(outputPath);
 
@@ -125,7 +134,7 @@ async function main() {
     fs.mkdirSync(bannerDir, { recursive: true });
   }
 
-  // 1. ① JDMパーツ
+  // 1. ① JDMパーツ (ボタン: Ver lista)
   // PT
   await buildBanner(
     baseImages.jdm,
@@ -137,7 +146,7 @@ async function main() {
       title2Color: '#b91c1c',
       sub1: 'Rodas RAYS/BBS, freios Brembo,',
       sub2: 'escapamentos e motores RB26/2JZ.',
-      buttonText: 'Ver Catalogo ->',
+      buttonText: 'Ver lista',
       buttonBg: '#dc2626'
     }),
     path.join(bannerDir, 'banner_jdm_pt.jpg')
@@ -153,13 +162,13 @@ async function main() {
       title2Color: '#b91c1c',
       sub1: 'Ruedas RAYS/BBS, frenos Brembo,',
       sub2: 'escapes y motores RB26/2JZ.',
-      buttonText: 'Ver Catalogo ->',
+      buttonText: 'Ver lista',
       buttonBg: '#dc2626'
     }),
     path.join(bannerDir, 'banner_jdm_es.jpg')
   );
 
-  // 2. ② 釣り用品 (水色レースなし・純白クリーン)
+  // 2. ② 釣り用品 (ボタン: Ver lista)
   // PT
   await buildBanner(
     baseImages.fishing,
@@ -171,7 +180,7 @@ async function main() {
       title2Color: '#0369a1',
       sub1: 'Molinetes Shimano Stella, Daiwa,',
       sub2: 'varas de carbono e iscas raras.',
-      buttonText: 'Explorar Pesca ->',
+      buttonText: 'Ver lista',
       buttonBg: '#0284c7'
     }),
     path.join(bannerDir, 'banner_fishing_pt.jpg')
@@ -187,13 +196,13 @@ async function main() {
       title2Color: '#0369a1',
       sub1: 'Carretes Shimano Stella, Daiwa,',
       sub2: 'canas de carbono y senuelos raros.',
-      buttonText: 'Explorar Pesca ->',
+      buttonText: 'Ver lista',
       buttonBg: '#0284c7'
     }),
     path.join(bannerDir, 'banner_fishing_es.jpg')
   );
 
-  // 3. ③ 楽器 (ゴールドサックス鮮明・完全ホワイト背景統一)
+  // 3. ③ 楽器 (ボタン: Ver lista)
   // PT
   await buildBanner(
     baseImages.instruments,
@@ -205,7 +214,7 @@ async function main() {
       title2Color: '#b45309',
       sub1: 'Saxofones Yamaha Custom, guitarras',
       sub2: 'japonesas e audio profissional.',
-      buttonText: 'Ver Instrumentos ->',
+      buttonText: 'Ver lista',
       buttonBg: '#d97706'
     }),
     path.join(bannerDir, 'banner_instruments_pt.jpg')
@@ -221,13 +230,13 @@ async function main() {
       title2Color: '#b45309',
       sub1: 'Saxofones Yamaha Custom, guitarras',
       sub2: 'japonesas y audio profesional.',
-      buttonText: 'Ver Instrumentos ->',
+      buttonText: 'Ver lista',
       buttonBg: '#d97706'
     }),
     path.join(bannerDir, 'banner_instruments_es.jpg')
   );
 
-  // 4. ④ フィギュア
+  // 4. ④ フィギュア (ボタン: Ver lista)
   // PT
   await buildBanner(
     baseImages.figure,
@@ -239,7 +248,7 @@ async function main() {
       title2Color: '#6d28d9',
       sub1: 'Dragon Ball, One Piece, Gundam e',
       sub2: 'estatuas exclusivas limitadas.',
-      buttonText: 'Ver Colecao ->',
+      buttonText: 'Ver lista',
       buttonBg: '#7c3aed'
     }),
     path.join(bannerDir, 'banner_figure_pt.jpg')
@@ -255,13 +264,13 @@ async function main() {
       title2Color: '#6d28d9',
       sub1: 'Dragon Ball, One Piece, Gundam y',
       sub2: 'estatuas exclusivas limitadas.',
-      buttonText: 'Ver Coleccion ->',
+      buttonText: 'Ver lista',
       buttonBg: '#7c3aed'
     }),
     path.join(bannerDir, 'banner_figure_es.jpg')
   );
 
-  // 5. ⑤ 安心配送 (JOGALIBREロゴ入りコンテナ・タップ先なし)
+  // 5. ⑤ 安心配送 (ボタン: 100% Protegido e Seguro / 100% Protegido y Seguro, タップ先なし)
   // PT
   await buildBanner(
     baseImages.shipping,
@@ -297,7 +306,7 @@ async function main() {
     path.join(bannerDir, 'banner_shipping_es.jpg')
   );
 
-  console.log('All 10 updated banners generated with large readable typography and clean images!');
+  console.log('All 10 updated banners generated with JOGALIBRE logo and centered text boxes!');
 }
 
 main().catch(console.error);
