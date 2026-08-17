@@ -385,7 +385,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       if (currentUser?.customerId === 'B001') return 0.9;
       if (currentUser?.agentCustomerId === 'B001') return 0.5;
       if (currentUser?.customerId?.startsWith('A')) {
-        const countryLower = currentUser.country?.trim().toLowerCase();
+        const countryLower = (currentUser?.country || '').trim().toLowerCase();
         if (countryLower === 'brasil' || countryLower === 'brazil') {
           return 0.7; // ブラジルエージェント: 30%利益率
         }

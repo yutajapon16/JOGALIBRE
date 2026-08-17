@@ -1306,7 +1306,7 @@ export default function Home() {
       currentUser.agentCustomerId === 'B001' ||
       currentUser.customerId === 'B001' ||
       (currentUser.customerId?.startsWith('A') && 
-        (currentUser.country?.trim().toLowerCase() === 'brasil' || currentUser.country?.trim().toLowerCase() === 'brazil'))
+        ((currentUser.country || '').trim().toLowerCase() === 'brasil' || (currentUser.country || '').trim().toLowerCase() === 'brazil'))
     )
   );
 
@@ -1490,7 +1490,7 @@ export default function Home() {
 
   // マイページの州変更時に市名を取得
   useEffect(() => {
-    if (currentUser?.country?.trim().toLowerCase() === 'brasil' && profileForm.state) {
+    if ((currentUser?.country || '').trim().toLowerCase() === 'brasil' && profileForm.state) {
       setMyPageCitiesLoading(true);
       fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${profileForm.state}/municipios`)
         .then(res => res.json())
@@ -1534,7 +1534,7 @@ export default function Home() {
   const handleMyPageCepChange = async (cepVal: string) => {
     const cleanCep = cepVal.replace(/\D/g, '');
     setProfileForm(prev => ({ ...prev, zipCode: cepVal }));
-    if (cleanCep.length === 8 && currentUser?.country?.trim().toLowerCase() === 'brasil') {
+    if (cleanCep.length === 8 && (currentUser?.country || '').trim().toLowerCase() === 'brasil') {
       try {
         const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
         const data = await res.json();
@@ -2078,7 +2078,7 @@ export default function Home() {
               setLang(profile.language);
               localStorage.setItem('lang', profile.language);
             }
-          } else if (profile.agent_customer_id === 'B001' || profile.country?.trim().toLowerCase() === 'brasil') {
+          } else if (profile.agent_customer_id === 'B001' || (profile.country || '').trim().toLowerCase() === 'brasil') {
             // B001紐づき顧客、またはブラジル国籍の顧客はデフォルトでポルトガル語(pt)を設定
             const currentLang = localStorage.getItem('lang');
             if (currentLang !== 'pt') {
@@ -2857,7 +2857,7 @@ export default function Home() {
       if (currentUser?.customerId === 'B001') return 0.9;
       if (currentUser?.agentCustomerId === 'B001') return 0.5;
       if (currentUser?.customerId?.startsWith('A')) {
-        const countryLower = currentUser.country?.trim().toLowerCase();
+        const countryLower = (currentUser?.country || '').trim().toLowerCase();
         if (countryLower === 'brasil' || countryLower === 'brazil') {
           return 0.7; // ブラジルエージェント: 30%利益率
         }
@@ -2936,7 +2936,7 @@ export default function Home() {
       if (currentUser?.customerId === 'B001') return 0.9;
       if (currentUser?.agentCustomerId === 'B001') return 0.5;
       if (currentUser?.customerId?.startsWith('A')) {
-        const countryLower = currentUser.country?.trim().toLowerCase();
+        const countryLower = (currentUser?.country || '').trim().toLowerCase();
         if (countryLower === 'brasil' || countryLower === 'brazil') {
           return 0.7; // ブラジルエージェント: 30%利益率
         }
@@ -6583,7 +6583,7 @@ export default function Home() {
                     className="w-full border border-gray-200 rounded-lg px-4 h-12 bg-gray-50 text-gray-500"
                   />
                 </div>
-                {currentUser?.country?.trim().toLowerCase() === 'brasil' && (
+                {(currentUser?.country || '').trim().toLowerCase() === 'brasil' && (
                   <div>
                     <label className="block text-sm font-medium mb-1">CPF / CNPJ</label>
                     <input
@@ -6597,27 +6597,27 @@ export default function Home() {
                 )}
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    {currentUser?.country?.trim().toLowerCase() === 'brasil' ? 'CEP' : (lang === 'es' ? 'Código Postal' : 'Código Postal')}
+                    {(currentUser?.country || '').trim().toLowerCase() === 'brasil' ? 'CEP' : (lang === 'es' ? 'Código Postal' : 'Código Postal')}
                   </label>
                   <input
                     type="text"
                     value={profileForm.zipCode}
                     onChange={(e) => {
-                      if (currentUser?.country?.trim().toLowerCase() === 'brasil') {
+                      if ((currentUser?.country || '').trim().toLowerCase() === 'brasil') {
                         handleMyPageCepChange(e.target.value);
                       } else {
                         setProfileForm({ ...profileForm, zipCode: e.target.value });
                       }
                     }}
                     className="w-full border border-gray-300 rounded-lg px-4 h-12"
-                    placeholder={currentUser?.country?.trim().toLowerCase() === 'brasil' ? '00000-000' : '12345-678'}
+                    placeholder={(currentUser?.country || '').trim().toLowerCase() === 'brasil' ? '00000-000' : '12345-678'}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     {lang === 'es' ? 'Estado' : 'Estado'}
                   </label>
-                  {currentUser?.country?.trim().toLowerCase() === 'brasil' ? (
+                  {(currentUser?.country || '').trim().toLowerCase() === 'brasil' ? (
                     <select
                       value={profileForm.state}
                       onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value, city: '' })}
@@ -6646,7 +6646,7 @@ export default function Home() {
                   <label className="block text-sm font-medium mb-1">
                     {lang === 'es' ? 'Ciudad' : 'Cidade'}
                   </label>
-                  {currentUser?.country?.trim().toLowerCase() === 'brasil' ? (
+                  {(currentUser?.country || '').trim().toLowerCase() === 'brasil' ? (
                     <select
                       value={profileForm.city}
                       onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
@@ -6677,7 +6677,7 @@ export default function Home() {
                     />
                   )}
                 </div>
-                {currentUser?.country?.trim().toLowerCase() === 'brasil' ? (
+                {(currentUser?.country || '').trim().toLowerCase() === 'brasil' ? (
                   <>
                     <div>
                       <label className="block text-sm font-medium mb-1">
@@ -6753,7 +6753,7 @@ export default function Home() {
                     if (profileSaving) return;
                     setProfileSaving(true);
                     try {
-                      const isBrasil = currentUser?.country?.trim().toLowerCase() === 'brasil';
+                      const isBrasil = (currentUser?.country || '').trim().toLowerCase() === 'brasil';
                       const finalAddress = isBrasil && profileForm.addressNumber
                         ? `${profileForm.address}, ${profileForm.addressNumber}${profileForm.complement ? ', ' + profileForm.complement : ''}`.trim()
                         : profileForm.address;
@@ -8769,7 +8769,7 @@ export default function Home() {
               </label>
 
               {/* 項目6: B001/ブラジルエージェント向け - 現地引き渡し・税関免責 */}
-              {(currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.role === 'agent' && (currentUser?.country?.toLowerCase() === 'brasil' || currentUser?.country?.toLowerCase() === 'brazil'))) && (
+              {(currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.role === 'agent' && ((currentUser?.country || '').toLowerCase() === 'brasil' || (currentUser?.country || '').toLowerCase() === 'brazil'))) && (
                 <label className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition cursor-pointer group">
                   <input
                     type="checkbox"
@@ -8807,9 +8807,9 @@ export default function Home() {
               <div className="pt-4 border-t border-gray-100 sticky bottom-0 bg-white">
                 <button
                   type="submit"
-                  disabled={!termsChecked.item1 || !termsChecked.item2 || !termsChecked.item3 || !termsChecked.item4 || !termsChecked.item5 || ((currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.role === 'agent' && (currentUser?.country?.toLowerCase() === 'brasil' || currentUser?.country?.toLowerCase() === 'brazil'))) && !termsChecked.item6)}
+                  disabled={!termsChecked.item1 || !termsChecked.item2 || !termsChecked.item3 || !termsChecked.item4 || !termsChecked.item5 || ((currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.role === 'agent' && ((currentUser?.country || '').toLowerCase() === 'brasil' || (currentUser?.country || '').toLowerCase() === 'brazil'))) && !termsChecked.item6)}
                   className={`w-full py-4 rounded-xl font-bold text-base transition duration-200 shadow-lg ${
-                    (termsChecked.item1 && termsChecked.item2 && termsChecked.item3 && termsChecked.item4 && termsChecked.item5 && (!(currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.role === 'agent' && (currentUser?.country?.toLowerCase() === 'brasil' || currentUser?.country?.toLowerCase() === 'brazil'))) || termsChecked.item6))
+                    (termsChecked.item1 && termsChecked.item2 && termsChecked.item3 && termsChecked.item4 && termsChecked.item5 && (!(currentUser?.customerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.role === 'agent' && ((currentUser?.country || '').toLowerCase() === 'brasil' || (currentUser?.country || '').toLowerCase() === 'brazil'))) || termsChecked.item6))
                       ? 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-indigo-200'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
                   }`}
