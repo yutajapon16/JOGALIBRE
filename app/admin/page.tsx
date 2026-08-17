@@ -878,8 +878,24 @@ export default function AdminDashboard() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // データ取得（ログイン後のみ実行）
-  // データ取得（ログイン後のみ実行）
+  // 1. ログイン時に全タブの情報を一括並列取得（全タブ事前ロード）
+  // ログイン完了時にすべてのタブデータを先読みしておくことで、タブ切り替え時の待ち時間を0msにします
+  useEffect(() => {
+    if (currentUser) {
+      Promise.allSettled([
+        fetchBidRequests(),
+        fetchPurchasedItems(),
+        fetchShippingContainers(),
+        fetchDeposits(),
+        fetchUsersData(),
+        fetchFinancials(financialMonth),
+        fetchInviteCodes(),
+        fetchExchangeRate()
+      ]);
+    }
+  }, [currentUser]);
+
+  // 2. タブ切り替え時または定期更新（バックグラウンドで最新データを同期）
   useEffect(() => {
     if (currentUser) {
       if (activeTab === 'requests') {
@@ -914,7 +930,7 @@ export default function AdminDashboard() {
         if (interval) clearInterval(interval);
       };
     }
-  }, [currentUser, activeTab]);
+  }, [currentUser, activeTab, financialMonth]);
 
   // PWA (ホーム画面追加時) 向けのカスタム Pull-to-Refresh 実装
   useEffect(() => {
