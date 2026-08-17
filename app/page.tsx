@@ -1784,9 +1784,33 @@ export default function Home() {
       if (cached && !currentUser) {
         try {
           const cacheData = JSON.parse(cached);
-          // 仮のユーザー情報としてセット（後でgetCurrentUserによって上書きされる）
-          setCurrentUser(prev => prev ? prev : { ...cacheData, email: '' } as any);
-        } catch {}
+          if (cacheData && cacheData.id && typeof cacheData === 'object') {
+            // 仮のユーザー情報としてセット（後でgetCurrentUserによって上書きされる）
+            setCurrentUser(prev => prev ? prev : {
+              id: cacheData.id,
+              email: cacheData.email || '',
+              role: cacheData.role || 'customer',
+              fullName: cacheData.fullName,
+              whatsapp: cacheData.whatsapp,
+              customerId: cacheData.customerId,
+              address: cacheData.address,
+              zipCode: cacheData.zipCode,
+              country: cacheData.country || '',
+              agentCustomerId: cacheData.agentCustomerId,
+              agentFullName: cacheData.agentFullName,
+              depositAmount: cacheData.depositAmount,
+              depositConfirmedAt: cacheData.depositConfirmedAt,
+              termsAcceptedAt: cacheData.termsAcceptedAt,
+              cpf: cacheData.cpf,
+              state: cacheData.state,
+              city: cacheData.city,
+              language: cacheData.language
+            } as any);
+          }
+        } catch {
+          // キャッシュが壊れている場合は安全に削除
+          localStorage.removeItem('joga_user_cache');
+        }
       }
     }
 
@@ -5935,8 +5959,8 @@ export default function Home() {
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {getFilteredDeposits().map((item) => {
-                      const parts = item.deposit_date.split('-');
-                      const dateFormatted = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : item.deposit_date.replace(/-/g, '/');
+                      const parts = (item.deposit_date || '').split('-');
+                      const dateFormatted = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : (item.deposit_date || '').replace(/-/g, '/');
                       const paymentMethodNames: Record<string, string> = {
                         bank: 'Banco',
                         paypal: 'PayPal',
