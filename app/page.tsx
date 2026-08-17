@@ -2314,11 +2314,11 @@ export default function Home() {
   const getFilteredDeposits = () => {
     let list = depositsList;
     if (depositFilterYear !== 'all') {
-      list = list.filter(d => d.deposit_date.startsWith(depositFilterYear));
+      list = list.filter(d => (d.deposit_date || '').startsWith(depositFilterYear));
     }
     if (depositFilterMonth !== 'all') {
       list = list.filter(d => {
-        const parts = d.deposit_date.split('-');
+        const parts = (d.deposit_date || '').split('-');
         if (parts.length < 2) return false;
         return Number(parts[1]).toString() === depositFilterMonth;
       });
@@ -5583,7 +5583,7 @@ export default function Home() {
                                     </span>
                                   </>
                                 ) : !item.paid ? (
-                                  (isBrlUser || item.agentCustomerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.customerId?.startsWith('A') && (currentUser?.country?.toLowerCase() === 'brasil' || currentUser?.country?.toLowerCase() === 'brazil'))) ? (
+                                  (isBrlUser || item.agentCustomerId === 'B001' || currentUser?.agentCustomerId === 'B001' || (currentUser?.customerId?.startsWith('A') && (((currentUser?.country || '').toLowerCase() === 'brasil') || ((currentUser?.country || '').toLowerCase() === 'brazil')))) ? (
                                     <label className={`flex items-center gap-2 cursor-pointer select-none py-1.5 px-3 rounded-lg border transition-all shadow-sm ${
                                       selectedBrlItemIds.includes(item.id)
                                         ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-extrabold'
@@ -6113,7 +6113,7 @@ export default function Home() {
                     const isB001Linked = item.agentCustomerId === 'B001';
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const isB001Self = item.customerId === 'B001';
-                    const countryLower = item.customerCountry?.trim().toLowerCase();
+                    const countryLower = (item.customerCountry || '').trim().toLowerCase();
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
 

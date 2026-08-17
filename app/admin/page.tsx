@@ -654,8 +654,8 @@ export default function AdminDashboard() {
           .filter(c => c.agentCustomerId === 'B001')
           .map(c => c.customerId);
         const brasilAgentIds = [
-          ...customersList.filter(c => c.customerId?.startsWith('A') && (c.country?.trim().toLowerCase() === 'brasil' || c.country?.trim().toLowerCase() === 'brazil')).map(c => c.customerId),
-          ...agentsList.filter(a => a.customerId?.startsWith('A') && (a.country?.trim().toLowerCase() === 'brasil' || a.country?.trim().toLowerCase() === 'brazil')).map(a => a.customerId)
+          ...customersList.filter(c => c.customerId?.startsWith('A') && ((c.country || '').trim().toLowerCase() === 'brasil' || (c.country || '').trim().toLowerCase() === 'brazil')).map(c => c.customerId),
+          ...agentsList.filter(a => a.customerId?.startsWith('A') && ((a.country || '').trim().toLowerCase() === 'brasil' || (a.country || '').trim().toLowerCase() === 'brazil')).map(a => a.customerId)
         ];
         filtered = filtered.filter(item => 
           item.customer_id === 'B001' || linkedCustomerIds.includes(item.customer_id) || brasilAgentIds.includes(item.customer_id)
@@ -1114,7 +1114,7 @@ export default function AdminDashboard() {
         filtered = filtered.filter(item => {
           const isB001 = item.customerId === 'B001';
           const isB001Linked = item.agentCustomerId === 'B001';
-          const countryLower = item.customerCountry?.trim().toLowerCase();
+          const countryLower = (item.customerCountry || '').trim().toLowerCase();
           const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
           return isB001 || isB001Linked || isBrasilAgent;
         });
@@ -2036,7 +2036,7 @@ export default function AdminDashboard() {
       } else if (selectedRequest.agentCustomerId === 'B001') {
         profitDivisor = 0.5;
       } else if (selectedRequest.customerId?.startsWith('A')) {
-        const countryLower = selectedRequest.customerCountry?.trim().toLowerCase();
+        const countryLower = (selectedRequest.customerCountry || '').trim().toLowerCase();
         if (countryLower === 'brasil' || countryLower === 'brazil') {
           profitDivisor = 0.7;
         } else {
@@ -2067,7 +2067,7 @@ export default function AdminDashboard() {
     // CSVデータ行
     const rows = items.map(item => {
       const isB001Linked = item.agentCustomerId === 'B001';
-      const countryLower = item.customerCountry?.trim().toLowerCase();
+      const countryLower = (item.customerCountry || '').trim().toLowerCase();
       const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
       
       const cost = item.finalPrice || 0;
@@ -2627,7 +2627,7 @@ export default function AdminDashboard() {
 
                     {(() => {
                       const isB001Linked = request.agentCustomerId === 'B001';
-                      const countryLower = request.customerCountry?.trim().toLowerCase();
+                      const countryLower = (request.customerCountry || '').trim().toLowerCase();
                       const isBrasilAgent = request.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
 
                       if (!isB001Linked && !isBrasilAgent) return null;
@@ -2955,7 +2955,7 @@ export default function AdminDashboard() {
                       : (item.counterOffer || item.maxBid || 0));
                     const isB001Linked = item.agentCustomerId === 'B001';
                     const isB001Self = item.customerId === 'B001';
-                    const countryLower = item.customerCountry?.trim().toLowerCase();
+                    const countryLower = (item.customerCountry || '').trim().toLowerCase();
                     const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
 
                     if (isB001Self || isB001Linked || isBrasilAgent) {
@@ -2973,7 +2973,7 @@ export default function AdminDashboard() {
                       : (item.counterOffer || item.maxBid || 0));
                     const isB001Linked = item.agentCustomerId === 'B001';
                     const isB001Self = item.customerId === 'B001';
-                    const countryLower = item.customerCountry?.trim().toLowerCase();
+                    const countryLower = (item.customerCountry || '').trim().toLowerCase();
                     const isBrasilAgent = item.customerId?.startsWith('A') && (countryLower === 'brasil' || countryLower === 'brazil');
 
                     if (isB001Self || isB001Linked || isBrasilAgent) {
@@ -4143,8 +4143,8 @@ export default function AdminDashboard() {
                         .filter(c => c.agentCustomerId === 'B001')
                         .map(c => c.customerId);
                       const brasilAgentIds = [
-                        ...customersList.filter(c => c.customerId?.startsWith('A') && (c.country?.trim().toLowerCase() === 'brasil' || c.country?.trim().toLowerCase() === 'brazil')).map(c => c.customerId),
-                        ...agentsList.filter(a => a.customerId?.startsWith('A') && (a.country?.trim().toLowerCase() === 'brasil' || a.country?.trim().toLowerCase() === 'brazil')).map(a => a.customerId)
+                        ...customersList.filter(c => c.customerId?.startsWith('A') && ((c.country || '').trim().toLowerCase() === 'brasil' || (c.country || '').trim().toLowerCase() === 'brazil')).map(c => c.customerId),
+                        ...agentsList.filter(a => a.customerId?.startsWith('A') && ((a.country || '').trim().toLowerCase() === 'brasil' || (a.country || '').trim().toLowerCase() === 'brazil')).map(a => a.customerId)
                       ];
                       return item.customerId === 'B001' || linkedCustomerIds.includes(item.customerId) || brasilAgentIds.includes(item.customerId);
                     }
@@ -4197,8 +4197,8 @@ export default function AdminDashboard() {
                     .filter(c => c.agentCustomerId === 'B001')
                     .map(c => c.customerId);
                   const brasilAgentIds = [
-                    ...customersList.filter(c => c.customerId?.startsWith('A') && (c.country?.trim().toLowerCase() === 'brasil' || c.country?.trim().toLowerCase() === 'brazil')).map(c => c.customerId),
-                    ...agentsList.filter(a => a.customerId?.startsWith('A') && (a.country?.trim().toLowerCase() === 'brasil' || a.country?.trim().toLowerCase() === 'brazil')).map(a => a.customerId)
+                    ...customersList.filter(c => c.customerId?.startsWith('A') && ((c.country || '').trim().toLowerCase() === 'brasil' || (c.country || '').trim().toLowerCase() === 'brazil')).map(c => c.customerId),
+                    ...agentsList.filter(a => a.customerId?.startsWith('A') && ((a.country || '').trim().toLowerCase() === 'brasil' || (a.country || '').trim().toLowerCase() === 'brazil')).map(a => a.customerId)
                   ];
 
                   // 通算入金 (商品代金のみ)
@@ -4893,7 +4893,7 @@ export default function AdminDashboard() {
                 } else if (selectedRequest.agentCustomerId === 'B001') {
                   profitDivisor = 0.5; // B001紐づき (利益率50%＝除数0.5)
                 } else if (selectedRequest.customerId?.startsWith('A')) {
-                  const countryLower = selectedRequest.customerCountry?.trim().toLowerCase();
+                  const countryLower = (selectedRequest.customerCountry || '').trim().toLowerCase();
                   if (countryLower === 'brasil' || countryLower === 'brazil') {
                     profitDivisor = 0.7; // ブラジルエージェント (利益率30%＝除数0.7)
                   } else {
@@ -4925,7 +4925,7 @@ export default function AdminDashboard() {
                     } else if (selectedRequest.agentCustomerId === 'B001') {
                       profitDivisor = 0.5; // B001紐づき (利益率50%＝除数0.5)
                     } else if (selectedRequest.customerId?.startsWith('A')) {
-                      const countryLower = selectedRequest.customerCountry?.trim().toLowerCase();
+                      const countryLower = (selectedRequest.customerCountry || '').trim().toLowerCase();
                       if (countryLower === 'brasil' || countryLower === 'brazil') {
                         profitDivisor = 0.7; // ブラジルエージェント (利益率30%＝除数0.7)
                       } else {

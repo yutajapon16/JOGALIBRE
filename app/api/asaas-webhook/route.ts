@@ -151,7 +151,7 @@ import { sendReceiptEmail } from '@/lib/resend';
  * 該当するbid_requestを更新し、入金データを作成、領収書を発行する
  */
 async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
-  const bidRequestIds = payment.externalReference?.split(',').map(id => id.trim()).filter(id => id);
+  const bidRequestIds = payment.externalReference ? payment.externalReference.split(',').map(id => id.trim()).filter(id => id) : [];
 
   if (!bidRequestIds || bidRequestIds.length === 0) {
     console.log(`[ASAAS Webhook] externalReferenceが設定されていないため、更新をスキップ: ${payment.id}`);
