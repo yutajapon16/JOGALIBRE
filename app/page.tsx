@@ -966,6 +966,21 @@ const PROMO_BANNERS = [
   }
 ];
 
+// カテゴリIDから親〜子までの階層配列を再帰的に取得するヘルパー関数
+function findCategoryPath(cats: any[], targetId: string, currentPath: any[] = []): any[] | null {
+  for (const cat of cats) {
+    const newPath = [...currentPath, cat];
+    if (cat.id === targetId) {
+      return newPath;
+    }
+    if (cat.sub && Array.isArray(cat.sub)) {
+      const found = findCategoryPath(cat.sub, targetId, newPath);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 // 人気ブランド・クイックタグ定義
 const QUICK_BRAND_TAGS = [
   { name: 'BBS', keyword: 'BBS', emoji: '🏎️' },
@@ -7325,9 +7340,17 @@ export default function Home() {
                             onClick={() => {
                               const banner = PROMO_BANNERS[currentBannerIndex] as any;
                               if (banner.targetCatId) {
-                                const target = CATEGORIES.find(c => c.id === banner.targetCatId);
-                                if (target) {
-                                  setCategoryHistory([target]);
+                                const path = findCategoryPath(CATEGORIES, banner.targetCatId);
+                                if (path && path.length > 0) {
+                                  setCategoryHistory(path);
+                                  const targetCat = path[path.length - 1];
+                                  if (targetCat.url) {
+                                    setCategorySearchKeyword('');
+                                    setJdmSearchKeyword('');
+                                    const cond = determineConditionFromUrl(targetCat.url);
+                                    setSearchCondition(cond);
+                                    fetchCategoryItems(targetCat.url, 1);
+                                  }
                                 }
                               } else if (banner.targetUrl) {
                                 const url = banner.targetUrl;
