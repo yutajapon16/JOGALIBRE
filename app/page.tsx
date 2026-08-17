@@ -1301,6 +1301,24 @@ export default function Home() {
     );
   };
 
+  // 全カテゴリ画像のバックグラウンド事前読み込み（プリロード）
+  // サイトアクセス時およびログイン完了時に全カテゴリ画像をブラウザキャッシュに先読みし、タップ時の表示遅延を0msにします
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      try {
+        const imageUrls = Array.from(new Set(Object.values(CATEGORY_VISUALS).map(v => v.image)));
+        imageUrls.forEach(url => {
+          if (url) {
+            const img = document.createElement('img');
+            img.src = url;
+          }
+        });
+      } catch (e) {
+        console.warn('Category images preloading error:', e);
+      }
+    }
+  }, []);
+
   // モーダルを開くときに既存のCPFをセット
   useEffect(() => {
     if (showBrlBatchPaymentModal && currentUser?.cpf) {
@@ -7429,7 +7447,8 @@ export default function Home() {
                                     src={bgImage}
                                     alt={title}
                                     className="h-[90%] sm:h-[95%] w-auto max-w-[78%] sm:max-w-[82%] object-contain mix-blend-multiply opacity-95 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                                    loading="lazy"
+                                    loading="eager"
+                                    decoding="async"
                                   />
                                 </div>
 
