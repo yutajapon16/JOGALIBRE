@@ -181,12 +181,25 @@ export const parseJstDateTime = (dateStr: string): Date | null => {
 
 export const parseAnyDateTime = (dateStr: string): Date | null => {
   if (!dateStr) return null;
-  const d1 = parseDbDateTime(dateStr);
-  if (d1 && !isNaN(d1.getTime())) return d1;
-  const d2 = parseJstDateTime(dateStr);
-  if (d2 && !isNaN(d2.getTime())) return d2;
-  const d3 = new Date(dateStr);
-  return isNaN(d3.getTime()) ? null : d3;
+  const cleanStr = dateStr.trim();
+
+  // 1. すでにタイムゾーン情報（'Z', '+', または日付区切り以外の10文字目以降の '-'）がある場合はそのままパース
+  const hasTimeZone = cleanStr.includes('Z') || cleanStr.includes('+') || cleanStr.includes('-', 10);
+  if (hasTimeZone) {
+    const d = new Date(cleanStr.replace(' ', 'T'));
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // 2. タイムゾーン情報がない場合、ヤフオクのオークション日時（JST = +09:00）として厳格にパース
+  const dJst = parseJstDateTime(cleanStr);
+  if (dJst && !isNaN(dJst.getTime())) return dJst;
+
+  // 3. DB日時パース (UTCフォールバック)
+  const dDb = parseDbDateTime(cleanStr);
+  if (dDb && !isNaN(dDb.getTime())) return dDb;
+
+  const dFallback = new Date(cleanStr);
+  return isNaN(dFallback.getTime()) ? null : dFallback;
 };
 
 export const getTimeRemaining = (endTime: string, lang: 'ja' | 'es' | 'pt', timeLeftStr?: string) => {

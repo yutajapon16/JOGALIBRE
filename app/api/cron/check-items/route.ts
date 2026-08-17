@@ -34,7 +34,7 @@ export async function GET(request: Request) {
         const now = new Date();
         const origin = new URL(request.url).origin;
 
-        // 最新の為替レート（USD/JPY）をリアルタイム取得（フロントエンドと完全一致）
+        // 最新の為替レート（USD/JPY）をリアルタイム取得
         let jpyRate = 155.73;
         try {
             const rateData = await getResilientExchangeRate();
@@ -60,70 +60,11 @@ export async function GET(request: Request) {
         }
 
         // -------------------------------------------------------------
-        // 1. 12時間前通知チェック（未完了の全申請対象）
-        // -------------------------------------------------------------
-        const { data: allActiveItems, error: activeError } = await supabaseAdmin
-            .from('bid_requests')
-            .select('id, product_id, product_title, product_url, product_end_time, status, customer_email, customer_message')
-            .is('final_status', null);
-
-        if (activeError) {
-            console.error('Error fetching active items for 12h check:', activeError);
-        }
-
-        if (allActiveItems && allActiveItems.length > 0) {
-            for (const item of allActiveItems) {
-                if (item.customer_message && item.customer_message.includes('[12h_notified]')) continue;
-                if (!item.product_end_time) continue;
-
-                const endDate = parseAnyDateTime(item.product_end_time);
-                if (!endDate) continue;
-
-                const diffMs = endDate.getTime() - now.getTime();
-                const diffHours = diffMs / (1000 * 60 * 60);
-
-                if (diffHours > 0 && diffHours <= 12) {
-                    const userMeta = item.customer_email ? userRoleMap.get(item.customer_email.toLowerCase()) : null;
-                    const customerId = userMeta?.customer_id || '不明';
-                    const productTitle = item.product_title || item.product_id || '商品情報なし';
-
-                    const title = item.status === 'pending'
-                        ? '⏰ 【残り12時間】未確認の申請あり'
-                        : '🔔 【残り12時間】オークション終了間近';
-
-                    const body = `商品: ${productTitle} (顧客: ${customerId})`;
-
-                    try {
-                        await fetch(`${origin}/api/push-send`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                sendToAdmins: true,
-                                title,
-                                body,
-                                url: '/admin'
-                            })
-                        });
-
-                        const updatedMsg = ((item.customer_message || '') + ' [12h_notified]').trim();
-                        await supabaseAdmin
-                            .from('bid_requests')
-                            .update({ customer_message: updatedMsg })
-                            .eq('id', item.id);
-                    } catch (e) {
-                        console.error(`Failed to send 12h notification for item ${item.id}:`, e);
-                    }
-                }
-            }
-        }
-
-        // -------------------------------------------------------------
-        // 2. 残り時間に応じた動的スケジュールチェック & 価格更新・通知
+        // 未完了の全申請（pending, approved）を一括取得して一元処理
         // -------------------------------------------------------------
         const { data: items, error: fetchError } = await supabaseAdmin
             .from('bid_requests')
             .select('id, product_id, product_title, product_url, product_end_time, status, customer_email, product_price, max_bid, customer_message')
-            .in('status', ['pending', 'approved'])
             .is('final_status', null);
 
         if (fetchError) throw fetchError;
@@ -136,11 +77,13 @@ export async function GET(request: Request) {
 
         for (const item of items) {
             try {
-                const msgStr = item.customer_message || '';
+                let currentMsg = item.customer_message || '';
                 const userMeta = item.customer_email ? userRoleMap.get(item.customer_email.toLowerCase()) : null;
-                const lang = userMeta?.language || 'pt'; // デフォルトはポルトガル語
+                const lang = userMeta?.language || 'pt';
+                const customerId = userMeta?.customer_id || '不明';
+                const productTitle = item.product_title || item.product_id || '商品';
 
-                // 残り時間の算出
+                // 1. 残り時間の算出（JST基準で正確にミリ秒計算）
                 let diffHours = 999;
                 if (item.product_end_time) {
                     const endDate = parseAnyDateTime(item.product_end_time);
@@ -149,42 +92,98 @@ export async function GET(request: Request) {
                     }
                 }
 
-                // 前回のチェックタイムスタンプ（[last_check:TIMESTAMP]）の抽出
+                // 2. 12時間前通知チェック（未完了の全ステータス対象）
+                // 残り時間が12時間以内、かつ2時間超で、未通知の場合
+                if (diffHours > 2 && diffHours <= 12 && !currentMsg.includes('[12h_notified]')) {
+                    const title = item.status === 'pending'
+                        ? '⏰ 【残り12時間】未確認の申請あり'
+                        : '🔔 【残り12時間】オークション終了間近';
+                    const body = `商品: ${productTitle} (顧客: ${customerId})`;
+
+                    pushPromises.push(
+                        fetch(`${origin}/api/push-send`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                sendToAdmins: true,
+                                title,
+                                body,
+                                url: '/admin'
+                            })
+                        }).catch(e => console.error(`12h push error for item ${item.id}:`, e))
+                    );
+
+                    currentMsg = `${currentMsg} [12h_notified]`.trim();
+                }
+
+                // pending（未承認）かつURLなし、または巡回不要な場合の簡易更新
+                if (!item.product_url || (item.status !== 'pending' && item.status !== 'approved')) {
+                    if (currentMsg !== item.customer_message) {
+                        await supabaseAdmin
+                            .from('bid_requests')
+                            .update({ customer_message: currentMsg })
+                            .eq('id', item.id);
+                    }
+                    continue;
+                }
+
+                // 3. 残り時間に応じた動的スクレイピング頻度制御
                 let lastCheckTs = 0;
-                const matchCheck = msgStr.match(/\[last_check:(\d+)\]/);
+                const matchCheck = currentMsg.match(/\[last_check:(\d+)\]/);
                 if (matchCheck) {
                     lastCheckTs = parseInt(matchCheck[1], 10);
                 }
-
                 const elapsedMs = now.getTime() - lastCheckTs;
 
-                // 残り時間に応じた動的スキップ判定
-                // - 24時間以上: 3時間（3 * 60 * 60 * 1000 ms）経過していなければスキップ
-                // - 2時間〜24時間: 15分（15 * 60 * 1000 ms）経過していなければスキップ
+                // - 24時間以上: 3時間経過していなければスキップ
+                // - 2時間〜24時間: 15分経過していなければスキップ
                 // - 2時間以内: 毎実行（スキップなし）
                 if (diffHours > 24 && elapsedMs < 3 * 60 * 60 * 1000) {
-                    continue; // 3時間未経過のためスキップ
+                    if (currentMsg !== item.customer_message) {
+                        await supabaseAdmin
+                            .from('bid_requests')
+                            .update({ customer_message: currentMsg })
+                            .eq('id', item.id);
+                    }
+                    continue;
                 } else if (diffHours > 2 && diffHours <= 24 && elapsedMs < 15 * 60 * 1000) {
-                    continue; // 15分未経過のためスキップ
+                    if (currentMsg !== item.customer_message) {
+                        await supabaseAdmin
+                            .from('bid_requests')
+                            .update({ customer_message: currentMsg })
+                            .eq('id', item.id);
+                    }
+                    continue;
                 }
 
-                // -------------------------------------------------------------
-                // ヤフオクページのスクレイピング
-                // -------------------------------------------------------------
+                // 4. ヤフオクページのスクレイピング
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-                const res = await fetch(item.product_url, {
-                    signal: controller.signal,
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                let html = '';
+                try {
+                    const res = await fetch(item.product_url, {
+                        signal: controller.signal,
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        }
+                    });
+                    clearTimeout(timeoutId);
+                    html = await res.text();
+                } catch (fetchErr) {
+                    clearTimeout(timeoutId);
+                    console.error(`Fetch error for ${item.product_url}:`, fetchErr);
+                    // 通信エラー時もメッセージ更新があれば保存
+                    if (currentMsg !== item.customer_message) {
+                        await supabaseAdmin
+                            .from('bid_requests')
+                            .update({ customer_message: currentMsg })
+                            .eq('id', item.id);
                     }
-                });
+                    continue;
+                }
 
-                clearTimeout(timeoutId);
-                const html = await res.text();
-
-                // 最新価格および開始価格・終了時間の抽出
+                // 最新価格および終了時間の抽出
                 let currentPrice = 0;
                 let initPrice = 0;
                 let latestEndTime: string | null = null;
@@ -214,7 +213,7 @@ export async function GET(request: Request) {
                     }
                 }
 
-                // フォールバック1: メタタグからの価格抽出
+                // フォールバック1: メタタグ
                 if (!currentPrice || currentPrice === 0) {
                     const ogPriceMatch = html.match(/<meta[^>]*property=["'](?:og:price:amount|product:price:amount)["'][^>]*content=["'](\d+)["']/i);
                     if (ogPriceMatch && ogPriceMatch[1]) {
@@ -222,7 +221,7 @@ export async function GET(request: Request) {
                     }
                 }
 
-                // フォールバック2: HTML価格テキストからの抽出
+                // フォールバック2: HTML価格テキスト
                 if (!currentPrice || currentPrice === 0) {
                     const priceRegexMatch = html.match(/class=["'][^"']*Price__value[^"']*["'][^>]*>([\d,]+)\s*円/i);
                     if (priceRegexMatch && priceRegexMatch[1]) {
@@ -230,38 +229,33 @@ export async function GET(request: Request) {
                     }
                 }
 
-                // 初期価格のフォールバック（初期価格が取れなかった場合は申請時の商品価格を使用）
                 if (!initPrice || initPrice === 0) {
                     initPrice = item.product_price || currentPrice;
                 }
 
-                // 終了判定キーワード
+                // 終了判定
                 const isEnded = html.includes('終了しました') ||
                     html.includes('オークションは終了しました') ||
                     html.includes('再出品');
 
-                // タグの管理
-                let updatedMsg = msgStr;
-
-                // [last_check:...] タグを現在のタイムスタンプに更新
-                if (updatedMsg.includes('[last_check:')) {
-                    updatedMsg = updatedMsg.replace(/\[last_check:\d+\]/, `[last_check:${now.getTime()}]`);
+                // [last_check:TIMESTAMP] の更新
+                if (currentMsg.includes('[last_check:')) {
+                    currentMsg = currentMsg.replace(/\[last_check:\d+\]/, `[last_check:${now.getTime()}]`);
                 } else {
-                    updatedMsg = `${updatedMsg} [last_check:${now.getTime()}]`.trim();
+                    currentMsg = `${currentMsg} [last_check:${now.getTime()}]`.trim();
                 }
 
                 const updateData: Record<string, any> = {
-                    customer_message: updatedMsg
+                    customer_message: currentMsg
                 };
 
                 if (currentPrice > 0 && currentPrice !== item.product_price) {
                     updateData.product_price = currentPrice;
                 }
 
-                // ヤフオク終了日時の自動同期（自動延長や出品者による延長を反映）
+                // ヤフオク終了日時の自動同期
                 if (latestEndTime && latestEndTime !== item.product_end_time) {
                     updateData.product_end_time = latestEndTime;
-                    // 最新の終了時間で残り時間 diffHours も再計算
                     const latestEndDate = parseAnyDateTime(latestEndTime);
                     if (latestEndDate) {
                         diffHours = (latestEndDate.getTime() - now.getTime()) / (1000 * 60 * 60);
@@ -270,19 +264,15 @@ export async function GET(request: Request) {
 
                 if (isEnded) {
                     updateData.final_status = 'ended_check_needed';
-                    updateData.customer_message = updatedMsg.includes('Auction ended.')
-                        ? updatedMsg
-                        : `${updatedMsg} Auction ended. Waiting for admin to confirm result.`.trim();
+                    currentMsg = currentMsg.includes('Auction ended.')
+                        ? currentMsg
+                        : `${currentMsg} Auction ended. Waiting for admin to confirm result.`.trim();
+                    updateData.customer_message = currentMsg;
                 }
 
-                // -------------------------------------------------------------
-                // A. 終了まで2時間以内の通知（顧客 & 管理者）
-                // -------------------------------------------------------------
-                if (diffHours > 0 && diffHours <= 2 && !msgStr.includes('[2h_notified]') && !isEnded) {
-                    const customerId = userMeta?.customer_id || '不明';
-                    const productTitle = item.product_title || item.product_id || '商品';
-
-                    // 1. 管理者向け通知
+                // 5. 終了まで2時間以内の通知（顧客 & 管理者）
+                if (diffHours > 0 && diffHours <= 2 && !currentMsg.includes('[2h_notified]') && !isEnded) {
+                    // 管理者通知
                     pushPromises.push(
                         fetch(`${origin}/api/push-send`, {
                             method: 'POST',
@@ -296,7 +286,7 @@ export async function GET(request: Request) {
                         }).catch(e => console.error('Admin 2h push error:', e))
                     );
 
-                    // 2. 顧客向け通知（言語別）
+                    // 顧客通知
                     if (item.customer_email) {
                         const custTitle = lang === 'es'
                             ? '⏰ ¡Quedan menos de 2 horas!'
@@ -319,23 +309,15 @@ export async function GET(request: Request) {
                         );
                     }
 
-                    // 2時間前通知済みフラグの記録
-                    updatedMsg = `${updatedMsg} [2h_notified]`.trim();
-                    updateData.customer_message = updatedMsg;
+                    currentMsg = `${currentMsg} [2h_notified]`.trim();
+                    updateData.customer_message = currentMsg;
                 }
 
-                // -------------------------------------------------------------
-                // B. オファー金額超過時の顧客・管理者向け即時プッシュ通知
-                // 【厳格化条件】:
-                // 1. ヤフオクの現在価格が、オファー申請時（または前回記録時）の基準価格から実際に上昇していること (currentPrice > basePrice)
-                //    ※途中から入札された商品でも、申請時の現在価格からの上昇を正確に検知
-                // 2. かつ、最新の必要USD額がお客様のオファー上限額 (max_bid) を超過していること
-                // -------------------------------------------------------------
+                // 6. オファー金額超過時の顧客・管理者向け即時通知
                 const basePrice = item.product_price || initPrice || 0;
                 const isPriceActuallyIncreased = currentPrice > basePrice;
 
                 if (currentPrice > 0 && item.max_bid && !isEnded && isPriceActuallyIncreased) {
-                    // 利益率（除数）の計算
                     let profitDivisor = 0.6;
                     if (userMeta?.customer_id === 'B001') profitDivisor = 0.9;
                     else if (userMeta?.agent_customer_id === 'B001') profitDivisor = 0.5;
@@ -344,7 +326,6 @@ export async function GET(request: Request) {
                         profitDivisor = (countryLower === 'brasil' || countryLower === 'brazil') ? 0.7 : 0.8;
                     }
 
-                    // 顧客向けドル換算概算価格（パターンA）
                     const currentCustomerUsd = computePatternAUsd(
                         currentPrice,
                         item.product_title,
@@ -353,34 +334,31 @@ export async function GET(request: Request) {
                         jpyRate
                     );
 
-                    // オファー額（max_bid）を超過しているか判定
-                    if (currentCustomerUsd > item.max_bid && !msgStr.includes('[price_exceeded_notified]')) {
-                        const productTitle = item.product_title || item.product_id || '商品';
+                    if (currentCustomerUsd > item.max_bid && !currentMsg.includes('[price_exceeded_notified]')) {
                         const custName = userMeta?.full_name || item.customer_email || '顧客';
-                        const custId = userMeta?.customer_id || '不明';
 
-                        // 1. 管理者向け通知
+                        // 管理者通知
                         pushPromises.push(
                             fetch(`${origin}/api/push-send`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     sendToAdmins: true,
-                                    title: `⚠️ 【高値更新】 ${custName} (${custId})`,
+                                    title: `⚠️ 【高値更新】 ${custName} (${customerId})`,
                                     body: `商品: ${productTitle}`,
                                     url: '/admin'
                                 })
                             }).catch(e => console.error('Admin price exceeded push error:', e))
                         );
 
-                        // 2. 顧客向け通知
+                        // 顧客通知
                         if (item.customer_email) {
                             const title = lang === 'es'
                                 ? '⚠️ ¡Tu oferta ha sido superada!'
                                 : '⚠️ Sua oferta foi ultrapassada!';
                             const body = lang === 'es'
-                                ? `"${productTitle}" (Precio actual: $${currentCustomerUsd} / Tu oferta: $${item.max_bid})`
-                                : `"${productTitle}" (Preço atual: $${currentCustomerUsd} / Sua oferta: $${item.max_bid})`;
+                                ? `El precio actual superó tu límite ($${item.max_bid}). Revisa el artículo para aumentar tu oferta.`
+                                : `O preço atual ultrapassou seu limite ($${item.max_bid}). Acesse para aumentar sua oferta.`;
 
                             pushPromises.push(
                                 fetch(`${origin}/api/push-send`, {
@@ -396,58 +374,44 @@ export async function GET(request: Request) {
                             );
                         }
 
-                        // オファー超過通知済みフラグの記録
-                        updatedMsg = `${updatedMsg} [price_exceeded_notified]`.trim();
-                        updateData.customer_message = updatedMsg;
+                        currentMsg = `${currentMsg} [price_exceeded_notified]`.trim();
+                        updateData.customer_message = currentMsg;
                     }
                 }
 
-                // DBデータの保存・更新
+                // DB更新を実行
                 const { error: updateError } = await supabaseAdmin
                     .from('bid_requests')
                     .update(updateData)
                     .eq('id', item.id);
 
-                if (!updateError) {
-                    if (isEnded) {
-                        const productTitle = item.product_title || item.product_id || '商品';
-                        pushPromises.push(
-                            fetch(`${origin}/api/push-send`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    sendToAdmins: true,
-                                    title: '🔚 オークション終了',
-                                    body: `商品: ${productTitle}`,
-                                    url: '/admin'
-                                })
-                            }).catch(e => console.error('Cron notify error:', e))
-                        );
-
-                        results.push({ id: item.id, status: 'updated_to_ended', updatedPrice: currentPrice });
-                    } else {
-                        results.push({ id: item.id, status: 'checked_and_updated', updatedPrice: currentPrice });
-                    }
+                if (updateError) {
+                    console.error(`Error updating item ${item.id}:`, updateError);
+                } else {
+                    results.push({
+                        id: item.id,
+                        price: currentPrice,
+                        isEnded,
+                        updatedMsg: currentMsg
+                    });
                 }
-
-            } catch (e) {
-                console.error(`Error checking item ${item.id}:`, e);
+            } catch (itemError) {
+                console.error(`Error processing item ${item.id}:`, itemError);
             }
         }
 
-        // すべてのプッシュ通知送信の完了を確実に待機
+        // 送信キューの完了待ち
         if (pushPromises.length > 0) {
             await Promise.allSettled(pushPromises);
         }
 
         return NextResponse.json({
-            processed: items.length,
-            updates: results.length,
+            message: 'All item checks and notification tasks completed successfully.',
+            processed: results.length,
             results
         });
-
-    } catch (error) {
-        console.error('Cron error:', error);
-        return NextResponse.json({ error: 'Cron failed' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Fatal error in /api/cron/check-items:', error);
+        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
     }
 }
