@@ -9,10 +9,27 @@ export default function ErrorBoundary({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [lang, setLang] = useState<'pt' | 'es'>('pt');
   const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     console.error('Client Application Error caught by boundary:', error);
+
+    // ユーザーの言語設定またはブラウザ言語を判定
+    if (typeof localStorage !== 'undefined') {
+      const savedLang = localStorage.getItem('lang');
+      if (savedLang === 'es' || savedLang === 'pt') {
+        setLang(savedLang);
+        return;
+      }
+    }
+    if (typeof navigator !== 'undefined' && navigator.language) {
+      if (navigator.language.toLowerCase().startsWith('es')) {
+        setLang('es');
+      } else {
+        setLang('pt');
+      }
+    }
   }, [error]);
 
   const handleClearCacheAndReload = async () => {
@@ -47,22 +64,44 @@ export default function ErrorBoundary({
     }
   };
 
+  const isEs = lang === 'es';
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white max-w-md w-full rounded-2xl shadow-xl p-6 text-center border border-gray-100">
+      <div className="bg-white max-w-md w-full rounded-2xl shadow-xl p-6 text-center border border-gray-100 relative">
+        {/* 言語切り替えトグル */}
+        <div className="absolute top-4 right-4 flex items-center bg-gray-100 rounded-lg p-0.5 text-xs font-bold">
+          <button
+            type="button"
+            onClick={() => setLang('pt')}
+            className={`px-2 py-1 rounded-md transition ${lang === 'pt' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'}`}
+          >
+            PT
+          </button>
+          <button
+            type="button"
+            onClick={() => setLang('es')}
+            className={`px-2 py-1 rounded-md transition ${lang === 'es' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'}`}
+          >
+            ES
+          </button>
+        </div>
+
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
           ⚠️
         </div>
+
         <h2 className="text-xl font-bold text-gray-900 mb-2">
-          Ocorreu um erro / Ha ocurrido un error
+          {isEs ? 'Ha ocurrido un error' : 'Ocorreu um erro'}
         </h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Por favor, tente recarregar a página ou limpar o cache.
-          <br />
-          Por favor, intente recargar la página o limpiar la caché.
+
+        <p className="text-sm text-gray-600 mb-5">
+          {isEs 
+            ? 'Por favor, intente recargar la página o limpiar la memoria caché para restaurar el sistema.'
+            : 'Por favor, tente recarregar a página ou limpar a memória cache para restaurar o sistema.'}
         </p>
 
-        {/* エラー概要（サポート用） */}
+        {/* エラー概要（サポート・診断用） */}
         {error?.message && (
           <div className="mb-5 p-3 bg-gray-50 rounded-lg text-left border border-gray-100">
             <p className="text-[11px] font-mono text-gray-500 break-all">
@@ -78,20 +117,21 @@ export default function ErrorBoundary({
             className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
           >
             {clearing ? (
-              <span>Limpando / Limpiando...</span>
+              <span>{isEs ? 'Limpiando...' : 'Limpando...'}</span>
             ) : (
-              <span>Limpar Cache e Recarregar / Limpiar Caché y Recargar</span>
+              <span>{isEs ? 'Limpiar Caché y Recargar' : 'Limpar Cache e Recarregar'}</span>
             )}
           </button>
           <button
             onClick={() => reset()}
             className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition cursor-pointer text-sm"
           >
-            Recarregar / Recargar
+            {isEs ? 'Recargar' : 'Recarregar'}
           </button>
         </div>
       </div>
     </div>
   );
 }
+
 
