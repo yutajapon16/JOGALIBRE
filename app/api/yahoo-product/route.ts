@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { NextResponse } from 'next/server';
-import { parseJstDateTime, parseDbDateTime } from '@/lib/utils';
+import { parseJstDateTime, parseDbDateTime, parseAnyDateTime } from '@/lib/utils';
 
 // AI要約・翻訳データの高速キャッシュ (6時間TTL)
 interface ProductCacheItem {
@@ -424,7 +424,7 @@ export async function POST(request: Request) {
     // 残り時間の計算 (詳細取得用)
     let timeLeft = '-';
     if (endTime) {
-      const parsedEndTime = parseDbDateTime(endTime);
+      const parsedEndTime = parseAnyDateTime(endTime);
       if (parsedEndTime) {
         const diff = Math.max(0, parsedEndTime.getTime() - Date.now());
         const d = Math.floor(diff / (1000 * 60 * 60 * 24));

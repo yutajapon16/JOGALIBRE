@@ -1,7 +1,7 @@
 export const formatDateTime = (dateString: string, mode: 'admin' | 'customer' = 'admin') => {
   if (!dateString) return '-';
 
-  const date = parseDbDateTime(dateString);
+  const date = parseAnyDateTime(dateString);
   if (!date || isNaN(date.getTime())) return dateString;
 
   // ローカルタイムゾーンの取得
@@ -63,7 +63,7 @@ export const formatDateOnly = (dateString: string, mode: 'admin' | 'customer' = 
     }
   }
 
-  const date = parseDbDateTime(dateString);
+  const date = parseAnyDateTime(dateString);
   if (!date || isNaN(date.getTime())) return dateString;
 
   const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -205,8 +205,8 @@ export const parseAnyDateTime = (dateStr: string): Date | null => {
 export const getTimeRemaining = (endTime: string, lang: 'ja' | 'es' | 'pt', timeLeftStr?: string) => {
   if (!endTime) return timeLeftStr || '-';
 
-  // DBからの値（またはAPIからのZ付きISO文字列）なので、parseDbDateTimeを使用する
-  const endDate = parseDbDateTime(endTime);
+  // ヤフオク日時（JST）およびDB日時（UTC）を環境非依存で安全かつ正確にパース
+  const endDate = parseAnyDateTime(endTime);
   if (!endDate) return timeLeftStr || '-';
 
   const now = new Date().getTime();
