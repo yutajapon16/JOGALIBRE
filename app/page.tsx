@@ -983,17 +983,12 @@ function findCategoryPath(cats: any[], targetId: string, currentPath: any[] = []
 
 // 人気ブランド・クイックタグ定義
 const QUICK_BRAND_TAGS = [
-  { name: 'BBS', keyword: 'BBS', emoji: '🏎️' },
-  { name: 'Shimano', keyword: 'Shimano', emoji: '🎣' },
-  { name: 'Yamaha', keyword: 'Yamaha', emoji: '🎷' },
-  { name: 'G-Shock', keyword: 'G-Shock', emoji: '⌚' },
-  { name: 'Daiwa', keyword: 'Daiwa', emoji: '🐟' },
-  { name: 'Nismo', keyword: 'Nismo', emoji: '🏁' },
-  { name: 'TRD', keyword: 'TRD', emoji: '⚙️' },
-  { name: 'Seiko', keyword: 'Seiko', emoji: '✨' },
-  { name: 'Momo', keyword: 'Momo', emoji: '🏎️' },
-  { name: 'Gundam', keyword: 'Gundam', emoji: '🤖' },
-  { name: 'Pokémon', keyword: 'Pokemon', emoji: '⚡' },
+  { name: 'BBS', keyword: 'BBS', emoji: '🏎️', targetCatId: 'llantas' },
+  { name: 'SHIMANO', keyword: 'SHIMANO', emoji: '🎣', targetCatId: 'pesca' },
+  { name: 'YAMAHA', keyword: 'YAMAHA', emoji: '🎷', targetCatId: 'viento' },
+  { name: 'G-SHOCK', keyword: 'G-SHOCK', emoji: '⌚', targetCatId: 'casio' },
+  { name: 'GUNDAM', emoji: '🤖', targetCatId: 'gundam' },
+  { name: 'POKEMON', keyword: 'Pokemon', emoji: '⚡' },
 ];
 
 // カテゴリ・サブカテゴリのビジュアル情報（全白背景スタジオ画像・ロゴ・サブテキスト）
@@ -7441,11 +7436,39 @@ export default function Home() {
                               <button
                                 key={tag.name}
                                 onClick={() => {
-                                  setKeyword(tag.keyword);
-                                  setSearchType('keyword');
-                                  handleKeywordSearch(tag.keyword);
+                                  if (tag.targetCatId) {
+                                    const path = findCategoryPath(CATEGORIES, tag.targetCatId);
+                                    if (path && path.length > 0) {
+                                      setCategoryHistory(path);
+                                      const targetCat = path[path.length - 1];
+                                      if (tag.keyword) {
+                                        // カテゴリ内キーワード検索（BBS, SHIMANO, YAMAHA, G-SHOCK）
+                                        setCategorySearchKeyword(tag.keyword);
+                                        setJdmSearchKeyword('');
+                                        const urlMatch = targetCat.url?.match(/list\/(\d+)/) || targetCat.url?.match(/auccat=(\d+)/);
+                                        const catId = urlMatch ? urlMatch[1] : tag.targetCatId;
+                                        const searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(tag.keyword)}&auccat=${catId}&va=${encodeURIComponent(tag.keyword)}&b=1&n=50`;
+                                        const cond = determineConditionFromUrl(searchUrl);
+                                        setSearchCondition(cond);
+                                        fetchCategoryItems(searchUrl, 1);
+                                      } else if (targetCat.url) {
+                                        // カテゴリフォルダへ直接遷移（GUNDAM等）
+                                        setCategorySearchKeyword('');
+                                        setJdmSearchKeyword('');
+                                        const cond = determineConditionFromUrl(targetCat.url);
+                                        setSearchCondition(cond);
+                                        fetchCategoryItems(targetCat.url, 1);
+                                      }
+                                    }
+                                  } else if (tag.keyword) {
+                                    // 通常のキーワード検索（POKEMON等）
+                                    setCategoryHistory([]);
+                                    setKeyword(tag.keyword);
+                                    setSearchType('keyword');
+                                    handleKeywordSearch(tag.keyword);
+                                  }
                                 }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-400 rounded-full text-xs font-bold text-gray-700 hover:text-indigo-600 shadow-sm transition whitespace-nowrap active:scale-95"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-400 rounded-full text-xs font-bold text-gray-700 hover:text-indigo-600 shadow-sm transition whitespace-nowrap active:scale-95 cursor-pointer"
                               >
                                 <span>{tag.emoji}</span>
                                 <span>{tag.name}</span>
