@@ -206,7 +206,19 @@ export async function GET(request: Request) {
                             itemData.taxinStartPrice ||
                             0;
                         if (itemData.endTime) {
-                            latestEndTime = itemData.endTime;
+                            if (typeof itemData.endTime === 'number') {
+                                const parsedDate = new Date(itemData.endTime * 1000);
+                                if (!isNaN(parsedDate.getTime())) {
+                                    latestEndTime = parsedDate.toISOString();
+                                }
+                            } else if (typeof itemData.endTime === 'string') {
+                                const parsedDate = parseAnyDateTime(itemData.endTime);
+                                if (parsedDate) {
+                                    latestEndTime = parsedDate.toISOString();
+                                } else {
+                                    latestEndTime = itemData.endTime;
+                                }
+                            }
                         }
                     } catch (e) {
                         console.error(`JSON parse error for item ${item.id}:`, e);
