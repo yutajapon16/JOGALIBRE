@@ -171,6 +171,12 @@ async function fetchItemsForKeyword(keyword: string): Promise<any[]> {
       const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
       const id = productIdMatch ? productIdMatch[1] : '';
       
+      let categoryId = '';
+      const catMatch = url?.match(/[?&]auccat=([0-9]+)/);
+      if (catMatch) {
+        categoryId = catMatch[1];
+      }
+      
       if (id && title && url && imageUrl && price > 0) {
         results.push({
           id,
@@ -180,9 +186,10 @@ async function fetchItemsForKeyword(keyword: string): Promise<any[]> {
           imageUrl,
           images: [imageUrl],
           currentPrice: price,
-          bids,
+          bids: typeof bids === 'number' && !isNaN(bids) ? bids : 0,
           timeLeft,
           endTime: endTimeISO,
+          categoryId: categoryId || undefined,
           source: 'yahoo_search'
         });
       }
@@ -209,6 +216,12 @@ async function fetchItemsForKeyword(keyword: string): Promise<any[]> {
         const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
         const id = productIdMatch ? productIdMatch[1] : '';
         
+        let categoryId = '';
+        const catMatch = url?.match(/[?&]auccat=([0-9]+)/);
+        if (catMatch) {
+          categoryId = catMatch[1];
+        }
+        
         if (id && title && url && imageUrl && price > 0) {
           results.push({
             id,
@@ -218,8 +231,9 @@ async function fetchItemsForKeyword(keyword: string): Promise<any[]> {
             imageUrl,
             images: [imageUrl],
             currentPrice: price,
-            bids,
+            bids: typeof bids === 'number' && !isNaN(bids) ? bids : 0,
             timeLeft,
+            categoryId: categoryId || undefined,
             source: 'yahoo_category'
           });
         }

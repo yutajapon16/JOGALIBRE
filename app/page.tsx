@@ -3140,20 +3140,36 @@ export default function Home() {
       if (data.product) {
         const detail = data.product;
         setSelectedProduct(prev => {
-          if (prev && prev.url === detail.url) {
+          if (prev && (prev.url === detail.url || prev.id === detail.id)) {
             return { ...prev, ...detail, images: detail.images || prev.images || [detail.imageUrl] };
           }
           return prev;
         });
 
+        // オファー入力欄(maxBid)も最新の計算価格に自動同期更新
+        const detailUrlWithCat = detail.url + (detail.categoryId ? (detail.url.includes('?') ? '&' : '?') + 'auccat=' + detail.categoryId : '');
+        const newCalculatedBid = calculateConvertedPrice(
+          detail.currentPrice,
+          'USD',
+          detail.titleJa || detail.title,
+          detailUrlWithCat,
+          currentCategory?.id,
+          detail.id
+        ).toString().replace(/,/g, '');
+
+        setBidForm(prev => ({
+          ...prev,
+          maxBid: newCalculatedBid
+        }));
+
         // 商品リスト(products)を同期更新
         setProducts(prev => prev.map(p =>
-          p.url === detail.url ? { ...p, ...detail, images: detail.images || [detail.imageUrl] } : p
+          (p.url === detail.url || p.id === detail.id) ? { ...p, ...detail, images: detail.images || [detail.imageUrl] } : p
         ));
 
         // お気に入りリスト(favorites)も同期更新（もし存在すれば）
         setFavorites(prev => prev.map(f =>
-          f.url === detail.url ? { ...f, ...detail, images: detail.images || [detail.imageUrl] } : f
+          (f.url === detail.url || f.id === detail.id) ? { ...f, ...detail, images: detail.images || [detail.imageUrl] } : f
         ));
       }
     } catch (error) {
@@ -7549,11 +7565,14 @@ export default function Home() {
                           ) : featuredItems.length > 0 ? (
                             <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-0.5">
                               {featuredItems.map((item) => {
+                                const itemUrlWithCat = item.url + (item.categoryId ? (item.url.includes('?') ? '&' : '?') + 'auccat=' + item.categoryId : '');
                                 const convertedPrice = calculateConvertedPrice(
                                   item.currentPrice,
                                   selectedCurrency,
                                   item.titleJa || item.title,
-                                  item.url || ''
+                                  itemUrlWithCat,
+                                  undefined,
+                                  item.id
                                 );
 
                                 return (
@@ -7569,7 +7588,9 @@ export default function Home() {
                                           item.currentPrice,
                                           'USD',
                                           item.titleJa || item.title,
-                                          item.url || ''
+                                          itemUrlWithCat,
+                                          undefined,
+                                          item.id
                                         ).toString().replace(/,/g, '')
                                       });
                                       if (item.url) {
@@ -7589,15 +7610,9 @@ export default function Home() {
                                             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&auto=format&fit=crop&q=80';
                                           }}
                                         />
-                                        {item.bids && item.bids > 0 ? (
-                                          <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                                            {item.bids} {t.bidsLabel || 'bids'}
-                                          </span>
-                                        ) : (
-                                          <span className="absolute top-1.5 left-1.5 bg-indigo-600/90 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                                            🇯🇵 JAPAN
-                                          </span>
-                                        )}
+                                        <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                          {item.bids ?? 0} {lang === 'es' ? 'Ofertas' : 'Lances'}
+                                        </span>
                                       </div>
                                       <h5 className="text-[11px] sm:text-xs font-bold text-gray-800 line-clamp-2 leading-tight group-hover:text-indigo-600 transition">
                                         {item.title}
