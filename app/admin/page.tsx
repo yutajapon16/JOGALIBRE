@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, calculateProductBidJpy, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, calculateProductBidJpy, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
 import { BidRequest } from '@/lib/types';
 
 // 管理者画面用のPWA manifest差し替え
@@ -2432,8 +2432,8 @@ export default function AdminDashboard() {
               {bidRequests
                 .sort((a, b) => {
                   const now = new Date().getTime();
-                  const timeA = a.productEndTime ? new Date(a.productEndTime).getTime() : Infinity;
-                  const timeB = b.productEndTime ? new Date(b.productEndTime).getTime() : Infinity;
+                  const timeA = a.productEndTime ? (parseAnyDateTime(a.productEndTime)?.getTime() || Infinity) : Infinity;
+                  const timeB = b.productEndTime ? (parseAnyDateTime(b.productEndTime)?.getTime() || Infinity) : Infinity;
 
                   const isEndedA = timeA <= now || a.finalStatus !== null;
                   const isEndedB = timeB <= now || b.finalStatus !== null;

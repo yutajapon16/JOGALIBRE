@@ -190,13 +190,19 @@ export const parseAnyDateTime = (dateStr: string): Date | null => {
     if (!isNaN(d.getTime())) return d;
   }
 
-  // 2. タイムゾーン情報がない場合、ヤフオクのオークション日時（JST = +09:00）として厳格にパース
-  const dJst = parseJstDateTime(cleanStr);
-  if (dJst && !isNaN(dJst.getTime())) return dJst;
+  // 2. スラッシュ区切りや日本語（年月日）を含む形式はヤフオクの日本時間（JST = +09:00）としてパース
+  if (cleanStr.includes('/') || cleanStr.includes('年') || cleanStr.includes('月') || cleanStr.includes('日')) {
+    const dJst = parseJstDateTime(cleanStr);
+    if (dJst && !isNaN(dJst.getTime())) return dJst;
+  }
 
-  // 3. DB日時パース (UTCフォールバック)
+  // 3. DB日時パース (PostgreSQLのTIMESTAMP WITHOUT TIME ZONEでZが削られたUTC日時をパース)
   const dDb = parseDbDateTime(cleanStr);
   if (dDb && !isNaN(dDb.getTime())) return dDb;
+
+  // 4. JSTフォールバック
+  const dJst = parseJstDateTime(cleanStr);
+  if (dJst && !isNaN(dJst.getTime())) return dJst;
 
   const dFallback = new Date(cleanStr);
   return isNaN(dFallback.getTime()) ? null : dFallback;

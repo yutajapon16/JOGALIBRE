@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
@@ -4357,8 +4357,8 @@ export default function Home() {
                 {myRequests
                   .sort((a, b) => {
                     const now = new Date().getTime();
-                    const timeA = a.productEndTime ? new Date(a.productEndTime).getTime() : Infinity;
-                    const timeB = b.productEndTime ? new Date(b.productEndTime).getTime() : Infinity;
+                    const timeA = a.productEndTime ? (parseAnyDateTime(a.productEndTime)?.getTime() || Infinity) : Infinity;
+                    const timeB = b.productEndTime ? (parseAnyDateTime(b.productEndTime)?.getTime() || Infinity) : Infinity;
 
                     const isEndedA = timeA <= now || a.finalStatus !== null;
                     const isEndedB = timeB <= now || b.finalStatus !== null;
