@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
@@ -1791,6 +1791,28 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 
+  // 詳細画面からの戻りやタブフォーカス時に即時オファー状態を同期・再検証
+  useEffect(() => {
+    const handleRevalidate = () => {
+      if (currentUser?.email) {
+        fetchMyRequests(currentUser.email);
+      }
+    };
+    window.addEventListener('pageshow', handleRevalidate);
+    window.addEventListener('focus', handleRevalidate);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleRevalidate();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('pageshow', handleRevalidate);
+      window.removeEventListener('focus', handleRevalidate);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [currentUser?.email]);
+
   useEffect(() => {
     if (currentUser) {
       if (currentUser.termsAcceptedAt !== null && currentUser.termsAcceptedAt !== undefined) {
@@ -2825,6 +2847,9 @@ export default function Home() {
           }).catch(e => console.error('Admin push error', e));
         }
 
+        if (selectedProduct) {
+          addLocalOfferedId(selectedProduct.id || selectedProduct.url || '');
+        }
         alert(t.offerSuccess);
         setSelectedProduct(null);
         setBidForm({ name: '', maxBid: '' });
@@ -3103,6 +3128,12 @@ export default function Home() {
         paid_local_at: req.paid_local_at as string | null | undefined,
       }));
 
+      // 取得したリクエストの全IDをローカルストレージキャッシュに同期
+      convertedRequests.forEach((req: any) => {
+        if (req.productId) addLocalOfferedId(req.productId);
+        if (req.productUrl) addLocalOfferedId(req.productUrl);
+      });
+
       // DBの翻訳結果を優先し、無い場合のみ翻訳APIを叩く
       const requestsWithTranslation = await Promise.all(convertedRequests.map(async (req: any) => {
         let title = req.productTitle || '';
@@ -3124,20 +3155,34 @@ export default function Home() {
 
   // 商品が既にオファー申請済みかどうかを判定する関数
   const isProductOffered = (prod?: { id?: string; url?: string } | null): boolean => {
-    if (!prod || !myRequests || myRequests.length === 0) return false;
-    return myRequests.some(req => {
-      if (prod.id && req.productId && (prod.id === req.productId || req.productId.includes(prod.id) || prod.id.includes(req.productId))) {
-        return true;
-      }
-      if (prod.url && req.productUrl) {
-        const cleanProdUrl = prod.url.split('?')[0].replace(/\/$/, '');
-        const cleanReqUrl = req.productUrl.split('?')[0].replace(/\/$/, '');
-        if (cleanProdUrl && cleanReqUrl && cleanProdUrl === cleanReqUrl) {
+    if (!prod) return false;
+    const prodAuctionId = extractAuctionId(prod.id) || extractAuctionId(prod.url);
+    if (!prodAuctionId) return false;
+
+    // 1. ローカルストレージの即時キャッシュを確認（商品詳細から戻った際にも即時反映）
+    const localOffered = getLocalOfferedIds();
+    if (localOffered.includes(prodAuctionId)) return true;
+
+    // 2. myRequestsリストを確認
+    if (myRequests && myRequests.length > 0) {
+      const found = myRequests.some(req => {
+        const reqAuctionId = extractAuctionId(req.productId) || extractAuctionId(req.productUrl);
+        if (reqAuctionId && reqAuctionId === prodAuctionId) return true;
+        if (prod.id && req.productId && (prod.id === req.productId || req.productId.includes(prod.id) || prod.id.includes(req.productId))) {
           return true;
         }
-      }
-      return false;
-    });
+        if (prod.url && req.productUrl) {
+          const cleanProdUrl = prod.url.split('?')[0].replace(/\/$/, '');
+          const cleanReqUrl = req.productUrl.split('?')[0].replace(/\/$/, '');
+          if (cleanProdUrl && cleanReqUrl && cleanProdUrl === cleanReqUrl) {
+            return true;
+          }
+        }
+        return false;
+      });
+      if (found) return true;
+    }
+    return false;
   };
 
   const fetchProductDetailForOfferSilent = async (url: string) => {

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
-import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
+import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId } from '@/lib/utils';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -191,7 +191,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       });
       if (res.ok) {
         const data = await res.json();
-        setMyRequests(data.bidRequests || []);
+        const list = data.bidRequests || [];
+        setMyRequests(list);
+        list.forEach((req: any) => {
+          if (req.product_id || req.productId) addLocalOfferedId(req.product_id || req.productId);
+          if (req.product_url || req.productUrl) addLocalOfferedId(req.product_url || req.productUrl);
+        });
       }
     } catch (e) {
       console.error('Error fetching my requests in detail page:', e);
@@ -200,24 +205,37 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   // 商品が既にオファー申請済みかどうかを判定する関数
   const isProductOffered = (): boolean => {
-    if (!product || !myRequests || myRequests.length === 0) return false;
-    return myRequests.some(req => {
-      const pId = product.id;
-      const reqPId = req.product_id || req.productId;
-      if (pId && reqPId && (pId === reqPId || reqPId.includes(pId) || pId.includes(reqPId))) {
-        return true;
-      }
-      const pUrl = product.url;
-      const reqUrl = req.product_url || req.productUrl;
-      if (pUrl && reqUrl) {
-        const cleanPUrl = pUrl.split('?')[0].replace(/\/$/, '');
-        const cleanReqUrl = reqUrl.split('?')[0].replace(/\/$/, '');
-        if (cleanPUrl && cleanReqUrl && cleanPUrl === cleanReqUrl) {
+    const prodAuctionId = extractAuctionId(product?.id) || extractAuctionId(product?.url) || extractAuctionId(targetUrl);
+    if (!prodAuctionId) return false;
+
+    // 1. ローカルストレージの即時キャッシュを確認
+    const localOffered = getLocalOfferedIds();
+    if (localOffered.includes(prodAuctionId)) return true;
+
+    // 2. myRequestsリストを確認
+    if (myRequests && myRequests.length > 0) {
+      const found = myRequests.some(req => {
+        const reqAuctionId = extractAuctionId(req.product_id || req.productId) || extractAuctionId(req.product_url || req.productUrl);
+        if (reqAuctionId && reqAuctionId === prodAuctionId) return true;
+        const pId = product?.id;
+        const reqPId = req.product_id || req.productId;
+        if (pId && reqPId && (pId === reqPId || reqPId.includes(pId) || pId.includes(reqPId))) {
           return true;
         }
-      }
-      return false;
-    });
+        const pUrl = product?.url || targetUrl;
+        const reqUrl = req.product_url || req.productUrl;
+        if (pUrl && reqUrl) {
+          const cleanPUrl = pUrl.split('?')[0].replace(/\/$/, '');
+          const cleanReqUrl = reqUrl.split('?')[0].replace(/\/$/, '');
+          if (cleanPUrl && cleanReqUrl && cleanPUrl === cleanReqUrl) {
+            return true;
+          }
+        }
+        return false;
+      });
+      if (found) return true;
+    }
+    return false;
   };
 
   useEffect(() => {
@@ -609,6 +627,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           }).catch(e => console.error('Admin push error', e));
         }
 
+        addLocalOfferedId(product?.id || product?.url || targetUrl || '');
         alert(t.offerSuccess);
         router.back();
       } else {

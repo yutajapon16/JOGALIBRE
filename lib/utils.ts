@@ -809,3 +809,52 @@ export function cleanExpiredInviteCodes(inviteCodes: InviteCode[]): { cleanedCod
   return { cleanedCodes, isUpdated };
 }
 
+/**
+ * URLまたはID文字列からヤフオクの商品・オークションIDを抽出・正規化する関数
+ */
+export function extractAuctionId(urlOrId?: string | null): string {
+  if (!urlOrId) return '';
+  const trimmed = urlOrId.trim();
+  const match = trimmed.match(/\/auction\/([a-zA-Z0-9]+)/i);
+  if (match && match[1]) return match[1].toLowerCase();
+  
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    const urlPath = trimmed.split('?')[0];
+    const parts = urlPath.split('/').filter(Boolean);
+    const lastPart = parts[parts.length - 1];
+    if (lastPart) return lastPart.toLowerCase();
+  }
+  return trimmed.split('?')[0].toLowerCase();
+}
+
+/**
+ * ローカルストレージに保存されている申請済み商品IDリストを取得する
+ */
+export function getLocalOfferedIds(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('joga_offered_ids');
+    if (saved) return JSON.parse(saved);
+  } catch (e) {
+    console.warn('Error reading joga_offered_ids:', e);
+  }
+  return [];
+}
+
+/**
+ * ローカルストレージに申請済み商品IDを追加・同期する
+ */
+export function addLocalOfferedId(idOrUrl: string) {
+  if (typeof window === 'undefined') return;
+  const cleanId = extractAuctionId(idOrUrl);
+  if (!cleanId) return;
+  try {
+    const current = getLocalOfferedIds();
+    if (!current.includes(cleanId)) {
+      const updated = [...current, cleanId];
+      localStorage.setItem('joga_offered_ids', JSON.stringify(updated));
+    }
+  } catch (e) {
+    console.warn('Error saving joga_offered_ids:', e);
+  }
+}
