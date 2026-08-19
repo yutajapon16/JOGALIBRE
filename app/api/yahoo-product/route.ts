@@ -454,6 +454,9 @@ export async function POST(request: Request) {
       categoryId = uniqueIds.join(',');
     }
 
+    const finalAiSummaryEs = aiSummaryEs || (isRealSummary(cachedItem?.aiSummaryEs) ? cachedItem?.aiSummaryEs : '') || '';
+    const finalAiSummaryPt = aiSummaryPt || (isRealSummary(cachedItem?.aiSummaryPt) ? cachedItem?.aiSummaryPt : '') || '';
+
     const product = {
       id: productId,
       title: translatedTitle || 'タイトル取得失敗',
@@ -471,8 +474,8 @@ export async function POST(request: Request) {
       translatedDescription: translatedDescription,
       titleJa: title,
       images: allImages.length > 0 ? allImages : [imageUrl],
-      aiSummaryEs: aiSummaryEs,
-      aiSummaryPt: aiSummaryPt
+      aiSummaryEs: finalAiSummaryEs,
+      aiSummaryPt: finalAiSummaryPt
     };
 
 
@@ -529,7 +532,7 @@ Descrição do produto:
 ${textToSummarize}`;
 
   const prompt = targetLang === 'es' ? promptEs : promptPt;
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
   for (const model of models) {
     try {
@@ -555,7 +558,7 @@ ${textToSummarize}`;
       if (response.ok) {
         const resData = await response.json();
         const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text && text.trim()) {
+        if (text && text.trim() && text.length > 20) {
           return text.trim();
         }
       } else {

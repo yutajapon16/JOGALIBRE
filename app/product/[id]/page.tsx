@@ -311,10 +311,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         if (!res.ok) throw new Error('Fetch failed');
         const data = await res.json();
         if (data.product) {
-          setProduct(data.product);
+          setProduct((prev: any) => {
+            const incoming = data.product;
+            return {
+              ...incoming,
+              aiSummaryEs: incoming.aiSummaryEs || prev?.aiSummaryEs || '',
+              aiSummaryPt: incoming.aiSummaryPt || prev?.aiSummaryPt || '',
+            };
+          });
 
           // 良いAI要約が含まれる場合、ブラウザのsessionStorageに保管
-          const summaryText = lang === 'es' ? data.product.aiSummaryEs : data.product.aiSummaryPt;
+          const summaryText = lang === 'es' ? (data.product.aiSummaryEs || '') : (data.product.aiSummaryPt || '');
           const isValidSummary = summaryText && summaryText.length > 20 && !summaryText.includes('Consulte los detalles') && !summaryText.includes('Consulte os detalhes');
           if (isValidSummary && typeof window !== 'undefined') {
             try {
