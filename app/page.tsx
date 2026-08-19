@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds } from '@/lib/utils';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
@@ -3128,11 +3128,9 @@ export default function Home() {
         paid_local_at: req.paid_local_at as string | null | undefined,
       }));
 
-      // 取得したリクエストの全IDをローカルストレージキャッシュに同期
-      convertedRequests.forEach((req: any) => {
-        if (req.productId) addLocalOfferedId(req.productId);
-        if (req.productUrl) addLocalOfferedId(req.productUrl);
-      });
+      // 取得した有効なリクエストの全IDでローカルストレージキャッシュを完全同期（削除されたものは消える）
+      const validOfferedIds = convertedRequests.flatMap((req: any) => [req.productId, req.productUrl].filter(Boolean));
+      syncLocalOfferedIds(validOfferedIds);
 
       // DBの翻訳結果を優先し、無い場合のみ翻訳APIを叩く
       const requestsWithTranslation = await Promise.all(convertedRequests.map(async (req: any) => {
@@ -3159,13 +3157,9 @@ export default function Home() {
     const prodAuctionId = extractAuctionId(prod.id) || extractAuctionId(prod.url);
     if (!prodAuctionId) return false;
 
-    // 1. ローカルストレージの即時キャッシュを確認（商品詳細から戻った際にも即時反映）
-    const localOffered = getLocalOfferedIds();
-    if (localOffered.includes(prodAuctionId)) return true;
-
-    // 2. myRequestsリストを確認
+    // 1. myRequestsリストが存在する場合は、myRequestsリストを照合
     if (myRequests && myRequests.length > 0) {
-      const found = myRequests.some(req => {
+      return myRequests.some(req => {
         const reqAuctionId = extractAuctionId(req.productId) || extractAuctionId(req.productUrl);
         if (reqAuctionId && reqAuctionId === prodAuctionId) return true;
         if (prod.id && req.productId && (prod.id === req.productId || req.productId.includes(prod.id) || prod.id.includes(req.productId))) {
@@ -3180,9 +3174,11 @@ export default function Home() {
         }
         return false;
       });
-      if (found) return true;
     }
-    return false;
+
+    // 2. myRequestsがまだ空・ロード中の場合はローカルストレージのキャッシュを確認
+    const localOffered = getLocalOfferedIds();
+    return localOffered.includes(prodAuctionId);
   };
 
   const fetchProductDetailForOfferSilent = async (url: string) => {
@@ -3578,6 +3574,13 @@ export default function Home() {
       : 'Tem certeza que deseja excluir esta oferta?';
     if (!confirm(confirmMsg)) return;
     try {
+      const targetReq = myRequests.find(r => r.id === requestId);
+      if (targetReq) {
+        if (targetReq.productId) removeLocalOfferedId(targetReq.productId);
+        if (targetReq.productUrl) removeLocalOfferedId(targetReq.productUrl);
+      }
+      setMyRequests(prev => prev.filter(r => r.id !== requestId));
+
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
@@ -3593,6 +3596,7 @@ export default function Home() {
       } else {
         const errData = await res.json();
         alert(lang === 'es' ? `Error: ${errData.error}` : `Erro: ${errData.error}`);
+        fetchMyRequests();
       }
     } catch (error) {
       console.error('Error deleting offer:', error);
@@ -3600,9 +3604,15 @@ export default function Home() {
     }
   };
 
-  // ← ここに追加！
   const confirmRejection = async (requestId: string) => {
     try {
+      const targetReq = myRequests.find(r => r.id === requestId);
+      if (targetReq) {
+        if (targetReq.productId) removeLocalOfferedId(targetReq.productId);
+        if (targetReq.productUrl) removeLocalOfferedId(targetReq.productUrl);
+      }
+      setMyRequests(prev => prev.filter(r => r.id !== requestId));
+
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 

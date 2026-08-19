@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
-import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId } from '@/lib/utils';
+import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds } from '@/lib/utils';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -193,10 +193,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         const data = await res.json();
         const list = data.bidRequests || [];
         setMyRequests(list);
-        list.forEach((req: any) => {
-          if (req.product_id || req.productId) addLocalOfferedId(req.product_id || req.productId);
-          if (req.product_url || req.productUrl) addLocalOfferedId(req.product_url || req.productUrl);
-        });
+        const validOfferedIds = list.flatMap((req: any) => [req.product_id || req.productId, req.product_url || req.productUrl].filter(Boolean));
+        syncLocalOfferedIds(validOfferedIds);
       }
     } catch (e) {
       console.error('Error fetching my requests in detail page:', e);
@@ -208,13 +206,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     const prodAuctionId = extractAuctionId(product?.id) || extractAuctionId(product?.url) || extractAuctionId(targetUrl);
     if (!prodAuctionId) return false;
 
-    // 1. ローカルストレージの即時キャッシュを確認
-    const localOffered = getLocalOfferedIds();
-    if (localOffered.includes(prodAuctionId)) return true;
-
-    // 2. myRequestsリストを確認
+    // 1. myRequestsリストが存在する場合は、myRequestsリストを照合
     if (myRequests && myRequests.length > 0) {
-      const found = myRequests.some(req => {
+      return myRequests.some(req => {
         const reqAuctionId = extractAuctionId(req.product_id || req.productId) || extractAuctionId(req.product_url || req.productUrl);
         if (reqAuctionId && reqAuctionId === prodAuctionId) return true;
         const pId = product?.id;
@@ -233,9 +227,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }
         return false;
       });
-      if (found) return true;
     }
-    return false;
+
+    // 2. myRequestsがまだ空・ロード中の場合はローカルストレージのキャッシュを確認
+    const localOffered = getLocalOfferedIds();
+    return localOffered.includes(prodAuctionId);
   };
 
   useEffect(() => {

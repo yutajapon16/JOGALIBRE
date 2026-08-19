@@ -858,3 +858,32 @@ export function addLocalOfferedId(idOrUrl: string) {
     console.warn('Error saving joga_offered_ids:', e);
   }
 }
+
+/**
+ * ローカルストレージから指定した申請済み商品IDを削除する
+ */
+export function removeLocalOfferedId(idOrUrl: string) {
+  if (typeof window === 'undefined') return;
+  const cleanId = extractAuctionId(idOrUrl);
+  if (!cleanId) return;
+  try {
+    const current = getLocalOfferedIds();
+    const updated = current.filter(id => id !== cleanId);
+    localStorage.setItem('joga_offered_ids', JSON.stringify(updated));
+  } catch (e) {
+    console.warn('Error removing from joga_offered_ids:', e);
+  }
+}
+
+/**
+ * 最新のリクエスト一覧からローカルストレージを完全上書き同期する
+ */
+export function syncLocalOfferedIds(idsOrUrls: string[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    const normalizedIds = Array.from(new Set(idsOrUrls.map(extractAuctionId).filter(Boolean)));
+    localStorage.setItem('joga_offered_ids', JSON.stringify(normalizedIds));
+  } catch (e) {
+    console.warn('Error syncing joga_offered_ids:', e);
+  }
+}
