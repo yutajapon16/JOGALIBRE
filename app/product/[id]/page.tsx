@@ -438,15 +438,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     
     return `${getCurrencySymbol(targetCurrency)} ${finalConverted.toLocaleString('en-US').replace(/,/g, '.')}`;
   };
+  const [isBidManuallyChanged, setIsBidManuallyChanged] = useState(false);
+
   useEffect(() => {
-    if (product?.currentPrice && bidForm.maxBid === '') {
+    if (product?.currentPrice && !isBidManuallyChanged) {
+      const calculated = calculateConvertedPrice(product.currentPrice, 'USD').toString().replace(/,/g, '');
       setBidForm(prev => ({ 
         ...prev, 
-        maxBid: calculateConvertedPrice(product.currentPrice, 'USD').toString().replace(/,/g, '') 
+        maxBid: calculated 
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product, exchangeRates]);
+  }, [product, currentUser, exchangeRates, selectedCurrency]);
 
   // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)
   const formatLocalCost = (cost: number | string): string => {
@@ -889,15 +892,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
-                  <input
-                    type="number"
-                    placeholder="USD"
-                    value={bidForm.maxBid}
-                    onChange={(e) => setBidForm(prev => ({ ...prev, maxBid: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg pl-8 pr-4 h-12 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300 placeholder:font-normal"
-                    required
-                    min="1"
-                  />
+                    <input
+                      type="number"
+                      placeholder="USD"
+                      value={bidForm.maxBid}
+                      onChange={(e) => {
+                        setIsBidManuallyChanged(true);
+                        setBidForm(prev => ({ ...prev, maxBid: e.target.value }));
+                      }}
+                      className="w-full border border-gray-300 rounded-lg pl-8 pr-4 h-12 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300 placeholder:font-normal"
+                      required
+                      min="1"
+                    />
                 </div>
               </div>
 

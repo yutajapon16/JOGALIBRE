@@ -7866,7 +7866,7 @@ export default function Home() {
                     );
                   })()}
                   <a
-                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent(selectedProduct.url || '')}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}`}
+                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent((selectedProduct.url || '') + (selectedProduct.categoryId ? ((selectedProduct.url || '').includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}`}
                     className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
                   >
                     {t.viewOnYahoo}
