@@ -151,6 +151,7 @@ const translations = {
     featuredTitle: 'Destacados de Japón',
     quickTagsTitle: 'Marcas Populares',
     categoriesTitle: 'Categorias',
+    offerMade: 'Oferta enviada',
   },
   pt: {
     title: 'JOGALIBRE',
@@ -281,6 +282,7 @@ const translations = {
     featuredTitle: 'Destaques do Japão',
     quickTagsTitle: 'Marcas Populares',
     categoriesTitle: 'Categorias',
+    offerMade: 'Oferta enviada',
   }
 };
 
@@ -2826,8 +2828,6 @@ export default function Home() {
         alert(t.offerSuccess);
         setSelectedProduct(null);
         setBidForm({ name: '', maxBid: '' });
-        setSearchUrl('');  // URLをクリア
-        setProducts([]);   // 商品リストをクリア
         fetchMyRequests();
       } else {
         alert(t.offerError);
@@ -3120,6 +3120,24 @@ export default function Home() {
     } catch (error) {
       console.error('Error fetching requests:', error);
     }
+  };
+
+  // 商品が既にオファー申請済みかどうかを判定する関数
+  const isProductOffered = (prod?: { id?: string; url?: string } | null): boolean => {
+    if (!prod || !myRequests || myRequests.length === 0) return false;
+    return myRequests.some(req => {
+      if (prod.id && req.productId && (prod.id === req.productId || req.productId.includes(prod.id) || prod.id.includes(req.productId))) {
+        return true;
+      }
+      if (prod.url && req.productUrl) {
+        const cleanProdUrl = prod.url.split('?')[0].replace(/\/$/, '');
+        const cleanReqUrl = req.productUrl.split('?')[0].replace(/\/$/, '');
+        if (cleanProdUrl && cleanReqUrl && cleanProdUrl === cleanReqUrl) {
+          return true;
+        }
+      }
+      return false;
+    });
   };
 
   const fetchProductDetailForOfferSilent = async (url: string) => {
@@ -4065,23 +4083,32 @@ export default function Home() {
               );
             })()}
 
-            <button
-              onClick={() => {
-                setSelectedProduct(product);
-                setBidForm({ 
-                  name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
-                    ? (currentUser?.agentFullName || '')
-                    : (currentUser?.fullName || ''),
-                  maxBid: calculateConvertedPrice(product.currentPrice, 'USD', product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id).toString().replace(/,/g, '')
-                });
-                if (product.url) {
-                  fetchProductDetailForOfferSilent(product.url);
-                }
-              }}
-              className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold rounded-lg transition shadow-sm hover:shadow flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
-            >
-              <span>{t.makeOffer}</span>
-            </button>
+            {isProductOffered(product) ? (
+              <button
+                disabled={true}
+                className="w-full h-12 bg-gray-100 text-gray-400 font-bold rounded-lg border border-gray-200 cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
+              >
+                <span>✓ {t.offerMade || (lang === 'es' ? 'Oferta enviada' : 'Oferta enviada')}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setSelectedProduct(product);
+                  setBidForm({ 
+                    name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
+                      ? (currentUser?.agentFullName || '')
+                      : (currentUser?.fullName || ''),
+                    maxBid: calculateConvertedPrice(product.currentPrice, 'USD', product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id).toString().replace(/,/g, '')
+                  });
+                  if (product.url) {
+                    fetchProductDetailForOfferSilent(product.url);
+                  }
+                }}
+                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold rounded-lg transition shadow-sm hover:shadow flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
+              >
+                <span>{t.makeOffer}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -7574,11 +7601,14 @@ export default function Home() {
                                   undefined,
                                   item.id
                                 );
+                                const itemOffered = isProductOffered(item);
 
                                 return (
                                   <button
                                     key={item.id}
+                                    disabled={itemOffered}
                                     onClick={() => {
+                                      if (itemOffered) return;
                                       setSelectedProduct(item);
                                       setBidForm({
                                         name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
@@ -7597,14 +7627,14 @@ export default function Home() {
                                         fetchProductDetailForOfferSilent(item.url);
                                       }
                                     }}
-                                    className="group flex-shrink-0 w-36 sm:w-44 bg-white border border-gray-200 hover:border-indigo-500 rounded-xl p-2 shadow-xs hover:shadow-md transition text-left active:scale-95 flex flex-col justify-between"
+                                    className={`group flex-shrink-0 w-36 sm:w-44 bg-white border ${itemOffered ? 'border-green-200 bg-green-50/20 cursor-not-allowed' : 'border-gray-200 hover:border-indigo-500 active:scale-95'} rounded-xl p-2 shadow-xs hover:shadow-md transition text-left flex flex-col justify-between`}
                                   >
                                     <div>
                                       <div className="relative w-full h-28 sm:h-32 rounded-lg overflow-hidden bg-gray-50 mb-2 flex items-center justify-center">
                                         <img
                                           src={item.imageUrl || (item.images && item.images[0]) || ''}
                                           alt={item.title}
-                                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                          className={`w-full h-full object-cover ${itemOffered ? '' : 'group-hover:scale-105'} transition duration-300`}
                                           loading="lazy"
                                           onError={(e) => {
                                             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&auto=format&fit=crop&q=80';
@@ -7613,18 +7643,23 @@ export default function Home() {
                                         <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                                           {item.bids ?? 0} {lang === 'es' ? 'Ofertas' : 'Lances'}
                                         </span>
+                                        {itemOffered && (
+                                          <span className="absolute top-1.5 right-1.5 bg-green-600/90 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                                            ✓ {t.offerMade || 'Oferta enviada'}
+                                          </span>
+                                        )}
                                       </div>
-                                      <h5 className="text-[11px] sm:text-xs font-bold text-gray-800 line-clamp-2 leading-tight group-hover:text-indigo-600 transition">
+                                      <h5 className={`text-[11px] sm:text-xs font-bold ${itemOffered ? 'text-gray-500' : 'text-gray-800 group-hover:text-indigo-600'} line-clamp-2 leading-tight transition`}>
                                         {item.title}
                                       </h5>
                                     </div>
                                     <div className="mt-2 pt-1 border-t border-gray-100 flex items-center justify-between">
-                                      <span className="text-xs sm:text-sm font-black text-indigo-600">
+                                      <span className={`text-xs sm:text-sm font-black ${itemOffered ? 'text-gray-400' : 'text-indigo-600'}`}>
                                         {selectedCurrency === 'USD' ? `$ ${convertedPrice}` : `${getCurrencySymbol(selectedCurrency)} ${convertedPrice}`}
                                         <span className="text-[9px] font-normal text-gray-500 ml-1">{selectedCurrency}</span>
                                       </span>
-                                      <span className="text-[10px] text-gray-400 group-hover:text-indigo-600 transition">
-                                        →
+                                      <span className={`text-[10px] ${itemOffered ? 'text-gray-300' : 'text-gray-400 group-hover:text-indigo-600'} transition`}>
+                                        {itemOffered ? '✓' : '→'}
                                       </span>
                                     </div>
                                   </button>

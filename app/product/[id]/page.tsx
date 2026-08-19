@@ -52,6 +52,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [myRequests, setMyRequests] = useState<any[]>([]);
 
   // 言語リソースの定義
   const translations = {
@@ -90,7 +91,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       localCostLabel: 'Costo Local',
       shippingMethodLabel: 'Método de envío',
       shippingMethodSea: 'Contenedor 🚢',
-      shippingMethodAir: 'Avión ✈️'
+      shippingMethodAir: 'Avión ✈️',
+      offerMade: 'Oferta enviada'
     },
     pt: {
       title: 'Visualização de Produto com IA',
@@ -127,7 +129,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       localCostLabel: 'Custo Local',
       shippingMethodLabel: 'Método de envio',
       shippingMethodSea: 'Contêiner 🚢',
-      shippingMethodAir: 'Avião ✈️'
+      shippingMethodAir: 'Avião ✈️',
+      offerMade: 'Oferta enviada'
     }
   };
 
@@ -174,6 +177,48 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       console.error('Error fetching user profile in detail page:', error);
     }
   };
+  // ユーザーのオファー申請一覧取得（オファー済み判定用）
+  const fetchMyRequests = async (overrideEmail?: string) => {
+    try {
+      const email = overrideEmail || currentUser?.email;
+      if (!email) return;
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+      const res = await fetch(`/api/bid-request?email=${encodeURIComponent(email)}`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMyRequests(data.bidRequests || []);
+      }
+    } catch (e) {
+      console.error('Error fetching my requests in detail page:', e);
+    }
+  };
+
+  // 商品が既にオファー申請済みかどうかを判定する関数
+  const isProductOffered = (): boolean => {
+    if (!product || !myRequests || myRequests.length === 0) return false;
+    return myRequests.some(req => {
+      const pId = product.id;
+      const reqPId = req.product_id || req.productId;
+      if (pId && reqPId && (pId === reqPId || reqPId.includes(pId) || pId.includes(reqPId))) {
+        return true;
+      }
+      const pUrl = product.url;
+      const reqUrl = req.product_url || req.productUrl;
+      if (pUrl && reqUrl) {
+        const cleanPUrl = pUrl.split('?')[0].replace(/\/$/, '');
+        const cleanReqUrl = reqUrl.split('?')[0].replace(/\/$/, '');
+        if (cleanPUrl && cleanReqUrl && cleanPUrl === cleanReqUrl) {
+          return true;
+        }
+      }
+      return false;
+    });
+  };
 
   useEffect(() => {
     // URLパラメーターの id を解決 (必要であればここで処理しますが、今回は未使用のため省略)
@@ -206,6 +251,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       if (user) {
         setCurrentUser(user);
         fetchUserProfile(user);
+        fetchMyRequests(user.email);
       }
     }).catch(err => {
       console.error('Fast failure in initial getCurrentUser:', err);
@@ -545,13 +591,33 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       const data = await res.json();
 
       if (res.ok) {
-        setMessage({ type: 'success', text: t.offerSuccess });
-        setBidForm(prev => ({ ...prev, maxBid: '' }));
+        // 管理者へ通知
+        if (currentUser) {
+          const itemTitle = product?.titleJa || product?.title || 'リクエスト商品';
+          const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
+          const custName = currentUser.fullName || finalCustomerName;
+          fetch('/api/push-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sendToAdmins: true,
+              bidRequestId: data?.bidRequest?.id,
+              title: `📩 【新規申請】${custName} ${custId}`.trim(),
+              body: `商品: ${itemTitle}`,
+              url: '/admin'
+            })
+          }).catch(e => console.error('Admin push error', e));
+        }
+
+        alert(t.offerSuccess);
+        router.back();
       } else {
+        alert(data.message || t.offerError);
         setMessage({ type: 'error', text: data.message || t.offerError });
       }
     } catch (err) {
       console.error('Error submitting bid request:', err);
+      alert(t.offerError);
       setMessage({ type: 'error', text: t.offerError });
     } finally {
       setSubmitting(false);
@@ -914,19 +980,29 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className={`w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold transition flex items-center justify-center ${
-                  submitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'
-                }`}
-              >
-                {submitting ? (
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                ) : (
-                  <span>{t.submit}</span>
-                )}
-              </button>
+              {isProductOffered() ? (
+                <button
+                  type="button"
+                  disabled={true}
+                  className="w-full bg-gray-100 text-gray-400 border border-gray-200 h-12 rounded-lg font-bold transition flex items-center justify-center cursor-not-allowed text-sm"
+                >
+                  <span>✓ {t.offerMade || (lang === 'es' ? 'Oferta enviada' : 'Oferta enviada')}</span>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className={`w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold transition flex items-center justify-center ${
+                    submitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'
+                  }`}
+                >
+                  {submitting ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    <span>{t.submit}</span>
+                  )}
+                </button>
+              )}
             </form>
           </div>
         )}
