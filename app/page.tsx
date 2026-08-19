@@ -148,7 +148,7 @@ const translations = {
     statusArrivedLocal: 'Llegado al destino',
     statusReadyForDelivery: 'Listo para retiro',
     statusDelivered: 'Entregado',
-    featuredTitle: 'Destaques do Japão',
+    featuredTitle: 'Destacados de Japón',
     quickTagsTitle: 'Marcas Populares',
     categoriesTitle: 'Categorias',
   },
@@ -1127,55 +1127,6 @@ const CATEGORY_VISUALS: Record<string, { image: string; tagPt: string; tagEs: st
   washlet: { image: '/images/categories/washlet.jpg', tagPt: 'TOTO', tagEs: 'TOTO' }
 };
 
-// 注目・おすすめ商品カルーセル（Destaques do Japão）
-const FEATURED_ITEMS = [
-  {
-    id: 'f1',
-    titlePt: 'BBS LM 18" Rodas Forjadas Japão',
-    titleEs: 'BBS LM 18" Ruedas Forjadas Japón',
-    priceUsd: 850,
-    searchKeyword: 'BBS 18インチ',
-    image: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=300&auto=format&fit=crop&q=80',
-    badge: 'JDM'
-  },
-  {
-    id: 'f2',
-    titlePt: 'Seiko Prospex Automático Diver 200M',
-    titleEs: 'Seiko Prospex Automático Diver 200M',
-    priceUsd: 320,
-    searchKeyword: 'SEIKO PROSPEX',
-    image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&auto=format&fit=crop&q=80',
-    badge: 'Relógio'
-  },
-  {
-    id: 'f3',
-    titlePt: 'Shimano Stella SW Molinete Premium',
-    titleEs: 'Shimano Stella SW Carrete Premium',
-    priceUsd: 490,
-    searchKeyword: 'SHIMANO STELLA',
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=300&auto=format&fit=crop&q=80',
-    badge: 'Pesca'
-  },
-  {
-    id: 'f4',
-    titlePt: 'Yamaha YAS-62 Saxofone Alto Profissional',
-    titleEs: 'Yamaha YAS-62 Saxofón Alto Profesional',
-    priceUsd: 1200,
-    searchKeyword: 'YAMAHA YAS-62',
-    image: 'https://images.unsplash.com/photo-1525994886773-080587e161c2?w=300&auto=format&fit=crop&q=80',
-    badge: 'Música'
-  },
-  {
-    id: 'f5',
-    titlePt: 'Bandai PG 1/60 Perfect Grade Gundam',
-    titleEs: 'Bandai PG 1/60 Perfect Grade Gundam',
-    priceUsd: 180,
-    searchKeyword: 'PG ガンダム',
-    image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=300&auto=format&fit=crop&q=80',
-    badge: 'Anime'
-  }
-];
-
 // URLのコンディションパラメータ(istatus)を更新するヘルパー関数
 const updateUrlCondition = (url: string, condition: 'all' | 'new' | 'used'): string => {
   try {
@@ -1236,6 +1187,8 @@ export default function Home() {
   const [products, setProducts] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SearchItem | null>(null);
+  const [featuredItems, setFeaturedItems] = useState<SearchItem[]>([]);
+  const [isFeaturedLoading, setIsFeaturedLoading] = useState(false);
   const [isOfferUpdating, setIsOfferUpdating] = useState(false);
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -1680,6 +1633,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    fetchFeaturedItems(lang);
+  }, [lang]);
+
+  useEffect(() => {
     // 初回セッション復元
     getCurrentUser().then(user => {
       if (user?.role === 'customer' || user?.role === 'agent') {
@@ -2069,6 +2026,23 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
+    }
+  };
+
+  const fetchFeaturedItems = async (targetLang: string = lang) => {
+    setIsFeaturedLoading(true);
+    try {
+      const res = await fetch(`/api/featured-items?lang=${targetLang}&count=12`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.items && Array.isArray(data.items)) {
+          setFeaturedItems(data.items);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching featured items:', error);
+    } finally {
+      setIsFeaturedLoading(false);
     }
   };
 
@@ -7554,49 +7528,95 @@ export default function Home() {
                         <div className="pt-2 space-y-2">
                           <div className="flex items-center justify-between px-1">
                             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                              🔥 {t.featuredTitle || 'Destaques do Japão'}
-                            </span>
-                            <span className="text-[10px] text-indigo-600 font-bold">
-                              {lang === 'es' ? 'Ver populares' : 'Ver populares'}
+                              🔥 {t.featuredTitle || (lang === 'es' ? 'Destacados de Japón' : 'Destaques do Japão')}
                             </span>
                           </div>
 
-                          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-0.5">
-                            {FEATURED_ITEMS.map((item) => (
-                              <button
-                                key={item.id}
-                                onClick={() => {
-                                  setKeyword(item.searchKeyword);
-                                  setSearchType('keyword');
-                                  handleKeywordSearch(item.searchKeyword);
-                                }}
-                                className="group flex-shrink-0 w-36 sm:w-44 bg-white border border-gray-200 hover:border-indigo-500 rounded-xl p-2 shadow-sm hover:shadow-md transition text-left active:scale-95"
-                              >
-                                <div className="relative w-full h-28 sm:h-32 rounded-lg overflow-hidden bg-gray-50 mb-2">
-                                  <img
-                                    src={item.image}
-                                    alt={lang === 'es' ? item.titleEs : item.titlePt}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                                    loading="lazy"
-                                  />
-                                  <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                                    {item.badge}
-                                  </span>
+                          {isFeaturedLoading && featuredItems.length === 0 ? (
+                            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <div
+                                  key={`featured-skel-${i}`}
+                                  className="flex-shrink-0 w-36 sm:w-44 bg-white border border-gray-100 rounded-xl p-2 shadow-xs animate-pulse"
+                                >
+                                  <div className="w-full h-28 sm:h-32 rounded-lg bg-gray-200 mb-2" />
+                                  <div className="h-3 bg-gray-200 rounded w-5/6 mb-1.5" />
+                                  <div className="h-3 bg-gray-200 rounded w-3/5 mb-2" />
+                                  <div className="h-4 bg-gray-200 rounded w-1/2" />
                                 </div>
-                                <h5 className="text-[11px] sm:text-xs font-bold text-gray-800 line-clamp-2 leading-tight group-hover:text-indigo-600 transition">
-                                  {lang === 'es' ? item.titleEs : item.titlePt}
-                                </h5>
-                                <div className="mt-1.5 flex items-center justify-between">
-                                  <span className="text-xs sm:text-sm font-black text-indigo-600">
-                                    ${item.priceUsd} <span className="text-[9px] font-normal text-gray-500">USD</span>
-                                  </span>
-                                  <span className="text-[10px] bg-indigo-50 text-indigo-600 font-bold px-1.5 py-0.5 rounded">
-                                    🇯🇵
-                                  </span>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
+                              ))}
+                            </div>
+                          ) : featuredItems.length > 0 ? (
+                            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-0.5">
+                              {featuredItems.map((item) => {
+                                const convertedPrice = calculateConvertedPrice(
+                                  item.currentPrice,
+                                  selectedCurrency,
+                                  item.titleJa || item.title,
+                                  item.url || ''
+                                );
+
+                                return (
+                                  <button
+                                    key={item.id}
+                                    onClick={() => {
+                                      setSelectedProduct(item);
+                                      setBidForm({
+                                        name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
+                                          ? (currentUser?.agentFullName || '')
+                                          : (currentUser?.fullName || ''),
+                                        maxBid: calculateConvertedPrice(
+                                          item.currentPrice,
+                                          'USD',
+                                          item.titleJa || item.title,
+                                          item.url || ''
+                                        ).toString().replace(/,/g, '')
+                                      });
+                                      if (item.url) {
+                                        fetchProductDetailForOfferSilent(item.url);
+                                      }
+                                    }}
+                                    className="group flex-shrink-0 w-36 sm:w-44 bg-white border border-gray-200 hover:border-indigo-500 rounded-xl p-2 shadow-xs hover:shadow-md transition text-left active:scale-95 flex flex-col justify-between"
+                                  >
+                                    <div>
+                                      <div className="relative w-full h-28 sm:h-32 rounded-lg overflow-hidden bg-gray-50 mb-2 flex items-center justify-center">
+                                        <img
+                                          src={item.imageUrl || (item.images && item.images[0]) || ''}
+                                          alt={item.title}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                          loading="lazy"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&auto=format&fit=crop&q=80';
+                                          }}
+                                        />
+                                        {item.bids && item.bids > 0 ? (
+                                          <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                            {item.bids} {t.bidsLabel || 'bids'}
+                                          </span>
+                                        ) : (
+                                          <span className="absolute top-1.5 left-1.5 bg-indigo-600/90 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                            🇯🇵 JAPAN
+                                          </span>
+                                        )}
+                                      </div>
+                                      <h5 className="text-[11px] sm:text-xs font-bold text-gray-800 line-clamp-2 leading-tight group-hover:text-indigo-600 transition">
+                                        {item.title}
+                                      </h5>
+                                    </div>
+                                    <div className="mt-2 pt-1 border-t border-gray-100 flex items-center justify-between">
+                                      <span className="text-xs sm:text-sm font-black text-indigo-600">
+                                        {selectedCurrency === 'USD' ? `$ ${convertedPrice}` : `${getCurrencySymbol(selectedCurrency)} ${convertedPrice}`}
+                                        <span className="text-[9px] font-normal text-gray-500 ml-1">{selectedCurrency}</span>
+                                      </span>
+                                      <span className="text-[10px] text-gray-400 group-hover:text-indigo-600 transition">
+                                        →
+                                      </span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : null}
                         </div>
                       )}
                     </div>
