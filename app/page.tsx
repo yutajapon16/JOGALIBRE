@@ -1791,9 +1791,10 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 
-  // 詳細画面からの戻りやタブフォーカス時に即時オファー状態を同期・再検証
+  // 詳細画面からの戻りやタブフォーカス時に即時オファー状態を同期・再検証＆モーダルクローズ
   useEffect(() => {
     const handleRevalidate = () => {
+      setSelectedProduct(null);
       if (currentUser?.email) {
         fetchMyRequests(currentUser.email);
       }
@@ -7957,6 +7958,7 @@ export default function Home() {
                   })()}
                   <a
                     href={`/product/${selectedProduct.id}?url=${encodeURIComponent((selectedProduct.url || '') + (selectedProduct.categoryId ? ((selectedProduct.url || '').includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}`}
+                    onClick={() => setSelectedProduct(null)}
                     className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
                   >
                     {t.viewOnYahoo}
