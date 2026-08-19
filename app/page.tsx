@@ -19,6 +19,10 @@ interface AppNotification {
   type?: string;
 }
 
+// BRLクレジットカード決済の受付フラグ (false: 準備中/停止, true: 受付中/再開)
+// 将来クレジットカード決済を再開する際はここを true に切り替えるだけで復旧可能です
+const ENABLE_CREDIT_CARD_PAYMENT = false;
+
 const translations = {
   es: {
     title: 'JOGALIBRE',
@@ -8635,7 +8639,14 @@ export default function Home() {
                   >
                     <span className="text-sm sm:text-base">💳</span>
                     <span className="flex flex-col leading-tight text-left">
-                      <span className="text-xs sm:text-sm">Cartão</span>
+                      <span className="text-xs sm:text-sm flex items-center gap-1">
+                        Cartão
+                        {!ENABLE_CREDIT_CARD_PAYMENT && (
+                          <span className="text-[9px] bg-yellow-100 text-yellow-800 font-bold px-1.5 py-0.5 rounded leading-none">
+                            {lang === 'es' ? 'Próximamente' : 'Em breve'}
+                          </span>
+                        )}
+                      </span>
                       <span className="text-[10px] sm:text-xs font-medium opacity-70">(Crédito / Débito)</span>
                     </span>
                   </button>
@@ -8660,19 +8671,36 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 space-y-3 text-xs">
-                    <div className="flex items-center gap-2 text-indigo-800 font-bold text-sm">
-                      <span>💳</span>
-                      <span>Cartão de Crédito ou Débito</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-indigo-800 font-bold text-sm">
+                        <span>💳</span>
+                        <span>Cartão de Crédito ou Débito</span>
+                      </div>
+                      {!ENABLE_CREDIT_CARD_PAYMENT && (
+                        <span className="text-[10px] bg-yellow-100 text-yellow-800 font-bold px-2 py-0.5 rounded-full">
+                          {lang === 'es' ? 'En preparación' : 'Em preparação'}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-gray-600 leading-relaxed">
-                      {lang === 'es'
-                        ? 'Pago seguro con tarjeta de crédito/débito.'
-                        : 'Pagamento seguro com cartão de crédito/débito.'}
-                    </p>
-                    <div className="p-3 bg-white rounded-lg border text-gray-500 text-[11px]">
-                      • Cartões aceitos: Visa, Mastercard, Elo, Hipercard<br />
-                      • Criptografia de ponta a ponta (SSL/TLS)
-                    </div>
+                    {!ENABLE_CREDIT_CARD_PAYMENT ? (
+                      <div className="p-3 bg-yellow-50/80 rounded-lg border border-yellow-200 text-yellow-800 text-[11px] leading-relaxed">
+                        ⚠️ {lang === 'es'
+                          ? 'El pago con tarjeta se encuentra temporalmente en preparación. Por favor, utilice PIX para completar su pago al instante.'
+                          : 'O pagamento com cartão está temporariamente em preparação. Por favor, utilize o PIX para concluir seu pagamento instantaneamente.'}
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-gray-600 leading-relaxed">
+                          {lang === 'es'
+                            ? 'Pago seguro con tarjeta de crédito/débito.'
+                            : 'Pagamento seguro com cartão de crédito/débito.'}
+                        </p>
+                        <div className="p-3 bg-white rounded-lg border text-gray-500 text-[11px]">
+                          • Cartões aceitos: Visa, Mastercard, Elo, Hipercard<br />
+                          • Criptografia de ponta a ponta (SSL/TLS)
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -8765,32 +8793,46 @@ export default function Home() {
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    disabled={isProcessingBrlPayment || (!currentUser?.cpf && !brlPaymentCpf.trim())}
-                    onClick={() => handleProcessBrlPayment(totalBrl, selectedItems)}
-                    className={`w-full font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-sm sm:text-base ${
-                      isProcessingBrlPayment || (!currentUser?.cpf && !brlPaymentCpf.trim())
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
-                    }`}
-                  >
-                    {isProcessingBrlPayment ? (
-                      <span className="flex items-center gap-2">
-                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {lang === 'es' ? 'Procesando...' : 'Processando...'}
-                      </span>
-                    ) : (
-                      <span>
-                        {lang === 'es'
-                          ? `Proceder al Pago (R$ ${formatBrlModal(totalBrl)})`
-                          : `Ir para Pagamento (R$ ${formatBrlModal(totalBrl)})`}
-                      </span>
-                    )}
-                  </button>
+                  (() => {
+                    const isCardDisabled = !ENABLE_CREDIT_CARD_PAYMENT && brlPaymentMethod === 'card';
+                    const isButtonDisabled = isProcessingBrlPayment || isCardDisabled || (!currentUser?.cpf && !brlPaymentCpf.trim());
+
+                    return (
+                      <button
+                        type="button"
+                        disabled={isButtonDisabled}
+                        onClick={() => {
+                          if (isCardDisabled) return;
+                          handleProcessBrlPayment(totalBrl, selectedItems);
+                        }}
+                        className={`w-full font-bold py-3.5 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-sm sm:text-base ${
+                          isButtonDisabled
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                        }`}
+                      >
+                        {isProcessingBrlPayment ? (
+                          <span className="flex items-center gap-2">
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {lang === 'es' ? 'Procesando...' : 'Processando...'}
+                          </span>
+                        ) : isCardDisabled ? (
+                          <span>
+                            {lang === 'es' ? 'En preparación' : 'Em preparação'}
+                          </span>
+                        ) : (
+                          <span>
+                            {lang === 'es'
+                              ? `Proceder al Pago (R$ ${formatBrlModal(totalBrl)})`
+                              : `Ir para Pagamento (R$ ${formatBrlModal(totalBrl)})`}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })()
                 )}
               </div>
             </div>
