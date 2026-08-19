@@ -3803,16 +3803,16 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 入金タブ */}
+        {/* 財務タブ */}
         {activeTab === 'financials' && (
-          <div className="flex flex-col gap-6 w-full p-4 sm:p-6 bg-gray-50 rounded-xl min-h-[500px]">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">📊 財務ダッシュボード</h2>
-                <p className="text-gray-500 text-sm mt-1">B001傘下顧客およびブラジルエージェントの売上集計</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-sans">📊 財務ダッシュボード</h2>
+                <p className="text-gray-500 text-xs sm:text-sm mt-1 font-sans">B001傘下顧客およびブラジルAGTの売上集計</p>
               </div>
-              <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm border">
-                <span className="text-gray-600 font-medium">対象月:</span>
+              <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-xs">
+                <span className="text-xs sm:text-sm font-bold text-gray-600">対象月:</span>
                 <input 
                   type="month" 
                   value={financialMonth}
@@ -3820,48 +3820,52 @@ export default function AdminDashboard() {
                     setFinancialMonth(e.target.value);
                     fetchFinancials(e.target.value);
                   }}
-                  className="border-none bg-transparent focus:ring-0 text-indigo-700 font-bold outline-none"
+                  className="border-none bg-transparent focus:ring-0 text-indigo-700 font-bold outline-none text-xs sm:text-sm cursor-pointer"
                 />
               </div>
             </div>
 
             {isLoadingFinancials ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
               </div>
             ) : financialData ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                {/* 顧客支払額 */}
-                <div className="bg-white rounded-xl shadow border border-gray-100 p-6 flex flex-col justify-center">
-                  <div className="text-sm font-bold text-gray-500 mb-2">顧客支払額</div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xl font-bold text-red-500">
-                      未入金 USD {financialData.unpaidCustomerPayment?.toFixed(2)}
-                    </span>
-                    <span className="text-2xl font-black text-gray-800">
-                      / 合計 USD {financialData.totalCustomerPayment?.toFixed(2)}
+              <div className="space-y-4">
+                {/* サマリーカード（顧客タブ・AGTタブと統一フォーマット） */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 font-sans">
+                  {/* 顧客支払額 */}
+                  <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-gray-500">未入金 / 顧客支払合計</span>
+                    <span className="text-base font-bold flex items-center gap-1.5">
+                      <span className="text-red-600 font-bold">
+                        $ {(financialData.unpaidCustomerPayment || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                      <span className="text-gray-400">/</span>
+                      <span className="text-gray-900 font-black">
+                        $ {(financialData.totalCustomerPayment || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
                     </span>
                   </div>
-                </div>
 
-                {/* システム利用料 (FFGN売上) */}
-                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow p-6 flex flex-col justify-center text-white">
-                  <div className="text-sm font-bold text-indigo-100 mb-2">システム利用料 (FFGN売上)</div>
-                  <div className="text-3xl font-black">
-                    合計 USD {financialData.systemFee?.toFixed(2)}
+                  {/* システム利用料 (FFGN売上) */}
+                  <div className="bg-white border border-purple-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-purple-700">システム利用料 (FFGN売上)</span>
+                    <span className="text-base font-black text-purple-700">
+                      $ {(financialData.systemFee || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                   </div>
-                </div>
 
-                {/* 商品立替金 (JOGAへの送金) */}
-                <div className="bg-white rounded-xl shadow border border-gray-100 p-6 flex flex-col justify-center">
-                  <div className="text-sm font-bold text-gray-500 mb-2">商品立替金 (株式会社JOGAへ送金する分)</div>
-                  <div className="text-3xl font-black text-blue-600">
-                    合計 USD {financialData.japanPayout?.toFixed(2)}
+                  {/* 商品立替金 (JOGAへの送金) */}
+                  <div className="bg-white border border-blue-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-xs font-bold text-blue-600">商品立替金 (JOGA送金分)</span>
+                    <span className="text-base font-black text-blue-600">
+                      $ {(financialData.japanPayout || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex justify-center items-center h-64 text-gray-400">
+              <div className="text-center py-16 text-gray-400 font-sans">
                 データが取得できませんでした
               </div>
             )}
