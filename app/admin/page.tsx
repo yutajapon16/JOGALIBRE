@@ -32,6 +32,7 @@ export default function AdminDashboard() {
   useAdminManifest();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [bidRequests, setBidRequests] = useState<BidRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [rejectReason, setRejectReason] = useState('');
@@ -407,8 +408,10 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchUsersData = async () => {
-    setLoadingUsers(true);
+  const fetchUsersData = async (forceLoading: boolean = false) => {
+    if (forceLoading || (customersList.length === 0 && agentsList.length === 0)) {
+      setLoadingUsers(true);
+    }
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -454,7 +457,7 @@ export default function AdminDashboard() {
       if (res.ok) {
         alert('ユーザー情報を更新しました');
         setEditingUser(null);
-        fetchUsersData();
+        fetchUsersData(true);
       } else {
         const err = await res.json();
         alert(`更新に失敗しました: ${err.error || ''}`);
@@ -464,8 +467,10 @@ export default function AdminDashboard() {
       alert('通信エラーが発生しました');
     }
   };
-  const fetchDeposits = async () => {
-    setLoadingDeposits(true);
+  const fetchDeposits = async (forceLoading: boolean = false) => {
+    if (forceLoading || depositsList.length === 0) {
+      setLoadingDeposits(true);
+    }
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -534,7 +539,7 @@ export default function AdminDashboard() {
           usdAmount: '',
           depositType: '商品代金'
         });
-        fetchDeposits();
+        fetchDeposits(true);
       } else {
         const err = await res.json();
         alert(`登録に失敗しました: ${err.error || ''}`);
@@ -545,8 +550,10 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchFinancials = async (month: string) => {
-    setIsLoadingFinancials(true);
+  const fetchFinancials = async (month: string, forceLoading: boolean = false) => {
+    if (forceLoading || !financialData) {
+      setIsLoadingFinancials(true);
+    }
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -559,11 +566,15 @@ export default function AdminDashboard() {
         const data = await res.json();
         setFinancialData(data);
       } else {
-        setFinancialData(null);
+        if (forceLoading || !financialData) {
+          setFinancialData(null);
+        }
       }
     } catch (error) {
       console.error('Error fetching financials:', error);
-      setFinancialData(null);
+      if (forceLoading || !financialData) {
+        setFinancialData(null);
+      }
     } finally {
       setIsLoadingFinancials(false);
     }
@@ -841,41 +852,91 @@ export default function AdminDashboard() {
 
   // セッションチェック（最初に実行）
   useEffect(() => {
-    // 初回セッション復元
-    getCurrentUser().then(user => {
-      if (user?.role === 'admin') {
-        setCurrentUser(user);
-      } else {
-        setCurrentUser(null);
+    let isMounted = true;
+    let authChecked = false;
+
+    // 万が一のタイムアウト防止（最長5秒で強制的にローディング解除）
+    const safetyTimer = setTimeout(() => {
+      if (isMounted && !authChecked) {
+        setLoading(false);
       }
-    }).catch(() => {
-      setCurrentUser(null);
-    }).finally(() => {
-      setLoading(false);
-    });
+    }, 5000);
+
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const user = await getCurrentUser(session.user);
+          if (isMounted) {
+            authChecked = true;
+            if (user?.role === 'admin') {
+              setCurrentUser(user);
+            } else {
+              setCurrentUser(null);
+            }
+            setLoading(false);
+          }
+          return;
+        }
+
+        // セッションがない場合：ローカルストレージに supabase 関連キーがあるか確認（リフレッシュ待ち）
+        const hasStoredAuth = typeof window !== 'undefined' && Object.keys(localStorage).some(k => k.startsWith('sb-') || k.includes('supabase'));
+        if (!hasStoredAuth) {
+          // 完全に未ログイン状態
+          if (isMounted) {
+            authChecked = true;
+            setCurrentUser(null);
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        console.error('Session check error:', err);
+        if (isMounted) {
+          authChecked = true;
+          setCurrentUser(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    initAuth();
 
     // セッション変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+
       if (event === 'SIGNED_OUT') {
+        authChecked = true;
         setCurrentUser(null);
         setLoading(false);
       } else if (session?.user) {
         // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
         const user = await getCurrentUser(session.user);
+        if (!isMounted) return;
+        authChecked = true;
+
         if (user?.role === 'admin') {
           setCurrentUser(user);
         } else if (event === 'SIGNED_IN') {
           // 管理者以外がログインした場合
           await supabase.auth.signOut({ scope: 'local' });
           alert('管理者アカウントでログインしてください');
+          setCurrentUser(null);
+        } else {
+          setCurrentUser(null);
         }
         setLoading(false);
       } else {
+        authChecked = true;
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // 1. ログイン時に全タブの情報を一括並列取得（全タブ事前ロード）
@@ -886,13 +947,15 @@ export default function AdminDashboard() {
         fetchBidRequests(),
         fetchPurchasedItems(),
         fetchShippingContainers(),
-        fetchDeposits(),
-        fetchUsersData(),
-        fetchFinancials(financialMonth),
+        fetchDeposits(false),
+        fetchUsersData(false),
+        fetchFinancials(financialMonth, false),
         fetchInviteCodes(),
-        fetchExchangeRate()
+        fetchExchangeRate(),
+        fetchUnreadCount()
       ]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   // 2. タブ切り替え時または定期更新（バックグラウンドで最新データを同期）
@@ -904,17 +967,17 @@ export default function AdminDashboard() {
         fetchPurchasedItems();
         fetchShippingContainers();
       } else if (activeTab === 'deposits') {
-        fetchDeposits();
-        fetchUsersData();
+        fetchDeposits(false);
+        fetchUsersData(false);
         fetchPurchasedItems();
       } else if (activeTab === 'shipping') {
         fetchPurchasedItems();
-        fetchUsersData();
+        fetchUsersData(false);
         fetchShippingContainers();
       } else if (activeTab === 'financials') {
-        fetchFinancials(financialMonth);
+        fetchFinancials(financialMonth, false);
       } else {
-        fetchUsersData();
+        fetchUsersData(false);
         if (activeTab === 'agents') {
           fetchInviteCodes();
         }
@@ -1034,14 +1097,18 @@ export default function AdminDashboard() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
     try {
       await signIn(loginForm.email, loginForm.password);
       // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
       // ロールチェックは onAuthStateChange 内で行われる（admin のみ setCurrentUser）
       setLoginForm({ email: '', password: '' });
+      setLoading(true);
     } catch (error) {
       console.error('Login error:', error);
       alert('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
+      setIsLoggingIn(false);
     }
   };
 
@@ -2195,9 +2262,10 @@ export default function AdminDashboard() {
             </div>
             <button
               type="submit"
-              className="w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center text-base"
+              disabled={isLoggingIn}
+              className="w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center text-base disabled:opacity-50"
             >
-              ログイン
+              {isLoggingIn ? 'ログイン中...' : 'ログイン'}
             </button>
           </form>
         </div>
@@ -2353,11 +2421,12 @@ export default function AdminDashboard() {
             <button
               onClick={() => {
                 if (activeTab === 'requests') fetchBidRequests();
-                else if (activeTab === 'purchased') fetchPurchasedItems();
-                else if (activeTab === 'deposits') { fetchDeposits(); fetchUsersData(); }
-                else if (activeTab === 'shipping') { fetchPurchasedItems(); fetchUsersData(); fetchShippingContainers(); }
+                else if (activeTab === 'purchased') { fetchPurchasedItems(); fetchShippingContainers(); }
+                else if (activeTab === 'deposits') { fetchDeposits(true); fetchUsersData(true); }
+                else if (activeTab === 'shipping') { fetchPurchasedItems(); fetchUsersData(true); fetchShippingContainers(); }
+                else if (activeTab === 'financials') { fetchFinancials(financialMonth, true); }
                 else {
-                  fetchUsersData();
+                  fetchUsersData(true);
                   if (activeTab === 'agents') {
                     fetchInviteCodes();
                   }
@@ -3417,7 +3486,7 @@ export default function AdminDashboard() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-sans">顧客リスト</h2>
               <button
-                onClick={fetchUsersData}
+                onClick={() => fetchUsersData(true)}
                 disabled={loadingUsers}
                 className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg font-semibold hover:bg-indigo-100 transition text-sm flex items-center gap-1"
               >
@@ -3577,7 +3646,10 @@ export default function AdminDashboard() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-sans">エージェントリスト</h2>
               <button
-                onClick={fetchUsersData}
+                onClick={() => {
+                  fetchUsersData(true);
+                  fetchInviteCodes();
+                }}
                 disabled={loadingUsers}
                 className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg font-semibold hover:bg-indigo-100 transition text-sm flex items-center gap-1"
               >
@@ -3818,7 +3890,7 @@ export default function AdminDashboard() {
                   value={financialMonth}
                   onChange={(e) => {
                     setFinancialMonth(e.target.value);
-                    fetchFinancials(e.target.value);
+                    fetchFinancials(e.target.value, true);
                   }}
                   className="border-none bg-transparent focus:ring-0 text-indigo-700 font-bold outline-none text-xs sm:text-sm cursor-pointer"
                 />
