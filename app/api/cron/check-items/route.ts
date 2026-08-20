@@ -64,7 +64,7 @@ export async function GET(request: Request) {
         // -------------------------------------------------------------
         const { data: items, error: fetchError } = await supabaseAdmin
             .from('bid_requests')
-            .select('id, product_id, product_title, product_url, product_end_time, status, customer_email, product_price, max_bid, customer_message')
+            .select('id, product_id, product_title, product_title_es, product_title_pt, product_url, product_end_time, status, customer_email, product_price, max_bid, customer_message')
             .is('final_status', null);
 
         if (fetchError) throw fetchError;
@@ -134,6 +134,11 @@ export async function GET(request: Request) {
                     lastCheckTs = parseInt(matchCheck[1], 10);
                 }
                 const elapsedMs = now.getTime() - lastCheckTs;
+
+                // 終了通知済みのアイテムは頻繁な巡回をスキップ（1時間ごと）
+                if (currentMsg.includes('[auction_ended_notified]') && elapsedMs < 60 * 60 * 1000) {
+                    continue;
+                }
 
                 // - 24時間以上: 3時間経過していなければスキップ
                 // - 2時間〜24時間: 15分経過していなければスキップ
@@ -248,7 +253,9 @@ export async function GET(request: Request) {
                 // 終了判定
                 const isEnded = html.includes('終了しました') ||
                     html.includes('オークションは終了しました') ||
-                    html.includes('再出品');
+                    html.includes('このオークションは終了しています') ||
+                    html.includes('再出品') ||
+                    (diffHours < -0.25); // 終了予定時刻から15分以上経過
 
                 // [last_check:TIMESTAMP] の更新
                 if (currentMsg.includes('[last_check:')) {
@@ -275,10 +282,27 @@ export async function GET(request: Request) {
                 }
 
                 if (isEnded) {
-                    updateData.final_status = 'ended_check_needed';
                     currentMsg = currentMsg.includes('Auction ended.')
                         ? currentMsg
                         : `${currentMsg} Auction ended. Waiting for admin to confirm result.`.trim();
+
+                    // 承認済みの申請商品（落札結果待ち）のオークション終了時、管理者宛てプッシュ通知を送信
+                    if (item.status === 'approved' && !currentMsg.includes('[auction_ended_notified]')) {
+                        pushPromises.push(
+                            fetch(`${origin}/api/push-send`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    sendToAdmins: true,
+                                    bidRequestId: item.id,
+                                    title: '🔚 オークション終了',
+                                    body: `商品: ${productTitle}`,
+                                    url: '/admin'
+                                })
+                            }).catch(e => console.error(`Auction ended admin push error for item ${item.id}:`, e))
+                        );
+                        currentMsg = `${currentMsg} [auction_ended_notified]`.trim();
+                    }
                     updateData.customer_message = currentMsg;
                 }
 
@@ -303,9 +327,12 @@ export async function GET(request: Request) {
                         const custTitle = lang === 'es'
                             ? '⏰ ¡Quedan menos de 2 horas!'
                             : '⏰ Faltam menos de 2 horas!';
+                        const itemTitle = lang === 'es'
+                            ? item.product_title_es || productTitle
+                            : item.product_title_pt || productTitle;
                         const custBody = lang === 'es'
-                            ? `Producto: ${productTitle}`
-                            : `Produto: ${productTitle}`;
+                            ? `Producto: ${itemTitle}`
+                            : `Produto: ${itemTitle}`;
 
                         pushPromises.push(
                             fetch(`${origin}/api/push-send`, {
@@ -313,6 +340,7 @@ export async function GET(request: Request) {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     email: item.customer_email,
+                                    bidRequestId: item.id,
                                     title: custTitle,
                                     body: custBody,
                                     url: '/'
@@ -368,9 +396,12 @@ export async function GET(request: Request) {
                             const title = lang === 'es'
                                 ? '⚠️ ¡Tu oferta ha sido superada!'
                                 : '⚠️ Sua oferta foi ultrapassada!';
+                            const itemTitle = lang === 'es'
+                                ? item.product_title_es || productTitle
+                                : item.product_title_pt || productTitle;
                             const body = lang === 'es'
-                                ? `El precio actual superó tu límite ($${item.max_bid}). Revisa el artículo para aumentar tu oferta.`
-                                : `O preço atual ultrapassou seu limite ($${item.max_bid}). Acesse para aumentar sua oferta.`;
+                                ? `"${itemTitle}" (Precio actual: $${currentCustomerUsd} / Tu oferta: $${item.max_bid})`
+                                : `"${itemTitle}" (Preço atual: $${currentCustomerUsd} / Sua oferta: $${item.max_bid})`;
 
                             pushPromises.push(
                                 fetch(`${origin}/api/push-send`, {
