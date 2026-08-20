@@ -9,7 +9,7 @@ import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost
 
 // オークションIDまたはURLからキャッシュキーを正規化して生成する関数
 const getProductCacheKey = (url: string | null, auctionId?: string, currentLang: string = 'es') => {
-  const cleanId = auctionId || extractAuctionId(url || '') || (url ? url.split('?')[0].replace(/.*\/([^\/]+)$/, '$1') : '') || 'unknown';
+  const cleanId = extractAuctionId(auctionId) || extractAuctionId(url || '') || (url ? url.split('?')[0].replace(/.*\/([^\/]+)$/, '$1') : '') || 'unknown';
   return `joga_prod_cache_${cleanId}_${currentLang}`;
 };
 
@@ -21,11 +21,7 @@ const readProductCache = (url: string | null, auctionId?: string, currentLang: s
     const raw = sessionStorage.getItem(key) || localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw);
-      const summaryText = currentLang === 'es' ? parsed.aiSummaryEs : parsed.aiSummaryPt;
-      const isValidSummary = summaryText && summaryText.length > 20 && !summaryText.includes('Consulte los detalles') && !summaryText.includes('Consulte os detalhes');
-      if (isValidSummary) {
-        return parsed;
-      }
+      return parsed;
     }
   } catch (e) {
     console.warn('Product cache read error:', e);
@@ -55,7 +51,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const origPriceParam = searchParams.get('origPrice');
   const titleJaParam = searchParams.get('titleJa');
 
-  // 商品データのState (キャッシュがあれば0msで同期復元)
+  // 商品データのState (キャッシュまたはURLパラメータから0msで即座に初期化)
   const [product, setProduct] = useState<any>(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -63,24 +59,29 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       const l = (urlParams.get('lang') || localStorage.getItem('lang') || 'es') as 'es' | 'pt';
       const pathParts = window.location.pathname.split('/');
       const idFromPath = pathParts[pathParts.length - 1];
-      return readProductCache(u, idFromPath, l);
+      const cached = readProductCache(u, idFromPath, l);
+      if (cached) return cached;
+
+      // キャッシュが無い場合でもURLから基本データを即時構築（画面を真っ白にしない）
+      if (u) {
+        const cleanId = extractAuctionId(idFromPath) || extractAuctionId(u);
+        const origP = urlParams.get('origPrice');
+        const tJa = urlParams.get('titleJa');
+        return {
+          id: cleanId,
+          title: tJa ? decodeURIComponent(tJa) : '',
+          titleJa: tJa ? decodeURIComponent(tJa) : undefined,
+          url: u,
+          currentPrice: origP && !isNaN(Number(origP)) ? Number(origP) : 0,
+          images: [],
+        };
+      }
     }
     return null;
   });
 
-  // ローディングState (キャッシュがあれば即時表示のため初期値false)
-  const [loading, setLoading] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const u = urlParams.get('url');
-      const l = (urlParams.get('lang') || localStorage.getItem('lang') || 'es') as 'es' | 'pt';
-      const pathParts = window.location.pathname.split('/');
-      const idFromPath = pathParts[pathParts.length - 1];
-      const cached = readProductCache(u, idFromPath, l);
-      if (cached) return false;
-    }
-    return true;
-  });
+  // ローディングState (productが初期化されていれば即時表示のため初期値false)
+  const [loading, setLoading] = useState<boolean>(() => !product);
   const [lang, setLang] = useState<'es' | 'pt'>('es');
   
   // ログインユーザー情報をキャッシュから同期的に初期ロード（表示のちらつきや金額計算の不一致を防止）
@@ -402,9 +403,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     // 1. まずキャッシュを確認して即時反映（0ms表示）
     const cachedData = readProductCache(targetUrl, idFromPath, lang);
     if (cachedData) {
-      setProduct(cachedData);
+      setProduct((prev: any) => ({
+        ...prev,
+        ...cachedData,
+      }));
       setLoading(false);
-    } else {
+    } else if (!product) {
       setLoading(true);
     }
 
@@ -429,17 +433,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           setProduct((prev: any) => {
             const incoming = data.product;
             const updated = {
+              ...prev,
               ...incoming,
               aiSummaryEs: incoming.aiSummaryEs || prev?.aiSummaryEs || '',
               aiSummaryPt: incoming.aiSummaryPt || prev?.aiSummaryPt || '',
+              images: incoming.images && incoming.images.length > 0 ? incoming.images : (prev?.images || []),
             };
 
-            // 良いAI要約が含まれる場合、キャッシュに保管
-            const summaryText = lang === 'es' ? (updated.aiSummaryEs || '') : (updated.aiSummaryPt || '');
-            const isValidSummary = summaryText && summaryText.length > 20 && !summaryText.includes('Consulte los detalles') && !summaryText.includes('Consulte os detalhes');
-            if (isValidSummary) {
-              writeProductCache(targetUrl, idFromPath, lang, updated);
-            }
+            // キャッシュに保管
+            writeProductCache(targetUrl, idFromPath, lang, updated);
             return updated;
           });
         } else {
@@ -725,22 +727,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     );
   }
 
-  if (loading) {
+  if (loading && !product) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
         <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p className="text-gray-600 text-center font-medium animate-pulse">{t.loading}</p>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white p-6 rounded-xl shadow text-center max-w-md w-full">
-          <p className="text-red-500 font-bold mb-4">{t.errorFetch}</p>
-          <button onClick={() => router.back()} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg w-full">{t.back}</button>
-        </div>
       </div>
     );
   }
@@ -974,15 +965,21 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {t.aiSummaryTitle}
           </h3>
 
-          {!showFallbackDescription ? (
+          {aiSummary ? (
             // カラーカードを使わず、シンプルで視認性の高い箇条書き改行デザイン
-            <div className="text-xs text-gray-800 leading-relaxed whitespace-pre-line font-medium bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans">
+            <div className="text-xs text-gray-800 leading-relaxed whitespace-pre-line font-medium bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans animate-in fade-in duration-300">
               {aiSummary}
             </div>
-          ) : (
+          ) : product.translatedDescription ? (
             // AI要約が無い場合のGoogle翻訳フォールバック
-            <div className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
-              {product.translatedDescription || (lang === 'es' ? 'No hay descripción disponible.' : 'Nenhuma descrição disponível.')}
+            <div className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap animate-in fade-in duration-300">
+              {product.translatedDescription}
+            </div>
+          ) : (
+            // 読み込み中スケルトン
+            <div className="text-xs text-gray-400 py-3 flex items-center gap-2 font-medium animate-pulse">
+              <span className="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent"></span>
+              <span>{lang === 'es' ? 'Generando resumen con IA...' : 'Gerando resumo com IA...'}</span>
             </div>
           )}
 

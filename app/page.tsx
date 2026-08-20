@@ -4037,6 +4037,40 @@ export default function Home() {
     );
   }
 
+  // 商品詳細を開く前に基本情報を事前キャッシュして詳細ページの0ms表示を実現する関数
+  const prepareProductCache = (prod: SearchItem) => {
+    if (typeof window === 'undefined') return;
+    const cleanId = extractAuctionId(prod.id || prod.url) || prod.id;
+    if (!cleanId) return;
+
+    const baseData = {
+      id: cleanId,
+      title: prod.title,
+      titleJa: prod.titleJa || prod.title,
+      url: prod.url,
+      currentPrice: prod.currentPrice,
+      imageUrl: prod.imageUrl,
+      images: prod.images && prod.images.length > 0 ? prod.images : [prod.imageUrl],
+      bids: prod.bids || 0,
+      endTime: prod.endTime,
+      timeLeft: prod.timeLeft,
+      categoryId: prod.categoryId,
+    };
+
+    // 既存のAI要約キャッシュがあれば合体して保存
+    const key = `joga_prod_cache_${cleanId}_${lang}`;
+    try {
+      const existingRaw = sessionStorage.getItem(key) || localStorage.getItem(key);
+      if (existingRaw) {
+        const existing = JSON.parse(existingRaw);
+        if (existing.aiSummaryEs) (baseData as any).aiSummaryEs = existing.aiSummaryEs;
+        if (existing.aiSummaryPt) (baseData as any).aiSummaryPt = existing.aiSummaryPt;
+      }
+      sessionStorage.setItem(key, JSON.stringify(baseData));
+      localStorage.setItem(key, JSON.stringify(baseData));
+    } catch {}
+  };
+
   // 共通のカード描画関数
   const renderProductCard = (product: SearchItem, index: number, isFavoriteTab: boolean = false) => {
     const isFav = favorites.some(f => f.id === product.id);
@@ -4044,25 +4078,22 @@ export default function Home() {
     return (
       <div key={`product-${isFavoriteTab ? 'fav' : 'search'}-${index}-${product.id}`} className="bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col h-full group">
 
-
-
-        <div className="relative aspect-square w-full bg-gray-50">
-          <Image
-            src={product.imageUrl || '/icons/customer-icon.png'}
-            alt={product.title || 'Product'}
-            fill
-            unoptimized
-            referrerPolicy="no-referrer"
-            className="object-cover"
-            sizes="(max-width: 768px) 50vw, 33vw"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              if (target && !target.src.includes('customer-icon.png')) {
-                target.src = '/icons/customer-icon.png';
-              }
-            }}
-          />
-
+        <div className="relative aspect-square w-full bg-gray-100 overflow-hidden">
+          {product.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.imageUrl}
+              alt={product.title || 'Product'}
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover transition-opacity duration-200"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-semibold">
+              No Image
+            </div>
+          )}
 
           {/* お気に入り（★）ボタン（画像上・右下） */}
           <button
@@ -4088,6 +4119,7 @@ export default function Home() {
           <div className="mt-auto space-y-1.5">
             <a
               href={`/product/${product.id}?url=${encodeURIComponent((product.url || '') + (product.categoryId ? ((product.url || '').includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}${product.currentPrice ? `&origPrice=${product.currentPrice}` : ''}${product.titleJa ? `&titleJa=${encodeURIComponent(product.titleJa)}` : ''}`}
+              onClick={() => prepareProductCache(product)}
               className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center"
             >
               {t.viewOnYahoo}
@@ -7942,21 +7974,21 @@ export default function Home() {
 
               <div className="flex gap-3 mb-4">
                 <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 relative">
-                  <Image
-                    src={selectedProduct.imageUrl || '/icons/customer-icon.png'}
-                    alt={selectedProduct.title || 'Product'}
-                    fill
-                    unoptimized
-                    referrerPolicy="no-referrer"
-                    className="object-cover"
-                    sizes="128px"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      if (target && !target.src.includes('customer-icon.png')) {
-                        target.src = '/icons/customer-icon.png';
-                      }
-                    }}
-                  />
+                  {selectedProduct.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={selectedProduct.imageUrl}
+                      alt={selectedProduct.title || 'Product'}
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-semibold">
+                      No Image
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 flex flex-col justify-between min-h-[8rem] h-auto gap-1">
                   <h3 className="text-xs sm:text-sm font-semibold line-clamp-2 leading-tight">{selectedProduct.title}</h3>
@@ -8002,7 +8034,10 @@ export default function Home() {
                   })()}
                   <a
                     href={`/product/${selectedProduct.id}?url=${encodeURIComponent((selectedProduct.url || '') + (selectedProduct.categoryId ? ((selectedProduct.url || '').includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}${selectedProduct.currentPrice ? `&origPrice=${selectedProduct.currentPrice}` : ''}${selectedProduct.titleJa ? `&titleJa=${encodeURIComponent(selectedProduct.titleJa)}` : ''}`}
-                    onClick={() => setSelectedProduct(null)}
+                    onClick={() => {
+                      prepareProductCache(selectedProduct);
+                      setSelectedProduct(null);
+                    }}
                     className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
                   >
                     {t.viewOnYahoo}
