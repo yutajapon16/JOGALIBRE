@@ -178,10 +178,17 @@ export async function GET(request: Request) {
       const priceText = $el.find('.Product__priceValue, .item__priceValue').first().text().replace(/[^\d]/g, '');
       let price = parseInt(priceText) || 0;
       // 税込価格がある場合は優先
-      const taxMatch = $el.text().match(/税込.*?([\d,]+)\s*円/);
+      const taxMatch = $el.text().match(/(?:税込|\(税込\)|税込み)\s*[：:\s]*¥?([\d,]+)\s*円?/);
       if (taxMatch) {
         const taxPrice = parseInt(taxMatch[1].replace(/,/g, ''));
         if (taxPrice > price) price = taxPrice;
+      }
+      // data-cl-params からの価格抽出フォールバック
+      if (!price && dataClParams) {
+        const priceParamMatch = dataClParams.match(/(?:price|cur_bid_price|taxin_price):(\d+);/);
+        if (priceParamMatch) {
+          price = parseInt(priceParamMatch[1], 10) || 0;
+        }
       }
       const bids = parseInt($el.find('.Product__bid, .item__bid').text()) || 0;
       const timeLeftRaw = $el.find('.Product__time, .item__time, .time, .date').text().trim();
@@ -238,11 +245,18 @@ export async function GET(request: Request) {
         const priceText = $el.find('.item__priceValue, .s_item__priceValue, .Product__priceValue, .sdc__price, .price, .bid, .lb-item__price').first().text().replace(/[^\d]/g, '') || $el.find('.price').text().replace(/[^\d]/g, '');
         let price = parseInt(priceText) || 0;
         // 税込価格がある場合は優先
-        const taxMatch = $el.text().match(/税込.*?([\d,]+)\s*円/);
+        const taxMatch = $el.text().match(/(?:税込|\(税込\)|税込み)\s*[：:\s]*¥?([\d,]+)\s*円?/);
         if (taxMatch) {
           const taxPrice = parseInt(taxMatch[1].replace(/,/g, ''));
           // 誤取得を防ぐため現在の価格より大きい場合のみ適用
           if (taxPrice > price) price = taxPrice;
+        }
+        // data-cl-params からの価格抽出フォールバック
+        if (!price && dataClParams) {
+          const priceParamMatch = dataClParams.match(/(?:price|cur_bid_price|taxin_price):(\d+);/);
+          if (priceParamMatch) {
+            price = parseInt(priceParamMatch[1], 10) || 0;
+          }
         }
         const bids = parseInt($el.find('.item__bid, .s_item__bid, .Product__bid, .sdc__bid, .bid, .lb-item__bid').text()) || 0;
 

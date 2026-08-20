@@ -4079,7 +4079,7 @@ export default function Home() {
 
           <div className="mt-auto space-y-1.5">
             <a
-              href={`/product/${product.id}?url=${encodeURIComponent(product.url || '')}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}`}
+              href={`/product/${product.id}?url=${encodeURIComponent((product.url || '') + (product.categoryId ? ((product.url || '').includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}${product.currentPrice ? `&origPrice=${product.currentPrice}` : ''}${product.titleJa ? `&titleJa=${encodeURIComponent(product.titleJa)}` : ''}`}
               className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center"
             >
               {t.viewOnYahoo}
@@ -7961,7 +7961,7 @@ export default function Home() {
                     );
                   })()}
                   <a
-                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent((selectedProduct.url || '') + (selectedProduct.categoryId ? ((selectedProduct.url || '').includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}`}
+                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent((selectedProduct.url || '') + (selectedProduct.categoryId ? ((selectedProduct.url || '').includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}${selectedProduct.currentPrice ? `&origPrice=${selectedProduct.currentPrice}` : ''}${selectedProduct.titleJa ? `&titleJa=${encodeURIComponent(selectedProduct.titleJa)}` : ''}`}
                     onClick={() => setSelectedProduct(null)}
                     className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
                   >
