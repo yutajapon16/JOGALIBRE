@@ -50,6 +50,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const st = searchParams.get('st');
   const origPriceParam = searchParams.get('origPrice');
   const titleJaParam = searchParams.get('titleJa');
+  const dispPriceParam = searchParams.get('dispPrice');
+  const currencyParam = searchParams.get('currency');
 
   // 商品データのState (キャッシュまたはURLパラメータから0msで即座に初期化)
   const [product, setProduct] = useState<any>(() => {
@@ -67,12 +69,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         const cleanId = extractAuctionId(idFromPath) || extractAuctionId(u);
         const origP = urlParams.get('origPrice');
         const tJa = urlParams.get('titleJa');
+        const dPrice = urlParams.get('dispPrice');
+        const curr = urlParams.get('currency') || 'USD';
         return {
           id: cleanId,
           title: tJa ? decodeURIComponent(tJa) : '',
           titleJa: tJa ? decodeURIComponent(tJa) : undefined,
           url: u,
           currentPrice: origP && !isNaN(Number(origP)) ? Number(origP) : 0,
+          displayPrice: dPrice || undefined,
+          displayCurrency: curr,
           images: [],
         };
       }
@@ -99,16 +105,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     return null;
   });
   
-  // 選択された通貨のState (デフォルトはUSD)
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  // 選択された通貨のState (パラメータがあれば優先、デフォルトはUSD)
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyParam || 'USD');
   // 引渡し場所のState (デフォルトはJP)
   const [deliveryCountry, setDeliveryCountry] = useState<string>('JP');
   const [deliveryCity, setDeliveryCity] = useState<string>('');
   // 発送方法のState (デフォルトはsea)
   const [shippingMethod, setShippingMethod] = useState<'sea' | 'air'>('sea');
-  // 為替レート関連のState
+  // 為替レート関連のState (初期値をトップページと同一にして初期計算のズレを防止)
   const [exchangeRate, setExchangeRate] = useState(150);
-  const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({});
+  const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({
+    JPY: 150,
+    BRL: 5.6,
+    PYG: 7500,
+    CLP: 930,
+    BOB: 6.9,
+    ARS: 935,
+  });
 
   // カルーセル（画像）用のインデックス
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -569,19 +582,33 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [isBidManuallyChanged, setIsBidManuallyChanged] = useState(false);
 
   useEffect(() => {
-    const effectivePrice = (origPriceParam && !isNaN(Number(origPriceParam))) 
-      ? Number(origPriceParam) 
-      : product?.currentPrice;
+    if (!isBidManuallyChanged) {
+      if (dispPriceParam) {
+        setBidForm(prev => ({ 
+          ...prev, 
+          maxBid: dispPriceParam.toString().replace(/[^0-9]/g, '') 
+        }));
+      } else if (product?.displayPrice) {
+        setBidForm(prev => ({ 
+          ...prev, 
+          maxBid: product.displayPrice.toString().replace(/[^0-9]/g, '') 
+        }));
+      } else {
+        const effectivePrice = (origPriceParam && !isNaN(Number(origPriceParam))) 
+          ? Number(origPriceParam) 
+          : product?.currentPrice;
 
-    if (effectivePrice && !isBidManuallyChanged) {
-      const calculated = calculateConvertedPrice(effectivePrice, 'USD').toString().replace(/,/g, '');
-      setBidForm(prev => ({ 
-        ...prev, 
-        maxBid: calculated 
-      }));
+        if (effectivePrice) {
+          const calculated = calculateConvertedPrice(effectivePrice, 'USD').toString().replace(/,/g, '');
+          setBidForm(prev => ({ 
+            ...prev, 
+            maxBid: calculated 
+          }));
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product, currentUser, exchangeRates, selectedCurrency, origPriceParam]);
+  }, [product, currentUser, exchangeRates, selectedCurrency, origPriceParam, dispPriceParam]);
 
   // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)
   const formatLocalCost = (cost: number | string): string => {
@@ -916,13 +943,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </span>
           </div>
 
-          {/* 通常の価格表示 (1段) */}
+          {/* 通常の価格表示 (1段: 検索タブで表示された価格を優先してチラつきなく完全同期) */}
           <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center justify-between text-green-700 font-bold">
             <span className="text-xs">{t.currentPrice}: {selectedCurrency}</span>
             <span className="text-sm sm:text-base font-extrabold">
               {(product?.id?.startsWith('m-') || (product?.url && !product.url.includes('auctions.yahoo.co.jp') && !product.url.includes('page.auctions.yahoo.co.jp')))
-                ? convertUSDToSelectedCurrency(product.currentPrice)
-                : `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(product.currentPrice)}`}
+                ? convertUSDToSelectedCurrency(product?.currentPrice || (origPriceParam ? Number(origPriceParam) : 0))
+                : (selectedCurrency === (currencyParam || product?.displayCurrency || 'USD') && (dispPriceParam || product?.displayPrice))
+                  ? `${getCurrencySymbol(selectedCurrency)} ${dispPriceParam || product?.displayPrice}`
+                  : `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(product?.currentPrice || (origPriceParam ? Number(origPriceParam) : 0))}`}
             </span>
           </div>
           

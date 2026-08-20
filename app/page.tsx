@@ -4038,7 +4038,7 @@ export default function Home() {
   }
 
   // 商品詳細を開く前に基本情報を事前キャッシュして詳細ページの0ms表示を実現する関数
-  const prepareProductCache = (prod: SearchItem) => {
+  const prepareProductCache = (prod: SearchItem, dispPrice?: string, curr: string = selectedCurrency) => {
     if (typeof window === 'undefined') return;
     const cleanId = extractAuctionId(prod.id || prod.url) || prod.id;
     if (!cleanId) return;
@@ -4049,6 +4049,8 @@ export default function Home() {
       titleJa: prod.titleJa || prod.title,
       url: prod.url,
       currentPrice: prod.currentPrice,
+      displayPrice: dispPrice,
+      displayCurrency: curr,
       imageUrl: prod.imageUrl,
       images: prod.images && prod.images.length > 0 ? prod.images : [prod.imageUrl],
       bids: prod.bids || 0,
@@ -4074,6 +4076,16 @@ export default function Home() {
   // 共通のカード描画関数
   const renderProductCard = (product: SearchItem, index: number, isFavoriteTab: boolean = false) => {
     const isFav = favorites.some(f => f.id === product.id);
+
+    // 検索一覧で表示する計算済み価格
+    const displayPriceVal = calculateConvertedPrice(
+      product.currentPrice, 
+      selectedCurrency, 
+      product.titleJa || product.title, 
+      product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), 
+      currentCategory?.id, 
+      product.id
+    );
 
     return (
       <div key={`product-${isFavoriteTab ? 'fav' : 'search'}-${index}-${product.id}`} className="bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col h-full group">
@@ -4118,8 +4130,8 @@ export default function Home() {
 
           <div className="mt-auto space-y-1.5">
             <a
-              href={`/product/${product.id}?url=${encodeURIComponent((product.url || '') + (product.categoryId ? ((product.url || '').includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}${product.currentPrice ? `&origPrice=${product.currentPrice}` : ''}${product.titleJa ? `&titleJa=${encodeURIComponent(product.titleJa)}` : ''}`}
-              onClick={() => prepareProductCache(product)}
+              href={`/product/${product.id}?url=${encodeURIComponent((product.url || '') + (product.categoryId ? ((product.url || '').includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}${product.currentPrice ? `&origPrice=${product.currentPrice}` : ''}${product.titleJa ? `&titleJa=${encodeURIComponent(product.titleJa)}` : ''}&dispPrice=${encodeURIComponent(displayPriceVal)}&currency=${selectedCurrency}`}
+              onClick={() => prepareProductCache(product, displayPriceVal, selectedCurrency)}
               className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center"
             >
               {t.viewOnYahoo}
@@ -4142,9 +4154,7 @@ export default function Home() {
                   <span className="text-xs font-semibold mr-0.5">
                     {getCurrencySymbol(selectedCurrency)}
                   </span>
-                  {currentUser?.agentCustomerId === 'B001'
-                    ? calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id, product.id)
-                    : calculateConvertedPrice(product.currentPrice, selectedCurrency, product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id, product.id)}
+                  {displayPriceVal}
                 </span>
                 {selectedCurrency === 'USD' && (
                   <span className="text-[8px] sm:text-[9px] text-green-700 font-medium ml-1.5 leading-tight flex-col hidden xs:block">
@@ -8032,16 +8042,21 @@ export default function Home() {
                       </div>
                     );
                   })()}
-                  <a
-                    href={`/product/${selectedProduct.id}?url=${encodeURIComponent((selectedProduct.url || '') + (selectedProduct.categoryId ? ((selectedProduct.url || '').includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}${selectedProduct.currentPrice ? `&origPrice=${selectedProduct.currentPrice}` : ''}${selectedProduct.titleJa ? `&titleJa=${encodeURIComponent(selectedProduct.titleJa)}` : ''}`}
-                    onClick={() => {
-                      prepareProductCache(selectedProduct);
-                      setSelectedProduct(null);
-                    }}
-                    className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
-                  >
-                    {t.viewOnYahoo}
-                  </a>
+                  {(() => {
+                    const featuredDispPrice = calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id, selectedProduct.id);
+                    return (
+                      <a
+                        href={`/product/${selectedProduct.id}?url=${encodeURIComponent((selectedProduct.url || '') + (selectedProduct.categoryId ? ((selectedProduct.url || '').includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}${selectedProduct.currentPrice ? `&origPrice=${selectedProduct.currentPrice}` : ''}${selectedProduct.titleJa ? `&titleJa=${encodeURIComponent(selectedProduct.titleJa)}` : ''}&dispPrice=${encodeURIComponent(featuredDispPrice)}&currency=USD`}
+                        onClick={() => {
+                          prepareProductCache(selectedProduct, featuredDispPrice, 'USD');
+                          setSelectedProduct(null);
+                        }}
+                        className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
+                      >
+                        {t.viewOnYahoo}
+                      </a>
+                    );
+                  })()}
                 </div>
               </div>
 
