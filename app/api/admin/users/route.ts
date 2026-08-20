@@ -167,3 +167,84 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    // 1. 管理者認証チェック
+    let user = await getUserFromRequest(request);
+    if (!user) {
+      const supabase = await getSupabaseServer();
+      const { data: { user: cookieUser } } = await supabase.auth.getUser();
+      user = cookieUser;
+    }
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (userRole?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('id') || searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Missing userId parameter' }, { status: 400 });
+    }
+
+    // 削除対象のユーザー情報を取得
+    const { data: targetUser } = await supabaseAdmin
+      .from('user_roles')
+      .select('id, email, role, customer_id')
+      .eq('id', userId)
+      .single();
+
+    // 2. DB（user_roles）から削除
+    const { error: dbDeleteError } = await supabaseAdmin
+      .from('user_roles')
+      .delete()
+      .eq('id', userId);
+
+    if (dbDeleteError) {
+      console.error('Error deleting user_roles row:', dbDeleteError);
+    }
+
+    // 3. Supabase Auth (auth.users) から完全削除
+    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (authDeleteError) {
+      console.warn('Error deleting auth user by id (may already be deleted):', authDeleteError);
+      // メールアドレスが残っている場合はメールアドレス一致でも削除
+      if (targetUser?.email) {
+        try {
+          const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers();
+          const targetAuth = authUsers?.find(u => (u.email || '').trim().toLowerCase() === targetUser.email.trim().toLowerCase());
+          if (targetAuth) {
+            await supabaseAdmin.auth.admin.deleteUser(targetAuth.id);
+          }
+        } catch (e) {
+          console.warn('Fallback auth deletion failed:', e);
+        }
+      }
+    }
+
+    // 4. プッシュ通知トークン等のクリーンアップ
+    try {
+      await supabaseAdmin
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', userId);
+    } catch {}
+
+    return NextResponse.json({ success: true, message: 'ユーザーを完全に削除しました' });
+  } catch (error) {
+    console.error('Error in DELETE /api/admin/users:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

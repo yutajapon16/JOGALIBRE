@@ -33,9 +33,38 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Supabase Anon Clientを用いてユーザー登録を実行（これで自動的に確認メールが送信されます）
-    const { data: authData, error: authError } = await supabaseAnon.auth.signUp({
-      email,
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 0. DB (user_roles) に既に同一メールアドレスが存在するかチェック
+    const { data: existingRoleUser } = await supabaseAdmin
+      .from('user_roles')
+      .select('id, email, role')
+      .ilike('email', cleanEmail)
+      .maybeSingle();
+
+    if (existingRoleUser) {
+      // 実際にDBにユーザーが存在する場合は正当な「登録済み」エラー
+      return NextResponse.json(
+        { error: 'このメールアドレスは既に使用されています', errorCode: 'EMAIL_ALREADY_EXISTS' },
+        { status: 409 }
+      );
+    }
+
+    // 1. DBには存在しないが、過去の削除などで Supabase Auth (auth.users) に残骸が残っている場合は自動クリーンアップ
+    try {
+      const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers();
+      const orphanAuthUser = authUsers?.find(u => (u.email || '').trim().toLowerCase() === cleanEmail);
+      if (orphanAuthUser) {
+        console.log(`Cleaning up orphan auth user before customer signup: ${orphanAuthUser.id} (${orphanAuthUser.email})`);
+        await supabaseAdmin.auth.admin.deleteUser(orphanAuthUser.id);
+      }
+    } catch (cleanError) {
+      console.warn('Error during orphan user cleanup in customer signup:', cleanError);
+    }
+
+    // 2. Supabase Anon Clientを用いてユーザー登録を実行（これで自動的に確認メールが送信されます）
+    let { data: authData, error: authError } = await supabaseAnon.auth.signUp({
+      email: cleanEmail,
       password,
       options: {
         data: {
@@ -54,6 +83,42 @@ export async function POST(request: Request) {
         }
       }
     });
+
+    // 万が一まだ already registered が出る場合のセカンドチャンス（Auth強制削除＆リトライ）
+    if (authError && (authError.message || '').toLowerCase().includes('already')) {
+      try {
+        const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers();
+        const orphanAuthUser = authUsers?.find(u => (u.email || '').trim().toLowerCase() === cleanEmail);
+        if (orphanAuthUser) {
+          await supabaseAdmin.auth.admin.deleteUser(orphanAuthUser.id);
+          // リトライ
+          const retryRes = await supabaseAnon.auth.signUp({
+            email: cleanEmail,
+            password,
+            options: {
+              data: {
+                full_name: fullName || null,
+                whatsapp: whatsapp || null,
+                role: 'customer',
+                user_role: 'customer',
+                address: address || null,
+                zip_code: zipCode || null,
+                country: country || null,
+                agent_customer_id: agentCustomerId || null,
+                cpf: cpf || null,
+                state: state || null,
+                city: city || null,
+                language: language || 'es'
+              }
+            }
+          });
+          authData = retryRes.data;
+          authError = retryRes.error;
+        }
+      } catch (retryErr) {
+        console.warn('Retry auth cleanup failed:', retryErr);
+      }
+    }
 
     if (authError) {
       console.error('Auth customer creation error:', authError);

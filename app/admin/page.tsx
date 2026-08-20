@@ -467,6 +467,38 @@ export default function AdminDashboard() {
       alert('通信エラーが発生しました');
     }
   };
+
+  const handleDeleteUser = async (userToDelete: any) => {
+    if (!userToDelete) return;
+    const name = userToDelete.fullName || userToDelete.email || userToDelete.customerId;
+    if (!confirm(`【警告】${name}（ID: ${userToDelete.customerId}）のアカウントおよび認証データを完全に削除してもよろしいですか？\n\n※この操作は元に戻せません。同じメールアドレスで再登録が可能になります。`)) {
+      return;
+    }
+
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/admin/users?id=${userToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+
+      if (res.ok) {
+        alert('ユーザーアカウントを完全に削除しました');
+        setEditingUser(null);
+        fetchUsersData(true);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`削除に失敗しました: ${err.error || ''}`);
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('通信エラーが発生しました');
+    }
+  };
   const fetchDeposits = async (forceLoading: boolean = false) => {
     if (forceLoading || depositsList.length === 0) {
       setLoadingDeposits(true);
@@ -5213,6 +5245,20 @@ export default function AdminDashboard() {
                 >
                   保存
                 </button>
+              </div>
+
+              {/* アカウント完全削除ボタン */}
+              <div className="pt-3 border-t mt-4">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteUser(editingUser)}
+                  className="w-full h-11 bg-red-50 text-red-600 border border-red-200 rounded-lg font-semibold hover:bg-red-100 transition flex items-center justify-center text-xs gap-1"
+                >
+                  🗑️ このアカウントを完全削除
+                </button>
+                <p className="text-[10px] text-gray-400 text-center mt-1">
+                  ※削除すると、同一メールアドレスでの再登録が可能になります
+                </p>
               </div>
             </form>
           </div>

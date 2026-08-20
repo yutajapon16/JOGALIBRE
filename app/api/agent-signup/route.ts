@@ -67,10 +67,39 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. admin.createUser でユーザーを作成
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 0. DB (user_roles) に既に同一メールアドレスが存在するかチェック
+    const { data: existingRoleUser } = await supabaseAdmin
+      .from('user_roles')
+      .select('id, email, role')
+      .ilike('email', cleanEmail)
+      .maybeSingle();
+
+    if (existingRoleUser) {
+      // 実際にDBにユーザーが存在する場合は正当な「登録済み」エラー
+      return NextResponse.json(
+        { error: 'このメールアドレスは既に使用されています', errorCode: 'EMAIL_ALREADY_EXISTS' },
+        { status: 409 }
+      );
+    }
+
+    // 1. DBには存在しないが、過去の削除などで Supabase Auth (auth.users) に残骸が残っている場合は自動クリーンアップ
+    try {
+      const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers();
+      const orphanAuthUser = authUsers?.find(u => (u.email || '').trim().toLowerCase() === cleanEmail);
+      if (orphanAuthUser) {
+        console.log(`Cleaning up orphan auth user before agent signup: ${orphanAuthUser.id} (${orphanAuthUser.email})`);
+        await supabaseAdmin.auth.admin.deleteUser(orphanAuthUser.id);
+      }
+    } catch (cleanError) {
+      console.warn('Error during orphan user cleanup in agent signup:', cleanError);
+    }
+
+    // 2. admin.createUser でユーザーを作成
     // email_confirm: true → メール確認済みとして作成（確認メール不要、即ログイン可能）
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+    let { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: cleanEmail,
       password,
       email_confirm: true,
       user_metadata: {
@@ -87,6 +116,39 @@ export async function POST(request: Request) {
         language: language || 'es'
       }
     });
+
+    // 万が一まだ already registered が出る場合のセカンドチャンス（Auth強制削除＆リトライ）
+    if (authError && (authError.message || '').toLowerCase().includes('already')) {
+      try {
+        const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers();
+        const orphanAuthUser = authUsers?.find(u => (u.email || '').trim().toLowerCase() === cleanEmail);
+        if (orphanAuthUser) {
+          await supabaseAdmin.auth.admin.deleteUser(orphanAuthUser.id);
+          const retryRes = await supabaseAdmin.auth.admin.createUser({
+            email: cleanEmail,
+            password,
+            email_confirm: true,
+            user_metadata: {
+              full_name: fullName || null,
+              whatsapp: whatsapp || null,
+              role: 'agent',
+              user_role: 'agent',
+              address: address || null,
+              zip_code: zipCode || null,
+              country: country || null,
+              cpf: cpf || null,
+              state: state || null,
+              city: city || null,
+              language: language || 'es'
+            }
+          });
+          authData = retryRes.data;
+          authError = retryRes.error;
+        }
+      } catch (retryErr) {
+        console.warn('Retry auth cleanup failed in agent signup:', retryErr);
+      }
+    }
 
     if (authError) {
       console.error('Auth user creation error:', authError);
