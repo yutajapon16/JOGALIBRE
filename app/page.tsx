@@ -4046,13 +4046,21 @@ export default function Home() {
 
 
 
-        <div className="relative aspect-square w-full">
+        <div className="relative aspect-square w-full bg-gray-50">
           <Image
-            src={product.imageUrl}
-            alt={product.title}
+            src={product.imageUrl || '/icons/customer-icon.png'}
+            alt={product.title || 'Product'}
             fill
+            unoptimized
+            referrerPolicy="no-referrer"
             className="object-cover"
             sizes="(max-width: 768px) 50vw, 33vw"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target && !target.src.includes('customer-icon.png')) {
+                target.src = '/icons/customer-icon.png';
+              }
+            }}
           />
 
 
@@ -4468,8 +4476,16 @@ export default function Home() {
                               src={request.productImage}
                               alt={request.productTitle}
                               fill
+                              unoptimized
+                              referrerPolicy="no-referrer"
                               className="object-cover rounded"
                               sizes="128px"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (target && !target.src.includes('customer-icon.png')) {
+                                  target.src = '/icons/customer-icon.png';
+                                }
+                              }}
                             />
                           ) : (
                             <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2 text-black">
@@ -5388,8 +5404,16 @@ export default function Home() {
                                 src={item.productImage}
                                 alt={item.productTitle}
                                 fill
+                                unoptimized
+                                referrerPolicy="no-referrer"
                                 className="object-cover rounded"
                                 sizes="128px"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  if (target && !target.src.includes('customer-icon.png')) {
+                                    target.src = '/icons/customer-icon.png';
+                                  }
+                                }}
                               />
                             ) : (
                               <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2 text-black">
@@ -6241,8 +6265,16 @@ export default function Home() {
                                 src={item.productImage}
                                 alt={item.productTitle}
                                 fill
+                                unoptimized
+                                referrerPolicy="no-referrer"
                                 className="object-cover rounded"
                                 sizes="128px"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  if (target && !target.src.includes('customer-icon.png')) {
+                                    target.src = '/icons/customer-icon.png';
+                                  }
+                                }}
                               />
                             ) : (
                               <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2">
@@ -7911,11 +7943,19 @@ export default function Home() {
               <div className="flex gap-3 mb-4">
                 <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 relative">
                   <Image
-                    src={selectedProduct.imageUrl}
-                    alt={selectedProduct.title}
+                    src={selectedProduct.imageUrl || '/icons/customer-icon.png'}
+                    alt={selectedProduct.title || 'Product'}
                     fill
+                    unoptimized
+                    referrerPolicy="no-referrer"
                     className="object-cover"
                     sizes="128px"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (target && !target.src.includes('customer-icon.png')) {
+                        target.src = '/icons/customer-icon.png';
+                      }
+                    }}
                   />
                 </div>
                 <div className="flex-1 flex flex-col justify-between min-h-[8rem] h-auto gap-1">

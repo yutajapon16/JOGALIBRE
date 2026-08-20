@@ -7,6 +7,45 @@ import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
 import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds } from '@/lib/utils';
 
+// オークションIDまたはURLからキャッシュキーを正規化して生成する関数
+const getProductCacheKey = (url: string | null, auctionId?: string, currentLang: string = 'es') => {
+  const cleanId = auctionId || extractAuctionId(url || '') || (url ? url.split('?')[0].replace(/.*\/([^\/]+)$/, '$1') : '') || 'unknown';
+  return `joga_prod_cache_${cleanId}_${currentLang}`;
+};
+
+// キャッシュ読み出し関数（sessionStorage -> localStorage）
+const readProductCache = (url: string | null, auctionId?: string, currentLang: string = 'es') => {
+  if (typeof window === 'undefined') return null;
+  const key = getProductCacheKey(url, auctionId, currentLang);
+  try {
+    const raw = sessionStorage.getItem(key) || localStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const summaryText = currentLang === 'es' ? parsed.aiSummaryEs : parsed.aiSummaryPt;
+      const isValidSummary = summaryText && summaryText.length > 20 && !summaryText.includes('Consulte los detalles') && !summaryText.includes('Consulte os detalhes');
+      if (isValidSummary) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Product cache read error:', e);
+  }
+  return null;
+};
+
+// キャッシュ書き込み関数（sessionStorage + localStorage）
+const writeProductCache = (url: string | null, auctionId: string | undefined, currentLang: string, data: any) => {
+  if (typeof window === 'undefined') return;
+  const key = getProductCacheKey(url, auctionId, currentLang);
+  try {
+    const str = JSON.stringify(data);
+    sessionStorage.setItem(key, str);
+    localStorage.setItem(key, str);
+  } catch (e) {
+    console.warn('Product cache write error:', e);
+  }
+};
+
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -16,9 +55,32 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const origPriceParam = searchParams.get('origPrice');
   const titleJaParam = searchParams.get('titleJa');
 
+  // 商品データのState (キャッシュがあれば0msで同期復元)
+  const [product, setProduct] = useState<any>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const u = urlParams.get('url');
+      const l = (urlParams.get('lang') || localStorage.getItem('lang') || 'es') as 'es' | 'pt';
+      const pathParts = window.location.pathname.split('/');
+      const idFromPath = pathParts[pathParts.length - 1];
+      return readProductCache(u, idFromPath, l);
+    }
+    return null;
+  });
 
-  const [product, setProduct] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  // ローディングState (キャッシュがあれば即時表示のため初期値false)
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const u = urlParams.get('url');
+      const l = (urlParams.get('lang') || localStorage.getItem('lang') || 'es') as 'es' | 'pt';
+      const pathParts = window.location.pathname.split('/');
+      const idFromPath = pathParts[pathParts.length - 1];
+      const cached = readProductCache(u, idFromPath, l);
+      if (cached) return false;
+    }
+    return true;
+  });
   const [lang, setLang] = useState<'es' | 'pt'>('es');
   
   // ログインユーザー情報をキャッシュから同期的に初期ロード（表示のちらつきや金額計算の不一致を防止）
@@ -327,36 +389,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
   }, [currentUser]);
 
-  // 商品詳細とAI要約の取得
+  // 商品詳細とAI要約の取得 (SWRパターン: キャッシュがあれば即時表示し、裏で最新情報を同期)
   useEffect(() => {
     if (!targetUrl) {
       setLoading(false);
       return;
     }
 
-    const fetchProduct = async () => {
-      const cacheKey = `joga_prod_cache_${encodeURIComponent(targetUrl)}_${lang}`;
+    const pathParts = typeof window !== 'undefined' ? window.location.pathname.split('/') : [];
+    const idFromPath = pathParts.length > 0 ? pathParts[pathParts.length - 1] : undefined;
 
-      // 1. まずブラウザのsessionStorageキャッシュを確認（戻るボタンで即時表示）
-      if (typeof window !== 'undefined') {
-        try {
-          const cached = sessionStorage.getItem(cacheKey);
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            const summaryText = lang === 'es' ? parsed.aiSummaryEs : parsed.aiSummaryPt;
-            const isValidSummary = summaryText && summaryText.length > 20 && !summaryText.includes('Consulte los detalles') && !summaryText.includes('Consulte os detalhes');
-            if (isValidSummary) {
-              setProduct(parsed);
-              setLoading(false);
-              return;
-            }
-          }
-        } catch (e) {
-          console.warn('SessionStorage cache read error:', e);
-        }
-      }
-
+    // 1. まずキャッシュを確認して即時反映（0ms表示）
+    const cachedData = readProductCache(targetUrl, idFromPath, lang);
+    if (cachedData) {
+      setProduct(cachedData);
+      setLoading(false);
+    } else {
       setLoading(true);
+    }
+
+    // 2. バックグラウンドで最新情報を取得・同期
+    const fetchProduct = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const accessToken = session?.access_token;
@@ -375,23 +428,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         if (data.product) {
           setProduct((prev: any) => {
             const incoming = data.product;
-            return {
+            const updated = {
               ...incoming,
               aiSummaryEs: incoming.aiSummaryEs || prev?.aiSummaryEs || '',
               aiSummaryPt: incoming.aiSummaryPt || prev?.aiSummaryPt || '',
             };
-          });
 
-          // 良いAI要約が含まれる場合、ブラウザのsessionStorageに保管
-          const summaryText = lang === 'es' ? (data.product.aiSummaryEs || '') : (data.product.aiSummaryPt || '');
-          const isValidSummary = summaryText && summaryText.length > 20 && !summaryText.includes('Consulte los detalles') && !summaryText.includes('Consulte os detalhes');
-          if (isValidSummary && typeof window !== 'undefined') {
-            try {
-              sessionStorage.setItem(cacheKey, JSON.stringify(data.product));
-            } catch (e) {
-              console.warn('SessionStorage set error:', e);
+            // 良いAI要約が含まれる場合、キャッシュに保管
+            const summaryText = lang === 'es' ? (updated.aiSummaryEs || '') : (updated.aiSummaryPt || '');
+            const isValidSummary = summaryText && summaryText.length > 20 && !summaryText.includes('Consulte los detalles') && !summaryText.includes('Consulte os detalhes');
+            if (isValidSummary) {
+              writeProductCache(targetUrl, idFromPath, lang, updated);
             }
-          }
+            return updated;
+          });
         } else {
           throw new Error('No product data');
         }
@@ -804,12 +854,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="relative aspect-video w-full bg-gray-100 flex items-center justify-center">
             {product.images && product.images.length > 0 ? (
               <Image
-                src={product.images[currentImageIndex]}
-                alt={`${product.title} - Image ${currentImageIndex + 1}`}
+                src={product.images[currentImageIndex] || '/icons/customer-icon.png'}
+                alt={`${product.title || 'Product'} - Image ${currentImageIndex + 1}`}
                 fill
+                unoptimized
+                referrerPolicy="no-referrer"
                 className="object-contain"
                 priority
                 sizes="(max-width: 768px) 100vw, 640px"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target && !target.src.includes('customer-icon.png')) {
+                    target.src = '/icons/customer-icon.png';
+                  }
+                }}
               />
             ) : (
               <div className="text-gray-400 text-sm font-bold">No Image</div>

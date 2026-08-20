@@ -73,6 +73,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="color-scheme" content="light" />
+        <meta name="referrer" content="no-referrer" />
         <link rel="icon" href="/icons/customer-icon.png" type="image/png" />
         <link rel="apple-touch-icon" href="/icons/customer-icon.png" />
 
