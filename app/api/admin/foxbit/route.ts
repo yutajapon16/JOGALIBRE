@@ -96,7 +96,7 @@ export async function GET(request: Request) {
 
     // 4. 未送金の落札・決済済み注文を抽出
     // 条件: final_status = 'won' AND (paid = true OR paid_brazil = true) AND (foxbit_remittance_status = 'pending' OR foxbit_remittance_status IS NULL)
-    const { data: pendingOrders, error: ordersError } = await supabaseAdmin
+    const { data: pendingOrdersRaw, error: ordersError } = await supabaseAdmin
       .from('bid_requests')
       .select('*')
       .eq('final_status', 'won')
@@ -110,29 +110,43 @@ export async function GET(request: Request) {
     }
 
     // 顧客情報を取得してマージ
-    const customerEmails = Array.from(new Set((pendingOrders || []).map(o => o.customer_email).filter(Boolean)));
+    const customerEmails = Array.from(new Set((pendingOrdersRaw || []).map(o => o.customer_email).filter(Boolean)));
     let userRolesMap: Record<string, any> = {};
 
     if (customerEmails.length > 0) {
       const { data: usersData } = await supabaseAdmin
         .from('user_roles')
-        .select('email, full_name, customer_id, agent_customer_id, country')
+        .select('email, full_name, customer_id, agent_customer_id, country, role')
         .in('email', customerEmails);
 
       if (usersData) {
         userRolesMap = usersData.reduce((acc, u) => {
-          acc[u.email] = u;
+          acc[(u.email || '').trim().toLowerCase()] = u;
           return acc;
         }, {} as Record<string, any>);
       }
     }
 
+    // B001傘下顧客およびブラジルエージェント（BRL決済対象）の注文のみをフィルタリング
+    const pendingOrders = (pendingOrdersRaw || []).filter(order => {
+      const email = (order.customer_email || '').trim().toLowerCase();
+      const userInfo = userRolesMap[email];
+      if (!userInfo) return false;
+
+      const isB001Linked = userInfo.agent_customer_id === 'B001' || userInfo.customer_id === 'B001' || order.agent_customer_id === 'B001' || order.customer_id === 'B001';
+      const country = (userInfo.country || order.delivery_country || '').trim().toLowerCase();
+      const isBrasilAgent = userInfo.role === 'agent' && (country === 'brasil' || country === 'brazil');
+
+      return isB001Linked || isBrasilAgent;
+    });
+
     // 各注文の送金対象額（USD / BRL）を算出
     let totalBrlNeeded = 0;
     let targetUsdNeeded = 0;
 
-    const formattedOrders = (pendingOrders || []).map(order => {
-      const userInfo = userRolesMap[order.customer_email] || {};
+    const formattedOrders = pendingOrders.map(order => {
+      const email = (order.customer_email || '').trim().toLowerCase();
+      const userInfo = userRolesMap[email] || {};
       const orderWithUser = {
         ...order,
         customerId: userInfo.customer_id || order.customer_id,

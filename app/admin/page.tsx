@@ -4101,25 +4101,26 @@ export default function AdminDashboard() {
             {/* 2. 入出金管理（Foxbit送金オペレーション）ボックス */}
             <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 border-t-4 border-amber-500">
               {/* ボックスヘッダー */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">🪙</span>
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-sans">入出金管理（Foxbit送金オペレーション）</h2>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-sans">入出金管理</h2>
                     {foxbitData?.foxbit?.connected ? (
-                      <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        Foxbit API 接続中
+                      <span className="bg-emerald-100 text-emerald-800 text-[11px] leading-tight px-2.5 py-1 rounded-lg font-bold flex flex-col items-center justify-center text-center shadow-xs border border-emerald-200">
+                        <span>Foxbit API</span>
+                        <span className="flex items-center gap-1 text-emerald-700 font-extrabold text-[10px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          接続中
+                        </span>
                       </span>
                     ) : (
-                      <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-medium">
-                        Foxbit API 未設定
+                      <span className="bg-gray-100 text-gray-600 text-[11px] leading-tight px-2.5 py-1 rounded-lg font-medium flex flex-col items-center justify-center text-center border border-gray-200">
+                        <span>Foxbit API</span>
+                        <span className="text-[10px]">未設定</span>
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-500 text-xs sm:text-sm mt-1 font-sans">
-                    Contabilizei Bank ➔ Foxbit ➔ 株式会社JOGA（日本法人）への日次送金・両替オペレーション
-                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -4138,6 +4139,12 @@ export default function AdminDashboard() {
                     {isLoadingFoxbit ? '更新中...' : '最新情報に更新'}
                   </button>
                 </div>
+              </div>
+
+              {/* サブテキスト（中央揃え・2行表記） */}
+              <div className="text-gray-500 text-xs sm:text-sm mb-5 font-sans text-center bg-slate-50 py-2 px-4 rounded-xl border border-slate-200">
+                <div className="font-bold text-gray-800">Contabilizei Bank → Foxbit → 日本</div>
+                <div className="text-gray-600 text-xs mt-0.5">日次送金オペレーション</div>
               </div>
 
               {/* 送金先設定インライン編集モーダル */}
