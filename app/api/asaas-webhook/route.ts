@@ -255,22 +255,33 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
       return;
     }
 
-    // 5. bid_requests のステータスを更新
-    const { error: updateError } = await supabaseAdmin
-      .from('bid_requests')
-      .update({
-        status: 'won', // 支払済（落札済）ステータスへ
-        final_status: 'won', // DBのカラム名はスネークケース
-        paid_brazil: true,
-        paid_brazil_at: new Date().toISOString(),
-        paid: true,
-        is_paid: true,
-        paid_at: new Date().toISOString(),
-      })
-      .in('id', bidRequestIds);
+    // 5. 各 bid_requests のステータスおよび確定金額(BRL)を更新
+    const nowIso = new Date().toISOString();
+    for (const item of items) {
+      const p = item.final_price || (item.customer_counter_offer && !item.customer_counter_offer_used ? item.customer_counter_offer : (item.counter_offer || item.max_bid || 0));
+      const roundedBrl = Math.ceil((p * originalRate) / 10) * 10;
+      const itemEffectiveRate = p > 0 ? roundedBrl / p : originalRate;
+      const itemRepasse = Math.round(((Number(item.japan_send_usd) || 0) * itemEffectiveRate) * 100) / 100;
 
-    if (updateError) {
-      console.error('[ASAAS Webhook] bid_requests 更新エラー:', updateError);
+      const { error: updateError } = await supabaseAdmin
+        .from('bid_requests')
+        .update({
+          status: 'won',
+          final_status: 'won',
+          paid_brazil: true,
+          paid_brazil_at: nowIso,
+          paid: true,
+          is_paid: true,
+          paid_at: nowIso,
+          japan_send_brl: itemRepasse,
+          paid_customer_brl: roundedBrl,
+          paid_effective_rate: Math.round(itemEffectiveRate * 10000) / 10000,
+        })
+        .eq('id', item.id);
+
+      if (updateError) {
+        console.error(`[ASAAS Webhook] bid_requests (${item.id}) 更新エラー:`, updateError);
+      }
     }
 
     // 6. 領収書 (PDF) の生成と保存

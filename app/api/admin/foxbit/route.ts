@@ -160,8 +160,11 @@ export async function GET(request: Request) {
         ? Number(order.japan_send_usd)
         : calculateJapanSendAmount(orderWithUser, totalSalePrice, jpyRate);
 
-      // 2. Foxbit送金指示額 (BRL) の算出（実勢レート換算、10レアル単位切り上げ）
-      const orderBrlAmount = Math.ceil((orderUsdAmount * usdtBrlRate) / 10) * 10;
+      // 2. Foxbit送金指示額 (BRL) の算出
+      // 顧客決済時に確定した japan_send_brl が保存されていればそれを優先使用（完全一致）、未設定の場合は実勢レートで切り上げ計算
+      const orderBrlAmount = order.japan_send_brl !== null && order.japan_send_brl !== undefined && Number(order.japan_send_brl) > 0
+        ? Number(order.japan_send_brl)
+        : Math.ceil((orderUsdAmount * usdtBrlRate) / 10) * 10;
 
       totalBrlNeeded += orderBrlAmount;
       targetUsdNeeded += orderUsdAmount;
@@ -175,6 +178,7 @@ export async function GET(request: Request) {
         final_price: totalSalePrice,
         japan_send_usd: orderUsdAmount,
         cost_brl: orderBrlAmount,
+        paid_effective_rate: order.paid_effective_rate || null,
         paid_at: order.paid_at || order.paid_brazil_at || order.created_at,
       };
     });
