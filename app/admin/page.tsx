@@ -61,6 +61,16 @@ export default function AdminDashboard() {
   });
   const [financialData, setFinancialData] = useState<any>(null);
   const [isLoadingFinancials, setIsLoadingFinancials] = useState(false);
+
+  // Foxbit 送金管理・入出金管理ステート
+  const [foxbitData, setFoxbitData] = useState<any>(null);
+  const [isLoadingFoxbit, setIsLoadingFoxbit] = useState<boolean>(false);
+  const [isRemitting, setIsRemitting] = useState<boolean>(false);
+  const [showRemittanceOrders, setShowRemittanceOrders] = useState<boolean>(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [isEditingFoxbitSettings, setIsEditingFoxbitSettings] = useState<boolean>(false);
+  const [editPixKey, setEditPixKey] = useState<string>('');
+  const [editJogaUsdt, setEditJogaUsdt] = useState<string>('');
   
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
@@ -612,6 +622,112 @@ export default function AdminDashboard() {
     }
   };
 
+  // Foxbit 送金データ取得関数
+  const fetchFoxbitData = async (forceLoading: boolean = false) => {
+    if (forceLoading || !foxbitData) {
+      setIsLoadingFoxbit(true);
+    }
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+      const res = await fetch('/api/admin/foxbit', {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFoxbitData(data);
+        if (data.settings) {
+          setEditPixKey(data.settings.pix_key || '');
+          setEditJogaUsdt(data.settings.joga_usdt_address || '');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching Foxbit data:', error);
+    } finally {
+      setIsLoadingFoxbit(false);
+    }
+  };
+
+  // クリップボードコピー処理 (Foxbit送金用)
+  const handleCopyFoxbitText = (text: string, keyName: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedKey(keyName);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  // 一括送金完了（mark_remitted）処理
+  const handleMarkRemitted = async () => {
+    if (!foxbitData?.remittance?.orders || foxbitData.remittance.orders.length === 0) {
+      alert('送金対象の注文がありません。');
+      return;
+    }
+
+    const confirmMsg = `対象の ${foxbitData.remittance.orders_count} 件の注文を送金済み（Remetido）として記録しますか？\n（本日の集計から除外され、二重送金が防止されます）`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsRemitting(true);
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+      const res = await fetch('/api/admin/foxbit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({ action: 'mark_remitted' })
+      });
+
+      if (res.ok) {
+        alert('送金済みとして記録しました。');
+        fetchFoxbitData(true);
+      } else {
+        const err = await res.json();
+        alert('更新に失敗しました: ' + (err.error || 'エラー'));
+      }
+    } catch (error) {
+      console.error('Error marking remitted:', error);
+      alert('通信エラーが発生しました。');
+    } finally {
+      setIsRemitting(false);
+    }
+  };
+
+  // Foxbit 送金先設定保存処理
+  const handleSaveFoxbitSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+      const res = await fetch('/api/admin/foxbit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        },
+        body: JSON.stringify({
+          action: 'update_settings',
+          pix_key: editPixKey,
+          joga_usdt_address: editJogaUsdt
+        })
+      });
+
+      if (res.ok) {
+        alert('送金先設定を保存しました。');
+        setIsEditingFoxbitSettings(false);
+        fetchFoxbitData(true);
+      } else {
+        alert('設定の保存に失敗しました。');
+      }
+    } catch (error) {
+      console.error('Error saving Foxbit settings:', error);
+      alert('通信エラーが発生しました。');
+    }
+  };
+
   const handleUpdateDeposit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingDeposit) return;
@@ -982,6 +1098,7 @@ export default function AdminDashboard() {
         fetchDeposits(false),
         fetchUsersData(false),
         fetchFinancials(financialMonth, false),
+        fetchFoxbitData(false),
         fetchInviteCodes(),
         fetchExchangeRate(),
         fetchUnreadCount()
@@ -1008,6 +1125,7 @@ export default function AdminDashboard() {
         fetchShippingContainers();
       } else if (activeTab === 'financials') {
         fetchFinancials(financialMonth, false);
+        fetchFoxbitData(false);
       } else {
         fetchUsersData(false);
         if (activeTab === 'agents') {
@@ -1067,6 +1185,9 @@ export default function AdminDashboard() {
               await fetchUsersData();
               await fetchPurchasedItems();
               await fetchShippingContainers();
+            } else if (activeTab === 'financials') {
+              await fetchFinancials(financialMonth, true);
+              await fetchFoxbitData(true);
             } else {
               await fetchUsersData();
             }
@@ -3909,70 +4030,436 @@ export default function AdminDashboard() {
 
         {/* 財務タブ */}
         {activeTab === 'financials' && (
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 font-sans">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-sans">📊 財務ダッシュボード</h2>
-                <p className="text-gray-500 text-xs sm:text-sm mt-1 font-sans">B001傘下顧客およびブラジルAGTの売上集計</p>
-              </div>
-              <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-xs">
-                <span className="text-xs sm:text-sm font-bold text-gray-600">対象月:</span>
-                <input 
-                  type="month" 
-                  value={financialMonth}
-                  onChange={(e) => {
-                    setFinancialMonth(e.target.value);
-                    fetchFinancials(e.target.value, true);
-                  }}
-                  className="border-none bg-transparent focus:ring-0 text-indigo-700 font-bold outline-none text-xs sm:text-sm cursor-pointer"
-                />
-              </div>
-            </div>
-
-            {isLoadingFinancials ? (
-              <div className="flex justify-center items-center py-16">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
-              </div>
-            ) : financialData ? (
-              <div className="space-y-4">
-                {/* サマリーカード（顧客タブ・AGTタブと統一フォーマット） */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6 font-sans">
-                  {/* 顧客支払額 */}
-                  <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                    <span className="text-xs font-bold text-gray-500">未入金 / 顧客支払合計</span>
-                    <span className="text-base font-bold flex items-center gap-1.5">
-                      <span className="text-red-600 font-bold">
-                        $ {(financialData.unpaidCustomerPayment || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                      <span className="text-gray-400">/</span>
-                      <span className="text-gray-900 font-black">
-                        $ {(financialData.totalCustomerPayment || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    </span>
-                  </div>
-
-                  {/* システム利用料 (FFGN売上) */}
-                  <div className="bg-white border border-purple-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                    <span className="text-xs font-bold text-purple-700">システム利用料 (FFGN売上)</span>
-                    <span className="text-base font-black text-purple-700">
-                      $ {(financialData.systemFee || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-
-                  {/* 商品立替金 (JOGAへの送金) */}
-                  <div className="bg-white border border-blue-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                    <span className="text-xs font-bold text-blue-600">商品立替金 (JOGA送金分)</span>
-                    <span className="text-base font-black text-blue-600">
-                      $ {(financialData.japanPayout || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
+          <div className="space-y-6 font-sans">
+            {/* 1. 財務ダッシュボードボックス */}
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-sans">📊 財務ダッシュボード</h2>
+                  <p className="text-gray-500 text-xs sm:text-sm mt-1 font-sans">B001傘下顧客およびブラジルAGTの売上集計</p>
+                </div>
+                <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-xs">
+                  <span className="text-xs sm:text-sm font-bold text-gray-600">対象月:</span>
+                  <input 
+                    type="month" 
+                    value={financialMonth}
+                    onChange={(e) => {
+                      setFinancialMonth(e.target.value);
+                      fetchFinancials(e.target.value, true);
+                    }}
+                    className="border-none bg-transparent focus:ring-0 text-indigo-700 font-bold outline-none text-xs sm:text-sm cursor-pointer"
+                  />
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-16 text-gray-400 font-sans">
-                データが取得できませんでした
+
+              {isLoadingFinancials ? (
+                <div className="flex justify-center items-center py-16">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+                </div>
+              ) : financialData ? (
+                <div className="space-y-4">
+                  {/* サマリーカード（顧客タブ・AGTタブと統一フォーマット） */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-2 font-sans">
+                    {/* 顧客支払額 */}
+                    <div className="bg-white border border-gray-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-gray-500">未入金 / 顧客支払合計</span>
+                      <span className="text-base font-bold flex items-center gap-1.5">
+                        <span className="text-red-600 font-bold">
+                          $ {(financialData.unpaidCustomerPayment || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-gray-400">/</span>
+                        <span className="text-gray-900 font-black">
+                          $ {(financialData.totalCustomerPayment || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* システム利用料 (FFGN売上) */}
+                    <div className="bg-white border border-purple-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-purple-700">システム利用料 (FFGN売上)</span>
+                      <span className="text-base font-black text-purple-700">
+                        $ {(financialData.systemFee || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                    {/* 商品立替金 (JOGAへの送金) */}
+                    <div className="bg-white border border-blue-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
+                      <span className="text-xs font-bold text-blue-600">商品立替金 (JOGA送金分)</span>
+                      <span className="text-base font-black text-blue-600">
+                        $ {(financialData.japanPayout || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400 font-sans">
+                  データが取得できませんでした
+                </div>
+              )}
+            </div>
+
+            {/* 2. 入出金管理（Foxbit送金オペレーション）ボックス */}
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 border-t-4 border-amber-500">
+              {/* ボックスヘッダー */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🪙</span>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-sans">入出金管理（Foxbit送金オペレーション）</h2>
+                    {foxbitData?.foxbit?.connected ? (
+                      <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Foxbit API 接続中
+                      </span>
+                    ) : (
+                      <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full font-medium">
+                        Foxbit API 未設定
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-500 text-xs sm:text-sm mt-1 font-sans">
+                    Contabilizei Bank ➔ Foxbit ➔ 株式会社JOGA（日本法人）への日次送金・両替オペレーション
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsEditingFoxbitSettings(!isEditingFoxbitSettings)}
+                    className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg transition"
+                    title="PixキーやUSDTアドレスを設定"
+                  >
+                    ⚙️ 送金先設定
+                  </button>
+                  <button
+                    onClick={() => fetchFoxbitData(true)}
+                    disabled={isLoadingFoxbit}
+                    className="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold px-3 py-2 rounded-lg transition shadow-sm disabled:opacity-50"
+                  >
+                    <span className={isLoadingFoxbit ? 'animate-spin' : ''}>🔄</span>
+                    {isLoadingFoxbit ? '更新中...' : '最新情報に更新'}
+                  </button>
+                </div>
               </div>
-            )}
+
+              {/* 送金先設定インライン編集モーダル */}
+              {isEditingFoxbitSettings && (
+                <form onSubmit={handleSaveFoxbitSettings} className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 space-y-4">
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <h3 className="text-sm font-bold text-gray-800">⚙️ Foxbit・JOGA送金先情報の設定</h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingFoxbitSettings(false)}
+                      className="text-gray-400 hover:text-gray-600 text-xs font-bold"
+                    >
+                      ✕ 閉じる
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Foxbit 法人Pix受取キー（Contabilizeiからの送金先）
+                      </label>
+                      <input
+                        type="text"
+                        value={editPixKey}
+                        onChange={(e) => setEditPixKey(e.target.value)}
+                        placeholder="例: CNPJ, メールアドレス, ランダムキー"
+                        className="w-full h-10 border border-gray-300 rounded-lg px-3 text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 outline-none bg-white text-black"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        株式会社JOGA USDT受取アドレス（Foxbitからの出金先）
+                      </label>
+                      <input
+                        type="text"
+                        value={editJogaUsdt}
+                        onChange={(e) => setEditJogaUsdt(e.target.value)}
+                        placeholder="例: TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc (TRC-20)"
+                        className="w-full h-10 border border-gray-300 rounded-lg px-3 text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 outline-none bg-white text-black font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingFoxbitSettings(false)}
+                      className="px-3 py-1.5 text-xs text-gray-600 font-semibold hover:bg-gray-200 rounded-lg transition"
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shadow-sm transition"
+                    >
+                      設定を保存
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* リアルタイムFoxbit口座状況 & USD換算充足判定パネル */}
+              <div className="bg-slate-900 text-white rounded-xl p-4 sm:p-5 mb-6 shadow-inner">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  {/* 1. USDT/BRL 実勢レート */}
+                  <div className="bg-slate-800/80 rounded-lg p-3 border border-slate-700">
+                    <div className="text-xs text-slate-400 font-semibold mb-1">📈 USDT/BRL 実勢レート</div>
+                    <div className="text-xl sm:text-2xl font-black text-amber-400 font-mono">
+                      1 USDT = R$ {(foxbitData?.foxbit?.usdt_brl_rate || 5.20).toFixed(4)}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-1">Foxbit 24h 実勢スワップレート</div>
+                  </div>
+
+                  {/* 2. Foxbit 保有残高 & 総合USD評価額 */}
+                  <div className="bg-slate-800/80 rounded-lg p-3 border border-slate-700">
+                    <div className="text-xs text-slate-400 font-semibold mb-1">🏦 リアルタイムFoxbit口座残高</div>
+                    <div className="text-xl sm:text-2xl font-black text-white font-mono">
+                      $ {(foxbitData?.foxbit?.total_usd_value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-xs text-slate-300 mt-1 flex gap-2">
+                      <span>R$ {(foxbitData?.foxbit?.brl_balance || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <span>+</span>
+                      <span>${(foxbitData?.foxbit?.usdt_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} USDT</span>
+                    </div>
+                  </div>
+
+                  {/* 3. リアルタイム充足ステータス（一瞬で目視判定） */}
+                  <div className={`rounded-lg p-3 border flex flex-col justify-between ${
+                    foxbitData?.foxbit?.is_sufficient
+                      ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-300'
+                      : 'bg-amber-950/60 border-amber-500/50 text-amber-300'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold">🎯 目標USD充足判定</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full font-black bg-black/40">
+                        進捗 {foxbitData?.foxbit?.fulfillment_percent || 0}%
+                      </span>
+                    </div>
+
+                    <div className="my-1">
+                      {foxbitData?.foxbit?.is_sufficient ? (
+                        <div className="text-base sm:text-lg font-black text-emerald-400 flex items-center gap-1">
+                          <span>✅ 充足</span>
+                          <span className="text-sm font-bold">
+                            (+${(foxbitData?.foxbit?.difference_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })})
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-base sm:text-lg font-black text-amber-400 flex items-center gap-1">
+                          <span>⏳ 不足</span>
+                          <span className="text-sm font-bold">
+                            (-${Math.abs(foxbitData?.foxbit?.difference_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })})
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-xs opacity-80">
+                      {foxbitData?.foxbit?.is_sufficient
+                        ? '両替 & JOGA送金準備完了'
+                        : 'ContabilizeiからのPix着金待ち'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* プログレスバー */}
+                <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                  <div 
+                    className={`h-2.5 rounded-full transition-all duration-500 ${
+                      foxbitData?.foxbit?.is_sufficient ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                    style={{ width: `${Math.min(foxbitData?.foxbit?.fulfillment_percent || 0, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* 2ステップ送金指示カード */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* STEP 1: Contabilizei ➔ Foxbit Pix送金 */}
+                <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-4 sm:p-5 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="bg-blue-600 text-white text-xs font-black px-2 py-0.5 rounded">STEP 1</span>
+                      <h3 className="text-sm sm:text-base font-bold text-blue-950">Contabilizei ➔ Foxbit Pix送金</h3>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs text-blue-700 font-semibold mb-0.5">本日の送金指示額 (BRL)</div>
+                        <div className="flex items-center justify-between bg-white border border-blue-200 rounded-lg px-3 py-2 shadow-xs">
+                          <span className="text-lg sm:text-xl font-black text-blue-900 font-mono">
+                            R$ {(foxbitData?.remittance?.total_brl_needed || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                          <button
+                            onClick={() => handleCopyFoxbitText((foxbitData?.remittance?.total_brl_needed || 0).toFixed(2), 'brl_amount')}
+                            className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold px-2.5 py-1 rounded transition"
+                          >
+                            {copiedKey === 'brl_amount' ? '✅ コピー済' : '📋 金額コピー'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-blue-700 font-semibold mb-0.5">Foxbit 法人Pixキー</div>
+                        <div className="flex items-center justify-between bg-white border border-blue-200 rounded-lg px-3 py-2 shadow-xs">
+                          <span className="text-xs sm:text-sm font-bold text-gray-800 font-mono truncate mr-2">
+                            {foxbitData?.settings?.pix_key || '(未登録: ⚙️送金先設定から登録)'}
+                          </span>
+                          {foxbitData?.settings?.pix_key && (
+                            <button
+                              onClick={() => handleCopyFoxbitText(foxbitData.settings.pix_key, 'pix_key')}
+                              className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold px-2.5 py-1 rounded shrink-0 transition"
+                            >
+                              {copiedKey === 'pix_key' ? '✅ コピー済' : '📋 Pixコピー'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-blue-600/90 mt-3 pt-2 border-t border-blue-200/60">
+                    💡 Contabilizei Bankアプリを開き、上記Pixキー宛てに指示額をPix送金します。
+                  </p>
+                </div>
+
+                {/* STEP 2: Foxbit両替 & JOGA送金 */}
+                <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-4 sm:p-5 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="bg-purple-600 text-white text-xs font-black px-2 py-0.5 rounded">STEP 2</span>
+                      <h3 className="text-sm sm:text-base font-bold text-purple-950">Foxbit両替 & JOGA送金</h3>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs text-purple-700 font-semibold mb-0.5">目標USD換算額 (USDT)</div>
+                        <div className="flex items-center justify-between bg-white border border-purple-200 rounded-lg px-3 py-2 shadow-xs">
+                          <span className="text-lg sm:text-xl font-black text-purple-900 font-mono">
+                            $ {(foxbitData?.remittance?.target_usd_needed || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <button
+                            onClick={() => handleCopyFoxbitText((foxbitData?.remittance?.target_usd_needed || 0).toFixed(2), 'usd_amount')}
+                            className="text-xs bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold px-2.5 py-1 rounded transition"
+                          >
+                            {copiedKey === 'usd_amount' ? '✅ コピー済' : '📋 目標額コピー'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-purple-700 font-semibold mb-0.5">JOGA受取ウォレット (USDT)</div>
+                        <div className="flex items-center justify-between bg-white border border-purple-200 rounded-lg px-3 py-2 shadow-xs">
+                          <span className="text-xs font-bold text-gray-800 font-mono truncate mr-2">
+                            {foxbitData?.settings?.joga_usdt_address || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc'}
+                          </span>
+                          <button
+                            onClick={() => handleCopyFoxbitText(foxbitData?.settings?.joga_usdt_address || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc', 'usdt_address')}
+                            className="text-xs bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold px-2.5 py-1 rounded shrink-0 transition"
+                          >
+                            {copiedKey === 'usdt_address' ? '✅ コピー済' : '📋 アドレスコピー'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-purple-600/90 mt-3 pt-2 border-t border-purple-200/60">
+                    💡 Foxbit内で着金したBRLを目標USD分両替（Converter）し、JOGAアドレスへ出金（Sacar）します。
+                  </p>
+                </div>
+              </div>
+
+              {/* 対象注文の内訳（アコーディオン） */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden mb-6">
+                <button
+                  type="button"
+                  onClick={() => setShowRemittanceOrders(!showRemittanceOrders)}
+                  className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-xs sm:text-sm font-bold text-gray-700 transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <span>📦 対象注文内訳</span>
+                    <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs font-black">
+                      {foxbitData?.remittance?.orders_count || 0} 件
+                    </span>
+                  </div>
+                  <span className="text-gray-500 font-semibold">
+                    {showRemittanceOrders ? '▲ 閉じる' : '▼ 内訳を確認する'}
+                  </span>
+                </button>
+
+                {showRemittanceOrders && (
+                  <div className="p-4 bg-white border-t border-gray-200">
+                    {foxbitData?.remittance?.orders && foxbitData.remittance.orders.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 text-xs">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-bold text-gray-600">管理番号 / 注文ID</th>
+                              <th className="px-3 py-2 text-left font-bold text-gray-600">商品名</th>
+                              <th className="px-3 py-2 text-left font-bold text-gray-600">顧客</th>
+                              <th className="px-3 py-2 text-right font-bold text-gray-600">仕入れ原価 (BRL)</th>
+                              <th className="px-3 py-2 text-right font-bold text-gray-600">日本送金額 (USD)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {foxbitData.remittance.orders.map((order: any) => (
+                              <tr key={order.id} className="hover:bg-gray-50">
+                                <td className="px-3 py-2 font-mono font-bold text-gray-800">
+                                  {order.stock_number || `#${order.id.slice(-6)}`}
+                                </td>
+                                <td className="px-3 py-2 text-gray-800 max-w-xs truncate" title={order.product_title}>
+                                  {order.product_title || '—'}
+                                </td>
+                                <td className="px-3 py-2 text-gray-700">
+                                  <span className="font-semibold">{order.customer_name}</span>
+                                  {order.customer_id && (
+                                    <span className="text-gray-400 ml-1">({order.customer_id})</span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2 text-right font-bold text-blue-700 font-mono">
+                                  R$ {order.cost_brl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td className="px-3 py-2 text-right font-bold text-purple-700 font-mono">
+                                  $ {order.japan_send_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-gray-400 text-xs">
+                        送金待ちの注文はありません。
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* フッターアクション（一括送金完了マーク & 二重送金防止） */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <div className="text-xs text-gray-600">
+                  {foxbitData?.remittance?.orders_count > 0 ? (
+                    <span>
+                      ⚠️ 銀行送金およびFoxbit出金が完了したら、下のボタンを押して「送金済み」に更新してください。
+                    </span>
+                  ) : (
+                    <span className="text-emerald-700 font-bold flex items-center gap-1">
+                      ✅ 現在、未送金の落札商品はすべて送金処理が完了しています。
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  onClick={handleMarkRemitted}
+                  disabled={isRemitting || !foxbitData?.remittance?.orders_count}
+                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-6 py-2.5 rounded-lg shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <span>🔄</span>
+                  {isRemitting ? '更新中...' : '一括送金完了にする (Marcar como Remetido)'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
