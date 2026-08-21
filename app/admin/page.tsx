@@ -1286,7 +1286,7 @@ export default function AdminDashboard() {
 
   const fetchExchangeRate = async () => {
     try {
-      const res = await fetch('/api/exchange-rate');
+      const res = await fetch('/api/exchange-rate', { cache: 'no-store' });
       const data = await res.json();
       if (data.usdToJpy) {
         setExchangeRate(data.usdToJpy);

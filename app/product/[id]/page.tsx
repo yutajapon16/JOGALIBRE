@@ -375,7 +375,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     // 為替レートの取得
     const fetchExchangeRate = async () => {
       try {
-        const res = await fetch('/api/exchange-rate');
+        const res = await fetch('/api/exchange-rate', { cache: 'no-store' });
         const data = await res.json();
         if (data.usdToJpy) {
           setExchangeRate(data.usdToJpy);
