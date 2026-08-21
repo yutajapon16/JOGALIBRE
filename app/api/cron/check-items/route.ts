@@ -193,6 +193,7 @@ export async function GET(request: Request) {
                 let initPrice = 0;
                 let latestEndTime: string | null = null;
 
+                let isClosedJson = false;
                 const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
                 if (nextDataMatch) {
                     try {
@@ -203,6 +204,8 @@ export async function GET(request: Request) {
                             itemData.price ||
                             itemData.currentPrice ||
                             itemData.currentBidPrice ||
+                            itemData.bidOrBuy ||
+                            itemData.buyPrice ||
                             itemData.startPrice ||
                             0;
                         initPrice = itemData.initPrice ||
@@ -210,6 +213,7 @@ export async function GET(request: Request) {
                             itemData.startPrice ||
                             itemData.taxinStartPrice ||
                             0;
+                        isClosedJson = itemData.isClosed === true || itemData.status === 'closed' || itemData.status === 'ended';
                         if (itemData.endTime) {
                             if (typeof itemData.endTime === 'number') {
                                 const parsedDate = new Date(itemData.endTime * 1000);
@@ -240,7 +244,9 @@ export async function GET(request: Request) {
 
                 // フォールバック2: HTML価格テキスト
                 if (!currentPrice || currentPrice === 0) {
-                    const priceRegexMatch = html.match(/class=["'][^"']*Price__value[^"']*["'][^>]*>([\d,]+)\s*円/i);
+                    const priceRegexMatch = html.match(/class=["'][^"']*Price__value[^"']*["'][^>]*>([\d,]+)\s*円/i) ||
+                        html.match(/落札価格[：:\s]*<[^>]*>([\d,]+)\s*円/i) ||
+                        html.match(/即決価格[：:\s]*<[^>]*>([\d,]+)\s*円/i);
                     if (priceRegexMatch && priceRegexMatch[1]) {
                         currentPrice = parseInt(priceRegexMatch[1].replace(/,/g, ''), 10);
                     }
@@ -250,12 +256,24 @@ export async function GET(request: Request) {
                     initPrice = item.product_price || currentPrice;
                 }
 
-                // 終了判定
-                const isEnded = html.includes('終了しました') ||
+                // 終了判定（即決落札、早期終了、通常終了）
+                const isEnded = isClosedJson ||
+                    html.includes('終了しました') ||
                     html.includes('オークションは終了しました') ||
                     html.includes('このオークションは終了しています') ||
+                    html.includes('即決価格で落札') ||
+                    html.includes('早期終了') ||
+                    html.includes('落札者あり') ||
                     html.includes('再出品') ||
                     (diffHours < -0.25); // 終了予定時刻から15分以上経過
+
+                // 即決落札や終了しているが、終了日時が未来のまままたは未設定の場合は現在時刻に補正
+                if (isEnded) {
+                    const parsedLatestEnd = latestEndTime ? parseAnyDateTime(latestEndTime) : null;
+                    if (!latestEndTime || (parsedLatestEnd && parsedLatestEnd.getTime() > now.getTime())) {
+                        latestEndTime = now.toISOString();
+                    }
+                }
 
                 // [last_check:TIMESTAMP] の更新
                 if (currentMsg.includes('[last_check:')) {
