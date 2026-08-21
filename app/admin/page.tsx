@@ -4404,12 +4404,12 @@ export default function AdminDashboard() {
                         <table className="min-w-full divide-y divide-gray-200 text-xs">
                           <thead className="bg-gray-50 text-[11px]">
                             <tr>
-                              <th className="px-2.5 py-2 text-left font-bold text-gray-600 whitespace-nowrap">在庫番号</th>
-                              <th className="px-2.5 py-2 text-left font-bold text-gray-600 whitespace-nowrap">商品名</th>
-                              <th className="px-2.5 py-2 text-left font-bold text-gray-600 whitespace-nowrap">ID</th>
-                              <th className="px-2.5 py-2 text-left font-bold text-gray-600 whitespace-nowrap">顧客名</th>
-                              <th className="px-2.5 py-2 text-right font-bold text-gray-600 whitespace-nowrap">BRL</th>
-                              <th className="px-2.5 py-2 text-right font-bold text-gray-600 whitespace-nowrap">USD</th>
+                              <th className="px-2.5 py-2 text-center font-bold text-gray-600 whitespace-nowrap">在庫番号</th>
+                              <th className="px-2.5 py-2 text-center font-bold text-gray-600 whitespace-nowrap">商品名</th>
+                              <th className="px-2.5 py-2 text-center font-bold text-gray-600 whitespace-nowrap">ID</th>
+                              <th className="px-2.5 py-2 text-center font-bold text-gray-600 whitespace-nowrap">顧客名</th>
+                              <th className="px-2.5 py-2 text-center font-bold text-gray-600 whitespace-nowrap">BRL</th>
+                              <th className="px-2.5 py-2 text-center font-bold text-gray-600 whitespace-nowrap">USD</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
