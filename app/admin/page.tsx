@@ -4100,29 +4100,28 @@ export default function AdminDashboard() {
 
             {/* 2. 入出金管理（Foxbit送金オペレーション）ボックス */}
             <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 border-t-4 border-amber-500">
-              {/* ボックスヘッダー */}
+              {/* ボックスヘッダー（タイトル左揃え、バッジ＆ボタン右揃え） */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">🪙</span>
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-sans">入出金管理</h2>
-                    {foxbitData?.foxbit?.connected ? (
-                      <span className="bg-emerald-100 text-emerald-800 text-[11px] leading-tight px-2.5 py-1 rounded-lg font-bold flex flex-col items-center justify-center text-center shadow-xs border border-emerald-200">
-                        <span>Foxbit API</span>
-                        <span className="flex items-center gap-1 text-emerald-700 font-extrabold text-[10px]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                          接続中
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="bg-gray-100 text-gray-600 text-[11px] leading-tight px-2.5 py-1 rounded-lg font-medium flex flex-col items-center justify-center text-center border border-gray-200">
-                        <span>Foxbit API</span>
-                        <span className="text-[10px]">未設定</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
                 <div className="flex items-center gap-2">
+                  <span className="text-2xl">🪙</span>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 font-sans">入出金管理</h2>
+                </div>
+                
+                <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
+                  {foxbitData?.foxbit?.connected ? (
+                    <span className="bg-emerald-100 text-emerald-800 text-[11px] leading-tight px-2.5 py-1 rounded-lg font-bold flex flex-col items-center justify-center text-center shadow-xs border border-emerald-200">
+                      <span>Foxbit API</span>
+                      <span className="flex items-center gap-1 text-emerald-700 font-extrabold text-[10px]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        接続中
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="bg-gray-100 text-gray-600 text-[11px] leading-tight px-2.5 py-1 rounded-lg font-medium flex flex-col items-center justify-center text-center border border-gray-200">
+                      <span>Foxbit API</span>
+                      <span className="text-[10px]">未設定</span>
+                    </span>
+                  )}
                   <button
                     onClick={() => setIsEditingFoxbitSettings(!isEditingFoxbitSettings)}
                     className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg transition"
@@ -4151,7 +4150,7 @@ export default function AdminDashboard() {
               {isEditingFoxbitSettings && (
                 <form onSubmit={handleSaveFoxbitSettings} className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 space-y-4">
                   <div className="flex justify-between items-center border-b pb-2">
-                    <h3 className="text-sm font-bold text-gray-800">⚙️ Foxbit・JOGA送金先情報の設定</h3>
+                    <h3 className="text-sm font-bold text-gray-800">⚙️ Foxbit・日本送金先情報の設定</h3>
                     <button
                       type="button"
                       onClick={() => setIsEditingFoxbitSettings(false)}
@@ -4169,13 +4168,13 @@ export default function AdminDashboard() {
                         type="text"
                         value={editPixKey}
                         onChange={(e) => setEditPixKey(e.target.value)}
-                        placeholder="例: CNPJ, メールアドレス, ランダムキー"
+                        placeholder="例: pix@foxbit.com.br"
                         className="w-full h-10 border border-gray-300 rounded-lg px-3 text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 outline-none bg-white text-black"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">
-                        株式会社JOGA USDT受取アドレス（Foxbitからの出金先）
+                        日本受取ウォレット（USDT TRC20）（Foxbitからの出金先）
                       </label>
                       <input
                         type="text"
@@ -4262,7 +4261,7 @@ export default function AdminDashboard() {
 
                     <div className="text-xs opacity-80">
                       {foxbitData?.foxbit?.is_sufficient
-                        ? '両替 & JOGA送金準備完了'
+                        ? '両替 ＆ 日本送金準備完了'
                         : 'ContabilizeiからのPix着金待ち'}
                     </div>
                   </div>
@@ -4329,12 +4328,12 @@ export default function AdminDashboard() {
                   </p>
                 </div>
 
-                {/* STEP 2: Foxbit両替 & JOGA送金 */}
+                {/* STEP 2: Foxbit 両替 → 日本送金 */}
                 <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-4 sm:p-5 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-3">
                       <span className="bg-purple-600 text-white text-xs font-black px-2 py-0.5 rounded">STEP 2</span>
-                      <h3 className="text-sm sm:text-base font-bold text-purple-950">Foxbit両替 & JOGA送金</h3>
+                      <h3 className="text-sm sm:text-base font-bold text-purple-950">Foxbit 両替 → 日本送金</h3>
                     </div>
 
                     <div className="space-y-3">
@@ -4354,7 +4353,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div>
-                        <div className="text-xs text-purple-700 font-semibold mb-0.5">JOGA受取ウォレット (USDT)</div>
+                        <div className="text-xs text-purple-700 font-semibold mb-0.5">日本受取ウォレット（USDT TRC20）</div>
                         <div className="flex items-center justify-between bg-white border border-purple-200 rounded-lg px-3 py-2 shadow-xs">
                           <span className="text-xs font-bold text-gray-800 font-mono truncate mr-2">
                             {foxbitData?.settings?.joga_usdt_address || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc'}
@@ -4371,7 +4370,7 @@ export default function AdminDashboard() {
                   </div>
 
                   <p className="text-xs text-purple-600/90 mt-3 pt-2 border-t border-purple-200/60">
-                    💡 Foxbit内で着金したBRLを目標USD分両替（Converter）し、JOGAアドレスへ出金（Sacar）します。
+                    💡 Foxbit内で着金したBRLを目標USD分両替（Converter）し、上記アドレスへ出金（Sacar）します。
                   </p>
                 </div>
               </div>
@@ -4452,7 +4451,7 @@ export default function AdminDashboard() {
                     </span>
                   ) : (
                     <span className="text-emerald-700 font-bold flex items-center gap-1">
-                      ✅ 現在、未送金の落札商品はすべて送金処理が完了しています。
+                      ✅ 落札商品全ての送金処理完了済み
                     </span>
                   )}
                 </div>
@@ -4463,7 +4462,7 @@ export default function AdminDashboard() {
                   className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-6 py-2.5 rounded-lg shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <span>🔄</span>
-                  {isRemitting ? '更新中...' : '一括送金完了にする (Marcar como Remetido)'}
+                  {isRemitting ? '更新中...' : '一括送金完了にする'}
                 </button>
               </div>
             </div>
