@@ -4398,38 +4398,39 @@ export default function AdminDashboard() {
                 </button>
 
                 {showRemittanceOrders && (
-                  <div className="p-4 bg-white border-t border-gray-200">
+                  <div className="p-2 sm:p-4 bg-white border-t border-gray-200">
                     {foxbitData?.remittance?.orders && foxbitData.remittance.orders.length > 0 ? (
                       <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200 text-xs">
-                          <thead className="bg-gray-50">
+                          <thead className="bg-gray-50 text-[11px]">
                             <tr>
-                              <th className="px-3 py-2 text-left font-bold text-gray-600">管理番号 / 注文ID</th>
-                              <th className="px-3 py-2 text-left font-bold text-gray-600">商品名</th>
-                              <th className="px-3 py-2 text-left font-bold text-gray-600">顧客</th>
-                              <th className="px-3 py-2 text-right font-bold text-gray-600">仕入れ原価 (BRL)</th>
-                              <th className="px-3 py-2 text-right font-bold text-gray-600">日本送金額 (USD)</th>
+                              <th className="px-2.5 py-2 text-left font-bold text-gray-600 whitespace-nowrap">在庫番号</th>
+                              <th className="px-2.5 py-2 text-left font-bold text-gray-600 whitespace-nowrap">商品名</th>
+                              <th className="px-2.5 py-2 text-left font-bold text-gray-600 whitespace-nowrap">ID</th>
+                              <th className="px-2.5 py-2 text-left font-bold text-gray-600 whitespace-nowrap">顧客名</th>
+                              <th className="px-2.5 py-2 text-right font-bold text-gray-600 whitespace-nowrap">BRL</th>
+                              <th className="px-2.5 py-2 text-right font-bold text-gray-600 whitespace-nowrap">USD</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
                             {foxbitData.remittance.orders.map((order: any) => (
-                              <tr key={order.id} className="hover:bg-gray-50">
-                                <td className="px-3 py-2 font-mono font-bold text-gray-800">
+                              <tr key={order.id} className="hover:bg-gray-50 text-[11px] sm:text-xs">
+                                <td className="px-2.5 py-2 font-mono font-bold text-gray-900 whitespace-nowrap">
                                   {order.stock_number || `#${order.id.slice(-6)}`}
                                 </td>
-                                <td className="px-3 py-2 text-gray-800 max-w-xs truncate" title={order.product_title}>
+                                <td className="px-2.5 py-2 text-gray-800 max-w-[110px] sm:max-w-[180px] truncate" title={order.product_title}>
                                   {order.product_title || '—'}
                                 </td>
-                                <td className="px-3 py-2 text-gray-700">
-                                  <span className="font-semibold">{order.customer_name}</span>
-                                  {order.customer_id && (
-                                    <span className="text-gray-400 ml-1">({order.customer_id})</span>
-                                  )}
+                                <td className="px-2.5 py-2 font-mono font-semibold text-gray-600 whitespace-nowrap">
+                                  {order.customer_id || '—'}
                                 </td>
-                                <td className="px-3 py-2 text-right font-bold text-blue-700 font-mono">
+                                <td className="px-2.5 py-2 text-gray-800 font-semibold whitespace-nowrap">
+                                  {order.customer_name || 'Cliente'}
+                                </td>
+                                <td className="px-2.5 py-2 text-right font-bold text-blue-700 font-mono whitespace-nowrap">
                                   R$ {order.cost_brl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </td>
-                                <td className="px-3 py-2 text-right font-bold text-purple-700 font-mono">
+                                <td className="px-2.5 py-2 text-right font-bold text-purple-700 font-mono whitespace-nowrap">
                                   $ {order.japan_send_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </td>
                               </tr>
