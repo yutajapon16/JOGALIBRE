@@ -1413,6 +1413,9 @@ export default function Home() {
   const [nextPageExists, setNextPageExists] = useState(false);
   const [activeCategoryUrl, setActiveCategoryUrl] = useState<string | null>(null);
   const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
+  const [processingOfferId, setProcessingOfferId] = useState<string | null>(null);
+  const [isSubmittingEditOffer, setIsSubmittingEditOffer] = useState(false);
+  const [isSubmittingCounter, setIsSubmittingCounter] = useState(false);
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
   // マイページ用state
   const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', addressNumber: '', complement: '', zipCode: '', agentCustomerId: '', cpf: '', state: '', city: '', language: '' });
@@ -3424,6 +3427,8 @@ export default function Home() {
   };
 
   const handleCounterOfferResponse = async (requestId: string, action: 'accept' | 'reject' | 'counter', counterAmount?: number) => {
+    if (processingOfferId) return;
+    setProcessingOfferId(requestId);
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -3489,10 +3494,14 @@ export default function Home() {
       fetchMyRequests();
     } catch (error) {
       console.error('Error responding to counter offer:', error);
+    } finally {
+      setProcessingOfferId(null);
     }
   };
 
   const handleFinalStatusConfirm = async (requestId: string, message?: string) => {
+    if (processingOfferId) return;
+    setProcessingOfferId(requestId);
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -3533,6 +3542,8 @@ export default function Home() {
       fetchMyRequests();
     } catch (error) {
       console.error('Error confirming:', error);
+    } finally {
+      setProcessingOfferId(null);
     }
   };
 
@@ -3543,7 +3554,8 @@ export default function Home() {
   };
 
   const handleEditOfferSubmit = async () => {
-    if (!editingOfferRequest || !editingOfferAmount) return;
+    if (isSubmittingEditOffer || !editingOfferRequest || !editingOfferAmount) return;
+    setIsSubmittingEditOffer(true);
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -3570,14 +3582,19 @@ export default function Home() {
     } catch (error) {
       console.error('Error editing offer:', error);
       alert(lang === 'es' ? 'Ocurrió un error al editar la oferta.' : 'Ocorreu um erro ao editar a oferta.');
+    } finally {
+      setIsSubmittingEditOffer(false);
     }
   };
 
   const handleDeleteOffer = async (requestId: string) => {
+    if (processingOfferId) return;
     const confirmMsg = lang === 'es' 
       ? '¿Estás seguro de que quieres eliminar esta oferta?' 
       : 'Tem certeza que deseja excluir esta oferta?';
     if (!confirm(confirmMsg)) return;
+
+    setProcessingOfferId(requestId);
     try {
       const targetReq = myRequests.find(r => r.id === requestId);
       if (targetReq) {
@@ -3606,10 +3623,14 @@ export default function Home() {
     } catch (error) {
       console.error('Error deleting offer:', error);
       alert(lang === 'es' ? 'Ocurrió un error al eliminar la oferta.' : 'Ocorreu um erro ao excluir a oferta.');
+    } finally {
+      setProcessingOfferId(null);
     }
   };
 
   const confirmRejection = async (requestId: string) => {
+    if (processingOfferId) return;
+    setProcessingOfferId(requestId);
     try {
       const targetReq = myRequests.find(r => r.id === requestId);
       if (targetReq) {
@@ -3633,6 +3654,8 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error confirming rejection:', error);
+    } finally {
+      setProcessingOfferId(null);
     }
   };
 
@@ -4949,15 +4972,17 @@ export default function Home() {
                         <div className="flex flex-col gap-2 mb-2 w-full">
                           <button
                             onClick={() => openEditOfferModal(request)}
-                            className="w-full bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                            disabled={!!processingOfferId}
+                            className="w-full bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {lang === 'es' ? 'Modificar monto de oferta' : 'Modificar valor da oferta'}
                           </button>
                           <button
                             onClick={() => handleDeleteOffer(request.id)}
-                            className="w-full bg-red-100 text-red-600 h-12 rounded-lg hover:bg-red-200 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                            disabled={!!processingOfferId}
+                            className="w-full bg-red-100 text-red-600 h-12 rounded-lg hover:bg-red-200 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {lang === 'es' ? 'Eliminar oferta' : 'Excluir oferta'}
+                            {processingOfferId === request.id ? (lang === 'es' ? 'Eliminando...' : 'Excluindo...') : (lang === 'es' ? 'Eliminar oferta' : 'Excluir oferta')}
                           </button>
                         </div>
                       )}
@@ -4975,7 +5000,7 @@ export default function Home() {
                           <div className="flex flex-col gap-2 mb-2 w-full">
                             <button
                               onClick={() => openEditOfferModal(request)}
-                              disabled={isWithin15Mins}
+                              disabled={isWithin15Mins || !!processingOfferId}
                               className="w-full bg-indigo-600 text-white h-12 rounded-lg hover:bg-indigo-700 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {isWithin15Mins
@@ -4992,9 +5017,10 @@ export default function Home() {
                       {request.status === 'rejected' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
                         <button
                           onClick={() => confirmRejection(request.id)}
-                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
+                          disabled={!!processingOfferId}
+                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {t.deleteCard}
+                          {processingOfferId === request.id ? (lang === 'es' ? 'Eliminando...' : 'Excluindo...') : t.deleteCard}
                         </button>
                       )}
 
@@ -5003,24 +5029,27 @@ export default function Home() {
                         <div className="flex flex-col gap-2 w-full mb-2">
                           <button
                             onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                            className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                            disabled={!!processingOfferId}
+                            className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {t.accept}
+                            {processingOfferId === request.id ? (lang === 'es' ? 'Procesando...' : 'Processando...') : t.accept}
                           </button>
                           <button
                             onClick={() => {
                               setSelectedRequestForCounter(request);
                               setShowCounterModal(true);
                             }}
-                            className="w-full bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                            disabled={!!processingOfferId}
+                            className="w-full bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {t.counterOfferAction}
                           </button>
                           <button
                             onClick={() => handleCounterOfferResponse(request.id, 'reject')}
-                            className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                            disabled={!!processingOfferId}
+                            className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {t.reject}
+                            {processingOfferId === request.id ? (lang === 'es' ? 'Procesando...' : 'Processando...') : t.reject}
                           </button>
                         </div>
                       )}
@@ -5029,9 +5058,10 @@ export default function Home() {
                       {request.adminNeedsConfirm && !request.customerCounterOffer && (
                         <button
                           onClick={() => confirmRejection(request.id)}
-                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
+                          disabled={!!processingOfferId}
+                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {t.deleteCard}
+                          {processingOfferId === request.id ? (lang === 'es' ? 'Eliminando...' : 'Excluindo...') : t.deleteCard}
                         </button>
                       )}
 
@@ -5040,15 +5070,17 @@ export default function Home() {
                         <div className="flex flex-col gap-2 w-full mb-2">
                           <button
                             onClick={() => handleCounterOfferResponse(request.id, 'accept')}
-                            className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                            disabled={!!processingOfferId}
+                            className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {t.accept}
+                            {processingOfferId === request.id ? (lang === 'es' ? 'Procesando...' : 'Processando...') : t.accept}
                           </button>
                           <button
                             onClick={() => handleCounterOfferResponse(request.id, 'reject')}
-                            className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold"
+                            disabled={!!processingOfferId}
+                            className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {t.reject}
+                            {processingOfferId === request.id ? (lang === 'es' ? 'Procesando...' : 'Processando...') : t.reject}
                           </button>
                         </div>
                       )}
@@ -5057,9 +5089,10 @@ export default function Home() {
                       {request.status === 'rejected' && request.customerCounterOffer && request.customerCounterOfferUsed && (
                         <button
                           onClick={() => confirmRejection(request.id)}
-                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
+                          disabled={!!processingOfferId}
+                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {t.deleteCard}
+                          {processingOfferId === request.id ? (lang === 'es' ? 'Eliminando...' : 'Excluindo...') : t.deleteCard}
                         </button>
                       )}
 
@@ -5067,9 +5100,10 @@ export default function Home() {
                       {request.finalStatus === 'won' && !request.customerConfirmed && (
                         <button
                           onClick={() => handleFinalStatusConfirm(request.id)}
-                          className="w-full bg-green-600 text-white h-12 rounded-lg hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
+                          disabled={!!processingOfferId}
+                          className="w-full bg-green-600 text-white h-12 rounded-lg hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {t.confirm}
+                          {processingOfferId === request.id ? (lang === 'es' ? 'Confirmando...' : 'Confirmando...') : t.confirm}
                         </button>
                       )}
 
@@ -5077,9 +5111,10 @@ export default function Home() {
                       {request.finalStatus === 'lost' && (
                         <button
                           onClick={() => handleFinalStatusConfirm(request.id)}
-                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2"
+                          disabled={!!processingOfferId}
+                          className="w-full bg-red-600 text-white h-12 rounded-lg hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center font-semibold mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {t.deleteCard}
+                          {processingOfferId === request.id ? (lang === 'es' ? 'Eliminando...' : 'Excluindo...') : t.deleteCard}
                         </button>
                       )}
                     </div>
@@ -8171,22 +8206,28 @@ export default function Home() {
                     setSelectedRequestForCounter(null);
                     setCustomerCounterAmount('');
                   }}
-                  className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 flex items-center justify-center"
+                  disabled={isSubmittingCounter}
+                  className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 flex items-center justify-center disabled:opacity-50"
                 >
                   {t.cancel}
                 </button>
                 <button
-                  onClick={() => {
-                    if (customerCounterAmount && !isNaN(parseFloat(customerCounterAmount))) {
-                      handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', parseFloat(customerCounterAmount));
+                  onClick={async () => {
+                    if (isSubmittingCounter || !customerCounterAmount || isNaN(parseFloat(customerCounterAmount)) || parseFloat(customerCounterAmount) <= 0) return;
+                    setIsSubmittingCounter(true);
+                    try {
+                      await handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', parseFloat(customerCounterAmount));
                       setShowCounterModal(false);
                       setSelectedRequestForCounter(null);
                       setCustomerCounterAmount('');
+                    } finally {
+                      setIsSubmittingCounter(false);
                     }
                   }}
-                  className="flex-1 bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center"
+                  disabled={isSubmittingCounter || !customerCounterAmount || isNaN(parseFloat(customerCounterAmount)) || parseFloat(customerCounterAmount) <= 0}
+                  className="flex-1 bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {lang === 'es' ? 'Enviar' : 'Enviar'}
+                  {isSubmittingCounter ? (lang === 'es' ? 'Enviando...' : 'Enviando...') : (lang === 'es' ? 'Enviar' : 'Enviar')}
                 </button>
               </div>
             </div>
@@ -8240,13 +8281,15 @@ export default function Home() {
                   setEditingOfferRequest(null);
                   setEditingOfferAmount('');
                 }}
-                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 flex items-center justify-center"
+                disabled={isSubmittingEditOffer}
+                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 flex items-center justify-center disabled:opacity-50"
               >
                 {t.cancel}
               </button>
               <button
                 onClick={handleEditOfferSubmit}
                 disabled={
+                  isSubmittingEditOffer ||
                   !editingOfferAmount ||
                   isNaN(Number(editingOfferAmount)) ||
                   Number(editingOfferAmount) <= 0 ||
@@ -8254,7 +8297,9 @@ export default function Home() {
                 }
                 className="flex-1 bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {lang === 'es' ? 'Guardar' : 'Salvar'}
+                {isSubmittingEditOffer 
+                  ? (lang === 'es' ? 'Guardando...' : 'Salvando...') 
+                  : (lang === 'es' ? 'Guardar' : 'Salvar')}
               </button>
             </div>
           </div>

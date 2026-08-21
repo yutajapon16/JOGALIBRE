@@ -33,12 +33,14 @@ export default function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [bidRequests, setBidRequests] = useState<BidRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [rejectReason, setRejectReason] = useState('');
   const [shippingCostJpy, setShippingCostJpy] = useState('');
   const [fobCostJpy, setFobCostJpy] = useState('1,500');
   const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
   const [finalPriceInput, setFinalPriceInput] = useState('');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1057,6 +1059,7 @@ export default function AdminDashboard() {
         authChecked = true;
         setCurrentUser(null);
         setLoading(false);
+        setIsLoggingIn(false);
       } else if (session?.user) {
         // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
         const user = await getCurrentUser(session.user);
@@ -1074,9 +1077,11 @@ export default function AdminDashboard() {
           setCurrentUser(null);
         }
         setLoading(false);
+        setIsLoggingIn(false);
       } else {
         authChecked = true;
         setLoading(false);
+        setIsLoggingIn(false);
       }
     });
 
@@ -1250,22 +1255,30 @@ export default function AdminDashboard() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoggingIn) return;
+    if (isLoggingIn || isLoggingOut) return;
+    if (!loginForm.email.trim() || !loginForm.password.trim()) {
+      return;
+    }
     setIsLoggingIn(true);
     try {
-      await signIn(loginForm.email, loginForm.password);
+      await signIn(loginForm.email.trim(), loginForm.password);
       // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
       // ロールチェックは onAuthStateChange 内で行われる（admin のみ setCurrentUser）
       setLoginForm({ email: '', password: '' });
       setLoading(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      alert('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
+      alert(error?.message || 'ログインに失敗しました。メールアドレスとパスワードを確認してください。');
+    } finally {
       setIsLoggingIn(false);
     }
   };
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    setShowLogoutConfirm(false);
+
     // ログアウト前にPushサブスクリプションを削除
     if (currentUser) {
       try {
@@ -1278,10 +1291,20 @@ export default function AdminDashboard() {
         console.error('Push subscription cleanup error:', err);
       }
     }
-    // 直ちにログアウト完了状態にしてログイン画面を表示（ページリロードや読み込み中画面を出さない）
+
+    setIsLoggingIn(false);
     setLoading(false);
     setCurrentUser(null);
-    await signOut();
+    try {
+      await signOut();
+    } finally {
+      setIsLoggingOut(false);
+      setIsLoggingIn(false);
+      // セッション破棄後に確実にクリーンな状態のログイン画面を表示するためページを置き換え
+      if (typeof window !== 'undefined') {
+        window.location.replace('/admin');
+      }
+    }
   };
 
   const fetchExchangeRate = async () => {
@@ -1517,6 +1540,8 @@ export default function AdminDashboard() {
   };
 
   const updateStatus = async (id: string, status: string, reason?: string, counterOfferAmount?: number, shippingJpy?: number, totalJpy?: number) => {
+    if (processingRequestId) return;
+    setProcessingRequestId(id);
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -1586,10 +1611,14 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error updating status:', error);
       alert('通信エラーが発生しました。');
+    } finally {
+      setProcessingRequestId(null);
     }
   };
 
   const updateFinalStatus = async (id: string, finalStatus: string, finalPrice?: number, totalJpy?: number, japanSendUsd?: number) => {
+    if (processingRequestId) return;
+    setProcessingRequestId(id);
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -1645,10 +1674,14 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error updating final status:', error);
       alert('通信エラーが発生しました。');
+    } finally {
+      setProcessingRequestId(null);
     }
   };
 
   const confirmCustomerRejection = async (id: string) => {
+    if (processingRequestId) return;
+    setProcessingRequestId(id);
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -1676,6 +1709,8 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error confirming rejection:', error);
       alert('通信エラーが発生しました。');
+    } finally {
+      setProcessingRequestId(null);
     }
   };
 
@@ -2415,8 +2450,8 @@ export default function AdminDashboard() {
             </div>
             <button
               type="submit"
-              disabled={isLoggingIn}
-              className="w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center text-base disabled:opacity-50"
+              disabled={isLoggingIn || isLoggingOut}
+              className="w-full bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoggingIn ? 'ログイン中...' : 'ログイン'}
             </button>
@@ -2979,7 +3014,8 @@ export default function AdminDashboard() {
                           setSelectedRequest(request);
                           setActionType('reject');
                         }}
-                        className="w-full bg-red-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base mb-2 flex items-center justify-center"
+                        disabled={!!processingRequestId}
+                        className="w-full bg-red-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base mb-2 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         却下 (オファー取り消し)
                       </button>
@@ -2989,16 +3025,18 @@ export default function AdminDashboard() {
                       <div className="flex flex-col gap-2 w-full mb-2">
                         <button
                           onClick={() => updateStatus(request.id, 'approved')}
-                          className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center text-sm sm:text-base"
+                          disabled={!!processingRequestId}
+                          className="w-full bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          承認
+                          {processingRequestId === request.id ? '処理中...' : '承認'}
                         </button>
                         <button
                           onClick={() => {
                             setSelectedRequest(request);
                             setActionType('reject');
                           }}
-                          className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center text-sm sm:text-base"
+                          disabled={!!processingRequestId}
+                          className="w-full bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           却下
                         </button>
@@ -3016,9 +3054,10 @@ export default function AdminDashboard() {
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <button
                           onClick={() => updateStatus(request.id, 'approved')}
-                          className="w-full sm:flex-1 bg-green-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
+                          disabled={!!processingRequestId}
+                          className="w-full sm:flex-1 bg-green-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          承認
+                          {processingRequestId === request.id ? '処理中...' : '承認'}
                         </button>
                         <button
                           onClick={() => {
@@ -3029,7 +3068,8 @@ export default function AdminDashboard() {
                             setShippingCostJpy(defaultShipping > 0 ? defaultShipping.toLocaleString('en-US') : '');
                             setActionType('counter');
                           }}
-                          className="w-full sm:flex-1 bg-blue-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center"
+                          disabled={!!processingRequestId}
+                          className="w-full sm:flex-1 bg-blue-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           カウンターオファー
                         </button>
@@ -3038,7 +3078,8 @@ export default function AdminDashboard() {
                             setSelectedRequest(request);
                             setActionType('reject');
                           }}
-                          className="w-full sm:flex-1 bg-red-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center"
+                          disabled={!!processingRequestId}
+                          className="w-full sm:flex-1 bg-red-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           却下
                         </button>
@@ -3062,15 +3103,17 @@ export default function AdminDashboard() {
                             setWonFobJpyInput(defaultFob.toString());
                             setActionType('won');
                           }}
-                          className="w-full sm:flex-1 bg-green-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center"
+                          disabled={!!processingRequestId}
+                          className="w-full sm:flex-1 bg-green-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           落札
                         </button>
                         <button
                           onClick={() => updateFinalStatus(request.id, 'lost')}
-                          className="w-full sm:flex-1 bg-red-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center"
+                          disabled={!!processingRequestId}
+                          className="w-full sm:flex-1 bg-red-600 text-white h-12 shrink-0 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          落札できず
+                          {processingRequestId === request.id ? '処理中...' : '落札できず'}
                         </button>
                       </div>
                     )}
@@ -3089,9 +3132,10 @@ export default function AdminDashboard() {
                       request.finalStatus === 'lost') && (
                       <button
                         onClick={() => confirmCustomerRejection(request.id)}
-                        className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center mt-2"
+                        disabled={!!processingRequestId}
+                        className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        削除を確認
+                        {processingRequestId === request.id ? '処理中...' : '削除を確認'}
                       </button>
                     )}
                   </div>
@@ -5421,15 +5465,17 @@ export default function AdminDashboard() {
                   setActionType(null);
                   setRejectReason('');
                 }}
-                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
+                disabled={!!processingRequestId}
+                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center disabled:opacity-50"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleReject}
-                className="flex-1 bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center"
+                disabled={!!processingRequestId}
+                className="flex-1 bg-red-600 text-white h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                却下
+                {processingRequestId ? '処理中...' : '却下'}
               </button>
             </div>
           </div>
@@ -5555,15 +5601,17 @@ export default function AdminDashboard() {
                   setShippingCostJpy('');
                   setFobCostJpy('1,500');
                 }}
-                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
+                disabled={!!processingRequestId}
+                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center disabled:opacity-50"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleCounterOffer}
-                className="flex-1 bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center"
+                disabled={!!processingRequestId}
+                className="flex-1 bg-blue-600 text-white h-12 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                送信
+                {processingRequestId ? '送信中...' : '送信'}
               </button>
             </div>
           </div>
@@ -5651,7 +5699,8 @@ export default function AdminDashboard() {
                   setWonShippingJpyInput('');
                   setWonFobJpyInput('');
                 }}
-                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center"
+                disabled={!!processingRequestId}
+                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center disabled:opacity-50"
               >
                 キャンセル
               </button>
@@ -5668,9 +5717,10 @@ export default function AdminDashboard() {
                     updateFinalStatus(selectedRequest.id, 'won', price, totalJpy, Math.round(japanSendAmount));
                   }
                 }}
-                className="flex-1 bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center"
+                disabled={!!processingRequestId}
+                className="flex-1 bg-green-600 text-white h-12 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                落札を確定
+                {processingRequestId ? '処理中...' : '落札を確定'}
               </button>
             </div>
           </div>
@@ -6378,18 +6428,20 @@ export default function AdminDashboard() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+                disabled={isLoggingOut}
+                className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
                 キャンセル
               </button>
               <button
-                onClick={() => {
-                  setShowLogoutConfirm(false);
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleLogout();
                 }}
-                className="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors shadow-sm"
+                disabled={isLoggingOut}
+                className="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-bold"
               >
-                ログアウト
+                {isLoggingOut ? 'ログアウト中...' : 'ログアウト'}
               </button>
             </div>
           </div>
