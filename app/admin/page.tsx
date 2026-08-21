@@ -4082,9 +4082,9 @@ export default function AdminDashboard() {
                       </span>
                     </div>
 
-                    {/* 商品立替金 (JOGAへの送金) */}
+                    {/* 商品立替分 (日本送金分) */}
                     <div className="bg-white border border-blue-100 rounded-lg h-12 px-3 flex items-center justify-between shadow-sm">
-                      <span className="text-xs font-bold text-blue-600">商品立替金 (JOGA送金分)</span>
+                      <span className="text-xs font-bold text-blue-600">商品立替分 (日本送金分)</span>
                       <span className="text-base font-black text-blue-600">
                         $ {(financialData.japanPayout || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
