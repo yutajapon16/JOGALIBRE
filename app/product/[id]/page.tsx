@@ -42,6 +42,20 @@ const writeProductCache = (url: string | null, auctionId: string | undefined, cu
   }
 };
 
+// 安全なデコード関数（Malformed URI シーケンスによるクラッシュを完全に防止）
+const safeDecodeURIComponent = (str: string | null | undefined): string => {
+  if (!str) return '';
+  try {
+    return decodeURIComponent(str);
+  } catch {
+    try {
+      return decodeURI(str);
+    } catch {
+      return str;
+    }
+  }
+};
+
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,31 +70,35 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   // 商品データのState (キャッシュまたはURLパラメータから0msで即座に初期化)
   const [product, setProduct] = useState<any>(() => {
     if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const u = urlParams.get('url');
-      const l = (urlParams.get('lang') || localStorage.getItem('lang') || 'es') as 'es' | 'pt';
-      const pathParts = window.location.pathname.split('/');
-      const idFromPath = pathParts[pathParts.length - 1];
-      const cached = readProductCache(u, idFromPath, l);
-      if (cached) return cached;
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const u = urlParams.get('url');
+        const l = (urlParams.get('lang') || localStorage.getItem('lang') || 'es') as 'es' | 'pt';
+        const pathParts = window.location.pathname.split('/');
+        const idFromPath = pathParts[pathParts.length - 1];
+        const cached = readProductCache(u, idFromPath, l);
+        if (cached) return cached;
 
-      // キャッシュが無い場合でもURLから基本データを即時構築（画面を真っ白にしない）
-      if (u) {
-        const cleanId = extractAuctionId(idFromPath) || extractAuctionId(u);
-        const origP = urlParams.get('origPrice');
-        const tJa = urlParams.get('titleJa');
-        const dPrice = urlParams.get('dispPrice');
-        const curr = urlParams.get('currency') || 'USD';
-        return {
-          id: cleanId,
-          title: tJa ? decodeURIComponent(tJa) : '',
-          titleJa: tJa ? decodeURIComponent(tJa) : undefined,
-          url: u,
-          currentPrice: origP && !isNaN(Number(origP)) ? Number(origP) : 0,
-          displayPrice: dPrice || undefined,
-          displayCurrency: curr,
-          images: [],
-        };
+        // キャッシュが無い場合でもURLから基本データを即時構築（画面を真っ白にしない）
+        if (u) {
+          const cleanId = extractAuctionId(idFromPath) || extractAuctionId(u);
+          const origP = urlParams.get('origPrice');
+          const tJa = urlParams.get('titleJa');
+          const dPrice = urlParams.get('dispPrice');
+          const curr = urlParams.get('currency') || 'USD';
+          return {
+            id: cleanId,
+            title: tJa ? safeDecodeURIComponent(tJa) : '',
+            titleJa: tJa ? safeDecodeURIComponent(tJa) : undefined,
+            url: u,
+            currentPrice: origP && !isNaN(Number(origP)) ? Number(origP) : 0,
+            displayPrice: dPrice || undefined,
+            displayCurrency: curr,
+            images: [],
+          };
+        }
+      } catch (e) {
+        console.warn('Initial product state error:', e);
       }
     }
     return null;
@@ -515,7 +533,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     if (jcat) {
       productUrlWithCategory += (productUrlWithCategory.includes('?') ? '&' : '?') + `jcat=${jcat}`;
     }
-    const effectiveTitle = titleJaParam ? decodeURIComponent(titleJaParam) : (product?.titleJa || product?.title || '');
+    const effectiveTitle = titleJaParam ? safeDecodeURIComponent(titleJaParam) : (product?.titleJa || product?.title || '');
     const FOB_COST = calculateDefaultFobCost(effectiveTitle, productUrlWithCategory);
     const SHIPPING_COST = calculateDefaultShippingCost(effectiveTitle, productUrlWithCategory);
     const totalJpyPrice = effectivePrice + FOB_COST + SHIPPING_COST;
@@ -639,9 +657,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId;
     }
     if (jcat && !finalUrl.includes('jcat=')) {
-      finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'jcat=' + jcat;
+      finalUrl += (finalUrl.includes('?') ? '&' : '?') + `jcat=${jcat}`;
     }
-    const effectiveTitle = titleJaParam ? decodeURIComponent(titleJaParam) : (product?.titleJa || product?.title || '');
+    const effectiveTitle = titleJaParam ? safeDecodeURIComponent(titleJaParam) : (product?.titleJa || product?.title || '');
     return calculateLocalCost(loc, { productTitle: effectiveTitle, productUrl: finalUrl }, shippingMethod);
   };
 
@@ -732,15 +750,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  // カルーセル画像の配列を取得
+  const productImages = Array.isArray(product?.images) && product.images.length > 0
+    ? product.images
+    : (product?.imageUrl ? [product.imageUrl] : []);
+
   // カルーセル画像の左右操作
   const nextImage = () => {
-    if (!product || !product.images) return;
-    setCurrentImageIndex(prev => (prev + 1) % product.images.length);
+    if (productImages.length <= 1) return;
+    setCurrentImageIndex(prev => (prev + 1) % productImages.length);
   };
 
   const prevImage = () => {
-    if (!product || !product.images) return;
-    setCurrentImageIndex(prev => (prev - 1 + product.images.length) % product.images.length);
+    if (productImages.length <= 1) return;
+    setCurrentImageIndex(prev => (prev - 1 + productImages.length) % productImages.length);
   };
 
   if (!targetUrl) {
@@ -870,10 +893,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         {/* 1. 商品画像カルーセル */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative group">
           <div className="relative aspect-video w-full bg-gray-100 flex items-center justify-center">
-            {product.images && product.images.length > 0 ? (
+            {productImages.length > 0 ? (
               <Image
-                src={product.images[currentImageIndex] || '/icons/customer-icon.png'}
-                alt={`${product.title || 'Product'} - Image ${currentImageIndex + 1}`}
+                src={productImages[currentImageIndex] || productImages[0] || '/icons/customer-icon.png'}
+                alt={`${product?.title || 'Product'} - Image ${currentImageIndex + 1}`}
                 fill
                 unoptimized
                 referrerPolicy="no-referrer"
@@ -892,7 +915,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             )}
 
             {/* カルーセル矢印ボタン */}
-            {product.images && product.images.length > 1 && (
+            {productImages.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
@@ -912,9 +935,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             )}
 
             {/* カルーセルページ表示 */}
-            {product.images && product.images.length > 1 && (
+            {productImages.length > 1 && (
               <div className="absolute bottom-3 right-3 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                {currentImageIndex + 1} / {product.images.length}
+                {currentImageIndex + 1} / {productImages.length}
               </div>
             )}
           </div>

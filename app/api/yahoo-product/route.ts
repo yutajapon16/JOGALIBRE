@@ -3,6 +3,7 @@ export const revalidate = 0;
 
 import { NextResponse } from 'next/server';
 import { parseJstDateTime, parseDbDateTime, parseAnyDateTime } from '@/lib/utils';
+import { translateTitle, translateText } from '@/lib/translate';
 
 // AI要約・翻訳データの高速キャッシュ (6時間TTL)
 interface ProductCacheItem {
@@ -354,20 +355,14 @@ export async function POST(request: Request) {
 
         if (needDescTrans) {
           const translateDesc = async () => {
-            const controllerTranslate = new AbortController();
-            const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 7000);
             try {
-              const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2000);
-              const transRes = await fetch(
-                `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(cleanDesc)}`,
-                { signal: controllerTranslate.signal }
-              );
-              const transData = await transRes.json();
-              translatedDescription = transData?.[0]?.map((x: string[]) => x[0]).join('') || '';
+              const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2500);
+              const trans = await translateText(cleanDesc, lang, 'ja');
+              if (trans) {
+                translatedDescription = trans;
+              }
             } catch (e) {
-              console.error('Description translation error:', e);
-            } finally {
-              clearTimeout(timeoutTranslate);
+              console.error('Description translation error in yahoo-product:', e);
             }
           };
           translatePromises.push(translateDesc());
@@ -375,19 +370,13 @@ export async function POST(request: Request) {
 
         if (needTitleTrans && title) {
           const translateTitleFn = async () => {
-            const controllerTranslate = new AbortController();
-            const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 4000);
             try {
-              const transRes = await fetch(
-                `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t&q=${encodeURIComponent(title)}`,
-                { signal: controllerTranslate.signal }
-              );
-              const transData = await transRes.json();
-              translatedTitle = transData?.[0]?.[0]?.[0] || title;
+              const trans = await translateTitle(title, lang);
+              if (trans) {
+                translatedTitle = trans;
+              }
             } catch (e) {
-              console.error('Title translation error:', e);
-            } finally {
-              clearTimeout(timeoutTranslate);
+              console.error('Title translation error in yahoo-product:', e);
             }
           };
           translatePromises.push(translateTitleFn());
@@ -522,49 +511,54 @@ export async function POST(request: Request) {
 async function generateAiSummary(description: string, targetLang: 'es' | 'pt', translatedDesc?: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return buildFallbackSummary(translatedDesc || description, targetLang);
+    return await buildFallbackSummary(translatedDesc || description, targetLang);
   }
 
-  // Google翻訳済みの文章があれば優先して渡し、無ければ原文を渡す
-  const textToSummarize = translatedDesc && translatedDesc.length > 50 ? translatedDesc : description;
+  // 翻訳済みまたは原文の説明文を使用
+  const textToSummarize = (translatedDesc && translatedDesc.length > 50) ? translatedDesc : description;
 
-  const promptEs = `Eres un asistente de compras experto. Tu tarea es traducir y resumir la siguiente descripción de producto al español.
-IMPORTANTE: Debes traducir ABSOLUTAMENTE TODO el contenido al español. No dejes ninguna palabra, frase o carácter en japonés.
+  const promptEs = `Eres un asistente de compras internacional experto para clientes de habla hispana en una plataforma de subastas de Yahoo! Japón.
+Tu tarea es traducir y resumir de forma clara, profesional y 100% en ESPAÑOL la siguiente descripción de producto.
 
-Genera un resumen conciso usando viñetas (bullet points) en el siguiente formato, basándote en la información proporcionada (si un dato no está en el texto, escribe "No especificado"):
+REGLAS CRÍTICAS:
+1. Debes redactar TODO absolutamente en ESPAÑOL. No incluyas ningún carácter en japonés (kanji, hiragana, katakana).
+2. Estructura el resumen EXACTAMENTE con las siguientes 5 viñetas:
+- **Especificaciones / Detalles**: (marca, modelo, dimensiones, color, material, etc. Si no se indica, escribe "No especificado")
+- **Estado del producto**: (usado/nuevo, presencia de rayones, abolladuras, desgaste, manchas, etc.)
+- **Funcionamiento**: (probado y funcionando, sin probar, para repuestos / chatarra / junk, etc.)
+- **Accesorios**: (caja, cables, manuales o solo el artículo principal)
+- **Envío en Japón**: (detalles de envío si se mencionan)
 
-- **Especificaciones / Detalles**: (tamaño, color, modelo, etc.)
-- **Estado del producto**: (daños, suciedad, desgaste, etc.)
-- **Funcionamiento**: (si funciona, si no se ha probado, o si es considerado chatarra/junk)
-- **Accesorios**: (lo que se incluye en el paquete)
-- **Envío**: (empresa de envío o método de envío en Japón, si se indica)
-
-No agregues conclusiones ni comentarios personales. Limítate a resumir los datos reales en español.
+3. No incluyas saludos ni conclusiones. Limítate a las 5 viñetas en español.
 
 Descripción del producto:
 ${textToSummarize}`;
 
-  const promptPt = `Você é um assistente de compras especializado. Sua tarefa é traduzir e resumir a seguinte descrição de produto para o português.
-IMPORTANTE: Você deve traduzir ABSOLUTAMENTE TODO o conteúdo para o português. Não deixe nenhuma palavra, frase ou caractere em japonês.
+  const promptPt = `Você é um assistente de compras internacional especializado para clientes lusófonos em uma plataforma de leilões do Yahoo! Japão.
+Sua tarefa é traduzir e resumir de forma clara, profissional e 100% em PORTUGUÊS a seguinte descrição de produto.
 
-Gere um resumo conciso usando marcadores (bullet points) no formato a seguir, baseando-se nas informações fornecidas (se uma informação não estiver no texto, escreva "Não especificado"):
+REGRAS CRÍTICAS:
+1. Você deve redigir TUDO absolutamente em PORTUGUÊS. Não inclua nenhum caractere em japonês (kanji, hiragana, katakana).
+2. Estruture o resumo EXATAMENTE com os seguintes 5 marcadores:
+- **Especificações / Detalhes**: (marca, modelo, dimensões, cor, material, etc. Se não constar, escreva "Não especificado")
+- **Estado do produto**: (usado/novo, presença de riscos, amassados, desgaste, manchas, etc.)
+- **Funcionamento**: (testado e funcionando, não testado, para peças / sucata / junk, etc.)
+- **Acessórios**: (caixa, cabos, manuais ou apenas o item principal)
+- **Envio no Japão**: (detalhes de envio se mencionados)
 
-- **Especificações / Detalhes**: (tamanho, cor, modelo, etc.)
-- **Estado do produto**: (danos, sujeira, desgaste, etc.)
-- **Funcionamento**: (se funciona, se não foi testado, ou se é considerado sucata/junk)
-- **Acessórios**: (o que está incluído no pacote)
-- **Envío**: (empresa de envio ou método de envio no Japão, se indicado)
-
-Não adicione conclusões ou comentários pessoais. Limite-se a resumir os dados reais em português.
+3. Não inclua saudações nem conclusões. Limite-se aos 5 marcadores em português.
 
 Descrição do produto:
 ${textToSummarize}`;
 
   const prompt = targetLang === 'es' ? promptEs : promptPt;
-  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-3.6-flash'];
 
   for (const model of models) {
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 9000);
+
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const response = await fetch(url, {
         method: 'POST',
@@ -578,11 +572,13 @@ ${textToSummarize}`;
             }]
           }],
           generationConfig: {
-            maxOutputTokens: 3000,
+            maxOutputTokens: 2000,
             temperature: 0.2
           }
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeout);
 
       if (response.ok) {
         const resData = await response.json();
@@ -606,16 +602,12 @@ async function buildFallbackSummary(text: string, targetLang: 'es' | 'pt'): Prom
   let clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   let snippet = clean.substring(0, 800);
 
-  // もし日本語文字が含まれている場合はGoogle翻訳で即座に翻訳して日本語混ざりを防ぐ
+  // 日本語文字が含まれている場合は translateText で確実に翻訳
   if (/[\u3040-\u30ff\u4e00-\u9faf]/.test(snippet)) {
     try {
-      const transRes = await fetch(
-        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${targetLang}&dt=t&q=${encodeURIComponent(snippet)}`
-      );
-      const transData = await transRes.json();
-      const translatedSnippet = transData?.[0]?.map((x: string[]) => x[0]).join('');
-      if (translatedSnippet) {
-        snippet = translatedSnippet;
+      const translated = await translateText(snippet, targetLang, 'ja');
+      if (translated && !/[\u3040-\u30ff\u4e00-\u9faf]/.test(translated)) {
+        snippet = translated;
       }
     } catch (e) {
       console.error('Fallback snippet translate error:', e);

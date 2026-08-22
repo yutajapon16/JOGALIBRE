@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { parseYahooTimeRaw, parseJstDateTime } from '@/lib/utils';
+import { batchTranslateTitles, translateText } from '@/lib/translate';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -39,20 +40,15 @@ export async function GET(request: Request) {
         searchUrl = searchUrl.replace(/b=\d+/, `b=${start}`);
       }
     } else if (q) {
-      const controllerTranslate = new AbortController();
-      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
-      try {
-        const translateRes = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${lang}&tl=ja&dt=t&q=${encodeURIComponent(q)}`,
-          { signal: controllerTranslate.signal }
-        );
-        const translateData = await translateRes.json();
-        translatedKeyword = translateData?.[0]?.[0]?.[0] || q;
-      } catch (e) {
-        console.warn('Translation API timeout/error:', e);
+      if (lang === 'ja') {
         translatedKeyword = q;
-      } finally {
-        clearTimeout(timeoutTranslate);
+      } else {
+        try {
+          translatedKeyword = await translateText(q, 'ja', lang);
+        } catch (e) {
+          console.warn('Search query translation error:', e);
+          translatedKeyword = q;
+        }
       }
 
       const start = (page - 1) * itemsPerPage + 1;
@@ -462,56 +458,21 @@ export async function GET(request: Request) {
     }
 
 
-    // --- タイトル一括自動翻訳 (無料Google Translate API) ---
+    // --- タイトル一括自動翻訳 (Gemini API + 多重フォールバック) ---
     if (items.length > 0 && lang !== 'ja') {
-      const controllerTranslate = new AbortController();
-      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
       try {
-        // 各アイテムのインデックス番号をセパレーターとして使用し、翻訳時のズレを完全に防止する
-        // 例: "=== 0 ===\nタイトル1\n=== 1 ===\nタイトル2"
-        const titlesToTranslate = items.map((item, idx) => `=== ${idx} ===\n${item.title}`).join('\n');
-
-        // Google Translate API (gtx) を呼び出し (GETだとURL長制限に引っかかるためPOSTに変更)
-        const translateRes = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ q: titlesToTranslate }).toString(),
-            signal: controllerTranslate.signal
-          }
-        );
-        const translateData = await translateRes.json();
-
-        // 翻訳結果は配列の配列で返ってくる
-        if (translateData && translateData[0]) {
-          let fullTranslatedText = '';
-          for (let i = 0; i < translateData[0].length; i++) {
-            fullTranslatedText += translateData[0][i][0];
-          }
-
-          // === 数字 === のパターンを検出して、各インデックスの商品タイトルに正しくマッピングする
-          const regex = /===\s*(\d+)\s*===([^=]+)/g;
-          let match;
-          let matchCount = 0;
-          
-          while ((match = regex.exec(fullTranslatedText)) !== null) {
-            const index = parseInt(match[1], 10);
-            const text = match[2].replace(/^[\s\n]+/, '').trim();
-            if (index >= 0 && index < items.length) {
-              if (text) {
-                items[index].title = text;
-                matchCount++;
-              }
+        const rawTitles = items.map(item => (typeof item.title === 'string' ? item.title : '') || '');
+        const translatedTitles = await batchTranslateTitles(rawTitles, lang);
+        if (translatedTitles && translatedTitles.length === items.length) {
+          items.forEach((item, idx) => {
+            if (translatedTitles[idx]) {
+              item.title = translatedTitles[idx];
             }
-          }
-          console.log(`Title translation matched ${matchCount} / ${items.length} items.`);
+          });
         }
       } catch (translateError) {
-        console.error('Batch title translation error:', translateError);
+        console.error('Batch title translation error in search route:', translateError);
         // 翻訳に失敗した場合はそのまま日本語のタイトルで続行する（フェールセーフ）
-      } finally {
-        clearTimeout(timeoutTranslate);
       }
     }
 

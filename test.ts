@@ -1,4 +1,4 @@
-import { calculateDefaultFobCost, calculateDefaultShippingCost } from './lib/utils.ts';
+import { calculateDefaultFobCost, calculateDefaultShippingCost } from './lib/utils';
 console.log('FOB for supra URL:', calculateDefaultFobCost("some title", "https://example.com?jcat=supra"));
 console.log('Shipping for motor URL:', calculateDefaultShippingCost("some title", "https://example.com?jcat=motor"));
 
@@ -68,7 +68,7 @@ console.log('5. 一般顧客 (customerId=C456):', simulateProfitRate('C456')); /
 
 
 console.log('--- Local Cost (CSV based) Tests ---');
-import { calculateLocalCost, detectCategoryKey } from './lib/utils.ts';
+import { calculateLocalCost, detectCategoryKey } from './lib/utils';
 
 // 1. エンジン
 const engineItem = { productTitle: "テストエンジン 3SGTE", productUrl: "https://page.auctions.yahoo.co.jp/jp/auction/f12345?auccat=2084200282" };

@@ -4063,37 +4063,57 @@ export default function Home() {
   // 商品詳細を開く前に基本情報を事前キャッシュして詳細ページの0ms表示を実現する関数
   const prepareProductCache = (prod: SearchItem, dispPrice?: string, curr: string = selectedCurrency) => {
     if (typeof window === 'undefined') return;
-    const cleanId = extractAuctionId(prod.id || prod.url) || prod.id;
-    if (!cleanId) return;
-
-    const baseData = {
-      id: cleanId,
-      title: prod.title,
-      titleJa: prod.titleJa || prod.title,
-      url: prod.url,
-      currentPrice: prod.currentPrice,
-      displayPrice: dispPrice,
-      displayCurrency: curr,
-      imageUrl: prod.imageUrl,
-      images: prod.images && prod.images.length > 0 ? prod.images : [prod.imageUrl],
-      bids: prod.bids || 0,
-      endTime: prod.endTime,
-      timeLeft: prod.timeLeft,
-      categoryId: prod.categoryId,
-    };
-
-    // 既存のAI要約キャッシュがあれば合体して保存
-    const key = `joga_prod_cache_${cleanId}_${lang}`;
     try {
-      const existingRaw = sessionStorage.getItem(key) || localStorage.getItem(key);
-      if (existingRaw) {
-        const existing = JSON.parse(existingRaw);
-        if (existing.aiSummaryEs) (baseData as any).aiSummaryEs = existing.aiSummaryEs;
-        if (existing.aiSummaryPt) (baseData as any).aiSummaryPt = existing.aiSummaryPt;
-      }
-      sessionStorage.setItem(key, JSON.stringify(baseData));
-      localStorage.setItem(key, JSON.stringify(baseData));
-    } catch {}
+      const cleanId = extractAuctionId(prod.id || prod.url) || prod.id;
+      if (!cleanId) return;
+
+      const baseData = {
+        id: cleanId,
+        title: prod.title,
+        titleJa: prod.titleJa || prod.title,
+        url: prod.url,
+        currentPrice: prod.currentPrice,
+        displayPrice: dispPrice,
+        displayCurrency: curr,
+        imageUrl: prod.imageUrl,
+        images: prod.images && prod.images.length > 0 ? prod.images : [prod.imageUrl],
+        bids: prod.bids || 0,
+        endTime: prod.endTime,
+        timeLeft: prod.timeLeft,
+        categoryId: prod.categoryId,
+      };
+
+      // 既存のAI要約キャッシュがあれば合体して保存
+      const key = `joga_prod_cache_${cleanId}_${lang}`;
+      try {
+        const existingRaw = sessionStorage.getItem(key) || localStorage.getItem(key);
+        if (existingRaw) {
+          const existing = JSON.parse(existingRaw);
+          if (existing.aiSummaryEs) (baseData as any).aiSummaryEs = existing.aiSummaryEs;
+          if (existing.aiSummaryPt) (baseData as any).aiSummaryPt = existing.aiSummaryPt;
+        }
+      } catch {}
+      try { sessionStorage.setItem(key, JSON.stringify(baseData)); } catch {}
+      try { localStorage.setItem(key, JSON.stringify(baseData)); } catch {}
+    } catch (e) {
+      console.warn('prepareProductCache error:', e);
+    }
+  };
+
+  // 商品詳細URLを安全に生成するヘルパー関数
+  const buildProductDetailUrl = (product: SearchItem, displayPriceVal: string) => {
+    const rawUrl = (product.url || '') + (product.categoryId ? ((product.url || '').includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : '');
+    const searchParamsObj = new URLSearchParams();
+    searchParamsObj.set('url', rawUrl);
+    searchParamsObj.set('lang', lang);
+    if (currentCategory?.id) searchParamsObj.set('jcat', currentCategory.id);
+    if (searchType) searchParamsObj.set('st', searchType);
+    if (product.currentPrice) searchParamsObj.set('origPrice', String(product.currentPrice));
+    if (product.titleJa || product.title) searchParamsObj.set('titleJa', product.titleJa || product.title);
+    if (displayPriceVal) searchParamsObj.set('dispPrice', displayPriceVal);
+    searchParamsObj.set('currency', selectedCurrency);
+
+    return `/product/${encodeURIComponent(product.id)}?${searchParamsObj.toString()}`;
   };
 
   // 共通のカード描画関数
@@ -4110,31 +4130,42 @@ export default function Home() {
       product.id
     );
 
+    const detailHref = buildProductDetailUrl(product, displayPriceVal);
+
     return (
       <div key={`product-${isFavoriteTab ? 'fav' : 'search'}-${index}-${product.id}`} className="bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col h-full group">
 
         <div className="relative aspect-square w-full bg-gray-100 overflow-hidden">
-          {product.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={product.imageUrl}
-              alt={product.title || 'Product'}
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover transition-opacity duration-200"
-            />
-          ) : (
-            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-semibold">
-              No Image
-            </div>
-          )}
+          <a
+            href={detailHref}
+            onClick={() => prepareProductCache(product, displayPriceVal, selectedCurrency)}
+            className="block w-full h-full cursor-pointer"
+          >
+            {product.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={product.imageUrl}
+                alt={product.title || 'Product'}
+                loading="lazy"
+                decoding="async"
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover transition-opacity duration-200"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-semibold">
+                No Image
+              </div>
+            )}
+          </a>
 
           {/* お気に入り（★）ボタン（画像上・右下） */}
           <button
-            onClick={(e) => toggleFavorite(product, e)}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(product, e);
+            }}
             disabled={isTogglingFavorite === product.id}
-            className="absolute bottom-2 right-2 z-10 p-2 sm:p-2.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center group-hover:shadow-md"
+            className="absolute bottom-2 right-2 z-10 p-2 sm:p-2.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center group-hover:shadow-md cursor-pointer"
           >
             {isTogglingFavorite === product.id ? (
               <svg className="animate-spin h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -4149,13 +4180,19 @@ export default function Home() {
           </button>
         </div>
         <div className="p-3 sm:p-4 flex flex-col flex-1">
-          <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 leading-[1.25rem] h-[2.5rem] overflow-hidden w-full mb-2">{product.title}</h3>
+          <a
+            href={detailHref}
+            onClick={() => prepareProductCache(product, displayPriceVal, selectedCurrency)}
+            className="block mb-2 group-hover:text-indigo-600 transition-colors"
+          >
+            <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 leading-[1.25rem] h-[2.5rem] overflow-hidden w-full">{product.title}</h3>
+          </a>
 
           <div className="mt-auto space-y-1.5">
             <a
-              href={`/product/${product.id}?url=${encodeURIComponent((product.url || '') + (product.categoryId ? ((product.url || '').includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}${product.currentPrice ? `&origPrice=${product.currentPrice}` : ''}${product.titleJa ? `&titleJa=${encodeURIComponent(product.titleJa)}` : ''}&dispPrice=${encodeURIComponent(displayPriceVal)}&currency=${selectedCurrency}`}
+              href={detailHref}
               onClick={() => prepareProductCache(product, displayPriceVal, selectedCurrency)}
-              className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center"
+              className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center cursor-pointer transition-opacity"
             >
               {t.viewOnYahoo}
             </a>
@@ -4186,8 +4223,6 @@ export default function Home() {
                 )}
               </div>
             </div>
-
-
 
             {deliveryCountry !== 'JP' && (() => {
               const cost = getLocalCost(product);
@@ -8079,14 +8114,15 @@ export default function Home() {
                   })()}
                   {(() => {
                     const featuredDispPrice = calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id, selectedProduct.id);
+                    const modalDetailHref = buildProductDetailUrl(selectedProduct, featuredDispPrice);
                     return (
                       <a
-                        href={`/product/${selectedProduct.id}?url=${encodeURIComponent((selectedProduct.url || '') + (selectedProduct.categoryId ? ((selectedProduct.url || '').includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''))}&lang=${lang}${currentCategory?.id ? `&jcat=${currentCategory.id}` : ''}&st=${searchType}${selectedProduct.currentPrice ? `&origPrice=${selectedProduct.currentPrice}` : ''}${selectedProduct.titleJa ? `&titleJa=${encodeURIComponent(selectedProduct.titleJa)}` : ''}&dispPrice=${encodeURIComponent(featuredDispPrice)}&currency=USD`}
+                        href={modalDetailHref}
                         onClick={() => {
-                          prepareProductCache(selectedProduct, featuredDispPrice, 'USD');
+                          prepareProductCache(selectedProduct, featuredDispPrice, selectedCurrency);
                           setSelectedProduct(null);
                         }}
-                        className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full"
+                        className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full cursor-pointer"
                       >
                         {t.viewOnYahoo}
                       </a>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { parseYahooTimeRaw } from '@/lib/utils';
+import { batchTranslateTitles } from '@/lib/translate';
 
 // 日本の多様な人気・注目商品の検索キーワードプール
 const FEATURED_SEARCH_KEYWORDS = [
@@ -298,41 +299,18 @@ export async function GET(request: Request) {
     
     // タイトルの自動翻訳（日本語以外の言語の場合）
     if (finalItems.length > 0 && lang !== 'ja') {
-      const controllerTranslate = new AbortController();
-      const timeoutTranslate = setTimeout(() => controllerTranslate.abort(), 5000);
       try {
-        const titlesToTranslate = finalItems.map((item, idx) => `=== ${idx} ===\n${item.titleJa || item.title}`).join('\n');
-        const translateRes = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=${lang}&dt=t`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ q: titlesToTranslate }).toString(),
-            signal: controllerTranslate.signal
-          }
-        );
-        const translateData = await translateRes.json();
-        
-        if (translateData && translateData[0]) {
-          let fullTranslatedText = '';
-          for (let i = 0; i < translateData[0].length; i++) {
-            fullTranslatedText += translateData[0][i][0];
-          }
-          
-          const regex = /===\s*(\d+)\s*===([^=]+)/g;
-          let match;
-          while ((match = regex.exec(fullTranslatedText)) !== null) {
-            const index = parseInt(match[1], 10);
-            const text = match[2].replace(/^[\s\n]+/, '').trim();
-            if (index >= 0 && index < finalItems.length && text) {
-              finalItems[index].title = text;
+        const titlesToTranslate = finalItems.map((item) => item.titleJa || item.title || '');
+        const translated = await batchTranslateTitles(titlesToTranslate, lang);
+        if (translated && translated.length === finalItems.length) {
+          finalItems.forEach((item, idx) => {
+            if (translated[idx]) {
+              item.title = translated[idx];
             }
-          }
+          });
         }
       } catch (transErr) {
         console.warn('Featured items translation error:', transErr);
-      } finally {
-        clearTimeout(timeoutTranslate);
       }
     }
     
