@@ -241,26 +241,66 @@ export async function POST(request: Request) {
     // アクション 1: 一括送金完了（mark_remitted）
     if (action === 'mark_remitted') {
       const { orderIds } = body;
+      const nowIso = new Date().toISOString();
 
-      let query = supabaseAdmin
-        .from('bid_requests')
-        .update({
-          foxbit_remittance_status: 'remitted',
-          foxbit_remitted_at: new Date().toISOString(),
-          foxbit_remitted_by: auth.user?.email || 'admin',
-        });
+      let targetIds = orderIds;
 
-      if (Array.isArray(orderIds) && orderIds.length > 0) {
-        query = query.in('id', orderIds);
-      } else {
-        // orderIds未指定時は未送金全件を対象にする
-        query = query
+      // orderIds未指定時は、未送金の対象注文を特定
+      if (!Array.isArray(targetIds) || targetIds.length === 0) {
+        const { data: rawOrders } = await supabaseAdmin
+          .from('bid_requests')
+          .select('id, customer_email, customer_id, agent_customer_id, delivery_country')
           .eq('final_status', 'won')
           .or('paid.eq.true,paid_brazil.eq.true')
           .or('foxbit_remittance_status.eq.pending,foxbit_remittance_status.is.null');
+
+        if (rawOrders && rawOrders.length > 0) {
+          const emails = Array.from(new Set(rawOrders.map(o => o.customer_email).filter(Boolean)));
+          let uMap: Record<string, any> = {};
+          if (emails.length > 0) {
+            const { data: uData } = await supabaseAdmin
+              .from('user_roles')
+              .select('email, customer_id, agent_customer_id, country, role')
+              .in('email', emails);
+            if (uData) {
+              uMap = uData.reduce((acc, u) => {
+                acc[(u.email || '').trim().toLowerCase()] = u;
+                return acc;
+              }, {} as Record<string, any>);
+            }
+          }
+
+          targetIds = rawOrders.filter(order => {
+            const email = (order.customer_email || '').trim().toLowerCase();
+            const u = uMap[email];
+            if (!u) return false;
+            const isB001 = u.agent_customer_id === 'B001' || u.customer_id === 'B001' || order.agent_customer_id === 'B001' || order.customer_id === 'B001';
+            const country = (u.country || order.delivery_country || '').trim().toLowerCase();
+            const isBrasilAgent = u.role === 'agent' && (country === 'brasil' || country === 'brazil');
+            return isB001 || isBrasilAgent;
+          }).map(o => o.id);
+        }
       }
 
-      const { data, error } = await query.select('id');
+      if (!Array.isArray(targetIds) || targetIds.length === 0) {
+        return NextResponse.json({
+          success: true,
+          message: '送金対象の注文がありませんでした。',
+          updated_count: 0,
+        });
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('bid_requests')
+        .update({
+          foxbit_remittance_status: 'remitted',
+          foxbit_remitted_at: nowIso,
+          foxbit_remitted_by: auth.user?.email || 'admin',
+          paid_japan: true,
+          paid_japan_at: nowIso,
+        })
+        .in('id', targetIds)
+        .select('id');
 
       if (error) {
         console.error('[Foxbit API] Error updating remittance status:', error);
@@ -269,7 +309,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `${data?.length || 0} 件の注文を送金済みとして記録しました。`,
+        message: `${data?.length || 0} 件の注文を送金済み（日本支払済）として記録しました。`,
         updated_count: data?.length || 0,
       });
     }

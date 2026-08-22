@@ -684,8 +684,10 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        alert('送金済みとして記録しました。');
+        alert('送金済みとして記録しました。\n（購入タブの日本支払額も自動で「支払済」に更新されました）');
         fetchFoxbitData(true);
+        fetchPurchasedItems();
+        fetchFinancials(financialMonth, true);
       } else {
         const err = await res.json();
         alert('更新に失敗しました: ' + (err.error || 'エラー'));
