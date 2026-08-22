@@ -4258,7 +4258,7 @@ export default function AdminDashboard() {
                   <div className="bg-slate-800/80 rounded-lg p-3 border border-slate-700">
                     <div className="text-xs text-slate-400 font-semibold mb-1">📈 USDT/BRL 実勢レート</div>
                     <div className="text-xl sm:text-2xl font-black text-amber-400 font-mono">
-                      1 USDT = R$ {(foxbitData?.foxbit?.usdt_brl_rate || 5.20).toFixed(4)}
+                      1 USDT = R$ {(foxbitData?.foxbit?.usdt_brl_rate || 5.20).toFixed(4).replace('.', ',')}
                     </div>
                     <div className="text-xs text-slate-400 mt-1">Foxbit 24h 実勢スワップレート</div>
                   </div>
