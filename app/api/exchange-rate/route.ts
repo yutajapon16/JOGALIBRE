@@ -4,9 +4,12 @@ export const revalidate = 0;
 import { NextResponse } from 'next/server';
 import { getResilientExchangeRate } from '@/lib/exchange';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const rateData = await getResilientExchangeRate();
+    const { searchParams } = new URL(req.url);
+    const forceRefresh = searchParams.get('force') === 'true' || searchParams.get('refresh') === 'true';
+
+    const rateData = await getResilientExchangeRate(forceRefresh);
 
     return NextResponse.json(
       {
@@ -30,7 +33,7 @@ export async function GET() {
         usdToJpy: 150,
         rates: {
           JPY: 150,
-          BRL: 5.6,
+          BRL: 5.24,
           PYG: 7500,
           CLP: 930,
           BOB: 6.9,

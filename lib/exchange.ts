@@ -1,7 +1,9 @@
-// 為替レートのレジリエンス（弾力性）管理モジュール
-// Foxbit API (BRL) および国際為替APIから取得し、1時間キャッシュで安定したレートを提供します。
+// 為替レートのレジリエンス（弾力性）および全ユーザー完全同期モジュール
+// データベース (Supabase system_settings) を単一真実源 (Single Source of Truth) として一元管理し、
+// Vercel Serverlessの複数インスタンス間でも全ユーザー・管理者に100%同一のレートを提供します。
 
 import { foxbitClient } from './foxbit';
+import { supabaseAdmin } from './supabase-admin';
 
 export interface ExchangeRates {
   JPY: number;
@@ -12,53 +14,80 @@ export interface ExchangeRates {
   ARS: number;
 }
 
-let cachedRates: ExchangeRates = {
+const DEFAULT_RATES: ExchangeRates = {
   JPY: 155.73,
-  BRL: 5.6,
+  BRL: 5.24,
   PYG: 7500,
   CLP: 930,
   BOB: 6.9,
   ARS: 935,
 };
 
-let lastUpdated: number = 0;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1時間キャッシュ (3600秒)
 
+interface DbCachedRateData {
+  rates: ExchangeRates;
+  updated_at: string;
+  foxbit_raw_rate?: number;
+}
+
 /**
- * 1時間キャッシュ付きで最新の為替レート(各通貨)を取得します。
- * BRLレートは Foxbit API (USDT/BRL 実勢レート) + R$ 0.05 を最優先で取得します。
+ * データベースで一元同期された最新為替レートを取得します。
+ * 全ユーザー（管理者・顧客全アカウント）に100%同一のレートが返ります。
  */
-export async function getResilientExchangeRate(): Promise<{
+export async function getResilientExchangeRate(forceRefresh: boolean = false): Promise<{
   rates: ExchangeRates;
   isCached: boolean;
   lastUpdated: string;
 }> {
-  const now = Date.now();
+  // 1. Supabase (system_settings) から共有レートを取得（強制更新でない場合）
+  let dbCachedData: DbCachedRateData | null = null;
+  if (!forceRefresh) {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'latest_exchange_rates')
+        .maybeSingle();
 
-  // 1. 有効期限内（1時間以内）のキャッシュが存在する場合は即座に返却
-  if (lastUpdated > 0 && (now - lastUpdated) < CACHE_TTL_MS) {
-    return {
-      rates: cachedRates,
-      isCached: true,
-      lastUpdated: new Date(lastUpdated).toISOString(),
-    };
+      if (!error && data?.value?.rates && data?.value?.updated_at) {
+        const val = data.value as DbCachedRateData;
+        dbCachedData = val;
+        const lastUpdatedTime = new Date(val.updated_at).getTime();
+        const ageMs = Date.now() - lastUpdatedTime;
+
+        // 1時間以内であれば、DB上の共有レートを全ユーザーに返却
+        if (ageMs >= 0 && ageMs < CACHE_TTL_MS) {
+          return {
+            rates: val.rates,
+            isCached: true,
+            lastUpdated: val.updated_at,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('[Exchange Rate DB Fetch Error]:', err);
+    }
   }
 
-  // 2. Foxbit APIから最新の USDT/BRL 実勢レートを取得（最優先）
+  // 2. 1時間以上経過または強制更新の場合、Foxbit APIから最新実勢レートを取得
   let foxbitBrlRate: number | null = null;
+  let foxbitRawRate: number | null = null;
   try {
     if (foxbitClient.isConfigured()) {
       const liveRate = await foxbitClient.getUsdtBrlRate();
       if (liveRate > 0) {
-        const brlBuffer = 0.05; // Foxbit実勢レートに +0.05 レアルの安全バッファ
+        foxbitRawRate = liveRate;
+        const brlBuffer = 0.05; // 安全バッファ (+5センタボ)
         foxbitBrlRate = Math.round((liveRate + brlBuffer) * 10000) / 10000;
       }
     }
   } catch (err) {
-    console.warn('[Exchange Rate] Foxbit rate fetch warning, falling back to market API:', err);
+    console.warn('[Exchange Rate Foxbit Error]:', err);
   }
 
-  // 3. メインAPI (exchangerate-api.com) からJPYおよびその他の通貨レートを取得
+  // 3. JPYおよびその他の通貨レートを外部APIから取得
+  let newRates: ExchangeRates = dbCachedData?.rates ? { ...dbCachedData.rates } : { ...DEFAULT_RATES };
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
@@ -71,76 +100,46 @@ export async function getResilientExchangeRate(): Promise<{
 
     const jpyMarketRate = data?.rates?.JPY;
     if (jpyMarketRate && jpyMarketRate > 50) {
-      const jpyTtbRate = jpyMarketRate - 3.5; // JPYはTTBレート相当（-3.5円）
+      const jpyTtbRate = jpyMarketRate - 3.5;
       const brlBuffer = 0.05;
 
-      const newRates: ExchangeRates = {
+      newRates = {
         JPY: jpyTtbRate,
-        BRL: foxbitBrlRate || (data.rates.BRL ? data.rates.BRL + brlBuffer : cachedRates.BRL),
-        PYG: data.rates.PYG || cachedRates.PYG,
-        CLP: data.rates.CLP || cachedRates.CLP,
-        BOB: data.rates.BOB || cachedRates.BOB,
-        ARS: data.rates.ARS || cachedRates.ARS,
-      };
-
-      cachedRates = newRates;
-      lastUpdated = now;
-
-      return {
-        rates: newRates,
-        isCached: false,
-        lastUpdated: new Date(lastUpdated).toISOString(),
+        BRL: foxbitBrlRate || (data.rates.BRL ? Math.round((data.rates.BRL + brlBuffer) * 10000) / 10000 : (dbCachedData?.rates?.BRL || DEFAULT_RATES.BRL)),
+        PYG: data.rates.PYG || dbCachedData?.rates?.PYG || DEFAULT_RATES.PYG,
+        CLP: data.rates.CLP || dbCachedData?.rates?.CLP || DEFAULT_RATES.CLP,
+        BOB: data.rates.BOB || dbCachedData?.rates?.BOB || DEFAULT_RATES.BOB,
+        ARS: data.rates.ARS || dbCachedData?.rates?.ARS || DEFAULT_RATES.ARS,
       };
     }
-  } catch (error) {
-    console.warn('[Exchange Rate] Primary exchange rate API failed. Trying secondary API...', error);
+  } catch (err) {
+    console.warn('[Exchange Rate External API Error]:', err);
+    if (foxbitBrlRate) {
+      newRates.BRL = foxbitBrlRate;
+    }
   }
 
-  // 4. セカンダリAPI (open.er-api.com) へのフェイルオーバー
+  const updatedIso = new Date().toISOString();
+
+  // 4. 新しいレートを Supabase (system_settings) に一元保存（全ユーザー・全インスタンスへ即時同期）
   try {
-    const controller2 = new AbortController();
-    const timeoutId2 = setTimeout(() => controller2.abort(), 4000);
-
-    const response2 = await fetch('https://open.er-api.com/v6/latest/USD', {
-      signal: controller2.signal,
-    });
-    const data2 = await response2.json();
-    clearTimeout(timeoutId2);
-
-    const jpyMarketRate2 = data2?.rates?.JPY;
-    if (jpyMarketRate2 && jpyMarketRate2 > 50) {
-      const jpyTtbRate2 = jpyMarketRate2 - 3.5;
-      const brlBuffer = 0.05;
-
-      const newRates2: ExchangeRates = {
-        JPY: jpyTtbRate2,
-        BRL: foxbitBrlRate || (data2.rates.BRL ? data2.rates.BRL + brlBuffer : cachedRates.BRL),
-        PYG: data2.rates.PYG || cachedRates.PYG,
-        CLP: data2.rates.CLP || cachedRates.CLP,
-        BOB: data2.rates.BOB || cachedRates.BOB,
-        ARS: data2.rates.ARS || cachedRates.ARS,
-      };
-
-      cachedRates = newRates2;
-      lastUpdated = now;
-
-      return {
-        rates: newRates2,
-        isCached: false,
-        lastUpdated: new Date(lastUpdated).toISOString(),
-      };
-    }
-  } catch (error2) {
-    console.warn('[Exchange Rate] Secondary API failed. Falling back to cached rates:', error2);
+    await supabaseAdmin
+      .from('system_settings')
+      .upsert({
+        key: 'latest_exchange_rates',
+        value: {
+          rates: newRates,
+          updated_at: updatedIso,
+          foxbit_raw_rate: foxbitRawRate,
+        },
+      });
+  } catch (err) {
+    console.warn('[Exchange Rate DB Save Error]:', err);
   }
 
-  // 5. キャッシュまたは安全な最新実勢デフォルト値を返却
   return {
-    rates: {
-      ...cachedRates,
-      BRL: foxbitBrlRate || cachedRates.BRL,
-    },
-    isCached: true,
-    lastUpdated: lastUpdated > 0 ? new Date(lastUpdated).toISOString() : 'Never (using fallback defaults)',
+    rates: newRates,
+    isCached: false,
+    lastUpdated: updatedIso,
   };
 }
