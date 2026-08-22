@@ -15,12 +15,12 @@ export interface ExchangeRates {
 }
 
 const DEFAULT_RATES: ExchangeRates = {
-  JPY: 155.73,
-  BRL: 5.24,
-  PYG: 7500,
-  CLP: 930,
-  BOB: 6.9,
-  ARS: 935,
+  JPY: 155.45,
+  BRL: 5.22,
+  PYG: 6494.95,
+  CLP: 818.42,
+  BOB: 7.01,
+  ARS: 1497.45,
 };
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1時間キャッシュ (3600秒)
@@ -88,6 +88,9 @@ export async function getResilientExchangeRate(forceRefresh: boolean = false): P
 
   // 3. JPYおよびその他の通貨レートを外部APIから取得
   let newRates: ExchangeRates = dbCachedData?.rates ? { ...dbCachedData.rates } : { ...DEFAULT_RATES };
+  let fetchSuccess = false;
+
+  // メインAPI (exchangerate-api.com)
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
@@ -104,18 +107,50 @@ export async function getResilientExchangeRate(forceRefresh: boolean = false): P
       const brlBuffer = 0.05;
 
       newRates = {
-        JPY: jpyTtbRate,
-        BRL: foxbitBrlRate || (data.rates.BRL ? Math.round((data.rates.BRL + brlBuffer) * 10000) / 10000 : (dbCachedData?.rates?.BRL || DEFAULT_RATES.BRL)),
-        PYG: data.rates.PYG || dbCachedData?.rates?.PYG || DEFAULT_RATES.PYG,
-        CLP: data.rates.CLP || dbCachedData?.rates?.CLP || DEFAULT_RATES.CLP,
-        BOB: data.rates.BOB || dbCachedData?.rates?.BOB || DEFAULT_RATES.BOB,
-        ARS: data.rates.ARS || dbCachedData?.rates?.ARS || DEFAULT_RATES.ARS,
+        JPY: Math.round(jpyTtbRate * 100) / 100,
+        BRL: foxbitBrlRate || (data.rates.BRL ? Math.round((data.rates.BRL + brlBuffer) * 10000) / 10000 : newRates.BRL),
+        PYG: data.rates.PYG ? Math.round(data.rates.PYG * 100) / 100 : newRates.PYG,
+        CLP: data.rates.CLP ? Math.round(data.rates.CLP * 100) / 100 : newRates.CLP,
+        BOB: data.rates.BOB ? Math.round(data.rates.BOB * 100) / 100 : newRates.BOB,
+        ARS: data.rates.ARS ? Math.round(data.rates.ARS * 100) / 100 : newRates.ARS,
       };
+      fetchSuccess = true;
     }
   } catch (err) {
-    console.warn('[Exchange Rate External API Error]:', err);
-    if (foxbitBrlRate) {
-      newRates.BRL = foxbitBrlRate;
+    console.warn('[Exchange Rate Primary API Error]:', err);
+  }
+
+  // セカンダリAPI (open.er-api.com) へのフェイルオーバー
+  if (!fetchSuccess) {
+    try {
+      const controller2 = new AbortController();
+      const timeoutId2 = setTimeout(() => controller2.abort(), 4000);
+
+      const response2 = await fetch('https://open.er-api.com/v6/latest/USD', {
+        signal: controller2.signal,
+      });
+      const data2 = await response2.json();
+      clearTimeout(timeoutId2);
+
+      const jpyMarketRate2 = data2?.rates?.JPY;
+      if (jpyMarketRate2 && jpyMarketRate2 > 50) {
+        const jpyTtbRate2 = jpyMarketRate2 - 3.5;
+        const brlBuffer = 0.05;
+
+        newRates = {
+          JPY: Math.round(jpyTtbRate2 * 100) / 100,
+          BRL: foxbitBrlRate || (data2.rates.BRL ? Math.round((data2.rates.BRL + brlBuffer) * 10000) / 10000 : newRates.BRL),
+          PYG: data2.rates.PYG ? Math.round(data2.rates.PYG * 100) / 100 : newRates.PYG,
+          CLP: data2.rates.CLP ? Math.round(data2.rates.CLP * 100) / 100 : newRates.CLP,
+          BOB: data2.rates.BOB ? Math.round(data2.rates.BOB * 100) / 100 : newRates.BOB,
+          ARS: data2.rates.ARS ? Math.round(data2.rates.ARS * 100) / 100 : newRates.ARS,
+        };
+      }
+    } catch (err2) {
+      console.warn('[Exchange Rate Secondary API Error]:', err2);
+      if (foxbitBrlRate) {
+        newRates.BRL = foxbitBrlRate;
+      }
     }
   }
 
