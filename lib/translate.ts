@@ -73,23 +73,20 @@ export async function batchTranslateTitles(titles: string[], targetLang: string)
     return results;
   }
 
-  // 2. 未キャッシュ分の Gemini API 一括高速翻訳
+  // 2. 未キャッシュ分のチャンク分割並列翻訳 (10件/チャンクで高速並列処理)
   const apiKey = process.env.GEMINI_API_KEY;
-  let translatedUncached: string[] | null = null;
+  const CHUNK_SIZE = 10;
+  const chunkPromises: Promise<string[]>[] = [];
 
-  if (apiKey) {
-    translatedUncached = await translateWithGeminiBatch(uncachedTitles, targetLang, apiKey);
+  for (let i = 0; i < uncachedTitles.length; i += CHUNK_SIZE) {
+    const chunk = uncachedTitles.slice(i, i + CHUNK_SIZE);
+    chunkPromises.push(
+      translateChunkWithFallback(chunk, targetLang, apiKey)
+    );
   }
 
-  // 3. Gemini が失敗した場合は GTX / MyMemory フォールバック
-  if (!translatedUncached || translatedUncached.length !== uncachedTitles.length) {
-    translatedUncached = await translateWithGtxBatch(uncachedTitles, targetLang);
-  }
-
-  if (!translatedUncached || translatedUncached.length !== uncachedTitles.length) {
-    // 最終フォールバック
-    translatedUncached = uncachedTitles;
-  }
+  const chunkResults = await Promise.all(chunkPromises);
+  const translatedUncached = chunkResults.flat();
 
   // 結果のマッピングとキャッシュ保存
   uncachedIndices.forEach((origIdx, i) => {
@@ -102,6 +99,34 @@ export async function batchTranslateTitles(titles: string[], targetLang: string)
   });
 
   return results;
+}
+
+/**
+ * 1チャンク（最大10件）の高速翻訳 + 多重フォールバック
+ */
+async function translateChunkWithFallback(chunk: string[], targetLang: string, apiKey?: string): Promise<string[]> {
+  if (apiKey) {
+    const geminiResult = await translateWithGeminiBatch(chunk, targetLang, apiKey);
+    if (geminiResult && geminiResult.length === chunk.length) {
+      return geminiResult;
+    }
+  }
+
+  // GTX バッチフォールバック
+  const gtxResult = await translateWithGtxBatch(chunk, targetLang);
+  if (gtxResult && gtxResult.length === chunk.length) {
+    return gtxResult;
+  }
+
+  // 個別 MyMemory フォールバック
+  try {
+    const memoryResults = await Promise.all(
+      chunk.map(t => translateWithMyMemory(t, targetLang, 'ja').catch(() => t))
+    );
+    return memoryResults;
+  } catch {
+    return chunk;
+  }
 }
 
 /**
@@ -118,6 +143,8 @@ export async function translateText(text: string, targetLang: string, sourceLang
 
       for (const model of GEMINI_MODELS) {
         try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 6000);
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
           const res = await fetch(url, {
             method: 'POST',
@@ -125,8 +152,10 @@ export async function translateText(text: string, targetLang: string, sourceLang
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: { maxOutputTokens: 2000, temperature: 0.1 }
-            })
+            }),
+            signal: controller.signal
           });
+          clearTimeout(timeout);
           if (res.ok) {
             const data = await res.json();
             const translated = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
@@ -164,15 +193,14 @@ export async function translateText(text: string, targetLang: string, sourceLang
 }
 
 /**
- * Gemini API を用いたタイトル一括翻訳内部関数
+ * Gemini API を用いたタイトル一括翻訳内部関数 (1チャンク分)
  */
 async function translateWithGeminiBatch(titles: string[], targetLang: string, apiKey: string): Promise<string[] | null> {
   const targetLangName = targetLang === 'es' ? 'Spanish (Español)' : targetLang === 'pt' ? 'Portuguese (Português)' : targetLang;
 
-  // JSON 配列としてリクエスト
   const prompt = `You are a professional translator for an e-commerce auction proxy service.
 Translate each of the following product titles from Japanese into ${targetLangName}.
-Return ONLY a valid JSON array of translated strings in the EXACT same order and array length as the input.
+Return ONLY a valid JSON array of ${titles.length} translated strings in the EXACT same order and array length as the input.
 Do NOT output markdown code fences, backticks, or any explanatory text. Return purely the JSON array.
 
 Input JSON:
@@ -181,7 +209,7 @@ ${JSON.stringify(titles)}`;
   for (const model of GEMINI_MODELS) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4000);
+      const timeout = setTimeout(() => controller.abort(), 7000);
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const response = await fetch(url, {
@@ -190,7 +218,7 @@ ${JSON.stringify(titles)}`;
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
-            maxOutputTokens: 4000,
+            maxOutputTokens: 2500,
             temperature: 0.1,
             responseMimeType: 'application/json'
           }
@@ -222,7 +250,7 @@ ${JSON.stringify(titles)}`;
         }
       }
     } catch (e) {
-      console.warn(`Gemini batch translate failed with model ${model}:`, e);
+      // 次のモデルへ
     }
   }
   return null;
