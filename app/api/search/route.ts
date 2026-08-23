@@ -412,7 +412,7 @@ export async function GET(request: Request) {
       // 次のページが本当に存在するかどうかはヤフオクの仕様上「実際に取得してみないと分からない」ため、裏で先読みする
       if (!hasNextPageDom && hasNextPageByCount && typeof rawContainerCount !== 'undefined') {
         const controllerNext = new AbortController();
-        const timeoutNext = setTimeout(() => controllerNext.abort(), 5000);
+        const timeoutNext = setTimeout(() => controllerNext.abort(), 2000);
         try {
           const nextBValue = (page * itemsPerPage) + 1; // 次ページの先頭インデックス
           const connector = searchUrl.includes('?') ? '&' : '?';

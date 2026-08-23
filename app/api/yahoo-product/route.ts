@@ -345,79 +345,56 @@ export async function POST(request: Request) {
     let aiSummaryEs = isCacheValid && isRealSummary(cachedItem.aiSummaryEs) ? cachedItem.aiSummaryEs || '' : '';
     let aiSummaryPt = isCacheValid && isRealSummary(cachedItem.aiSummaryPt) ? cachedItem.aiSummaryPt || '' : '';
 
-    // 1. タイトルと説明文の翻訳（キャッシュ未ヒット時のみ実行）
-    if (lang !== 'ja') {
-      const needTitleTrans = !translatedTitle || translatedTitle === title;
-      const needDescTrans = !translatedDescription && description && !skipDescription;
-
-      if (needTitleTrans || needDescTrans) {
-        const translatePromises: Promise<void>[] = [];
-
-        if (needDescTrans) {
-          const translateDesc = async () => {
-            try {
-              const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2500);
-              const trans = await translateText(cleanDesc, lang, 'ja');
-              if (trans) {
-                translatedDescription = trans;
-              }
-            } catch (e) {
-              console.error('Description translation error in yahoo-product:', e);
-            }
-          };
-          translatePromises.push(translateDesc());
-        }
-
-        if (needTitleTrans && title) {
-          const translateTitleFn = async () => {
-            try {
-              const trans = await translateTitle(title, lang);
-              if (trans) {
-                translatedTitle = trans;
-              }
-            } catch (e) {
-              console.error('Title translation error in yahoo-product:', e);
-            }
-          };
-          translatePromises.push(translateTitleFn());
-        }
-
-        if (translatePromises.length > 0) {
-          await Promise.all(translatePromises);
-        }
-      }
-    }
-
-    // 2. 顧客の指定言語に応じたAI要約の生成（要求言語のみ高速生成 & キャッシュ活用）
+    // 1. タイトル翻訳とAI要約を最優先・完全並列実行 (超高速化)
     const targetLangForAi: 'es' | 'pt' = lang === 'pt' ? 'pt' : 'es';
-    const needAiEs = targetLangForAi === 'es' && !aiSummaryEs;
-    const needAiPt = targetLangForAi === 'pt' && !aiSummaryPt;
+    const needAi = !skipAiSummary && description && ((targetLangForAi === 'es' && !aiSummaryEs) || (targetLangForAi === 'pt' && !aiSummaryPt));
+    const needTitleTrans = lang !== 'ja' && (!translatedTitle || translatedTitle === title) && title;
 
-    if (description && !skipAiSummary && (needAiEs || needAiPt)) {
-      const controllerAi = new AbortController();
-      const timeoutAi = setTimeout(() => controllerAi.abort(), 12000);
+    const parallelTasks: Promise<void>[] = [];
+
+    // タイトル高速翻訳タスク
+    if (needTitleTrans) {
+      parallelTasks.push(
+        translateTitle(title, lang)
+          .then((trans) => { if (trans) translatedTitle = trans; })
+          .catch((e) => { console.error('Title translation error:', e); })
+      );
+    }
+
+    // AI要約高速生成タスク (Gemini 2.5 Flash Lite で 1〜2秒生成)
+    if (needAi) {
+      const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 3000);
+      parallelTasks.push(
+        generateAiSummary(cleanDesc, targetLangForAi)
+          .then((summary) => {
+            if (targetLangForAi === 'es') aiSummaryEs = summary;
+            else aiSummaryPt = summary;
+          })
+          .catch(async (err) => {
+            console.error(`Gemini ${targetLangForAi.toUpperCase()} Summary error:`, err);
+            const fallback = await buildFallbackSummary(cleanDesc, targetLangForAi);
+            if (targetLangForAi === 'es') aiSummaryEs = fallback;
+            else aiSummaryPt = fallback;
+          })
+      );
+    }
+
+    if (parallelTasks.length > 0) {
+      await Promise.all(parallelTasks);
+    }
+
+    // AI要約がどうしても失敗した場合のみ、説明文のGoogle翻訳をフォールバック実行
+    const currentAiSummary = targetLangForAi === 'es' ? aiSummaryEs : aiSummaryPt;
+    if (lang !== 'ja' && description && !skipDescription && !translatedDescription && (!isRealSummary(currentAiSummary))) {
       try {
-        const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2500);
-        if (needAiEs) {
-          aiSummaryEs = await generateAiSummary(cleanDesc, 'es', translatedDescription).catch(async err => {
-            console.error('Gemini ES Summary error:', err);
-            return await buildFallbackSummary(translatedDescription || cleanDesc, 'es');
-          });
-        }
-        if (needAiPt) {
-          aiSummaryPt = await generateAiSummary(cleanDesc, 'pt', translatedDescription).catch(async err => {
-            console.error('Gemini PT Summary error:', err);
-            return await buildFallbackSummary(translatedDescription || cleanDesc, 'pt');
-          });
-        }
+        const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 2000);
+        translatedDescription = await translateText(cleanDesc, lang, 'ja');
       } catch (e) {
-        console.error('AI Summary overall error:', e);
-      } finally {
-        clearTimeout(timeoutAi);
+        console.error('Fallback description translation error:', e);
       }
     }
 
-    // 3. キャッシュの更新（本物のAI要約のみキャッシュに記憶し、フォールバック文面はキャッシュしない）
+    // 2. キャッシュの更新（本物のAI要約のみキャッシュに記憶し、フォールバック文面はキャッシュしない）
     productAiCache.set(productId, {
       aiSummaryEs: isRealSummary(aiSummaryEs) ? aiSummaryEs : (isRealSummary(cachedItem?.aiSummaryEs) ? cachedItem?.aiSummaryEs : undefined),
       aiSummaryPt: isRealSummary(aiSummaryPt) ? aiSummaryPt : (isRealSummary(cachedItem?.aiSummaryPt) ? cachedItem?.aiSummaryPt : undefined),
@@ -552,12 +529,12 @@ Descrição do produto:
 ${textToSummarize}`;
 
   const prompt = targetLang === 'es' ? promptEs : promptPt;
-  const models = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-3.6-flash'];
+  const models = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.6-flash'];
 
   for (const model of models) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 9000);
+      const timeout = setTimeout(() => controller.abort(), 5000);
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const response = await fetch(url, {

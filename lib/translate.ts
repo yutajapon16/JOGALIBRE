@@ -1,21 +1,45 @@
 /**
  * 翻訳ユーティリティモジュール
- * Gemini API（最新モデル）による高速・高品質なバッチ翻訳および多重フォールバックを提供
+ * インメモリキャッシュ + Gemini 2.5 Flash Lite による超高速・高品質なバッチ翻訳
  */
 
-const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-3.6-flash'];
+// 超高速・高スループットモデルを最優先
+const GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.6-flash'];
+
+// 翻訳結果のインメモリキャッシュ (Key: `${targetLang}:${sourceText}`)
+const translationMemoryCache = new Map<string, string>();
+const MAX_CACHE_SIZE = 10000;
+
+function getCachedTranslation(text: string, targetLang: string): string | undefined {
+  if (!text) return text;
+  return translationMemoryCache.get(`${targetLang}:${text.trim()}`);
+}
+
+function setCachedTranslation(text: string, targetLang: string, translated: string) {
+  if (!text || !translated) return;
+  if (translationMemoryCache.size >= MAX_CACHE_SIZE) {
+    // 古いエントリを間引く
+    const firstKey = translationMemoryCache.keys().next().value;
+    if (firstKey) translationMemoryCache.delete(firstKey);
+  }
+  translationMemoryCache.set(`${targetLang}:${text.trim()}`, translated.trim());
+}
 
 /**
  * 単一タイトルの翻訳
  */
 export async function translateTitle(title: string, targetLang: string): Promise<string> {
   if (!title || targetLang === 'ja') return title;
+  const cached = getCachedTranslation(title, targetLang);
+  if (cached) return cached;
+
   const results = await batchTranslateTitles([title], targetLang);
   return results[0] || title;
 }
 
 /**
  * 複数商品タイトルの一括高速翻訳
+ * インメモリキャッシュを最優先参照し、未翻訳分のみを Gemini で並列バッチ翻訳
  * @param titles 翻訳対象のタイトル配列
  * @param targetLang 翻訳先言語（'es' または 'pt' 等）
  * @returns 翻訳されたタイトル配列（元の配列と同じ長さ・順序）
@@ -25,33 +49,59 @@ export async function batchTranslateTitles(titles: string[], targetLang: string)
     return titles || [];
   }
 
-  // 1. Gemini API による一括翻訳
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (apiKey) {
-    const geminiResult = await translateWithGeminiBatch(titles, targetLang, apiKey);
-    if (geminiResult && geminiResult.length === titles.length) {
-      return geminiResult;
+  const results: string[] = new Array(titles.length);
+  const uncachedIndices: number[] = [];
+  const uncachedTitles: string[] = [];
+
+  // 1. キャッシュヒット確認
+  titles.forEach((title, idx) => {
+    if (!title || typeof title !== 'string') {
+      results[idx] = '';
+      return;
     }
+    const cached = getCachedTranslation(title, targetLang);
+    if (cached) {
+      results[idx] = cached;
+    } else {
+      uncachedIndices.push(idx);
+      uncachedTitles.push(title);
+    }
+  });
+
+  // 全てキャッシュヒットしていたら即時返却 (0ms)
+  if (uncachedTitles.length === 0) {
+    return results;
   }
 
-  // 2. Google Translate (gtx) によるバッチ翻訳フォールバック
-  const gtxResult = await translateWithGtxBatch(titles, targetLang);
-  if (gtxResult && gtxResult.length === titles.length) {
-    return gtxResult;
+  // 2. 未キャッシュ分の Gemini API 一括高速翻訳
+  const apiKey = process.env.GEMINI_API_KEY;
+  let translatedUncached: string[] | null = null;
+
+  if (apiKey) {
+    translatedUncached = await translateWithGeminiBatch(uncachedTitles, targetLang, apiKey);
   }
 
-  // 3. MyMemory API による個別フォールバック（重要タイトルまたは短縮処理）
-  try {
-    const fallbackResults = await Promise.all(
-      titles.map(async (t) => {
-        if (!t) return t;
-        return await translateWithMyMemory(t, targetLang, 'ja').catch(() => t);
-      })
-    );
-    return fallbackResults;
-  } catch {
-    return titles;
+  // 3. Gemini が失敗した場合は GTX / MyMemory フォールバック
+  if (!translatedUncached || translatedUncached.length !== uncachedTitles.length) {
+    translatedUncached = await translateWithGtxBatch(uncachedTitles, targetLang);
   }
+
+  if (!translatedUncached || translatedUncached.length !== uncachedTitles.length) {
+    // 最終フォールバック
+    translatedUncached = uncachedTitles;
+  }
+
+  // 結果のマッピングとキャッシュ保存
+  uncachedIndices.forEach((origIdx, i) => {
+    const origTitle = uncachedTitles[i];
+    const transTitle = (translatedUncached && translatedUncached[i]) ? translatedUncached[i] : origTitle;
+    results[origIdx] = transTitle;
+    if (transTitle && transTitle !== origTitle) {
+      setCachedTranslation(origTitle, targetLang, transTitle);
+    }
+  });
+
+  return results;
 }
 
 /**
@@ -131,7 +181,7 @@ ${JSON.stringify(titles)}`;
   for (const model of GEMINI_MODELS) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
+      const timeout = setTimeout(() => controller.abort(), 4000);
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const response = await fetch(url, {

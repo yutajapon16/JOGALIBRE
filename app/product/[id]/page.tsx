@@ -106,7 +106,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   // ローディングState (productが初期化されていれば即時表示のため初期値false)
   const [loading, setLoading] = useState<boolean>(() => !product);
-  const [lang, setLang] = useState<'es' | 'pt'>('es');
+  const [lang, setLang] = useState<'es' | 'pt'>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryLang = urlParams.get('lang');
+      if (queryLang === 'es' || queryLang === 'pt') return queryLang;
+      const saved = localStorage.getItem('lang');
+      if (saved === 'es' || saved === 'pt') return saved;
+    }
+    return 'es';
+  });
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(() => {
+    if (product) {
+      const currentLang = (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('lang') || localStorage.getItem('lang') || 'es') : 'es');
+      const hasSummary = currentLang === 'es' ? !!product.aiSummaryEs : !!product.aiSummaryPt;
+      return !hasSummary;
+    }
+    return true;
+  });
   
   // ログインユーザー情報をキャッシュから同期的に初期ロード（表示のちらつきや金額計算の不一致を防止）
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -444,6 +461,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
 
     // 2. バックグラウンドで最新情報を取得・同期
+    setIsAiLoading(!cachedData || !(lang === 'es' ? cachedData.aiSummaryEs : cachedData.aiSummaryPt));
     const fetchProduct = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -482,6 +500,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         console.error('Error fetching product details:', err);
       } finally {
         setLoading(false);
+        setIsAiLoading(false);
       }
     };
 
@@ -1018,20 +1037,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </h3>
 
           {aiSummary ? (
-            // カラーカードを使わず、シンプルで視認性の高い箇条書き改行デザイン
+            // カラーカードを使わず、シンプルで視認性の高い箇条書き改行デザイン（AI要約を最優先表示）
             <div className="text-xs text-gray-800 leading-relaxed whitespace-pre-line font-medium bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans animate-in fade-in duration-300">
               {aiSummary}
             </div>
-          ) : product.translatedDescription ? (
-            // AI要約が無い場合のGoogle翻訳フォールバック
-            <div className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap animate-in fade-in duration-300">
+          ) : isAiLoading ? (
+            // AI生成中の読み込みスケルトン
+            <div className="text-xs text-indigo-600 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 py-4 flex items-center justify-center gap-2.5 font-bold animate-pulse">
+              <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-indigo-600 border-t-transparent"></span>
+              <span>{lang === 'es' ? '🤖 Generando resumen con IA...' : '🤖 Gerando resumo com IA...'}</span>
+            </div>
+          ) : product?.translatedDescription ? (
+            // AI要約がどうしても失敗した場合のみのGoogle翻訳フォールバック
+            <div className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap animate-in fade-in duration-300 bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans">
               {product.translatedDescription}
             </div>
           ) : (
-            // 読み込み中スケルトン
-            <div className="text-xs text-gray-400 py-3 flex items-center gap-2 font-medium animate-pulse">
-              <span className="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent"></span>
-              <span>{lang === 'es' ? 'Generando resumen con IA...' : 'Gerando resumo com IA...'}</span>
+            <div className="text-xs text-gray-400 py-3 flex items-center gap-2 font-medium">
+              <span>{lang === 'es' ? 'No hay información adicional disponible.' : 'Nenhuma informação adicional disponível.'}</span>
             </div>
           )}
 
