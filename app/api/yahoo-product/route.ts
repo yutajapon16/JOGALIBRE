@@ -499,14 +499,24 @@ Tu tarea es traducir y resumir de forma clara, profesional y 100% en ESPAÑOL la
 
 REGLAS CRÍTICAS:
 1. Debes redactar TODO absolutamente en ESPAÑOL. No incluyas ningún carácter en japonés (kanji, hiragana, katakana).
-2. Estructura el resumen EXACTAMENTE con las siguientes 5 viñetas:
-- **Especificaciones / Detalles**: (marca, modelo, dimensiones, color, material, etc. Si no se indica, escribe "No especificado")
-- **Estado del producto**: (usado/nuevo, presencia de rayones, abolladuras, desgaste, manchas, etc.)
-- **Funcionamiento**: (probado y funcionando, sin probar, para repuestos / chatarra / junk, etc.)
-- **Accesorios**: (caja, cables, manuales o solo el artículo principal)
-- **Envío en Japón**: (detalles de envío si se mencionan)
+2. Estructura el resumen EXACTAMENTE con los siguientes 5 bloques separados por un salto de línea entre cada uno, usando viñetas claras:
 
-3. No incluyas saludos ni conclusiones. Limítate a las 5 viñetas en español.
+• **Especificaciones / Detalles**:
+(marca, modelo, dimensiones, color, material, etc. Si no se indica, escribe "No especificado")
+
+• **Estado del producto**:
+(usado/nuevo, presencia de rayones, abolladuras, desgaste, manchas, etc.)
+
+• **Funcionamiento**:
+(probado y funcionando, sin probar, para repuestos / chatarra / junk, etc.)
+
+• **Accesorios incluidos**:
+(caja, cables, manuales o solo el artículo principal)
+
+• **Envío en Japón**:
+(detalles de envío si se mencionan en la descripción)
+
+3. No incluyas saludos ni despedidas. Solo los 5 bloques con viñetas en español.
 
 Descripción del producto:
 ${textToSummarize}`;
@@ -516,20 +526,30 @@ Sua tarefa é traduzir e resumir de forma clara, profissional e 100% em PORTUGU�
 
 REGRAS CRÍTICAS:
 1. Você deve redigir TUDO absolutamente em PORTUGUÊS. Não inclua nenhum caractere em japonês (kanji, hiragana, katakana).
-2. Estruture o resumo EXATAMENTE com os seguintes 5 marcadores:
-- **Especificações / Detalhes**: (marca, modelo, dimensões, cor, material, etc. Se não constar, escreva "Não especificado")
-- **Estado do produto**: (usado/novo, presença de riscos, amassados, desgaste, manchas, etc.)
-- **Funcionamento**: (testado e funcionando, não testado, para peças / sucata / junk, etc.)
-- **Acessórios**: (caixa, cabos, manuais ou apenas o item principal)
-- **Envio no Japão**: (detalhes de envio se mencionados)
+2. Estruture o resumo EXATAMENTE com os seguintes 5 blocos separados por uma linha em branco entre cada um, usando marcadores claros:
 
-3. Não inclua saudações nem conclusões. Limite-se aos 5 marcadores em português.
+• **Especificações / Detalhes**:
+(marca, modelo, dimensões, cor, material, etc. Se não constar, escreva "Não especificado")
+
+• **Estado do produto**:
+(usado/novo, presença de riscos, amassados, desgaste, manchas, etc.)
+
+• **Funcionamento**:
+(testado e funcionando, não testado, para peças / sucata / junk, etc.)
+
+• **Acessórios incluídos**:
+(caixa, cabos, manuais ou apenas o item principal)
+
+• **Envio no Japão**:
+(detalhes de envio se mencionados na descrição)
+
+3. Não inclua saudações nem despedidas. Apenas os 5 blocos com marcadores em português.
 
 Descrição do produto:
 ${textToSummarize}`;
 
   const prompt = targetLang === 'es' ? promptEs : promptPt;
-  const models = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.6-flash'];
+  const models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
 
   for (const model of models) {
     try {

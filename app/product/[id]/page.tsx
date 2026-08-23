@@ -1037,35 +1037,38 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </h3>
 
           {aiSummary ? (
-            // カラーカードを使わず、シンプルで視認性の高い箇条書き改行デザイン（AI要約を最優先表示）
-            <div className="text-xs text-gray-800 leading-relaxed whitespace-pre-line font-medium bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans animate-in fade-in duration-300">
-              {aiSummary}
+            // 段落ごとに空行と箇条書きで区切られた見やすいAI要約デザイン
+            <div className="space-y-3">
+              <div className="text-xs text-gray-800 leading-relaxed whitespace-pre-line font-medium bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans animate-in fade-in duration-300">
+                {aiSummary}
+              </div>
+              {/* AI要約の免責事項（AI要約完了時のみ表示） */}
+              <p className="text-[10px] font-semibold leading-normal p-3 rounded-xl border bg-indigo-50 text-indigo-700 border-indigo-200 animate-in fade-in duration-300">
+                {t.aiDisclaimer}
+              </p>
             </div>
           ) : isAiLoading ? (
-            // AI生成中の読み込みスケルトン
+            // AI生成中の読み込みスケルトン（免責事項は一切非表示）
             <div className="text-xs text-indigo-600 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 py-4 flex items-center justify-center gap-2.5 font-bold animate-pulse">
               <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-indigo-600 border-t-transparent"></span>
               <span>{lang === 'es' ? '🤖 Generando resumen con IA...' : '🤖 Gerando resumo com IA...'}</span>
             </div>
           ) : product?.translatedDescription ? (
             // AI要約がどうしても失敗した場合のみのGoogle翻訳フォールバック
-            <div className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap animate-in fade-in duration-300 bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans">
-              {product.translatedDescription}
+            <div className="space-y-3">
+              <div className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap animate-in fade-in duration-300 bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans">
+                {product.translatedDescription}
+              </div>
+              {/* Google翻訳フォールバック用の免責事項 */}
+              <p className="text-[10px] font-semibold leading-normal p-3 rounded-xl border bg-yellow-50 text-yellow-700 border-yellow-200 animate-in fade-in duration-300">
+                {t.googleDisclaimer}
+              </p>
             </div>
           ) : (
             <div className="text-xs text-gray-400 py-3 flex items-center gap-2 font-medium">
               <span>{lang === 'es' ? 'No hay información adicional disponible.' : 'Nenhuma informação adicional disponível.'}</span>
             </div>
           )}
-
-          {/* 注意書き・免責事項の出し分け */}
-          <p className={`text-[10px] font-semibold leading-normal p-3 rounded-xl border ${
-            !showFallbackDescription 
-              ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
-              : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-          }`}>
-            {!showFallbackDescription ? t.aiDisclaimer : t.googleDisclaimer}
-          </p>
 
           {/* 元のヤフオクページへ遷移するボタン（免責事項の下に配置移動＆h-7化） */}
           <a

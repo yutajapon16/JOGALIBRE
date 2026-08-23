@@ -4,7 +4,7 @@
  */
 
 // 超高速・高スループットモデルを最優先
-const GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.6-flash'];
+const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
 
 // 翻訳結果のインメモリキャッシュ (Key: `${targetLang}:${sourceText}`)
 const translationMemoryCache = new Map<string, string>();
