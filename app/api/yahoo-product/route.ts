@@ -612,8 +612,8 @@ async function buildFallbackSummary(text: string, targetLang: 'es' | 'pt'): Prom
   }
 
   if (targetLang === 'pt') {
-    return `- **Especificações / Detalhes**: Consulte os detalhes traduzidos abaixo\n- **Estado do produto**: Verifique o texto e fotos do anúncio\n- **Resumo**: ${snippet}`;
+    return `• **Especificações / Detalhes**:\nConsulte a descrição traduzida\n\n• **Estado do produto**:\nVerifique as fotos e o texto do anúncio\n\n• **Resumo da Descrição**:\n${snippet}`;
   } else {
-    return `- **Especificaciones / Detalles**: Consulte los detalles traducidos a continuación\n- **Estado del producto**: Revise el texto y las fotos del anuncio\n- **Resumen**: ${snippet}`;
+    return `• **Especificaciones / Detalles**:\nConsulte la descripción traducida\n\n• **Estado del producto**:\nRevise las fotos y el texto del anuncio\n\n• **Resumen de la Descripción**:\n${snippet}`;
   }
 }

@@ -6,7 +6,7 @@ import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
 import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, calculateProductBidJpy, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
-import { BidRequest } from '@/lib/types';
+import { BidRequest, BidStatus, FinalStatus } from '@/lib/types';
 
 // 管理者画面用のPWA manifest差し替え
 function useAdminManifest() {
@@ -1565,7 +1565,22 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        fetchBidRequests();
+        // 楽観的UI更新: 即座にステータスを反映してチラつきを防止
+        setBidRequests(prev => prev.map(item => {
+          if (item.id === id) {
+            return {
+              ...item,
+              status: status as BidStatus,
+              rejectReason: reason || null,
+              counterOffer: counterOfferAmount || null,
+              shippingCostJpy: shippingJpy || null,
+              totalJpy: totalJpy || null,
+              approvedAt: status === 'approved' ? new Date().toISOString() : item.approvedAt
+            };
+          }
+          return item;
+        }));
+
         setSelectedRequest(null);
         setActionType(null);
         setRejectReason('');
@@ -1606,6 +1621,8 @@ export default function AdminDashboard() {
             }),
           }).catch(err => console.error('Push notification error:', err));
         }
+
+        await fetchBidRequests();
       } else {
         console.error('updateStatus failed:', res.status);
         alert('更新に失敗しました。ページをリロードしてください。');
@@ -1635,7 +1652,19 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        fetchBidRequests();
+        // 楽観的UI更新: 即座にステータスを反映してチラつきを防止
+        setBidRequests(prev => prev.map(item => {
+          if (item.id === id) {
+            return {
+              ...item,
+              finalStatus: finalStatus as FinalStatus,
+              finalPrice: finalPrice || null,
+              totalJpy: totalJpy || null
+            };
+          }
+          return item;
+        }));
+
         setSelectedRequest(null);
         setActionType(null);
         setFinalPriceInput('');
@@ -1668,6 +1697,11 @@ export default function AdminDashboard() {
               url: '/',
             }),
           }).catch(err => console.error('Push notification error:', err));
+        }
+
+        await fetchBidRequests();
+        if (finalStatus === 'won') {
+          await fetchPurchasedItems();
         }
       } else {
         console.error('updateFinalStatus failed:', res.status);
@@ -1702,7 +1736,9 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        fetchBidRequests();
+        // 楽観的UI更新: 即座に一覧から除外
+        setBidRequests(prev => prev.filter(item => item.id !== id));
+        await fetchBidRequests();
       } else {
         const errorData = await res.json().catch(() => ({}));
         console.error('Delete failed:', res.status, errorData);
@@ -1731,7 +1767,8 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        fetchPurchasedItems();
+        setPurchasedItems(prev => prev.map(item => item.id === id ? { ...item, paid } : item));
+        await fetchPurchasedItems();
       }
     } catch (error) {
       console.error('Error updating paid status:', error);
@@ -1753,7 +1790,8 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        fetchPurchasedItems();
+        setPurchasedItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+        await fetchPurchasedItems();
       }
     } catch (error) {
       console.error('Error updating paid split status:', error);
@@ -1775,7 +1813,7 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        fetchPurchasedItems();
+        await fetchPurchasedItems();
       } else {
         const err = await res.json().catch(() => ({}));
         alert(`在庫番号の更新に失敗しました: ${err.error || ''}`);
@@ -1801,7 +1839,7 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        fetchPurchasedItems();
+        await fetchPurchasedItems();
       } else {
         const err = await res.json().catch(() => ({}));
         alert(`請求書番号の更新に失敗しました: ${err.error || ''}`);
@@ -1841,7 +1879,7 @@ export default function AdminDashboard() {
       });
       if (res.ok) {
         alert(`${actionText}しました`);
-        fetchPurchasedItems();
+        await fetchPurchasedItems();
       } else {
         const err = await res.json();
         alert(`処理に失敗しました: ${err.error || ''}`);

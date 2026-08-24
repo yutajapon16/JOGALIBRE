@@ -3433,8 +3433,9 @@ export default function Home() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
+      let res;
       if (action === 'accept') {
-        await fetch('/api/bid-request', {
+        res = await fetch('/api/bid-request', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -3446,7 +3447,7 @@ export default function Home() {
           })
         });
       } else if (action === 'reject') {
-        await fetch('/api/bid-request', {
+        res = await fetch('/api/bid-request', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -3458,7 +3459,7 @@ export default function Home() {
           })
         });
       } else if (action === 'counter' && counterAmount) {
-        await fetch('/api/bid-request', {
+        res = await fetch('/api/bid-request', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -3471,27 +3472,43 @@ export default function Home() {
         });
       }
 
-      // 管理者へ通知
-      if (currentUser) {
-        const targetReq = myRequests.find(r => r.id === requestId);
-        const itemTitle = targetReq?.productTitle || '対象商品';
-        const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
-        const custName = currentUser.fullName || currentUser.email;
+      if (res && res.ok) {
+        // 楽観的UI更新: 即座に反映してチラつきを防止
+        setMyRequests(prev => prev.map(item => {
+          if (item.id === requestId) {
+            if (action === 'accept') {
+              return { ...item, status: 'approved', customerCounterOfferUsed: true };
+            } else if (action === 'reject') {
+              return { ...item, status: 'rejected', rejectReason: 'Offer declined by customer' };
+            } else if (action === 'counter' && counterAmount) {
+              return { ...item, customerCounterOffer: counterAmount, customerCounterOfferUsed: false };
+            }
+          }
+          return item;
+        }));
 
-        fetch('/api/push-send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sendToAdmins: true,
-            bidRequestId: requestId,
-            title: `💬 【オファー回答】${custName} ${custId}`.trim(),
-            body: `商品: ${itemTitle}`,
-            url: '/admin'
-          })
-        }).catch(e => console.error('Admin push error', e));
+        // 管理者へ通知
+        if (currentUser) {
+          const targetReq = myRequests.find(r => r.id === requestId);
+          const itemTitle = targetReq?.productTitle || '対象商品';
+          const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
+          const custName = currentUser.fullName || currentUser.email;
+
+          fetch('/api/push-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sendToAdmins: true,
+              bidRequestId: requestId,
+              title: `💬 【オファー回答】${custName} ${custId}`.trim(),
+              body: `商品: ${itemTitle}`,
+              url: '/admin'
+            })
+          }).catch(e => console.error('Admin push error', e));
+        }
+
+        await fetchMyRequests();
       }
-
-      fetchMyRequests();
     } catch (error) {
       console.error('Error responding to counter offer:', error);
     } finally {
@@ -3506,7 +3523,7 @@ export default function Home() {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
-      await fetch('/api/bid-request', {
+      const res = await fetch('/api/bid-request', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -3519,27 +3536,41 @@ export default function Home() {
         })
       });
 
-      // 管理者へ通知
-      if (currentUser) {
-        const targetReq = myRequests.find(r => r.id === requestId);
-        const itemTitle = targetReq?.productTitle || '対象商品';
-        const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
-        const custName = currentUser.fullName || currentUser.email;
+      if (res.ok) {
+        // 楽観的UI更新: 即座に確認状態を反映
+        setMyRequests(prev => prev.map(item => {
+          if (item.id === requestId) {
+            return {
+              ...item,
+              customerConfirmed: true,
+              customerMessage: message || ''
+            };
+          }
+          return item;
+        }));
 
-        fetch('/api/push-send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sendToAdmins: true,
-            bidRequestId: requestId,
-            title: `✅ 【確認完了】${custName} ${custId}`.trim(),
-            body: `商品: ${itemTitle}`,
-            url: '/admin'
-          })
-        }).catch(e => console.error('Admin push error', e));
+        // 管理者へ通知
+        if (currentUser) {
+          const targetReq = myRequests.find(r => r.id === requestId);
+          const itemTitle = targetReq?.productTitle || '対象商品';
+          const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
+          const custName = currentUser.fullName || currentUser.email;
+
+          fetch('/api/push-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sendToAdmins: true,
+              bidRequestId: requestId,
+              title: `✅ 【確認完了】${custName} ${custId}`.trim(),
+              body: `商品: ${itemTitle}`,
+              url: '/admin'
+            })
+          }).catch(e => console.error('Admin push error', e));
+        }
+
+        await fetchMyRequests();
       }
-
-      fetchMyRequests();
     } catch (error) {
       console.error('Error confirming:', error);
     } finally {
@@ -3574,7 +3605,7 @@ export default function Home() {
         setIsEditOfferModalOpen(false);
         setEditingOfferRequest(null);
         setEditingOfferAmount('');
-        fetchMyRequests();
+        await fetchMyRequests();
       } else {
         const errData = await res.json();
         alert(lang === 'es' ? `Error: ${errData.error}` : `Erro: ${errData.error}`);
@@ -3614,11 +3645,11 @@ export default function Home() {
       });
 
       if (res.ok) {
-        fetchMyRequests();
+        await fetchMyRequests();
       } else {
         const errData = await res.json();
         alert(lang === 'es' ? `Error: ${errData.error}` : `Erro: ${errData.error}`);
-        fetchMyRequests();
+        await fetchMyRequests();
       }
     } catch (error) {
       console.error('Error deleting offer:', error);
@@ -3650,7 +3681,7 @@ export default function Home() {
       });
 
       if (res.ok) {
-        fetchMyRequests();
+        await fetchMyRequests();
       }
     } catch (error) {
       console.error('Error confirming rejection:', error);
