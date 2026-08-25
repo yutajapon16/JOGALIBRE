@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     let endTime: string | null = null;
     let currentPrice = 0;
     let bids = 0;
-    let isClosed = false;
+    let isClosedJson: boolean | null = null;
 
     // NEXT_DATA から商品詳細データをパース
     const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
@@ -117,7 +117,12 @@ export async function POST(request: Request) {
           0;
 
         bids = itemData.bids || itemData.bidCount || itemData.numberOfBids || 0;
-        isClosed = itemData.isClosed === true || itemData.status === 'closed' || itemData.status === 'ended';
+        
+        if (itemData.status === 'closed' || itemData.status === 'ended' || itemData.isClosed === true) {
+          isClosedJson = true;
+        } else if (itemData.status === 'open' || itemData.status === 'active' || itemData.isClosed === false) {
+          isClosedJson = false;
+        }
 
         if (itemData.endTime) {
           if (typeof itemData.endTime === 'number') {
@@ -137,16 +142,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // HTMLからの終了判定およびフォールバック抽出
-    const isEndedHtml = html.includes('終了しました') ||
-      html.includes('オークションは終了しました') ||
-      html.includes('このオークションは終了しています') ||
-      html.includes('即決価格で落札') ||
-      html.includes('早期終了') ||
-      html.includes('落札者あり') ||
-      html.includes('落札価格');
-
-    // 価格のフォールバック
     // 価格のフォールバック
     if (!currentPrice || currentPrice === 0) {
       const priceMatch = html.match(/class=["'][^"']*Price__value[^"']*["'][^>]*>([\d,]+)\s*円/i) ||
@@ -182,9 +177,25 @@ export async function POST(request: Request) {
     const now = Date.now();
     const parsedEndTime = endTime ? (parseDbDateTime(endTime) || parseJstDateTime(endTime)) : null;
     const isEndTimePast = parsedEndTime ? parsedEndTime.getTime() <= now : false;
-    const isEnded = isClosed || isEndedHtml || isEndTimePast;
 
-    // 即決落札やオークション終了しているが、終了時刻が未来のまままたは未取得の場合は現在時刻を終了日時とする
+    // 正確な終了判定（JSONのstatusを最優先、HTMLは確定的な見出しのみ）
+    let isEnded = false;
+    if (isClosedJson === true) {
+      isEnded = true;
+    } else if (isClosedJson === false) {
+      // ヤフオク上で出品中（open/active）の場合、終了日時が過去になっていなければ開催中！
+      isEnded = isEndTimePast;
+    } else {
+      // JSONが取得できなかった場合の確定的なHTML終了文言チェック
+      const isEndedSpecificHtml = html.includes('このオークションは終了しています') ||
+        html.includes('オークションは終了しました') ||
+        html.includes('ClosedHeader') ||
+        html.includes('落札者：') ||
+        html.includes('即決価格で落札されました');
+      isEnded = isEndedSpecificHtml || isEndTimePast;
+    }
+
+    // 即決落札や出品者早期終了等で実際に終了しているが、終了時刻が未来のままの場合は現在時刻を終了日時とする
     if (isEnded && (!endTime || (parsedEndTime && parsedEndTime.getTime() > now))) {
       endTime = new Date().toISOString();
     }
@@ -197,7 +208,8 @@ export async function POST(request: Request) {
       });
     }
 
-    const isNewEndTimeFuture = parsedEndTime ? (parsedEndTime.getTime() > now && !isClosed && !isEndedHtml) : false;
+    // 終了日時が未来かつ終了していない場合は進行中（または再出品）
+    const isNewEndTimeFuture = parsedEndTime ? (parsedEndTime.getTime() > now && !isEnded) : false;
 
     // データベースの更新
     const updateData: Record<string, any> = {
@@ -227,7 +239,11 @@ export async function POST(request: Request) {
 
     let resultMessage = 'ヤフオクの最新情報を同期しました。';
     if (isNewEndTimeFuture) {
-      resultMessage = 'ヤフオク情報と同期しました。再出品された新しい終了時間に更新され、オファーがアクティブに戻りました。';
+      if (bidRequest.final_status) {
+        resultMessage = 'ヤフオク情報と同期しました。再出品された新しい終了時間に更新され、オファーがアクティブに戻りました。';
+      } else {
+        resultMessage = `ヤフオクの最新情報を同期しました。（現在価格: ${currentPrice ? currentPrice.toLocaleString() + '円' : '-'} / 入札: ${bids}件）`;
+      }
     } else if (isEnded) {
       if (bids === 0) {
         resultMessage = '再出品されていません。（入札数0でオークション終了）';
