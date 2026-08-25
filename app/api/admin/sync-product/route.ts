@@ -147,12 +147,24 @@ export async function POST(request: Request) {
       html.includes('落札価格');
 
     // 価格のフォールバック
+    // 価格のフォールバック
     if (!currentPrice || currentPrice === 0) {
       const priceMatch = html.match(/class=["'][^"']*Price__value[^"']*["'][^>]*>([\d,]+)\s*円/i) ||
         html.match(/落札価格[：:\s]*<[^>]*>([\d,]+)\s*円/i) ||
         html.match(/即決価格[：:\s]*<[^>]*>([\d,]+)\s*円/i);
       if (priceMatch && priceMatch[1]) {
         currentPrice = parseInt(priceMatch[1].replace(/,/g, ''), 10);
+      }
+    }
+
+    // 入札件数のフォールバック
+    if (!bids || bids === 0) {
+      const bidsMatch = html.match(/入札[件数]*[：:\s]*<[^>]*>([\d,]+)/i) ||
+        html.match(/class=["'][^"']*Count__number[^"']*["'][^>]*>([\d,]+)/i) ||
+        html.match(/入札件数[：:\s]*([\d,]+)/i) ||
+        html.match(/入札[：:\s]*([\d,]+)\s*件/i);
+      if (bidsMatch && bidsMatch[1]) {
+        bids = parseInt(bidsMatch[1].replace(/,/g, ''), 10) || 0;
       }
     }
 
@@ -217,7 +229,13 @@ export async function POST(request: Request) {
     if (isNewEndTimeFuture) {
       resultMessage = 'ヤフオク情報と同期しました。再出品された新しい終了時間に更新され、オファーがアクティブに戻りました。';
     } else if (isEnded) {
-      resultMessage = 'ヤフオクでのオークション終了（即決落札等）を確認しました。終了日時と最新価格を同期しました。';
+      if (bids === 0) {
+        resultMessage = '再出品されていません。（入札数0でオークション終了）';
+      } else {
+        resultMessage = `ヤフオクでのオークション終了（落札・即決終了等）を確認しました。終了日時と最新価格（${currentPrice ? currentPrice.toLocaleString() + '円' : ''} / 入札${bids}件）を同期しました。`;
+      }
+    } else {
+      resultMessage = `ヤフオクの最新情報を同期しました。（現在価格: ${currentPrice ? currentPrice.toLocaleString() + '円' : '-'} / 入札: ${bids}件）`;
     }
 
     return NextResponse.json({
