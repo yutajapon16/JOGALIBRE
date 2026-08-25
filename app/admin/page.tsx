@@ -61,8 +61,32 @@ export default function AdminDashboard() {
   const [wonPriceJpyInput, setWonPriceJpyInput] = useState('');
   const [wonShippingJpyInput, setWonShippingJpyInput] = useState('');
   const [wonFobJpyInput, setWonFobJpyInput] = useState('');
-  const [exchangeRate, setExchangeRate] = useState(150);
-  const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({ JPY: 150, BRL: 5.6, PYG: 7500 });
+  // 為替レート関連のState（ローカルキャッシュから同期復元して初期表示の150.00チラつきを防止）
+  const [exchangeRate, setExchangeRate] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('joga_usd_to_jpy_rate');
+        if (cached && !isNaN(Number(cached))) {
+          return Number(cached);
+        }
+      } catch {}
+    }
+    return 150;
+  });
+  const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('joga_exchange_rates');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed === 'object') {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return { JPY: 150, BRL: 5.6, PYG: 7500 };
+  });
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const [activeTab, setActiveTab] = useState<'requests' | 'purchased' | 'deposits' | 'shipping' | 'customers' | 'agents' | 'financials'>('requests');
   const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
@@ -1349,9 +1373,19 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.usdToJpy) {
         setExchangeRate(data.usdToJpy);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('joga_usd_to_jpy_rate', data.usdToJpy.toString());
+          } catch {}
+        }
       }
       if (data.rates) {
         setExchangeRates(data.rates);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('joga_exchange_rates', JSON.stringify(data.rates));
+          } catch {}
+        }
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);

@@ -1582,15 +1582,39 @@ export default function Home() {
   const [purchasedMonth, setPurchasedMonth] = useState<string>('all');
   const [shippingStatusFilter, setShippingStatusFilter] = useState<string>('all');
   const [copiedItemId, setCopiedItemId] = useState<string | null>(null);
-  const [exchangeRate, setExchangeRate] = useState(150);
+  // 為替レート関連のState（ローカルキャッシュから同期復元して初期表示の150.00チラつきを防止）
+  const [exchangeRate, setExchangeRate] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('joga_usd_to_jpy_rate');
+        if (cached && !isNaN(Number(cached))) {
+          return Number(cached);
+        }
+      } catch {}
+    }
+    return 150;
+  });
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
-  const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>({
-    JPY: 150,
-    BRL: 5.6,
-    PYG: 7500,
-    CLP: 930,
-    BOB: 6.9,
-    ARS: 935,
+  const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('joga_exchange_rates');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed === 'object') {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return {
+      JPY: 150,
+      BRL: 5.6,
+      PYG: 7500,
+      CLP: 930,
+      BOB: 6.9,
+      ARS: 935,
+    };
   });
   const [showCounterModal, setShowCounterModal] = useState(false);  // ← 追加
   const [selectedRequestForCounter, setSelectedRequestForCounter] = useState<BidRequest | null>(null);  // ← 追加
@@ -2052,9 +2076,19 @@ export default function Home() {
       const data = await res.json();
       if (data.usdToJpy) {
         setExchangeRate(data.usdToJpy);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('joga_usd_to_jpy_rate', data.usdToJpy.toString());
+          } catch {}
+        }
       }
       if (data.rates) {
         setExchangeRates(data.rates);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('joga_exchange_rates', JSON.stringify(data.rates));
+          } catch {}
+        }
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
