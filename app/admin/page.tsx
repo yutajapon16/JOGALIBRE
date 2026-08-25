@@ -30,7 +30,20 @@ function useAdminManifest() {
 
 export default function AdminDashboard() {
   useAdminManifest();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('joga_user_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed?.role === 'admin') {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return null;
+  });
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -1005,48 +1018,80 @@ export default function AdminDashboard() {
   // セッションチェック（最初に実行）
   useEffect(() => {
     let isMounted = true;
-    let authChecked = false;
+    let authResolved = false;
 
-    // 万が一のタイムアウト防止（最長5秒で強制的にローディング解除）
+    // ローカルストレージに Supabase 認証情報があるか確認
+    const hasStoredAuth = typeof window !== 'undefined' && Object.keys(localStorage).some(
+      k => (k.startsWith('sb-') || k.includes('supabase')) && k.endsWith('-auth-token')
+    );
+
+    // 万が一のタイムアウト防止（最長6秒で強制的にローディング解除）
     const safetyTimer = setTimeout(() => {
-      if (isMounted && !authChecked) {
+      if (isMounted && !authResolved) {
+        authResolved = true;
         setLoading(false);
       }
-    }, 5000);
+    }, 6000);
+
+    const resolveAdminUser = async (supabaseUser: any) => {
+      try {
+        const user = await getCurrentUser(supabaseUser);
+        if (!isMounted) return;
+        authResolved = true;
+        if (user?.role === 'admin') {
+          setCurrentUser(user);
+        } else {
+          setCurrentUser(null);
+        }
+      } catch (e) {
+        console.error('Error resolving admin user:', e);
+        if (isMounted) {
+          authResolved = true;
+          setCurrentUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          setIsLoggingIn(false);
+        }
+      }
+    };
 
     const initAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const user = await getCurrentUser(session.user);
-          if (isMounted) {
-            authChecked = true;
-            if (user?.role === 'admin') {
-              setCurrentUser(user);
-            } else {
-              setCurrentUser(null);
+        let { data: { session } } = await supabase.auth.getSession();
+
+        // セッションがないが、以前の認証情報がストレージに残っている場合は明示的にリフレッシュを試みる
+        if (!session?.user && hasStoredAuth) {
+          try {
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            if (!refreshError && refreshData?.session) {
+              session = refreshData.session;
             }
-            setLoading(false);
+          } catch (refErr) {
+            console.warn('Session refresh attempt in admin:', refErr);
           }
+        }
+
+        if (session?.user) {
+          await resolveAdminUser(session.user);
           return;
         }
 
-        // セッションがない場合：ローカルストレージに supabase 関連キーがあるか確認（リフレッシュ待ち）
-        const hasStoredAuth = typeof window !== 'undefined' && Object.keys(localStorage).some(k => k.startsWith('sb-') || k.includes('supabase'));
-        if (!hasStoredAuth) {
-          // 完全に未ログイン状態
-          if (isMounted) {
-            authChecked = true;
-            setCurrentUser(null);
-            setLoading(false);
-          }
-        }
-      } catch (err) {
-        console.error('Session check error:', err);
+        // ストレージにも何もない、あるいはリフレッシュも失敗してセッションが無い場合のみログイン画面へ
         if (isMounted) {
-          authChecked = true;
+          authResolved = true;
           setCurrentUser(null);
           setLoading(false);
+          setIsLoggingIn(false);
+        }
+      } catch (err) {
+        console.error('Session check error in admin:', err);
+        if (isMounted) {
+          authResolved = true;
+          setCurrentUser(null);
+          setLoading(false);
+          setIsLoggingIn(false);
         }
       }
     };
@@ -1058,30 +1103,19 @@ export default function AdminDashboard() {
       if (!isMounted) return;
 
       if (event === 'SIGNED_OUT') {
-        authChecked = true;
+        authResolved = true;
         setCurrentUser(null);
         setLoading(false);
         setIsLoggingIn(false);
       } else if (session?.user) {
-        // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
-        const user = await getCurrentUser(session.user);
-        if (!isMounted) return;
-        authChecked = true;
-
-        if (user?.role === 'admin') {
-          setCurrentUser(user);
-        } else if (event === 'SIGNED_IN') {
-          // 管理者以外がログインした場合
-          await supabase.auth.signOut({ scope: 'local' });
-          alert('管理者アカウントでログインしてください');
-          setCurrentUser(null);
-        } else {
-          setCurrentUser(null);
-        }
-        setLoading(false);
-        setIsLoggingIn(false);
-      } else {
-        authChecked = true;
+        // SIGNED_IN, TOKEN_REFRESHED, USER_UPDATED 等でセッション復元
+        await resolveAdminUser(session.user);
+      } else if (event === 'INITIAL_SESSION' && hasStoredAuth) {
+        // ストレージにトークンがある場合の初期空セッション（リフレッシュ待ち）は無視し、initAuth側の完了を待つ！
+        return;
+      } else if (!hasStoredAuth) {
+        authResolved = true;
+        setCurrentUser(null);
         setLoading(false);
         setIsLoggingIn(false);
       }
