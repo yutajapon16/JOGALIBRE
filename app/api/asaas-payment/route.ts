@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
+import { notifyAdminError } from '@/lib/error-notifier';
 
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 const ASAAS_BASE_URL = 'https://api.asaas.com/v3';
@@ -191,6 +192,15 @@ export async function POST(request: Request) {
 
     if (paymentResult.error) {
       const errorMsg = paymentResult.data?.errors?.[0]?.description || 'Payment creation failed';
+      notifyAdminError({
+        category: 'payment',
+        title: 'Asaas 決済作成エラー',
+        message: `Asaas 決済の作成に失敗しました: ${errorMsg}`,
+        details: { billingType, totalAmount, itemIds, asaasResponse: paymentResult.data },
+        severity: 'critical',
+        throttleKey: `asaas-payment-error:${customerId}`
+      }).catch(e => console.error('Admin notify error:', e));
+
       return NextResponse.json({ error: errorMsg }, { status: 500 });
     }
 
@@ -229,6 +239,14 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('[ASAAS Payment] エラー:', error);
+    notifyAdminError({
+      category: 'payment',
+      title: 'Asaas 決済API内部例外エラー',
+      message: `決済処理中に例外が発生しました: ${error.message || 'Unknown error'}`,
+      details: { error: error.stack || String(error) },
+      severity: 'critical'
+    }).catch(e => console.error('Admin notify error:', e));
+
     return NextResponse.json(
       { error: error.message || 'Internal Server Error' },
       { status: 500 }

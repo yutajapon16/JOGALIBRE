@@ -4,6 +4,7 @@ export const revalidate = 0;
 import { NextResponse } from 'next/server';
 import { parseJstDateTime, parseDbDateTime, parseAnyDateTime } from '@/lib/utils';
 import { translateTitle, translateText } from '@/lib/translate';
+import { notifyAdminError, hasJapaneseCharacters } from '@/lib/error-notifier';
 
 // AI要約・翻訳データの高速キャッシュ (6時間TTL)
 interface ProductCacheItem {
@@ -21,10 +22,14 @@ const productAiCache = new Map<string, ProductCacheItem>();
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6時間
 
 export async function POST(request: Request) {
+  let requestUrl = '';
+  let requestLang = 'es';
   try {
     const body = await request.json();
     const url = body.url;
+    requestUrl = url || '';
     const lang = (body.lang || 'es').toLowerCase();
+    requestLang = lang;
     const skipDescription = body.skipDescription || false;
     const skipAiSummary = body.skipAiSummary || false;
     const forceRefresh = body.forceRefresh || body.refresh || false;
@@ -347,19 +352,51 @@ export async function POST(request: Request) {
     if (needTitleTrans) {
       parallelTasks.push(
         translateTitle(title, lang)
-          .then((trans) => { if (trans) translatedTitle = trans; })
+          .then((trans) => {
+            if (trans) translatedTitle = trans;
+            if (lang !== 'ja' && hasJapaneseCharacters(translatedTitle)) {
+              notifyAdminError({
+                category: 'translation',
+                title: `商品タイトル翻訳での日本語残存検知 (${lang.toUpperCase()})`,
+                message: `商品詳細取得時にタイトルの翻訳結果に日本語文字が含まれています。`,
+                productId,
+                url,
+                details: { originalTitle: title, translatedTitle },
+                severity: 'warning',
+                throttleKey: `product-title-trans:${productId}`
+              }).catch(e => console.error('Admin notify error:', e));
+            }
+          })
           .catch((e) => { console.error('Title translation error:', e); })
       );
     }
 
-    // AI要約高速生成タスク (Gemini 2.5 Flash Lite で 1〜2秒生成)
+    // AI要約高速生成タスク (Gemini で 1〜2秒生成)
     if (needAi) {
       const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 3000);
       parallelTasks.push(
-        generateAiSummary(cleanDesc, targetLangForAi)
+        generateAiSummary(cleanDesc, targetLangForAi, undefined, productId, url)
           .then((summary) => {
             if (targetLangForAi === 'es') aiSummaryEs = summary;
             else aiSummaryPt = summary;
+
+            // AI要約結果の日本語残存チェック
+            if (hasJapaneseCharacters(summary)) {
+              notifyAdminError({
+                category: 'ai_summary',
+                title: `商品AI要約での日本語残存エラー検知 (${targetLangForAi.toUpperCase()})`,
+                message: `商品ID: ${productId} のAI要約結果に日本語（漢字・ひらがな・カタカナ）が含まれていることが検知されました。`,
+                productId,
+                url,
+                details: {
+                  targetLang: targetLangForAi,
+                  summarySnippet: summary.substring(0, 400),
+                  rawDescSnippet: cleanDesc.substring(0, 200)
+                },
+                severity: 'error',
+                throttleKey: `ai-summary-japanese:${productId}`
+              }).catch(e => console.error('Admin notify error:', e));
+            }
           })
           .catch(async (err) => {
             console.error(`Gemini ${targetLangForAi.toUpperCase()} Summary error:`, err);
@@ -440,22 +477,19 @@ export async function POST(request: Request) {
       }
     }
 
-    // カテゴリIDの抽出（パンくずリストのURLからすべてのカテゴリIDを取得してカンマ区切りにする）
-    // /category/list/(\d+) と /listX/(\d+)-category.html の両方のパターンに対応
+    // カテゴリIDの抽出
     let categoryId = '';
     const breadcrumbMatches = Array.from(
       html.matchAll(/auctions\.yahoo\.co\.jp\/(?:category\/list\/(\d+)|list\d+\/(\d+)-category\.html)/g)
     );
     const ids = breadcrumbMatches.map(m => m[1] || m[2]).filter(Boolean);
 
-    // 将来的なURLの変更やパンくずリストの構造変化に備え、HTML内の構造データ ("catidX": "xxxxx") からも補助的にカテゴリIDを抽出してマージする
     const catidMatches = Array.from(html.matchAll(/"catid\d+"\s*:\s*"(\d+)"/g));
     if (catidMatches.length > 0) {
       ids.push(...catidMatches.map(m => m[1]));
     }
 
     if (ids.length > 0) {
-      // 重複を排除してカンマ区切りにする
       const uniqueIds = Array.from(new Set(ids));
       categoryId = uniqueIds.join(',');
     }
@@ -469,12 +503,12 @@ export async function POST(request: Request) {
       currentPrice: currentPrice,
       bids: bids,
       endTime: endTime,
-      timeLeft: timeLeft, // 追加
+      timeLeft: timeLeft,
       isClosed: isFinished,
       isEnded: isFinished,
       imageUrl: imageUrl,
       url: url,
-      categoryId: categoryId, // カテゴリIDを追加
+      categoryId: categoryId,
       source: 'yahoo_url_import',
       shippingCost: shippingCost,
       shippingUnknown: shippingUnknown,
@@ -486,11 +520,24 @@ export async function POST(request: Request) {
       aiSummaryPt: finalAiSummaryPt
     };
 
-
     return NextResponse.json({ product });
 
   } catch (error) {
     console.error('Error fetching Yahoo product:', error);
+    // ヤフオク商品詳細取得エラーを管理者に通知
+    notifyAdminError({
+      category: 'scraping',
+      title: 'ヤフオク商品詳細データ取得エラー',
+      message: `商品URLのスクレイピング・データ解析中にエラーが発生しました: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      url: requestUrl,
+      details: {
+        error: error instanceof Error ? error.stack : String(error),
+        requestLang
+      },
+      severity: 'error',
+      throttleKey: `yahoo-product-fetch:${requestUrl.substring(0, 50)}`
+    }).catch(e => console.error('Admin notify error:', e));
+
     return NextResponse.json(
       { error: 'Failed to fetch product data', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -498,9 +545,23 @@ export async function POST(request: Request) {
   }
 }
 
-async function generateAiSummary(description: string, targetLang: 'es' | 'pt', translatedDesc?: string): Promise<string> {
+async function generateAiSummary(
+  description: string,
+  targetLang: 'es' | 'pt',
+  translatedDesc?: string,
+  productId?: string,
+  url?: string
+): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
+    notifyAdminError({
+      category: 'ai_summary',
+      title: 'Gemini APIキー未設定エラー',
+      message: 'GEMINI_API_KEY 環境変数が設定されていないため、AI要約がフォールバックモードで動作しています。',
+      severity: 'critical',
+      throttleKey: 'gemini-apikey-missing'
+    }).catch(e => console.error('Admin notify error:', e));
+
     return await buildFallbackSummary(translatedDesc || description, targetLang);
   }
 
@@ -537,7 +598,7 @@ ${textToSummarize}`;
   const promptPt = `Você é um assistente de compras internacional especializado para clientes lusófonos em uma plataforma de leilões do Yahoo! Japão.
 Sua tarefa é traduzir e resumir de forma clara, profissional e 100% em PORTUGUÊS a seguinte descrição de produto.
 
-REGRAS CRÍTICAS:
+REGLAS CRÍTICAS:
 1. Você deve redigir TUDO absolutamente em PORTUGUÊS. Não inclua nenhum caractere em japonês (kanji, hiragana, katakana).
 2. Estruture o resumo EXATAMENTE com os seguintes 5 blocos separados por uma linha em branco entre cada um, usando marcadores claros:
 
@@ -569,8 +630,8 @@ ${textToSummarize}`;
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const response = await fetch(url, {
+      const urlEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(urlEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -604,6 +665,18 @@ ${textToSummarize}`;
       console.warn(`Gemini model ${model} fetch error:`, e);
     }
   }
+
+  // Gemini 全モデル失敗時に管理者に通知
+  notifyAdminError({
+    category: 'ai_summary',
+    title: `Gemini API 全モデル失敗によるAI要約フォールバック発生 (${targetLang.toUpperCase()})`,
+    message: `Gemini のすべてのモデル(${models.join(', ')})へのリクエストが失敗し、フォールバック要約が適用されました。APIクォータ超過またはGoogle側の障害の可能性があります。`,
+    productId,
+    url,
+    details: { targetLang, productId },
+    severity: 'error',
+    throttleKey: 'gemini-all-models-failed'
+  }).catch(e => console.error('Admin notify error:', e));
 
   return await buildFallbackSummary(translatedDesc || description, targetLang);
 }

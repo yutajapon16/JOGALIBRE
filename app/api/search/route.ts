@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { parseYahooTimeRaw, parseJstDateTime } from '@/lib/utils';
 import { batchTranslateTitles, translateText } from '@/lib/translate';
+import { notifyAdminError } from '@/lib/error-notifier';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -48,6 +49,14 @@ export async function GET(request: Request) {
         } catch (e) {
           console.warn('Search query translation error:', e);
           translatedKeyword = q;
+          notifyAdminError({
+            category: 'translation',
+            title: `検索クエリ翻訳失敗 (${lang.toUpperCase()})`,
+            message: `検索クエリ「${q}」の日本語への翻訳中にエラーが発生しました。`,
+            details: { query: q, lang, error: String(e) },
+            severity: 'warning',
+            throttleKey: `search-query-trans:${q}`
+          }).catch(err => console.error('Admin notify error:', err));
         }
       }
 
@@ -58,6 +67,7 @@ export async function GET(request: Request) {
       } else if (cond === 'used') {
         condParam = '&istatus=2';
       }
+
       searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(translatedKeyword)}&va=${encodeURIComponent(translatedKeyword)}&exflg=1&b=${start}&n=${itemsPerPage}&s1=score&o1=d${condParam}`;
     }
 
@@ -479,6 +489,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ items, translatedKeyword, nextPage });
   } catch (error) {
     console.error('Search error:', error);
+    notifyAdminError({
+      category: 'scraping',
+      title: 'ヤフオク検索スクレイピング・データ解析エラー',
+      message: `検索リクエストの処理中にエラーが発生しました: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: {
+        error: error instanceof Error ? error.stack : String(error),
+        query: q,
+        urlParam
+      },
+      severity: 'error',
+      throttleKey: `search-error:${q || urlParam || 'unknown'}`
+    }).catch(e => console.error('Admin notify error:', e));
+
     return NextResponse.json({ error: 'Failed to search' }, { status: 500 });
   }
 }

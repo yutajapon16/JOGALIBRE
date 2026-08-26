@@ -3,6 +3,8 @@
  * インメモリキャッシュ + Gemini 2.5 Flash Lite による超高速・高品質なバッチ翻訳
  */
 
+import { notifyAdminError, hasJapaneseCharacters } from '@/lib/error-notifier';
+
 // 超高速・高スループットモデルを最優先
 const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
 
@@ -88,15 +90,42 @@ export async function batchTranslateTitles(titles: string[], targetLang: string)
   const chunkResults = await Promise.all(chunkPromises);
   const translatedUncached = chunkResults.flat();
 
+  // 日本語残存・未翻訳タイトルの収集
+  const failedTitles: { original: string; translated: string }[] = [];
+
   // 結果のマッピングとキャッシュ保存
   uncachedIndices.forEach((origIdx, i) => {
     const origTitle = uncachedTitles[i];
     const transTitle = (translatedUncached && translatedUncached[i]) ? translatedUncached[i] : origTitle;
     results[origIdx] = transTitle;
-    if (transTitle && transTitle !== origTitle) {
+
+    // 日本語残存チェック（ターゲット言語がes/ptで、結果に日本語が含まれているか未翻訳のまま）
+    if (targetLang !== 'ja' && origTitle && origTitle.length > 3) {
+      if (hasJapaneseCharacters(transTitle) || transTitle === origTitle) {
+        failedTitles.push({ original: origTitle, translated: transTitle });
+      }
+    }
+
+    if (transTitle && transTitle !== origTitle && !hasJapaneseCharacters(transTitle)) {
       setCachedTranslation(origTitle, targetLang, transTitle);
     }
   });
+
+  // 翻訳エラー・日本語残存が検知された場合は非同期で管理者に通知（スロットリング付き）
+  if (failedTitles.length > 0) {
+    notifyAdminError({
+      category: 'translation',
+      title: `商品タイトルの${targetLang.toUpperCase()}翻訳エラー（日本語残存/未翻訳検知）`,
+      message: `${failedTitles.length}件の商品タイトルの翻訳において、日本語が残存しているか翻訳に失敗した可能性があります。`,
+      details: {
+        targetLang,
+        failedCount: failedTitles.length,
+        sampleFailures: failedTitles.slice(0, 5)
+      },
+      severity: 'warning',
+      throttleKey: `translation:${targetLang}:${failedTitles[0]?.original?.substring(0, 20)}`
+    }).catch(e => console.error('Failed to notify translation error:', e));
+  }
 
   return results;
 }
@@ -188,6 +217,21 @@ export async function translateText(text: string, targetLang: string, sourceLang
     const memoryResult = await translateWithMyMemory(text, targetLang, sourceLang);
     if (memoryResult) return memoryResult;
   } catch {}
+
+  // 全ての翻訳が失敗し、日本語が残存している場合は管理者に通知
+  if (targetLang !== 'ja' && sourceLang === 'ja' && hasJapaneseCharacters(text)) {
+    notifyAdminError({
+      category: 'translation',
+      title: `テキスト翻訳の全フォールバック失敗（${targetLang.toUpperCase()}）`,
+      message: `Gemini, Google Translate, MyMemory によるテキスト翻訳がすべて失敗し、原文（日本語）が返却されました。`,
+      details: {
+        targetLang,
+        sourceTextSnippet: text.substring(0, 300)
+      },
+      severity: 'error',
+      throttleKey: `translateText:${targetLang}:${text.substring(0, 30)}`
+    }).catch(e => console.error('Failed to notify text translation failure:', e));
+  }
 
   return text;
 }

@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { notifyAdminError } from '@/lib/error-notifier';
 
 // ASAAS Webhook認証トークン（環境変数から取得）
 const ASAAS_WEBHOOK_TOKEN = process.env.ASAAS_WEBHOOK_TOKEN;
@@ -415,8 +416,20 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
     */
 
     console.log(`[ASAAS Webhook] 支払い確認・全処理完了: payment=${payment.id}, items=${bidRequestIds.length}件`);
-  } catch (err) {
+  } catch (err: any) {
     console.error(`[ASAAS Webhook] handlePaymentConfirmed 致命的エラー:`, err);
+    notifyAdminError({
+      category: 'payment',
+      title: 'Asaas Webhook 決済確定処理エラー',
+      message: `Asaas Webhookの決済処理(ID: ${payment?.id})中に致命的な例外が発生しました: ${err?.message || 'Unknown error'}`,
+      details: {
+        paymentId: payment?.id,
+        error: err?.stack || String(err),
+        paymentData: payment
+      },
+      severity: 'critical',
+      throttleKey: `asaas-webhook-error:${payment?.id}`
+    }).catch(e => console.error('Admin notify error:', e));
   }
 }
 

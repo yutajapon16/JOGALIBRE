@@ -14,6 +14,21 @@ export default function GlobalError({
   useEffect(() => {
     console.error('Global Error caught:', error);
 
+    // エラー情報を管理者通知APIへ非同期報告
+    try {
+      fetch('/api/client-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: error.message || 'Unknown Global Error',
+          stack: error.stack,
+          digest: error.digest,
+          url: typeof window !== 'undefined' ? window.location.href : '',
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
+        })
+      }).catch(() => {});
+    } catch {}
+
     if (typeof localStorage !== 'undefined') {
       const savedLang = localStorage.getItem('lang');
       if (savedLang === 'es' || savedLang === 'pt') {

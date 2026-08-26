@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendOrderCsvEmail } from '@/lib/resend';
 import { getResilientExchangeRate } from '@/lib/exchange';
 import { calculateDefaultFobCost, calculateDefaultShippingCost, calculateJapanSendAmount } from '@/lib/utils';
+import { notifyAdminError } from '@/lib/error-notifier';
 
 export async function GET(request: Request) {
   // Vercel Cron からの認証チェック
@@ -172,6 +173,15 @@ export async function GET(request: Request) {
 
   } catch (error: any) {
     console.error('Cron Error:', error);
+    notifyAdminError({
+      category: 'cron',
+      title: '入札依頼CSVエクスポート Cronバッチ失敗',
+      message: `注文CSVエクスポートの自動処理中にエラーが発生しました: ${error.message || 'Unknown error'}`,
+      details: { error: error.stack || String(error) },
+      severity: 'error',
+      throttleKey: 'cron-export-orders-error'
+    }).catch(e => console.error('Admin notify error:', e));
+
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

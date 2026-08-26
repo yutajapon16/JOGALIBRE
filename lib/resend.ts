@@ -486,3 +486,110 @@ export async function sendAutoConfirmedEmail(to: string, productTitle: string, l
     console.error('Failed to send auto confirmed email via Resend:', error);
   }
 }
+
+export interface SystemAlertEmailOptions {
+  to?: string;
+  type: string;
+  title: string;
+  message: string;
+  details?: string | Record<string, any>;
+  url?: string;
+  timestamp?: string;
+  severity?: 'warning' | 'critical' | 'error';
+}
+
+/**
+ * 管理者（admin@jogalibre.com）宛てのシステムエラー通知メールを送信
+ */
+export async function sendSystemAlertEmail(options: SystemAlertEmailOptions) {
+  try {
+    const resend = getResend();
+    const recipient = options.to || process.env.ADMIN_ALERT_EMAIL || 'admin@jogalibre.com';
+    const severity = options.severity || 'error';
+    const jstTime = options.timestamp || new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+
+    const badgeColor = severity === 'critical' ? '#dc2626' : severity === 'warning' ? '#d97706' : '#ef4444';
+    const badgeText = severity === 'critical' ? 'CRITICAL' : severity === 'warning' ? 'WARNING' : 'ERROR';
+
+    let formattedDetails = '';
+    if (options.details) {
+      if (typeof options.details === 'string') {
+        formattedDetails = options.details;
+      } else {
+        formattedDetails = JSON.stringify(options.details, null, 2);
+      }
+    }
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 680px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px; width: 100%;">
+          <tr>
+            <td style="vertical-align: middle;">
+              <span style="display: inline-block; background-color: #0f172a; color: #ffffff; font-weight: bold; font-size: 12px; padding: 4px 10px; border-radius: 4px; letter-spacing: 0.5px;">JOGALIBRE SYSTEM MONITOR</span>
+            </td>
+            <td style="vertical-align: middle; text-align: right;">
+              <span style="display: inline-block; background-color: ${badgeColor}; color: #ffffff; font-weight: bold; font-size: 11px; padding: 3px 8px; border-radius: 4px;">${badgeText}</span>
+            </td>
+          </tr>
+        </table>
+
+        <h2 style="color: #0f172a; margin: 0 0 16px 0; font-size: 20px; line-height: 1.4;">
+          ⚠️ ${options.title}
+        </h2>
+
+        <div style="background-color: #f8fafc; border-left: 4px solid ${badgeColor}; padding: 14px 16px; border-radius: 4px; margin-bottom: 20px;">
+          <p style="margin: 0 0 6px 0; font-size: 13px; color: #64748b; font-weight: bold;">【エラー概要】</p>
+          <p style="margin: 0; font-size: 15px; color: #0f172a; line-height: 1.5; white-space: pre-wrap;">${options.message}</p>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+          <tbody>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 8px 0; color: #64748b; width: 130px; font-weight: 600;">種別 (Type)</td>
+              <td style="padding: 8px 0; color: #0f172a; font-family: monospace;">${options.type}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 8px 0; color: #64748b; font-weight: 600;">発生日時 (JST)</td>
+              <td style="padding: 8px 0; color: #0f172a;">${jstTime}</td>
+            </tr>
+            ${options.url ? `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 8px 0; color: #64748b; font-weight: 600;">対象URL / 画面</td>
+              <td style="padding: 8px 0; color: #2563eb; word-break: break-all;">
+                <a href="${options.url}" style="color: #2563eb; text-decoration: underline;" target="_blank" rel="noopener noreferrer">${options.url}</a>
+              </td>
+            </tr>` : ''}
+          </tbody>
+        </table>
+
+        ${formattedDetails ? `
+        <div style="margin-bottom: 24px;">
+          <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b; font-weight: bold;">【詳細情報 / スタックトレース】</p>
+          <pre style="background-color: #0f172a; color: #f8fafc; padding: 14px; border-radius: 8px; font-size: 12px; line-height: 1.5; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">${formattedDetails.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+        </div>` : ''}
+
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;" />
+        <p style="font-size: 12px; color: #94a3b8; margin: 0; text-align: center;">
+          このメールは JOGALIBRE システムエラー自動監視モジュールより送信されています。
+        </p>
+      </div>
+    `;
+
+    const { data, error } = await resend.emails.send({
+      from: 'JOGALIBRE Monitor <info@jogalibre.com>',
+      to: [recipient],
+      subject: `[JOGALIBRE 警告] ${options.title}`,
+      html: html,
+    });
+
+    if (error) {
+      console.error('Failed to send system alert email via Resend:', error);
+      return { success: false, error };
+    }
+    return { success: true, data };
+  } catch (error) {
+    console.error('Critical failure in sendSystemAlertEmail:', error);
+    return { success: false, error };
+  }
+}
+

@@ -15,6 +15,21 @@ export default function ErrorBoundary({
   useEffect(() => {
     console.error('Client Application Error caught by boundary:', error);
 
+    // エラー情報を管理者通知APIへ非同期報告
+    try {
+      fetch('/api/client-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: error.message || 'Client Boundary Error',
+          stack: error.stack,
+          digest: error.digest,
+          url: typeof window !== 'undefined' ? window.location.href : '',
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
+        })
+      }).catch(() => {});
+    } catch {}
+
     // ユーザーの言語設定またはブラウザ言語を判定
     if (typeof localStorage !== 'undefined') {
       const savedLang = localStorage.getItem('lang');
