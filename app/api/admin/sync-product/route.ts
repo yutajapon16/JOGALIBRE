@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     // データベースから対象のリクエスト情報を取得
     const { data: bidRequest, error: fetchError } = await supabaseAdmin
       .from('bid_requests')
-      .select('id, product_url, status, final_status')
+      .select('id, product_url, status, final_status, customer_message')
       .eq('id', requestId)
       .single();
 
@@ -223,8 +223,14 @@ export async function POST(request: Request) {
     // 再出品されて未来のオークションとして再開された場合、終了ステータスをクリアしてアクティブ状態に復旧する
     if (isNewEndTimeFuture) {
       updateData.final_status = null;
-      updateData.customer_message = null;
       updateData.admin_needs_confirm = false;
+      if (bidRequest.customer_message) {
+        // 終了メッセージのみを除去し、過去の通知タグ等は必要に応じて保持
+        updateData.customer_message = bidRequest.customer_message
+          .replace(/Auction ended\. Waiting for admin to confirm result\./g, '')
+          .replace(/\[auction_ended_notified\]/g, '')
+          .trim();
+      }
     }
 
     const { error: updateError } = await supabaseAdmin
