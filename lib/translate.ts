@@ -8,6 +8,101 @@ import { notifyAdminError, hasJapaneseCharacters } from '@/lib/error-notifier';
 // 超高速・高スループットモデルを最優先
 const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
 
+// 1. 英語＋カタカナ・漢字の重複パターン除去（例: SONY ソニー -> SONY, ソニー SONY -> SONY）
+const BRAND_DUPLICATE_RULES: { pattern: RegExp; replacement: string }[] = [
+  { pattern: /(?:SONY\s*ソニー|ソニー\s*SONY)/gi, replacement: 'SONY' },
+  { pattern: /(?:TOYOTA\s*トヨタ|トヨタ\s*TOYOTA)/gi, replacement: 'Toyota' },
+  { pattern: /(?:HONDA\s*ホンダ|ホンダ\s*HONDA)/gi, replacement: 'Honda' },
+  { pattern: /(?:NISSAN\s*(?:ニッサン|日産)|(?:ニッサン|日産)\s*NISSAN)/gi, replacement: 'Nissan' },
+  { pattern: /(?:MAZDA\s*マツダ|マツダ\s*MAZDA)/gi, replacement: 'Mazda' },
+  { pattern: /(?:SUBARU\s*スバル|スバル\s*SUBARU)/gi, replacement: 'Subaru' },
+  { pattern: /(?:MITSUBISHI\s*(?:ミツビシ|三菱)|(?:ミツビシ|三菱)\s*MITSUBISHI)/gi, replacement: 'Mitsubishi' },
+  { pattern: /(?:SUZUKI\s*スズキ|スズキ\s*SUZUKI)/gi, replacement: 'Suzuki' },
+  { pattern: /(?:KAWASAKI\s*カワサキ|カワサキ\s*KAWASAKI)/gi, replacement: 'Kawasaki' },
+  { pattern: /(?:YAMAHA\s*ヤマハ|ヤマハ\s*YAMAHA)/gi, replacement: 'Yamaha' },
+  { pattern: /(?:CANON\s*(?:キヤノン|キャノン)|(?:キヤノン|キャノン)\s*CANON)/gi, replacement: 'Canon' },
+  { pattern: /(?:NIKON\s*ニコン|ニコン\s*NIKON)/gi, replacement: 'Nikon' },
+  { pattern: /(?:PANASONIC\s*パナソニック|パナソニック\s*PANASONIC)/gi, replacement: 'Panasonic' },
+  { pattern: /(?:PIONEER\s*パイオニア|パイオニア\s*PIONEER)/gi, replacement: 'Pioneer' },
+  { pattern: /(?:KENWOOD\s*ケンウッド|ケンウッド\s*KENWOOD)/gi, replacement: 'Kenwood' },
+  { pattern: /(?:ALPINE\s*アルパイン|アルパイン\s*ALPINE)/gi, replacement: 'Alpine' },
+  { pattern: /(?:CARROZZERIA\s*カロッツェリア|カロッツェリア\s*CARROZZERIA)/gi, replacement: 'Carrozzeria' },
+  { pattern: /(?:BBS\s*(?:ビービーエス|ＢＢＳ)|(?:ビービーエス|ＢＢＳ)\s*BBS)/gi, replacement: 'BBS' },
+  { pattern: /(?:RAYS\s*レイズ|レイズ\s*RAYS)/gi, replacement: 'RAYS' },
+  { pattern: /(?:WORK\s*ワーク|ワーク\s*WORK)/gi, replacement: 'WORK' },
+  { pattern: /(?:ENKEI\s*エンケイ|エンケイ\s*ENKEI)/gi, replacement: 'ENKEI' },
+  { pattern: /(?:BREMBO\s*ブレンボ|ブレンボ\s*BREMBO)/gi, replacement: 'Brembo' },
+  { pattern: /(?:BRIDGESTONE\s*ブリヂストン|ブリヂストン\s*BRIDGESTONE)/gi, replacement: 'Bridgestone' },
+  { pattern: /(?:YOKOHAMA\s*ヨコハマ|ヨコハマ\s*YOKOHAMA)/gi, replacement: 'Yokohama' },
+  { pattern: /(?:DUNLOP\s*ダンロップ|ダンロップ\s*DUNLOP)/gi, replacement: 'Dunlop' },
+  { pattern: /(?:MICHELIN\s*ミシュラン|ミシュラン\s*MICHELIN)/gi, replacement: 'Michelin' },
+  { pattern: /(?:SHIMANO\s*シマノ|シマノ\s*SHIMANO)/gi, replacement: 'Shimano' },
+  { pattern: /(?:DAIWA\s*ダイワ|ダイワ\s*DAIWA)/gi, replacement: 'Daiwa' },
+  { pattern: /(?:TAMIYA\s*タミヤ|タミヤ\s*TAMIYA)/gi, replacement: 'Tamiya' },
+  { pattern: /(?:BANDAI\s*バンダイ|バンダイ\s*BANDAI)/gi, replacement: 'Bandai' },
+  { pattern: /(?:CASIO\s*カシオ|カシオ\s*CASIO)/gi, replacement: 'Casio' },
+  { pattern: /(?:SEIKO\s*セイコー|セイコー\s*SEIKO)/gi, replacement: 'Seiko' },
+  { pattern: /(?:CITIZEN\s*シチズン|シチズン\s*CITIZEN)/gi, replacement: 'Citizen' },
+];
+
+// 2. 単独で残存したカタカナ・漢字ブランド名の変換
+const STANDALONE_BRAND_RULES: { pattern: RegExp; replacement: string }[] = [
+  { pattern: /ソニー/g, replacement: 'SONY' },
+  { pattern: /トヨタ/g, replacement: 'Toyota' },
+  { pattern: /ホンダ/g, replacement: 'Honda' },
+  { pattern: /(?:ニッサン|日産)/g, replacement: 'Nissan' },
+  { pattern: /マツダ/g, replacement: 'Mazda' },
+  { pattern: /スバル/g, replacement: 'Subaru' },
+  { pattern: /(?:ミツビシ|三菱)/g, replacement: 'Mitsubishi' },
+  { pattern: /スズキ/g, replacement: 'Suzuki' },
+  { pattern: /カワサキ/g, replacement: 'Kawasaki' },
+  { pattern: /ヤマハ/g, replacement: 'Yamaha' },
+  { pattern: /(?:キヤノン|キャノン)/g, replacement: 'Canon' },
+  { pattern: /ニコン/g, replacement: 'Nikon' },
+  { pattern: /パナソニック/g, replacement: 'Panasonic' },
+  { pattern: /パイオニア/g, replacement: 'Pioneer' },
+  { pattern: /ケンウッド/g, replacement: 'Kenwood' },
+  { pattern: /アルパイン/g, replacement: 'Alpine' },
+  { pattern: /カロッツェリア/g, replacement: 'Carrozzeria' },
+  { pattern: /(?:ビービーエス|ＢＢＳ)/g, replacement: 'BBS' },
+  { pattern: /レイズ/g, replacement: 'RAYS' },
+  { pattern: /エンケイ/g, replacement: 'ENKEI' },
+  { pattern: /ブレンボ/g, replacement: 'Brembo' },
+  { pattern: /ブリヂストン/g, replacement: 'Bridgestone' },
+  { pattern: /ヨコハマ/g, replacement: 'Yokohama' },
+  { pattern: /ダンロップ/g, replacement: 'Dunlop' },
+  { pattern: /ミシュラン/g, replacement: 'Michelin' },
+  { pattern: /シマノ/g, replacement: 'Shimano' },
+  { pattern: /ダイワ/g, replacement: 'Daiwa' },
+  { pattern: /タミヤ/g, replacement: 'Tamiya' },
+  { pattern: /バンダイ/g, replacement: 'Bandai' },
+  { pattern: /カシオ/g, replacement: 'Casio' },
+  { pattern: /セイコー/g, replacement: 'Seiko' },
+  { pattern: /シチズン/g, replacement: 'Citizen' },
+];
+
+/**
+ * 翻訳後テキスト内のカタカナ重複ブランド名や単独カタカナブランドを英語/ローマ字にクリーンアップ
+ */
+export function cleanupBrandNames(text: string): string {
+  if (!text) return text;
+  let cleaned = text;
+
+  // 1. 重複パターンを優先除去
+  for (const rule of BRAND_DUPLICATE_RULES) {
+    cleaned = cleaned.replace(rule.pattern, rule.replacement);
+  }
+
+  // 2. 残った単独カタカナブランドを変換
+  for (const rule of STANDALONE_BRAND_RULES) {
+    cleaned = cleaned.replace(rule.pattern, rule.replacement);
+  }
+
+  // 連続スペースの整理
+  return cleaned.replace(/\s+/g, ' ').trim();
+}
+
+
 // 翻訳結果のインメモリキャッシュ (Key: `${targetLang}:${sourceText}`)
 const translationMemoryCache = new Map<string, string>();
 const MAX_CACHE_SIZE = 10000;
@@ -96,7 +191,13 @@ export async function batchTranslateTitles(titles: string[], targetLang: string)
   // 結果のマッピングとキャッシュ保存
   uncachedIndices.forEach((origIdx, i) => {
     const origTitle = uncachedTitles[i];
-    const transTitle = (translatedUncached && translatedUncached[i]) ? translatedUncached[i] : origTitle;
+    let transTitle = (translatedUncached && translatedUncached[i]) ? translatedUncached[i] : origTitle;
+
+    // ブランド名のカタカナ重複クリーンアップを適用
+    if (targetLang !== 'ja' && transTitle) {
+      transTitle = cleanupBrandNames(transTitle);
+    }
+
     results[origIdx] = transTitle;
 
     // 日本語残存チェック（ターゲット言語がes/ptで、結果に日本語が含まれているか未翻訳のまま）
@@ -129,6 +230,7 @@ export async function batchTranslateTitles(titles: string[], targetLang: string)
 
   return results;
 }
+
 
 /**
  * 1チャンク（最大10件）の高速翻訳 + 多重フォールバック
@@ -188,7 +290,7 @@ export async function translateText(text: string, targetLang: string, sourceLang
           if (res.ok) {
             const data = await res.json();
             const translated = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-            if (translated) return translated;
+            if (translated) return cleanupBrandNames(translated);
           }
         } catch {}
       }
@@ -208,14 +310,14 @@ export async function translateText(text: string, targetLang: string, sourceLang
     if (res.ok) {
       const data = await res.json();
       const translated = data?.[0]?.map((x: string[]) => x[0]).join('');
-      if (translated) return translated.trim();
+      if (translated) return cleanupBrandNames(translated.trim());
     }
   } catch {}
 
   // フォールバック: MyMemory
   try {
     const memoryResult = await translateWithMyMemory(text, targetLang, sourceLang);
-    if (memoryResult) return memoryResult;
+    if (memoryResult) return cleanupBrandNames(memoryResult);
   } catch {}
 
   // 全ての翻訳が失敗し、日本語が残存している場合は管理者に通知
@@ -244,11 +346,16 @@ async function translateWithGeminiBatch(titles: string[], targetLang: string, ap
 
   const prompt = `You are a professional translator for an e-commerce auction proxy service.
 Translate each of the following product titles from Japanese into ${targetLangName}.
-Return ONLY a valid JSON array of ${titles.length} translated strings in the EXACT same order and array length as the input.
-Do NOT output markdown code fences, backticks, or any explanatory text. Return purely the JSON array.
+
+CRITICAL RULES:
+1. Return ONLY a valid JSON array of ${titles.length} translated strings in the EXACT same order and array length as the input.
+2. Remove redundant Japanese katakana brand names when the Latin/English name is present (e.g. "SONY ソニー" -> "SONY", "TOYOTA トヨタ" -> "Toyota", "BBS ビービーエス" -> "BBS").
+3. Convert all standalone Japanese brand names to their official Latin/English equivalents (e.g. "ソニー" -> "SONY", "日産" -> "Nissan").
+4. Do NOT output markdown code fences, backticks, or any explanatory text. Return purely the JSON array.
 
 Input JSON:
 ${JSON.stringify(titles)}`;
+
 
   for (const model of GEMINI_MODELS) {
     try {
