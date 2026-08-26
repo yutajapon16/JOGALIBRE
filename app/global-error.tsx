@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function GlobalError({
   error,
@@ -14,20 +15,37 @@ export default function GlobalError({
   useEffect(() => {
     console.error('Global Error caught:', error);
 
-    // エラー情報を管理者通知APIへ非同期報告
-    try {
-      fetch('/api/client-error', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: error.message || 'Unknown Global Error',
-          stack: error.stack,
-          digest: error.digest,
-          url: typeof window !== 'undefined' ? window.location.href : '',
-          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
-        })
-      }).catch(() => {});
-    } catch {}
+    // エラー情報とログイン中ユーザー情報を管理者通知APIへ非同期報告
+    const reportError = async () => {
+      try {
+        let userId: string | undefined = undefined;
+        let email: string | undefined = undefined;
+
+        try {
+          const { data } = await supabase.auth.getUser();
+          if (data?.user) {
+            userId = data.user.id;
+            email = data.user.email;
+          }
+        } catch {}
+
+        await fetch('/api/client-error', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: error.message || 'Unknown Global Error',
+            stack: error.stack,
+            digest: error.digest,
+            url: typeof window !== 'undefined' ? window.location.href : '',
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+            userId,
+            email,
+          })
+        });
+      } catch {}
+    };
+
+    reportError();
 
     if (typeof localStorage !== 'undefined') {
       const savedLang = localStorage.getItem('lang');

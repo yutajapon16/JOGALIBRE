@@ -38,6 +38,14 @@ export type ErrorCategory =
   | 'system'            // サーバーサイド全般
   | 'client';           // フロントエンドクラッシュ
 
+export interface ErrorUserInfo {
+  id?: string;
+  customerId?: string;
+  name?: string;
+  email?: string;
+  role?: string;
+}
+
 export interface NotifyAdminErrorOptions {
   category: ErrorCategory;
   title: string;
@@ -46,6 +54,7 @@ export interface NotifyAdminErrorOptions {
   url?: string;
   productId?: string;
   severity?: ErrorSeverity;
+  user?: ErrorUserInfo;      // 操作していた顧客・ユーザー情報
   throttleKey?: string;      // 重複抑制用キー（省略時は category + title を使用）
   throttleMinutes?: number;  // クールダウン時間（デフォルト10分）
 }
@@ -65,11 +74,12 @@ export async function notifyAdminError(options: NotifyAdminErrorOptions): Promis
     url,
     productId,
     severity = 'error',
+    user,
     throttleKey,
     throttleMinutes = 10
   } = options;
 
-  const key = throttleKey || `${category}:${title}:${productId || ''}`;
+  const key = throttleKey || `${category}:${title}:${productId || ''}:${user?.customerId || user?.email || ''}`;
   const now = Date.now();
   const cooldownMs = throttleMinutes * 60 * 1000;
   const existing = alertCooldownMap.get(key);
@@ -85,7 +95,19 @@ export async function notifyAdminError(options: NotifyAdminErrorOptions): Promis
 
   const jstTimeString = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
   const logPrefix = `[ErrorNotifier][${category.toUpperCase()}][${severity.toUpperCase()}]`;
-  console.error(`${logPrefix} ${title}: ${message}`, details || '');
+  console.error(`${logPrefix} ${title}: ${message}`, details || '', user ? `[User: ${user.customerId || user.email || 'guest'}]` : '');
+
+  // 顧客情報の要約ラベル（プッシュ通知等で使用）
+  let userLabel = '';
+  if (user) {
+    if (user.customerId && user.name) {
+      userLabel = ` (顧客: ${user.customerId} / ${user.name} 様)`;
+    } else if (user.customerId) {
+      userLabel = ` (顧客: ${user.customerId})`;
+    } else if (user.email) {
+      userLabel = ` (顧客: ${user.email})`;
+    }
+  }
 
   // 1. メール送信（admin@jogalibre.com）
   const emailPromise = (async () => {
@@ -98,7 +120,13 @@ export async function notifyAdminError(options: NotifyAdminErrorOptions): Promis
         details,
         url: url || (productId ? `https://page.auctions.yahoo.co.jp/auction/${productId}` : undefined),
         timestamp: jstTimeString,
-        severity
+        severity,
+        user: user ? {
+          customerId: user.customerId,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        } : undefined
       };
       await sendSystemAlertEmail(emailOpts);
     } catch (err) {
@@ -121,12 +149,15 @@ export async function notifyAdminError(options: NotifyAdminErrorOptions): Promis
 
       const adminUserIds = adminUsers.map(u => u.id);
 
+      const notificationTitle = `⚠️ [エラー検知] ${title}${userLabel}`;
+      const notificationBody = message.length > 120 ? message.substring(0, 117) + '...' : message;
+
       // アプリ内通知テーブルに記録
       try {
         const notifications = adminUserIds.map(uid => ({
           user_id: uid,
-          title: `⚠️ [エラー検知] ${title}`,
-          body: message.length > 120 ? message.substring(0, 117) + '...' : message,
+          title: notificationTitle,
+          body: notificationBody,
           url: url || '/admin',
           is_read: false
         }));
@@ -146,7 +177,7 @@ export async function notifyAdminError(options: NotifyAdminErrorOptions): Promis
         if (subs && subs.length > 0) {
           const pushPayload = JSON.stringify({
             title: `⚠️ [システム警告] ${title}`,
-            body: message.length > 100 ? message.substring(0, 97) + '...' : message,
+            body: `${notificationBody}${userLabel}`,
             icon: '/icons/logo-mark.png',
             url: url || '/admin'
           });
@@ -175,3 +206,4 @@ export async function notifyAdminError(options: NotifyAdminErrorOptions): Promis
 
   return { notified: true, throttled: false };
 }
+

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function ErrorBoundary({
   error,
@@ -15,20 +16,37 @@ export default function ErrorBoundary({
   useEffect(() => {
     console.error('Client Application Error caught by boundary:', error);
 
-    // エラー情報を管理者通知APIへ非同期報告
-    try {
-      fetch('/api/client-error', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: error.message || 'Client Boundary Error',
-          stack: error.stack,
-          digest: error.digest,
-          url: typeof window !== 'undefined' ? window.location.href : '',
-          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
-        })
-      }).catch(() => {});
-    } catch {}
+    // エラー情報とログイン中ユーザー情報を管理者通知APIへ非同期報告
+    const reportError = async () => {
+      try {
+        let userId: string | undefined = undefined;
+        let email: string | undefined = undefined;
+
+        try {
+          const { data } = await supabase.auth.getUser();
+          if (data?.user) {
+            userId = data.user.id;
+            email = data.user.email;
+          }
+        } catch {}
+
+        await fetch('/api/client-error', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: error.message || 'Client Boundary Error',
+            stack: error.stack,
+            digest: error.digest,
+            url: typeof window !== 'undefined' ? window.location.href : '',
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+            userId,
+            email,
+          })
+        });
+      } catch {}
+    };
+
+    reportError();
 
     // ユーザーの言語設定またはブラウザ言語を判定
     if (typeof localStorage !== 'undefined') {

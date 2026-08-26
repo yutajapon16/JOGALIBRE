@@ -496,6 +496,12 @@ export interface SystemAlertEmailOptions {
   url?: string;
   timestamp?: string;
   severity?: 'warning' | 'critical' | 'error';
+  user?: {
+    customerId?: string;
+    name?: string;
+    email?: string;
+    role?: string;
+  };
 }
 
 /**
@@ -520,6 +526,25 @@ export async function sendSystemAlertEmail(options: SystemAlertEmailOptions) {
       }
     }
 
+    const userInfo = options.user;
+    const userDisplayHtml = userInfo && (userInfo.customerId || userInfo.email || userInfo.name)
+      ? `
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
+          <p style="margin: 0 0 8px 0; font-size: 13px; color: #166534; font-weight: bold;">👤 【操作ユーザー / 顧客情報】</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            ${userInfo.customerId ? `<tr><td style="padding: 3px 0; color: #15803d; width: 110px; font-weight: 600;">顧客ID:</td><td style="padding: 3px 0; color: #0f172a; font-weight: bold;">${userInfo.customerId}</td></tr>` : ''}
+            ${userInfo.name ? `<tr><td style="padding: 3px 0; color: #15803d; font-weight: 600;">お名前:</td><td style="padding: 3px 0; color: #0f172a;">${userInfo.name} 様</td></tr>` : ''}
+            ${userInfo.email ? `<tr><td style="padding: 3px 0; color: #15803d; font-weight: 600;">メール:</td><td style="padding: 3px 0; color: #0f172a;">${userInfo.email}</td></tr>` : ''}
+            ${userInfo.role ? `<tr><td style="padding: 3px 0; color: #15803d; font-weight: 600;">権限 (Role):</td><td style="padding: 3px 0; color: #0f172a; font-family: monospace;">${userInfo.role}</td></tr>` : ''}
+          </table>
+        </div>
+      `
+      : `
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; font-size: 13px; color: #64748b;">
+          👤 <strong>操作ユーザー:</strong> 未ログイン（ゲスト訪問者）またはシステム自動実行
+        </div>
+      `;
+
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 680px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px; width: 100%;">
@@ -541,6 +566,8 @@ export async function sendSystemAlertEmail(options: SystemAlertEmailOptions) {
           <p style="margin: 0 0 6px 0; font-size: 13px; color: #64748b; font-weight: bold;">【エラー概要】</p>
           <p style="margin: 0; font-size: 15px; color: #0f172a; line-height: 1.5; white-space: pre-wrap;">${options.message}</p>
         </div>
+
+        ${userDisplayHtml}
 
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
           <tbody>
@@ -581,6 +608,7 @@ export async function sendSystemAlertEmail(options: SystemAlertEmailOptions) {
       subject: `[JOGALIBRE 警告] ${options.title}`,
       html: html,
     });
+
 
     if (error) {
       console.error('Failed to send system alert email via Resend:', error);

@@ -70,12 +70,14 @@ export default function RootLayout({
   const imageUrl = `${siteUrl}/icons/customer-icon.png`;
 
   return (
-    <html lang="en">
+    <html lang="es" translate="no" className="notranslate">
       <head>
+        <meta name="google" content="notranslate" />
         <meta name="color-scheme" content="light" />
         <meta name="referrer" content="no-referrer" />
         <link rel="icon" href="/icons/customer-icon.png" type="image/png" />
         <link rel="apple-touch-icon" href="/icons/customer-icon.png" />
+
 
         {/* Fallback explicit Open Graph Meta Tags for WhatsApp & Social Web Crawlers */}
         <meta property="og:title" content="JOGALIBRE" />
