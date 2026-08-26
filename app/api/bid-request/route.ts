@@ -87,46 +87,51 @@ export async function POST(request: Request) {
       );
     }
 
-    // 申請作成時点で残り12時間以内の場合、即座に管理者へ通知を送信
-    if (productEndTime) {
-      const endDate = parseAnyDateTime(productEndTime);
-      if (endDate) {
-        const diffMs = endDate.getTime() - Date.now();
-        const diffHours = diffMs / (1000 * 60 * 60);
+    // 申請作成時に即座に管理者へ通知を送信
+    try {
+      const { data: userRole } = await supabaseAdmin
+        .from('user_roles')
+        .select('customer_id')
+        .eq('email', finalEmail)
+        .single();
 
-        if (diffHours > 0 && diffHours <= 12) {
-          const { data: userRole } = await supabaseAdmin
-            .from('user_roles')
-            .select('customer_id')
-            .eq('email', finalEmail)
-            .single();
-
-          const customerId = userRole?.customer_id || '不明';
-          const title = '⏰ 【残り12時間】未確認の申請あり';
-          const bodyText = `商品: ${productTitle || productId} (顧客: ${customerId})`;
-
-          try {
-            await fetch(`${new URL(request.url).origin}/api/push-send`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                sendToAdmins: true,
-                title,
-                body: bodyText,
-                url: '/admin'
-              })
-            });
-
-            const updatedMsg = ((data.customer_message || '') + ' [12h_notified]').trim();
-            await supabaseAdmin
-              .from('bid_requests')
-              .update({ customer_message: updatedMsg })
-              .eq('id', data.id);
-          } catch (pushErr) {
-            console.error('Instant 12h push error:', pushErr);
+      const customerId = userRole?.customer_id || '不明';
+      
+      let isUrgent = false;
+      if (productEndTime) {
+        const endDate = parseAnyDateTime(productEndTime);
+        if (endDate) {
+          const diffMs = endDate.getTime() - Date.now();
+          const diffHours = diffMs / (1000 * 60 * 60);
+          if (diffHours > 0 && diffHours <= 12) {
+            isUrgent = true;
           }
         }
       }
+
+      const title = isUrgent ? '⏰ 【残り12時間】未確認の申請あり' : '🔔 新規入札リクエスト';
+      const bodyText = `商品: ${productTitle || productId} (顧客: ${customerId})`;
+
+      await fetch(`${new URL(request.url).origin}/api/push-send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sendToAdmins: true,
+          title,
+          body: bodyText,
+          url: '/admin'
+        })
+      });
+
+      if (isUrgent) {
+        const updatedMsg = ((data.customer_message || '') + ' [12h_notified]').trim();
+        await supabaseAdmin
+          .from('bid_requests')
+          .update({ customer_message: updatedMsg })
+          .eq('id', data.id);
+      }
+    } catch (pushErr) {
+      console.error('Admin notification push error:', pushErr);
     }
 
     return NextResponse.json({

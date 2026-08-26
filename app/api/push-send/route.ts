@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-
 import { VAPID_PUBLIC_KEY } from '@/lib/constants';
+import { sendEvolutionWhatsAppMessage } from '@/lib/whatsapp-evolution';
 
 // Web Push設定
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
@@ -74,18 +74,18 @@ export async function POST(request: NextRequest) {
             if (reqData) bidReq = reqData;
         }
 
-        // ユーザー権限と言語マップを取得
+        // ユーザー権限・言語・WhatsApp番号・国情報を取得
         const { data: targetRoles } = await supabaseAdmin
             .from('user_roles')
-            .select('id, role, language')
+            .select('id, role, language, whatsapp, country, full_name')
             .in('id', targetUserIds);
         
-        const roleMap = new Map();
+        const roleMap = new Map<string, any>();
         if (targetRoles) {
             targetRoles.forEach(r => roleMap.set(r.id, r));
         }
 
-        // DBに通知履歴を各受診者の言語に合わせて記録
+        // DBに通知履歴を各受信者の言語に合わせて記録
         try {
             const logs = targetUserIds.map(uid => {
                 const uInfo = roleMap.get(uid);
@@ -138,7 +138,61 @@ export async function POST(request: NextRequest) {
             console.error('DB保存クリティカルエラー:', dbErr);
         }
 
-        // 対象ユーザーのプッシュサブスクリプションを一括取得
+        // --- 1. WhatsApp 同時通知処理（Evolution API） ---
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://jogalibre.com';
+        const targetUrl = url ? `${baseUrl.replace(/\/+$/, '')}${url.startsWith('/') ? url : `/${url}`}` : baseUrl;
+
+        const whatsappPromises = targetUserIds.map(async (uid) => {
+            const uInfo = roleMap.get(uid);
+            const isAdmin = uInfo?.role === 'admin';
+            const targetWhatsApp = uInfo?.whatsapp || (isAdmin ? process.env.ADMIN_WHATSAPP_NUMBER : null);
+            if (!targetWhatsApp) return { success: false, skipped: true };
+
+            const uLang = uInfo?.language || (isAdmin ? 'ja' : 'es');
+
+            let formattedBody = body || '';
+            if (bidReq) {
+                if (isAdmin) {
+                    formattedBody = `商品: ${bidReq.product_title || 'リクエスト商品'}`;
+                } else if (uLang === 'pt') {
+                    formattedBody = `Produto: ${bidReq.product_title_pt || bidReq.product_title_es || bidReq.product_title}`;
+                } else {
+                    formattedBody = `Producto: ${bidReq.product_title_es || bidReq.product_title_pt || bidReq.product_title}`;
+                }
+            } else {
+                if (isAdmin) {
+                    formattedBody = formattedBody.replace(/^(Producto|Produto):\s*/i, '商品: ');
+                } else if (uLang === 'pt') {
+                    formattedBody = formattedBody.replace(/^(商品|Producto):\s*/i, 'Produto: ');
+                } else {
+                    formattedBody = formattedBody.replace(/^(商品|Produto):\s*/i, 'Producto: ');
+                }
+            }
+
+            let cleanTitle = title || '';
+            if (!cleanTitle || cleanTitle === 'JOGALIBRE' || cleanTitle === 'Administrador' || cleanTitle === '管理画面') {
+                cleanTitle = isAdmin ? '🔔 通知' : (uLang === 'pt' ? '🔔 Notificação' : '🔔 Notificación');
+            }
+
+            // WhatsApp用の見やすいフォーマット
+            const messageLines = [
+                `*JOGALIBRE*`,
+                cleanTitle,
+                formattedBody,
+                '',
+                targetUrl
+            ].filter(line => line !== null && line !== undefined);
+
+            const messageText = messageLines.join('\n');
+
+            return await sendEvolutionWhatsAppMessage({
+                to: targetWhatsApp,
+                message: messageText,
+                country: uInfo?.country || (isAdmin ? 'BR' : undefined)
+            });
+        });
+
+        // --- 2. Web Push 通知処理 ---
         const { data: subscriptions, error: fetchError } = await supabaseAdmin
             .from('push_subscriptions')
             .select('user_id, subscription')
@@ -146,78 +200,86 @@ export async function POST(request: NextRequest) {
 
         if (fetchError) {
             console.error('サブスクリプション取得エラー:', fetchError);
-            return NextResponse.json({ error: fetchError.message }, { status: 500 });
         }
 
-        if (!subscriptions || subscriptions.length === 0) {
-            return NextResponse.json(
-                { error: 'プッシュ通知が登録されていません（アプリ内通知履歴は保存されました）', sent: false },
-                { status: 200 }
-            );
-        }
+        const pushPromises = (subscriptions || []).map(async (sub) => {
+            try {
+                const uInfo = roleMap.get(sub.user_id);
+                const isAdmin = uInfo?.role === 'admin';
+                const uLang = uInfo?.language || 'es';
 
-        // 各サブスクリプションに通知を送信（受信者の言語に合わせてペイロード作成）
-        const results = await Promise.allSettled(
-            subscriptions.map(async (sub) => {
-                try {
-                    const uInfo = roleMap.get(sub.user_id);
-                    const isAdmin = uInfo?.role === 'admin';
-                    const uLang = uInfo?.language || 'es';
-
-                    let formattedBody = body || '新しい通知があります';
-                    if (bidReq) {
-                        if (isAdmin) {
-                            formattedBody = `商品: ${bidReq.product_title || 'リクエスト商品'}`;
-                        } else if (uLang === 'pt') {
-                            formattedBody = `Produto: ${bidReq.product_title_pt || bidReq.product_title_es || bidReq.product_title}`;
-                        } else {
-                            formattedBody = `Producto: ${bidReq.product_title_es || bidReq.product_title_pt || bidReq.product_title}`;
-                        }
+                let formattedBody = body || '新しい通知があります';
+                if (bidReq) {
+                    if (isAdmin) {
+                        formattedBody = `商品: ${bidReq.product_title || 'リクエスト商品'}`;
+                    } else if (uLang === 'pt') {
+                        formattedBody = `Produto: ${bidReq.product_title_pt || bidReq.product_title_es || bidReq.product_title}`;
                     } else {
-                        if (isAdmin) {
-                            formattedBody = formattedBody.replace(/^(Producto|Produto):\s*/i, '商品: ');
-                        } else if (uLang === 'pt') {
-                            formattedBody = formattedBody.replace(/^(商品|Producto):\s*/i, 'Produto: ');
-                        } else {
-                            formattedBody = formattedBody.replace(/^(商品|Produto):\s*/i, 'Producto: ');
-                        }
+                        formattedBody = `Producto: ${bidReq.product_title_es || bidReq.product_title_pt || bidReq.product_title}`;
                     }
-
-                    let cleanTitle = title || '';
-                    if (!cleanTitle || cleanTitle === 'JOGALIBRE' || cleanTitle === 'Administrador' || cleanTitle === '管理画面') {
-                        cleanTitle = isAdmin ? '🔔 通知' : (uLang === 'pt' ? '🔔 Notificação' : '🔔 Notificación');
+                } else {
+                    if (isAdmin) {
+                        formattedBody = formattedBody.replace(/^(Producto|Produto):\s*/i, '商品: ');
+                    } else if (uLang === 'pt') {
+                        formattedBody = formattedBody.replace(/^(商品|Producto):\s*/i, 'Produto: ');
+                    } else {
+                        formattedBody = formattedBody.replace(/^(商品|Produto):\s*/i, 'Producto: ');
                     }
-
-                    const payload = JSON.stringify({
-                        title: cleanTitle,
-                        body: formattedBody,
-                        icon: '/icons/customer-icon.png',
-                        url: url || '/',
-                    });
-
-                    const pushSubscription = JSON.parse(sub.subscription);
-                    await webpush.sendNotification(pushSubscription, payload);
-                    return { success: true };
-                } catch (err: unknown) {
-                    if (err && typeof err === 'object' && 'statusCode' in err) {
-                        const statusCode = (err as { statusCode: number }).statusCode;
-                        if (statusCode === 410 || statusCode === 404) {
-                            await supabaseAdmin
-                                .from('push_subscriptions')
-                                .delete()
-                                .eq('user_id', sub.user_id);
-                        }
-                    }
-                    console.error('プッシュ送信エラー:', err);
-                    return { success: false, error: (err as Error).message };
                 }
-            })
-        );
 
-        const sentCount = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
-        const sent = sentCount > 0;
+                let cleanTitle = title || '';
+                if (!cleanTitle || cleanTitle === 'JOGALIBRE' || cleanTitle === 'Administrador' || cleanTitle === '管理画面') {
+                    cleanTitle = isAdmin ? '🔔 通知' : (uLang === 'pt' ? '🔔 Notificação' : '🔔 Notificación');
+                }
 
-        return NextResponse.json({ success: true, sent, sentCount });
+                const payload = JSON.stringify({
+                    title: cleanTitle,
+                    body: formattedBody,
+                    icon: '/icons/customer-icon.png',
+                    url: url || '/',
+                });
+
+                const pushSubscription = JSON.parse(sub.subscription);
+                await webpush.sendNotification(pushSubscription, payload);
+                return { success: true };
+            } catch (err: unknown) {
+                if (err && typeof err === 'object' && 'statusCode' in err) {
+                    const statusCode = (err as { statusCode: number }).statusCode;
+                    if (statusCode === 410 || statusCode === 404) {
+                        await supabaseAdmin
+                            .from('push_subscriptions')
+                            .delete()
+                            .eq('user_id', sub.user_id);
+                    }
+                }
+                console.error('プッシュ送信エラー:', err);
+                return { success: false, error: (err as Error).message };
+            }
+        });
+
+        // WhatsAppとWeb Pushを並列実行
+        const [pushResults, whatsappResults] = await Promise.all([
+            Promise.allSettled(pushPromises),
+            Promise.allSettled(whatsappPromises)
+        ]);
+
+        const pushSentCount = pushResults.filter(
+            (r) => r.status === 'fulfilled' && (r.value as any)?.success
+        ).length;
+
+        const whatsappSentCount = whatsappResults.filter(
+            (r) => r.status === 'fulfilled' && (r.value as any)?.success
+        ).length;
+
+        const sent = pushSentCount > 0 || whatsappSentCount > 0;
+
+        return NextResponse.json({
+            success: true,
+            sent,
+            pushSentCount,
+            whatsappSentCount,
+            totalTargets: targetUserIds.length
+        });
     } catch (error) {
         console.error('通知送信エラー:', error);
         return NextResponse.json(
