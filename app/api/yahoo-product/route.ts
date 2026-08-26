@@ -60,13 +60,7 @@ export async function POST(request: Request) {
     let shippingUnknown = false;
     let allImages: string[] = [];
     let description = '';
-    let isClosedItem = false;
-    let isEndedHtml = html.includes('終了しました') ||
-      html.includes('オークションは終了しました') ||
-      html.includes('このオークションは終了しています') ||
-      html.includes('即決価格で落札') ||
-      html.includes('早期終了') ||
-      html.includes('落札者あり');
+    let isClosedJson: boolean | null = null;
 
     const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
 
@@ -162,13 +156,10 @@ export async function POST(request: Request) {
             }
 
             // 終了判定
-            isClosedItem = itemData.isClosed === true || itemData.status === 'closed' || itemData.status === 'ended';
-
-            if (isClosedItem || isEndedHtml) {
-              const parsedDate = endTime ? parseAnyDateTime(endTime) : null;
-              if (!endTime || (parsedDate && parsedDate.getTime() > Date.now())) {
-                endTime = new Date().toISOString();
-              }
+            if (itemData.status === 'closed' || itemData.status === 'ended') {
+              isClosedJson = true;
+            } else if (itemData.status === 'open' || itemData.status === 'active') {
+              isClosedJson = false;
             }
 
 
@@ -406,20 +397,44 @@ export async function POST(request: Request) {
       expiresAt: now + CACHE_TTL_MS
     });
 
+    const nowTs = Date.now();
+    const parsedEndTime = endTime ? (parseDbDateTime(endTime) || parseJstDateTime(endTime) || parseAnyDateTime(endTime)) : null;
+    const isEndTimePast = parsedEndTime ? parsedEndTime.getTime() <= nowTs : false;
+
+    let isFinished = false;
+    if (isClosedJson === true) {
+      isFinished = true;
+    } else if (isClosedJson === false) {
+      // ヤフオク上で出品中（open/active）の場合、終了予定時刻が過去になっていなければ開催中！
+      isFinished = isEndTimePast;
+    } else {
+      // JSONが取得できなかった場合のHTML終了文言チェック
+      const isEndedSpecificHtml = html.includes('このオークションは終了しています') ||
+        html.includes('オークションは終了しました') ||
+        html.includes('ClosedHeader') ||
+        html.includes('即決価格で落札されました');
+      isFinished = isEndedSpecificHtml || isEndTimePast;
+    }
+
+    // 実際に終了している場合で、終了時刻が未来のまま（即決等）の場合は現在時刻に補正
+    if (isFinished && (!endTime || (parsedEndTime && parsedEndTime.getTime() > nowTs))) {
+      endTime = new Date().toISOString();
+    }
+
     // 残り時間の計算 (詳細取得用)
     let timeLeft = '-';
-    if (isClosedItem || isEndedHtml) {
+    if (isFinished) {
       timeLeft = lang === 'ja' ? '終了' : 'Finalizado';
     } else if (endTime) {
-      const parsedEndTime = parseAnyDateTime(endTime);
-      if (parsedEndTime) {
-        const diff = Math.max(0, parsedEndTime.getTime() - Date.now());
-        if (diff === 0) {
+      const parsed = parseAnyDateTime(endTime);
+      if (parsed) {
+        const diff = parsed.getTime() - nowTs;
+        if (diff <= 0) {
           timeLeft = lang === 'ja' ? '終了' : 'Finalizado';
         } else {
           const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-          const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-          const m = Math.floor((diff / 1000 / 60) % 60);
+          const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
           timeLeft = `${d}d ${h}h ${m}m`;
         }
       }
@@ -447,8 +462,6 @@ export async function POST(request: Request) {
 
     const finalAiSummaryEs = aiSummaryEs || (isRealSummary(cachedItem?.aiSummaryEs) ? cachedItem?.aiSummaryEs : '') || '';
     const finalAiSummaryPt = aiSummaryPt || (isRealSummary(cachedItem?.aiSummaryPt) ? cachedItem?.aiSummaryPt : '') || '';
-
-    const isFinished = isClosedItem || isEndedHtml || (endTime ? (parseAnyDateTime(endTime)?.getTime() || 0) <= Date.now() : false);
 
     const product = {
       id: productId,
