@@ -30,20 +30,7 @@ function useAdminManifest() {
 
 export default function AdminDashboard() {
   useAdminManifest();
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('joga_user_cache');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed?.role === 'admin') {
-            return parsed;
-          }
-        }
-      } catch {}
-    }
-    return null;
-  });
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -1043,40 +1030,55 @@ export default function AdminDashboard() {
   useEffect(() => {
     let isMounted = true;
     let authResolved = false;
+    let isResolving = false;
+    let lastResolvedUserId: string | null = null;
 
     // ローカルストレージに Supabase 認証情報があるか確認
     const hasStoredAuth = typeof window !== 'undefined' && Object.keys(localStorage).some(
       k => (k.startsWith('sb-') || k.includes('supabase')) && k.endsWith('-auth-token')
     );
 
-    // 万が一のタイムアウト防止（最長6秒で強制的にローディング解除）
+    // 万が一のタイムアウト防止（最長5秒で強制的にローディング解除）
     const safetyTimer = setTimeout(() => {
       if (isMounted && !authResolved) {
         authResolved = true;
         setLoading(false);
       }
-    }, 6000);
+    }, 5000);
 
     const resolveAdminUser = async (supabaseUser: any) => {
+      // 重複実行または同じユーザーで既に解決済みの場合はスキップ
+      if (isResolving) return;
+      if (lastResolvedUserId === supabaseUser?.id && authResolved) return;
+
+      isResolving = true;
       try {
         const user = await getCurrentUser(supabaseUser);
         if (!isMounted) return;
         authResolved = true;
+        lastResolvedUserId = user?.id || null;
+
         if (user?.role === 'admin') {
-          setCurrentUser(user);
-          // ① トップページ（申請タブ）の表示に必要な最重要データのみを待機（約0.2〜0.4秒の最速完了）
-          // これにより、ロード画面がすぐに消え、トップページが開いた瞬間に申請中商品が即座に揃って表示されます
+          // ① トップページ（申請タブ）の表示に必要な最重要データのみを最大2.5秒で待機
           try {
-            await Promise.allSettled([
-              fetchBidRequests(),
-              fetchExchangeRate(),
-              fetchUnreadCount()
+            const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2500));
+            await Promise.race([
+              Promise.allSettled([
+                fetchBidRequests(),
+                fetchExchangeRate(),
+                fetchUnreadCount()
+              ]),
+              timeoutPromise
             ]);
           } catch (dataErr) {
-            console.warn('Initial critical data preload error:', dataErr);
+            console.warn('Initial critical data preload warning:', dataErr);
           }
 
-          // ② 他の重いタブデータ（落札済み・入金・顧客・財務・Foxbit等）はバックグラウンドで非同期に事前ロード（画面描画を一切待たせない）
+          if (isMounted) {
+            setCurrentUser(user);
+          }
+
+          // ② 他の重いタブデータはバックグラウンドで非同期に事前ロード（画面描画を一切ブロックしない）
           Promise.allSettled([
             fetchPurchasedItems(),
             fetchShippingContainers(),
@@ -1087,7 +1089,9 @@ export default function AdminDashboard() {
             fetchInviteCodes()
           ]).catch(e => console.warn('Background tab preload error:', e));
         } else {
-          setCurrentUser(null);
+          if (isMounted) {
+            setCurrentUser(null);
+          }
         }
       } catch (e) {
         console.error('Error resolving admin user:', e);
@@ -1096,6 +1100,7 @@ export default function AdminDashboard() {
           setCurrentUser(null);
         }
       } finally {
+        isResolving = false;
         if (isMounted) {
           setLoading(false);
           setIsLoggingIn(false);
@@ -1150,6 +1155,7 @@ export default function AdminDashboard() {
 
       if (event === 'SIGNED_OUT') {
         authResolved = true;
+        lastResolvedUserId = null;
         setCurrentUser(null);
         setLoading(false);
         setIsLoggingIn(false);
@@ -1324,14 +1330,10 @@ export default function AdminDashboard() {
     setIsLoggingIn(true);
     try {
       await signIn(loginForm.email.trim(), loginForm.password);
-      // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
-      // ロールチェックは onAuthStateChange 内で行われる（admin のみ setCurrentUser）
       setLoginForm({ email: '', password: '' });
-      setLoading(true);
     } catch (error: any) {
       console.error('Login error:', error);
       alert(error?.message || 'ログインに失敗しました。メールアドレスとパスワードを確認してください。');
-    } finally {
       setIsLoggingIn(false);
     }
   };
