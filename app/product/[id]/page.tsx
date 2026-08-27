@@ -768,24 +768,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       const data = await res.json();
 
       if (res.ok) {
-        // 管理者へ通知
-        if (currentUser) {
-          const itemTitle = product?.titleJa || product?.title || 'リクエスト商品';
-          const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
-          const custName = currentUser.fullName || finalCustomerName;
-          fetch('/api/push-send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sendToAdmins: true,
-              bidRequestId: data?.bidRequest?.id,
-              title: `📩 【新規申請】${custName} ${custId}`.trim(),
-              body: `商品: ${itemTitle}`,
-              url: '/admin'
-            })
-          }).catch(e => console.error('Admin push error', e));
-        }
-
         addLocalOfferedId(product?.id || product?.url || targetUrl || '');
         alert(t.offerSuccess);
         router.back();

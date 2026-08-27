@@ -87,15 +87,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // 申請作成時に即座に管理者へ通知を送信
+    // 申請作成時に即座に管理者へ通知を送信（サーバー側で一括処理して重複防止）
     try {
       const { data: userRole } = await supabaseAdmin
         .from('user_roles')
-        .select('customer_id')
+        .select('full_name, customer_id')
         .eq('email', finalEmail)
         .single();
 
-      const customerId = userRole?.customer_id || '不明';
+      const customerId = userRole?.customer_id ? `(${userRole.customer_id})` : '';
+      const custName = userRole?.full_name || customerName || finalEmail;
       
       let isUrgent = false;
       if (productEndTime) {
@@ -109,14 +110,15 @@ export async function POST(request: Request) {
         }
       }
 
-      const title = isUrgent ? '⏰ 【残り12時間】未確認の申請あり' : '🔔 新規入札リクエスト';
-      const bodyText = `商品: ${productTitle || productId} (顧客: ${customerId})`;
+      const title = isUrgent ? `⏰ 【残り12時間】${custName} ${customerId}`.trim() : `📩 【新規申請】${custName} ${customerId}`.trim();
+      const bodyText = `商品: ${productTitle || productId}`;
 
       await fetch(`${new URL(request.url).origin}/api/push-send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sendToAdmins: true,
+          bidRequestId: data.id,
           title,
           body: bodyText,
           url: '/admin'

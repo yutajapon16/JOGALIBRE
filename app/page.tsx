@@ -2870,25 +2870,6 @@ export default function Home() {
       });
 
       if (res.ok) {
-        const resData = await res.json();
-        // 管理者へ通知
-        if (currentUser) {
-          const itemTitle = selectedProduct?.title || bidForm.name || 'リクエスト商品';
-          const custId = currentUser.customerId ? `(${currentUser.customerId})` : '';
-          const custName = currentUser.fullName || finalCustomerName;
-          fetch('/api/push-send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sendToAdmins: true,
-              bidRequestId: resData?.bidRequest?.id,
-              title: `📩 【新規申請】${custName} ${custId}`.trim(),
-              body: `商品: ${itemTitle}`,
-              url: '/admin'
-            })
-          }).catch(e => console.error('Admin push error', e));
-        }
-
         if (selectedProduct) {
           addLocalOfferedId(selectedProduct.id || selectedProduct.url || '');
         }
