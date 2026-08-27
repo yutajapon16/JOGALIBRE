@@ -365,6 +365,30 @@ export async function sendWelcomeEmail(to: string, fullName: string, customerId:
             </a>
           </div>
 
+          <!-- Web App（ホーム画面追加）ガイド -->
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 24px 0;">
+            <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: bold; color: #1e293b; text-align: center;">📲 Instale o JOGALIBRE como Aplicativo no seu Celular!</p>
+            <p style="margin: 0 0 14px 0; font-size: 13px; color: #475569; line-height: 1.5; text-align: center;">Adicione o JOGALIBRE à tela inicial do seu celular para acessar com 1 toque, como um app nativo:</p>
+            
+            <div style="margin-bottom: 10px; padding: 10px 14px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
+              <p style="margin: 0 0 4px 0; font-size: 13px; font-weight: bold; color: #0f172a;">🍎 iPhone (Safari):</p>
+              <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.5;">
+                1. Abra <strong>jogalibre.com</strong> no navegador <strong>Safari</strong>.<br />
+                2. Toque no botão de <strong>Compartilhar</strong> (ícone de quadrado com seta para cima ⎋ na barra inferior).<br />
+                3. Selecione <strong>"Adicionar à Tela de Início"</strong> ➜ toque em <strong>"Adicionar"</strong>.
+              </p>
+            </div>
+
+            <div style="padding: 10px 14px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
+              <p style="margin: 0 0 4px 0; font-size: 13px; font-weight: bold; color: #0f172a;">🤖 Android (Chrome):</p>
+              <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.5;">
+                1. Abra <strong>jogalibre.com</strong> no <strong>Google Chrome</strong>.<br />
+                2. Toque no menu de <strong>3 pontinhos (⋮)</strong> no canto superior direito.<br />
+                3. Selecione <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.
+              </p>
+            </div>
+          </div>
+
           <p style="font-weight: bold; margin-top: 20px;">Como funciona o JOGALIBRE?</p>
           <ul style="padding-left: 20px; line-height: 1.6; color: #4b5563;">
             <li><strong>1. Busque Produtos:</strong> Pesquise os produtos desejados diretamente em nossa plataforma e envie sua solicitação de lance.</li>
@@ -407,6 +431,30 @@ export async function sendWelcomeEmail(to: string, fullName: string, customerId:
             <a href="https://wa.me/5518996686059?text=%C2%A1Hola!%20Cre%C3%A9%20mi%20cuenta%20en%20JOGALIBRE." style="background-color: #25D366; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 14px; box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);">
               💬 Abrir en WhatsApp y Guardar Contacto
             </a>
+          </div>
+
+          <!-- Web App（ホーム画面追加）ガイド -->
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 24px 0;">
+            <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: bold; color: #1e293b; text-align: center;">📲 ¡Instala JOGALIBRE como App en tu Móvil!</p>
+            <p style="margin: 0 0 14px 0; font-size: 13px; color: #475569; line-height: 1.5; text-align: center;">Agrega JOGALIBRE a la pantalla de inicio de tu móvil para acceder con 1 toque como una app nativa:</p>
+            
+            <div style="margin-bottom: 10px; padding: 10px 14px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
+              <p style="margin: 0 0 4px 0; font-size: 13px; font-weight: bold; color: #0f172a;">🍎 iPhone (Safari):</p>
+              <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.5;">
+                1. Abre <strong>jogalibre.com</strong> en el navegador <strong>Safari</strong>.<br />
+                2. Toca el botón <strong>Compartir</strong> (icono de cuadrado con flecha hacia arriba ⎋ en la barra inferior).<br />
+                3. Selecciona <strong>"Agregar a pantalla de inicio"</strong> ➜ toca en <strong>"Agregar"</strong>.
+              </p>
+            </div>
+
+            <div style="padding: 10px 14px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px;">
+              <p style="margin: 0 0 4px 0; font-size: 13px; font-weight: bold; color: #0f172a;">🤖 Android (Chrome):</p>
+              <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.5;">
+                1. Abre <strong>jogalibre.com</strong> en <strong>Google Chrome</strong>.<br />
+                2. Toca el menú de <strong>3 puntos (⋮)</strong> en la esquina superior derecha.<br />
+                3. Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.
+              </p>
+            </div>
           </div>
 
           <p style="font-weight: bold; margin-top: 20px;">¿Cómo funciona JOGALIBRE?</p>
