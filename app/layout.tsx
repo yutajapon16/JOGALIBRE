@@ -14,10 +14,12 @@ const geistMono = Geist_Mono({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.jogalibre.com";
 
+const siteDescription = "JOGALIBRE es tu plataforma para comprar y subastar productos directamente desde Japón. Compras seguras, subastas en tiempo real y entregas directo a tus manos.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "JOGALIBRE",
-  description: "Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão",
+  description: siteDescription,
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -33,7 +35,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "JOGALIBRE",
-    description: "Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão",
+    description: siteDescription,
     siteName: "JOGALIBRE",
     type: "website",
     images: [
@@ -48,7 +50,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "JOGALIBRE",
-    description: "Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão",
+    description: siteDescription,
     images: [`${siteUrl}/icons/customer-icon.png`],
   },
 };
@@ -72,6 +74,7 @@ export default function RootLayout({
   return (
     <html lang="es" translate="no" className="notranslate">
       <head>
+        <meta name="description" content={siteDescription} />
         <meta name="google" content="notranslate" />
         <meta name="color-scheme" content="light" />
         <meta name="referrer" content="no-referrer" />
@@ -81,7 +84,7 @@ export default function RootLayout({
 
         {/* Fallback explicit Open Graph Meta Tags for WhatsApp & Social Web Crawlers */}
         <meta property="og:title" content="JOGALIBRE" />
-        <meta property="og:description" content="Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão" />
+        <meta property="og:description" content={siteDescription} />
         <meta property="og:image" content={imageUrl} />
         <meta property="og:image:secure_url" content={imageUrl} />
         <meta property="og:image:type" content="image/png" />
@@ -92,7 +95,7 @@ export default function RootLayout({
 
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content="JOGALIBRE" />
-        <meta name="twitter:description" content="Compra y Subasta Directa de Japón / Compra e Leilão Direto do Japão" />
+        <meta name="twitter:description" content={siteDescription} />
         <meta name="twitter:image" content={imageUrl} />
       </head>
       <body
