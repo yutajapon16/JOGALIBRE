@@ -3593,9 +3593,34 @@ export default function Home() {
     }
   };
 
+  // カウンターオファー合意状態および合意金額を取得するヘルパー関数
+  const getAgreedCounterOffer = (request?: BidRequest | null): number | null => {
+    if (!request) return null;
+    // 1. 管理者が提示したカウンターオファーを顧客が承認した場合
+    if (
+      request.counterOffer &&
+      (request.customerCounterOfferUsed || (!request.customerCounterOffer && (request.status === 'approved' || !!request.finalStatus)))
+    ) {
+      return request.counterOffer;
+    }
+    // 2. 顧客が提示したカウンターオファーを管理者が承認した場合
+    if (
+      request.customerCounterOffer &&
+      !request.customerCounterOfferUsed &&
+      (request.status === 'approved' || !!request.finalStatus)
+    ) {
+      return request.customerCounterOffer;
+    }
+    return null;
+  };
+
   const openEditOfferModal = (request: BidRequest) => {
     setEditingOfferRequest(request);
-    setEditingOfferAmount(request.maxBid ? String(request.maxBid) : '');
+    const agreedCounter = getAgreedCounterOffer(request);
+    const effectiveCurrentBid = (agreedCounter !== null && (!request.maxBid || agreedCounter >= request.maxBid))
+      ? agreedCounter
+      : (request.maxBid || 0);
+    setEditingOfferAmount(effectiveCurrentBid ? String(effectiveCurrentBid) : '');
     setIsEditOfferModalOpen(true);
   };
 
@@ -4758,13 +4783,32 @@ export default function Home() {
                         </span>
                       </div>
 
-                      {/* 希望入札額ボックス (h-12) */}
-                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                        <span className="text-xs text-gray-500 font-medium">{t.maxBid}:</span>
-                        <span className="text-base font-bold text-indigo-600">
-                          {convertUSDToSelectedCurrency(request.maxBid || 0)}
-                        </span>
-                      </div>
+                      {/* 希望入札額ボックス / カウンターオファー合意時ボックス (h-12) */}
+                      {(() => {
+                        const agreedCounter = getAgreedCounterOffer(request);
+                        const isCounterAgreed = agreedCounter !== null && (!request.maxBid || agreedCounter >= request.maxBid);
+                        const isCustomerCounter = isCounterAgreed && request.customerCounterOffer && !request.customerCounterOfferUsed;
+
+                        if (isCounterAgreed) {
+                          return (
+                            <div className={`mb-2 h-12 px-3 ${isCustomerCounter ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'} rounded-lg flex items-center justify-between`}>
+                              <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                              <span className={`text-base font-bold ${isCustomerCounter ? 'text-purple-700' : 'text-blue-700'}`}>
+                                {convertUSDToSelectedCurrency(agreedCounter || 0)}
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                            <span className="text-xs text-gray-500 font-medium">{t.maxBid}:</span>
+                            <span className="text-base font-bold text-indigo-600">
+                              {convertUSDToSelectedCurrency(request.maxBid || 0)}
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                       {/* 申請詳細情報のh-12ボックス化 */}
                       <div className="mb-2 h-12 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs box-border grid grid-cols-2 gap-2">
@@ -4830,54 +4874,21 @@ export default function Home() {
 
                       {/* ケース3A: 管理者が顧客のカウンターオファーを承認 */}
                       {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
-                            <span className="text-base font-bold text-purple-700">
-                              {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
-                            </span>
-                          </div>
-                          <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center">
-                            <p className="text-xs font-semibold text-green-700">
-                              {lang === 'es' 
-                                ? 'Tu contraoferta fue aceptada. Esperando el resultado de la subasta.' 
-                                : 'Sua contraoferta foi aceita. Aguardando o resultado do leilão.'}
-                            </p>
-                          </div>
+                        <div className="mb-2 h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center w-full">
+                          <p className="text-xs font-semibold text-green-700">
+                            {lang === 'es' 
+                              ? 'Tu contraoferta fue aceptada. Esperando el resultado de la subasta.' 
+                              : 'Sua contraoferta foi aceita. Aguardando o resultado do leilão.'}
+                          </p>
                         </div>
                       )}
 
-                      {/* ケース3B: 顧客が管理者のカウンターオファーを承認 */}
-                      {request.customerCounterOffer && request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                            <span className="text-base font-bold text-blue-700">
-                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
-                            </span>
-                          </div>
-                          <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center">
-                            <p className="text-xs font-semibold text-green-700">
-                              {lang === 'es' ? 'Aceptaste la contraoferta. Esperando el resultado de la subasta.' : 'Você aceitou a contraoferta. Aguardando o resultado do leilão.'}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ケース3C: 顧客が管理者のカウンターオファーを直接承認 */}
-                      {!request.customerCounterOffer && request.counterOffer && request.status === 'approved' && !request.finalStatus && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                            <span className="text-base font-bold text-blue-700">
-                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
-                            </span>
-                          </div>
-                          <div className="h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center">
-                            <p className="text-xs font-semibold text-green-700">
-                              {lang === 'es' ? 'Aceptaste la contraoferta. Esperando el resultado de la subasta.' : 'Você aceitou a contraoferta. Aguardando o resultado do leilão.'}
-                            </p>
-                          </div>
+                      {/* ケース3B & 3C: 顧客が管理者のカウンターオファーを承認 */}
+                      {((request.customerCounterOffer && request.customerCounterOfferUsed) || (!request.customerCounterOffer && request.counterOffer)) && request.status === 'approved' && !request.finalStatus && (
+                        <div className="mb-2 h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center w-full">
+                          <p className="text-xs font-semibold text-green-700">
+                            {lang === 'es' ? 'Aceptaste la contraoferta. Esperando el resultado de la subasta.' : 'Você aceitou a contraoferta. Aguardando o resultado do leilão.'}
+                          </p>
                         </div>
                       )}
 
@@ -4959,32 +4970,10 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* 不落札（lost）時の金額維持表示 ＋ 不落札メッセージ */}
+                      {/* 不落札（lost）時のメッセージ */}
                       {request.finalStatus === 'lost' && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          {/* 管理者カウンターオファーがある場合は維持表示 */}
-                          {request.counterOffer && !(request.customerCounterOffer && !request.customerCounterOfferUsed) && (
-                            <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                              <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                              <span className="text-base font-bold text-blue-700">
-                                {convertUSDToSelectedCurrency(request.counterOffer || 0)}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* 顧客自身のカウンターオファーがある場合は維持表示 (管理者に承認された場合のみ) */}
-                          {request.customerCounterOffer && !request.customerCounterOfferUsed && (
-                            <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
-                              <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
-                              <span className="text-base font-bold text-purple-700">
-                                {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
-                              </span>
-                            </div>
-                          )}
-
-                          <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs text-red-800 font-semibold shadow-sm">
-                            {t.lost}
-                          </div>
+                        <div className="mb-2 h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs text-red-800 font-semibold shadow-sm w-full">
+                          {t.lost}
                         </div>
                       )}
 
@@ -8318,75 +8307,83 @@ export default function Home() {
       }
 
       {/* オファー金額変更モーダル */}
-      {isEditOfferModalOpen && editingOfferRequest && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-              {lang === 'es' ? 'Modificar monto de oferta' : 'Modificar valor da oferta'}
-            </h3>
-            
-            <div className="mb-4 text-center">
-              <p className="text-sm text-gray-500 mb-1">{t.maxBid} (USD)</p>
-              <div className="text-2xl font-black text-indigo-600">
-                ${editingOfferRequest.maxBid?.toLocaleString('en-US') || 0}
-              </div>
-            </div>
+      {isEditOfferModalOpen && editingOfferRequest && (() => {
+        const agreedCounter = getAgreedCounterOffer(editingOfferRequest);
+        const isCounterAgreed = agreedCounter !== null && (!editingOfferRequest.maxBid || agreedCounter >= editingOfferRequest.maxBid);
+        const effectiveCurrentBid = isCounterAgreed ? (agreedCounter || 0) : (editingOfferRequest.maxBid || 0);
 
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {lang === 'es' ? 'Nuevo monto máximo (USD)' : 'Novo valor máximo (USD)'}
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
-                <input
-                  type="number"
-                  value={editingOfferAmount}
-                  onChange={(e) => setEditingOfferAmount(e.target.value)}
-                  className="w-full h-14 pl-10 pr-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-lg font-bold text-black focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
-                  placeholder="0.00"
-                />
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                {lang === 'es' ? 'Modificar monto de oferta' : 'Modificar valor da oferta'}
+              </h3>
+              
+              <div className="mb-4 text-center">
+                <p className="text-sm text-gray-500 mb-1">
+                  {isCounterAgreed ? 'Contraoferta (USD)' : `${t.maxBid} (USD)`}
+                </p>
+                <div className={`text-2xl font-black ${isCounterAgreed ? 'text-blue-700' : 'text-indigo-600'}`}>
+                  ${effectiveCurrentBid.toLocaleString('en-US')}
+                </div>
               </div>
-            </div>
 
-            {editingOfferRequest.status === 'approved' && (
-              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                {lang === 'es'
-                  ? `* Para solicitudes aprobadas, el nuevo monto debe ser mayor al actual ($${editingOfferRequest.maxBid || 0}).`
-                  : `* Para solicitações aprovadas, o novo valor deve ser maior que o atual ($${editingOfferRequest.maxBid || 0}).`}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  {lang === 'es' ? 'Nuevo monto máximo (USD)' : 'Novo valor máximo (USD)'}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                  <input
+                    type="number"
+                    value={editingOfferAmount}
+                    onChange={(e) => setEditingOfferAmount(e.target.value)}
+                    className="w-full h-14 pl-10 pr-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-lg font-bold text-black focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
-            )}
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setIsEditOfferModalOpen(false);
-                  setEditingOfferRequest(null);
-                  setEditingOfferAmount('');
-                }}
-                disabled={isSubmittingEditOffer}
-                className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 flex items-center justify-center disabled:opacity-50"
-              >
-                {t.cancel}
-              </button>
-              <button
-                onClick={handleEditOfferSubmit}
-                disabled={
-                  isSubmittingEditOffer ||
-                  !editingOfferAmount ||
-                  isNaN(Number(editingOfferAmount)) ||
-                  Number(editingOfferAmount) <= 0 ||
-                  (editingOfferRequest.status === 'approved' && Number(editingOfferAmount) <= (editingOfferRequest.maxBid || 0))
-                }
-                className="flex-1 bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmittingEditOffer 
-                  ? (lang === 'es' ? 'Guardando...' : 'Salvando...') 
-                  : (lang === 'es' ? 'Guardar' : 'Salvar')}
-              </button>
+              {editingOfferRequest.status === 'approved' && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                  {lang === 'es'
+                    ? `* Para solicitudes aprobadas, el nuevo monto debe ser mayor al actual ($${effectiveCurrentBid}).`
+                    : `* Para solicitações aprovadas, o novo valor deve ser maior que o atual ($${effectiveCurrentBid}).`}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setIsEditOfferModalOpen(false);
+                    setEditingOfferRequest(null);
+                    setEditingOfferAmount('');
+                  }}
+                  disabled={isSubmittingEditOffer}
+                  className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 flex items-center justify-center disabled:opacity-50"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  onClick={handleEditOfferSubmit}
+                  disabled={
+                    isSubmittingEditOffer ||
+                    !editingOfferAmount ||
+                    isNaN(Number(editingOfferAmount)) ||
+                    Number(editingOfferAmount) <= 0 ||
+                    (editingOfferRequest.status === 'approved' && Number(editingOfferAmount) <= effectiveCurrentBid)
+                  }
+                  className="flex-1 bg-indigo-600 text-white h-12 rounded-lg font-semibold hover:bg-indigo-700 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmittingEditOffer 
+                    ? (lang === 'es' ? 'Guardando...' : 'Salvando...') 
+                    : (lang === 'es' ? 'Guardar' : 'Salvar')}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       {/* お知らせモーダル */}
       {showNotifications && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">

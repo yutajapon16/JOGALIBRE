@@ -547,12 +547,20 @@ export async function PATCH(request: Request) {
           }
         } else if (currentRequest.status === 'approved') {
           // 承認済みの場合の制限チェック
-          const currentMaxBid = Number(currentRequest.max_bid || 0);
+          // カウンターオファー合意がある場合は合意金額を基準とする
+          const agreedCounter = 
+            (currentRequest.customer_counter_offer_used || (!currentRequest.customer_counter_offer && currentRequest.counter_offer))
+              ? currentRequest.counter_offer
+              : (currentRequest.customer_counter_offer && !currentRequest.customer_counter_offer_used ? currentRequest.customer_counter_offer : null);
+
+          const currentEffectiveBid = (agreedCounter && (!currentRequest.max_bid || Number(agreedCounter) >= Number(currentRequest.max_bid)))
+            ? Number(agreedCounter)
+            : Number(currentRequest.max_bid || 0);
 
           // 1. 増額チェック
-          if (newMaxBid <= currentMaxBid) {
+          if (newMaxBid <= currentEffectiveBid) {
             return NextResponse.json(
-              { error: 'Approved bid can only be increased' },
+              { error: 'Approved bid can only be increased above current agreed amount' },
               { status: 400 }
             );
           }
