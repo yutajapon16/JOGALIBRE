@@ -2167,26 +2167,21 @@ export default function AdminDashboard() {
           const email = item.customerEmail;
           if (email) {
             const lang = item.language || 'es';
-            const itemName = item.stockNumber || 'Item';
+            const itemTitle = (lang === 'pt' ? item.productTitlePt : item.productTitleEs) || item.productTitle || item.stockNumber || 'Item';
             
             let notifyTitle = '';
-            let notifyBody = '';
+            const notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
 
             if (newStatus === 'arrived_jp') {
               notifyTitle = lang === 'pt' ? '📦 Chegou ao armazém no Japão' : '📦 Llegó al almacén en Japón';
-              notifyBody = lang === 'pt' ? `O produto [${itemName}] chegou ao armazém no Japão.` : `El producto [${itemName}] llegó al almacén en Japón.`;
             } else if (newStatus === 'in_transit') {
               notifyTitle = lang === 'pt' ? '🚢 Em trânsito' : '🚢 En tránsito';
-              notifyBody = lang === 'pt' ? `O produto [${itemName}] partiu.` : `El producto [${itemName}] ha salido.`;
             } else if (newStatus === 'arrived_local') {
               notifyTitle = lang === 'pt' ? '📍 Chegou ao local' : '📍 Llegó al destino local';
-              notifyBody = lang === 'pt' ? `O produto [${itemName}] chegou à região local.` : `El producto [${itemName}] llegó a la región local.`;
             } else if (newStatus === 'ready_for_delivery') {
               notifyTitle = lang === 'pt' ? '✅ Pronto para retirada' : '✅ Listo para entrega';
-              notifyBody = lang === 'pt' ? `O produto [${itemName}] está pronto para ser retirado.` : `El producto [${itemName}] está listo para ser entregado.`;
             } else if (newStatus === 'delivered') {
               notifyTitle = lang === 'pt' ? '🎉 Entrega concluída' : '🎉 Entrega completada';
-              notifyBody = lang === 'pt' ? `O produto [${itemName}] foi entregue com sucesso.` : `El producto [${itemName}] ha sido entregado con éxito.`;
             }
 
             if (notifyTitle) {
