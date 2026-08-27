@@ -352,6 +352,19 @@ export async function sendWelcomeEmail(to: string, fullName: string, customerId:
           <div style="background-color: #f3f4f6; border-left: 4px solid #4f46e5; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
             <p style="margin: 0; font-size: 14px; color: #374151;"><strong>Seu ID de Cliente:</strong> <span style="font-size: 16px; color: #4f46e5; font-weight: bold;">${customerId}</span></p>
           </div>
+
+          <!-- WhatsApp公式サポート＆通知案内 -->
+          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 18px; margin: 24px 0; text-align: center;">
+            <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: bold; color: #166534;">📱 Salve nosso WhatsApp Oficial de Notificações!</p>
+            <p style="margin: 0 0 16px 0; font-size: 13px; color: #15803d; line-height: 1.5;">
+              Para receber atualizações instantâneas sobre seus lances, arremates e status de envio no WhatsApp sem bloqueios, adicione nosso número aos seus contatos:
+              <br /><strong style="font-size: 14px; color: #166534;">📞 +55 18 99668-6059</strong> (JOGALIBRE Suporte)
+            </p>
+            <a href="https://wa.me/5518996686059?text=Ol%C3%A1%2C%20criei%20minha%20conta%20no%20JOGALIBRE!" style="background-color: #25D366; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 14px; box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);">
+              💬 Abrir no WhatsApp e Salvar Contato
+            </a>
+          </div>
+
           <p style="font-weight: bold; margin-top: 20px;">Como funciona o JOGALIBRE?</p>
           <ul style="padding-left: 20px; line-height: 1.6; color: #4b5563;">
             <li><strong>1. Busque Produtos:</strong> Copie o link do produto no Yahoo Auctions (ou busque na nossa plataforma) e envie sua solicitação de lance.</li>
@@ -383,6 +396,19 @@ export async function sendWelcomeEmail(to: string, fullName: string, customerId:
           <div style="background-color: #f3f4f6; border-left: 4px solid #4f46e5; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
             <p style="margin: 0; font-size: 14px; color: #374151;"><strong>Tu ID de Cliente:</strong> <span style="font-size: 16px; color: #4f46e5; font-weight: bold;">${customerId}</span></p>
           </div>
+
+          <!-- WhatsApp公式サポート＆通知案内 -->
+          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 18px; margin: 24px 0; text-align: center;">
+            <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: bold; color: #166534;">📱 ¡Guarda nuestro WhatsApp Oficial de Notificaciones!</p>
+            <p style="margin: 0 0 16px 0; font-size: 13px; color: #15803d; line-height: 1.5;">
+              Para recibir notificaciones instantáneas sobre tus ofertas, compras y seguimiento de envíos en WhatsApp sin interrupciones, agrega nuestro número a tus contactos:
+              <br /><strong style="font-size: 14px; color: #166534;">📞 +55 18 99668-6059</strong> (JOGALIBRE Soporte)
+            </p>
+            <a href="https://wa.me/5518996686059?text=%C2%A1Hola!%20Cre%C3%A9%20mi%20cuenta%20en%20JOGALIBRE." style="background-color: #25D366; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 14px; box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);">
+              💬 Abrir en WhatsApp y Guardar Contacto
+            </a>
+          </div>
+
           <p style="font-weight: bold; margin-top: 20px;">¿Cómo funciona JOGALIBRE?</p>
           <ul style="padding-left: 20px; line-height: 1.6; color: #4b5563;">
             <li><strong>1. Busca Productos:</strong> Copia el enlace del producto en Yahoo Auctions (o busca en nuestra plataforma) y envía tu solicitud de oferta.</li>
