@@ -5,12 +5,43 @@
 
 import { notifyAdminError, hasJapaneseCharacters } from '@/lib/error-notifier';
 
-// 超高速・高スループットモデルを最優先
-const GEMINI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash'];
+// 公式の高速・高スループット安定モデルを優先順に設定
+const GEMINI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
+  'gemini-2.5-pro'
+];
 
 // 1. 英語＋カタカナ・漢字の重複パターン除去（例: SONY ソニー -> SONY, ソニー SONY -> SONY）
 const BRAND_DUPLICATE_RULES: { pattern: RegExp; replacement: string }[] = [
+  // アウトドア・キャンプ
+  { pattern: /(?:COLEMAN\s*コールマン|コールマン\s*COLEMAN)/gi, replacement: 'Coleman' },
+  { pattern: /(?:SNOW\s*PEAK\s*スノーピーク|スノーピーク\s*SNOW\s*PEAK)/gi, replacement: 'Snow Peak' },
+  { pattern: /(?:LOGOS\s*ロゴス|ロゴス\s*LOGOS)/gi, replacement: 'LOGOS' },
+  { pattern: /(?:CAPTAIN\s*STAG\s*キャプテンスタッグ|キャプテンスタッグ\s*CAPTAIN\s*STAG)/gi, replacement: 'Captain Stag' },
+  { pattern: /(?:MONT-BELL\s*モンベル|モンベル\s*MONT-BELL)/gi, replacement: 'mont-bell' },
+  { pattern: /(?:THE\s*NORTH\s*FACE\s*ノースフェイス|ノースフェイス\s*THE\s*NORTH\s*FACE)/gi, replacement: 'THE NORTH FACE' },
+  { pattern: /(?:PATAGONIA\s*パタゴニア|パタゴニア\s*PATAGONIA)/gi, replacement: 'Patagonia' },
+  { pattern: /(?:UNIFLAME\s*ユニフレーム|ユニフレーム\s*UNIFLAME)/gi, replacement: 'UNIFLAME' },
+  { pattern: /(?:SOTO\s*ソト|ソト\s*SOTO)/gi, replacement: 'SOTO' },
+  { pattern: /(?:NANGA\s*ナンガ|ナンガ\s*NANGA)/gi, replacement: 'NANGA' },
+
+  // 家電・カメラ・電子機器
   { pattern: /(?:SONY\s*ソニー|ソニー\s*SONY)/gi, replacement: 'SONY' },
+  { pattern: /(?:CANON\s*(?:キヤノン|キャノン)|(?:キヤノン|キャノン)\s*CANON)/gi, replacement: 'Canon' },
+  { pattern: /(?:NIKON\s*ニコン|ニコン\s*NIKON)/gi, replacement: 'Nikon' },
+  { pattern: /(?:PANASONIC\s*パナソニック|パナソニック\s*PANASONIC)/gi, replacement: 'Panasonic' },
+  { pattern: /(?:PIONEER\s*パイオニア|パイオニア\s*PIONEER)/gi, replacement: 'Pioneer' },
+  { pattern: /(?:KENWOOD\s*ケンウッド|ケンウッド\s*KENWOOD)/gi, replacement: 'Kenwood' },
+  { pattern: /(?:ALPINE\s*アルパイン|アルパイン\s*ALPINE)/gi, replacement: 'Alpine' },
+  { pattern: /(?:CARROZZERIA\s*カロッツェリア|カロッツェリア\s*CARROZZERIA)/gi, replacement: 'Carrozzeria' },
+  { pattern: /(?:CASIO\s*カシオ|カシオ\s*CASIO)/gi, replacement: 'Casio' },
+  { pattern: /(?:SEIKO\s*セイコー|セイコー\s*SEIKO)/gi, replacement: 'Seiko' },
+  { pattern: /(?:CITIZEN\s*シチズン|シチズン\s*CITIZEN)/gi, replacement: 'Citizen' },
+
+  // 車・バイク・パーツ
   { pattern: /(?:TOYOTA\s*トヨタ|トヨタ\s*TOYOTA)/gi, replacement: 'Toyota' },
   { pattern: /(?:HONDA\s*ホンダ|ホンダ\s*HONDA)/gi, replacement: 'Honda' },
   { pattern: /(?:NISSAN\s*(?:ニッサン|日産)|(?:ニッサン|日産)\s*NISSAN)/gi, replacement: 'Nissan' },
@@ -20,13 +51,6 @@ const BRAND_DUPLICATE_RULES: { pattern: RegExp; replacement: string }[] = [
   { pattern: /(?:SUZUKI\s*スズキ|スズキ\s*SUZUKI)/gi, replacement: 'Suzuki' },
   { pattern: /(?:KAWASAKI\s*カワサキ|カワサキ\s*KAWASAKI)/gi, replacement: 'Kawasaki' },
   { pattern: /(?:YAMAHA\s*ヤマハ|ヤマハ\s*YAMAHA)/gi, replacement: 'Yamaha' },
-  { pattern: /(?:CANON\s*(?:キヤノン|キャノン)|(?:キヤノン|キャノン)\s*CANON)/gi, replacement: 'Canon' },
-  { pattern: /(?:NIKON\s*ニコン|ニコン\s*NIKON)/gi, replacement: 'Nikon' },
-  { pattern: /(?:PANASONIC\s*パナソニック|パナソニック\s*PANASONIC)/gi, replacement: 'Panasonic' },
-  { pattern: /(?:PIONEER\s*パイオニア|パイオニア\s*PIONEER)/gi, replacement: 'Pioneer' },
-  { pattern: /(?:KENWOOD\s*ケンウッド|ケンウッド\s*KENWOOD)/gi, replacement: 'Kenwood' },
-  { pattern: /(?:ALPINE\s*アルパイン|アルパイン\s*ALPINE)/gi, replacement: 'Alpine' },
-  { pattern: /(?:CARROZZERIA\s*カロッツェリア|カロッツェリア\s*CARROZZERIA)/gi, replacement: 'Carrozzeria' },
   { pattern: /(?:BBS\s*(?:ビービーエス|ＢＢＳ)|(?:ビービーエス|ＢＢＳ)\s*BBS)/gi, replacement: 'BBS' },
   { pattern: /(?:RAYS\s*レイズ|レイズ\s*RAYS)/gi, replacement: 'RAYS' },
   { pattern: /(?:WORK\s*ワーク|ワーク\s*WORK)/gi, replacement: 'WORK' },
@@ -36,17 +60,25 @@ const BRAND_DUPLICATE_RULES: { pattern: RegExp; replacement: string }[] = [
   { pattern: /(?:YOKOHAMA\s*ヨコハマ|ヨコハマ\s*YOKOHAMA)/gi, replacement: 'Yokohama' },
   { pattern: /(?:DUNLOP\s*ダンロップ|ダンロップ\s*DUNLOP)/gi, replacement: 'Dunlop' },
   { pattern: /(?:MICHELIN\s*ミシュラン|ミシュラン\s*MICHELIN)/gi, replacement: 'Michelin' },
+
+  // 釣具・ホビー
   { pattern: /(?:SHIMANO\s*シマノ|シマノ\s*SHIMANO)/gi, replacement: 'Shimano' },
   { pattern: /(?:DAIWA\s*ダイワ|ダイワ\s*DAIWA)/gi, replacement: 'Daiwa' },
   { pattern: /(?:TAMIYA\s*タミヤ|タミヤ\s*TAMIYA)/gi, replacement: 'Tamiya' },
   { pattern: /(?:BANDAI\s*バンダイ|バンダイ\s*BANDAI)/gi, replacement: 'Bandai' },
-  { pattern: /(?:CASIO\s*カシオ|カシオ\s*CASIO)/gi, replacement: 'Casio' },
-  { pattern: /(?:SEIKO\s*セイコー|セイコー\s*SEIKO)/gi, replacement: 'Seiko' },
-  { pattern: /(?:CITIZEN\s*シチズン|シチズン\s*CITIZEN)/gi, replacement: 'Citizen' },
 ];
 
 // 2. 単独で残存したカタカナ・漢字ブランド名の変換
 const STANDALONE_BRAND_RULES: { pattern: RegExp; replacement: string }[] = [
+  { pattern: /コールマン/g, replacement: 'Coleman' },
+  { pattern: /スノーピーク/g, replacement: 'Snow Peak' },
+  { pattern: /ロゴス/g, replacement: 'LOGOS' },
+  { pattern: /キャプテンスタッグ/g, replacement: 'Captain Stag' },
+  { pattern: /モンベル/g, replacement: 'mont-bell' },
+  { pattern: /ノースフェイス/g, replacement: 'THE NORTH FACE' },
+  { pattern: /パタゴニア/g, replacement: 'Patagonia' },
+  { pattern: /ユニフレーム/g, replacement: 'UNIFLAME' },
+  { pattern: /ナンガ/g, replacement: 'NANGA' },
   { pattern: /ソニー/g, replacement: 'SONY' },
   { pattern: /トヨタ/g, replacement: 'Toyota' },
   { pattern: /ホンダ/g, replacement: 'Honda' },
@@ -80,6 +112,7 @@ const STANDALONE_BRAND_RULES: { pattern: RegExp; replacement: string }[] = [
   { pattern: /セイコー/g, replacement: 'Seiko' },
   { pattern: /シチズン/g, replacement: 'Citizen' },
 ];
+
 
 /**
  * 翻訳後テキスト内のカタカナ重複ブランド名や単独カタカナブランドを英語/ローマ字にクリーンアップ
@@ -291,6 +324,9 @@ export async function translateText(text: string, targetLang: string, sourceLang
             const data = await res.json();
             const translated = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
             if (translated) return cleanupBrandNames(translated);
+          } else if (res.status === 429 || res.status === 503) {
+            // レートリミット・一時混雑時は少し待機してから次のモデルへ
+            await new Promise(r => setTimeout(r, 600));
           }
         } catch {}
       }
@@ -349,13 +385,12 @@ Translate each of the following product titles from Japanese into ${targetLangNa
 
 CRITICAL RULES:
 1. Return ONLY a valid JSON array of ${titles.length} translated strings in the EXACT same order and array length as the input.
-2. Remove redundant Japanese katakana brand names when the Latin/English name is present (e.g. "SONY ソニー" -> "SONY", "TOYOTA トヨタ" -> "Toyota", "BBS ビービーエス" -> "BBS").
-3. Convert all standalone Japanese brand names to their official Latin/English equivalents (e.g. "ソニー" -> "SONY", "日産" -> "Nissan").
+2. Remove redundant Japanese katakana brand names when the Latin/English name is present (e.g. "SONY ソニー" -> "SONY", "TOYOTA トヨタ" -> "Toyota", "BBS ビービーエス" -> "BBS", "Coleman コールマン" -> "Coleman").
+3. Convert all standalone Japanese brand names to their official Latin/English equivalents (e.g. "ソニー" -> "SONY", "日産" -> "Nissan", "コールマン" -> "Coleman").
 4. Do NOT output markdown code fences, backticks, or any explanatory text. Return purely the JSON array.
 
 Input JSON:
 ${JSON.stringify(titles)}`;
-
 
   for (const model of GEMINI_MODELS) {
     try {
@@ -399,6 +434,9 @@ ${JSON.stringify(titles)}`;
             return titles[idx];
           });
         }
+      } else if (response.status === 429 || response.status === 503) {
+        // レートリミット・一時混雑時は少し待機してから次のモデルへ
+        await new Promise(r => setTimeout(r, 600));
       }
     } catch (e) {
       // 次のモデルへ
@@ -406,6 +444,7 @@ ${JSON.stringify(titles)}`;
   }
   return null;
 }
+
 
 /**
  * Google Translate (gtx) を用いたタイトル一括翻訳内部関数
