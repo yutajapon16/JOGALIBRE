@@ -367,7 +367,7 @@ export async function sendWelcomeEmail(to: string, fullName: string, customerId:
 
           <p style="font-weight: bold; margin-top: 20px;">Como funciona o JOGALIBRE?</p>
           <ul style="padding-left: 20px; line-height: 1.6; color: #4b5563;">
-            <li><strong>1. Busque Produtos:</strong> Copie o link do produto no Yahoo Auctions (ou busque na nossa plataforma) e envie sua solicitação de lance.</li>
+            <li><strong>1. Busque Produtos:</strong> Pesquise os produtos desejados diretamente em nossa plataforma e envie sua solicitação de lance.</li>
             <li><strong>2. Confirmação:</strong> Nossa equipe avaliará e aprovará seu pedido rapidamente.</li>
             <li><strong>3. Pagamento e Envio:</strong> Pague de forma segura via Pix/Cartão e receba o acompanhamento direto no seu app.</li>
           </ul>
@@ -411,7 +411,7 @@ export async function sendWelcomeEmail(to: string, fullName: string, customerId:
 
           <p style="font-weight: bold; margin-top: 20px;">¿Cómo funciona JOGALIBRE?</p>
           <ul style="padding-left: 20px; line-height: 1.6; color: #4b5563;">
-            <li><strong>1. Busca Productos:</strong> Copia el enlace del producto en Yahoo Auctions (o busca en nuestra plataforma) y envía tu solicitud de oferta.</li>
+            <li><strong>1. Busca Productos:</strong> Busca los productos deseados directamente en nuestra plataforma y envía tu solicitud de oferta.</li>
             <li><strong>2. Confirmación:</strong> Nuestro equipo revisará y aprobará tu pedido rápidamente.</li>
             <li><strong>3. Pago y Envío:</strong> Paga de forma segura y recibe el seguimiento directamente en tu aplicación.</li>
           </ul>
