@@ -1064,6 +1064,24 @@ export default function AdminDashboard() {
         authResolved = true;
         if (user?.role === 'admin') {
           setCurrentUser(user);
+          // ★ 読み込み画面（ロード画面）が表示されている間に、全タブのデータを一括並列取得して完了を待つ！
+          // これにより、トップページ（申請タブ）が表示された瞬間に全商品データが即座に描画されます（0ms）
+          try {
+            await Promise.allSettled([
+              fetchBidRequests(),
+              fetchPurchasedItems(),
+              fetchShippingContainers(),
+              fetchDeposits(false),
+              fetchUsersData(false),
+              fetchFinancials(financialMonth, false),
+              fetchFoxbitData(false),
+              fetchInviteCodes(),
+              fetchExchangeRate(),
+              fetchUnreadCount()
+            ]);
+          } catch (dataErr) {
+            console.warn('Initial data preload error:', dataErr);
+          }
         } else {
           setCurrentUser(null);
         }
@@ -1151,26 +1169,6 @@ export default function AdminDashboard() {
       subscription.unsubscribe();
     };
   }, []);
-
-  // 1. ログイン時に全タブの情報を一括並列取得（全タブ事前ロード）
-  // ログイン完了時にすべてのタブデータを先読みしておくことで、タブ切り替え時の待ち時間を0msにします
-  useEffect(() => {
-    if (currentUser) {
-      Promise.allSettled([
-        fetchBidRequests(),
-        fetchPurchasedItems(),
-        fetchShippingContainers(),
-        fetchDeposits(false),
-        fetchUsersData(false),
-        fetchFinancials(financialMonth, false),
-        fetchFoxbitData(false),
-        fetchInviteCodes(),
-        fetchExchangeRate(),
-        fetchUnreadCount()
-      ]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
 
   // 2. タブ切り替え時または定期更新（バックグラウンドで最新データを同期）
   useEffect(() => {
@@ -1522,10 +1520,8 @@ export default function AdminDashboard() {
       }));
 
       setBidRequests(convertedRequests);
-      setLoading(false);  // ← これを追加
     } catch (error) {
       console.error('Error fetching bid requests:', error);
-      setLoading(false);  // ← エラー時も追加
     }
   };
 
