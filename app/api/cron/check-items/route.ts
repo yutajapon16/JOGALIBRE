@@ -402,7 +402,20 @@ export async function GET(request: Request) {
                         jpyRate
                     );
 
-                    if (currentCustomerUsd > item.max_bid && !currentMsg.includes('[price_exceeded_notified]')) {
+                    // 既に現在のmax_bidに対して通知済みかを厳密に判定
+                    let notifiedBidAmount: number | null = null;
+                    const matchNotifiedBid = currentMsg.match(/\[price_exceeded_notified:(\d+(?:\.\d+)?)\]/);
+                    if (matchNotifiedBid) {
+                        notifiedBidAmount = parseFloat(matchNotifiedBid[1]);
+                    } else if (currentMsg.includes('[price_exceeded_notified]')) {
+                        // 旧タグの場合は一旦現在のmax_bidで通知済みとみなす
+                        notifiedBidAmount = Number(item.max_bid);
+                    }
+
+                    // 現在の顧客上限額 (item.max_bid) を超えており、かつ その上限額での通知がまだ行われていない場合のみ送信
+                    const hasAlreadyNotifiedForThisBid = notifiedBidAmount !== null && Number(item.max_bid) <= notifiedBidAmount;
+
+                    if (currentCustomerUsd > item.max_bid && !hasAlreadyNotifiedForThisBid) {
                         const custName = userMeta?.full_name || item.customer_email || '顧客';
 
                         // 管理者通知
@@ -412,6 +425,7 @@ export async function GET(request: Request) {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     sendToAdmins: true,
+                                    bidRequestId: item.id,
                                     title: `⚠️ 【高値更新】 ${custName} (${customerId})`,
                                     body: `商品: ${productTitle}`,
                                     url: '/admin'
@@ -437,6 +451,7 @@ export async function GET(request: Request) {
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
                                         email: item.customer_email,
+                                        bidRequestId: item.id,
                                         title,
                                         body,
                                         url: '/'
@@ -445,7 +460,9 @@ export async function GET(request: Request) {
                             );
                         }
 
-                        currentMsg = `${currentMsg} [price_exceeded_notified]`.trim();
+                        // タグを [price_exceeded_notified:現在のmax_bid] で更新
+                        currentMsg = currentMsg.replace(/\[price_exceeded_notified(?::\d+(?:\.\d+)?)?\]/g, '').trim();
+                        currentMsg = `${currentMsg} [price_exceeded_notified:${item.max_bid}]`.trim();
                         updateData.customer_message = currentMsg;
                     }
                 }
