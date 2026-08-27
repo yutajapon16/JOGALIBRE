@@ -1064,24 +1064,28 @@ export default function AdminDashboard() {
         authResolved = true;
         if (user?.role === 'admin') {
           setCurrentUser(user);
-          // ★ 読み込み画面（ロード画面）が表示されている間に、全タブのデータを一括並列取得して完了を待つ！
-          // これにより、トップページ（申請タブ）が表示された瞬間に全商品データが即座に描画されます（0ms）
+          // ① トップページ（申請タブ）の表示に必要な最重要データのみを待機（約0.2〜0.4秒の最速完了）
+          // これにより、ロード画面がすぐに消え、トップページが開いた瞬間に申請中商品が即座に揃って表示されます
           try {
             await Promise.allSettled([
               fetchBidRequests(),
-              fetchPurchasedItems(),
-              fetchShippingContainers(),
-              fetchDeposits(false),
-              fetchUsersData(false),
-              fetchFinancials(financialMonth, false),
-              fetchFoxbitData(false),
-              fetchInviteCodes(),
               fetchExchangeRate(),
               fetchUnreadCount()
             ]);
           } catch (dataErr) {
-            console.warn('Initial data preload error:', dataErr);
+            console.warn('Initial critical data preload error:', dataErr);
           }
+
+          // ② 他の重いタブデータ（落札済み・入金・顧客・財務・Foxbit等）はバックグラウンドで非同期に事前ロード（画面描画を一切待たせない）
+          Promise.allSettled([
+            fetchPurchasedItems(),
+            fetchShippingContainers(),
+            fetchDeposits(false),
+            fetchUsersData(false),
+            fetchFinancials(financialMonth, false),
+            fetchFoxbitData(false),
+            fetchInviteCodes()
+          ]).catch(e => console.warn('Background tab preload error:', e));
         } else {
           setCurrentUser(null);
         }
