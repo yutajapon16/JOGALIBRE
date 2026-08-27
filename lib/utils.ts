@@ -293,6 +293,33 @@ const cachedLocalCosts: Record<string, LocalCostItem> = costsCache.localCosts as
 function loadCostsData() {}
 
 /**
+ * タイトルまたはURLに対して、キーワードが安全に一致しているかを判定する関数
+ * 短い英数字キーワード（evo, ape, gap, som, ram, gpu, cpu, dj等）は、単語境界で照合して
+ * 「nuevo」などの無関係な単語への部分一致誤爆を防ぐ
+ */
+export const matchesCostKeyword = (text: string, keyword: string): boolean => {
+  if (!text || !keyword) return false;
+  const trimmedKw = keyword.trim().toLowerCase();
+  if (!trimmedKw) return false;
+  const lowerText = text.toLowerCase();
+
+  // 英数字・ハイフンのみで構成されるキーワードの場合は単語境界マッチング
+  if (/^[a-z0-9_-]+$/i.test(trimmedKw)) {
+    const escaped = trimmedKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // moto の特殊判定（motor を除外）
+    if (trimmedKw === 'moto') {
+      const regex = /(^|[^a-z0-9])moto([^a-z0-9]|$)/i;
+      return regex.test(lowerText) && !lowerText.includes('motor');
+    }
+    const regex = new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i');
+    return regex.test(lowerText);
+  }
+
+  // 日本語など非ASCII文字列を含む場合は通常の部分一致
+  return lowerText.includes(trimmedKw);
+};
+
+/**
  * 商品タイトルやURLからカテゴリキーを判定するヘルパー関数
  */
 export const detectCategoryKey = (title?: string | null, url?: string | null): string => {
@@ -330,22 +357,12 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
 
   // 3. キーワードによるフォールバック判定
   for (const item of cachedShippingCosts) {
-    if (item.keywords.some(keyword => {
-      if (keyword === 'moto') {
-        return lowerTitle.includes('moto') || (lowerUrl.includes('moto') && !lowerUrl.includes('motor'));
-      }
-      return lowerTitle.includes(keyword) || lowerUrl.includes(keyword);
-    })) {
+    if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
       return item.key;
     }
   }
   for (const item of cachedFobCosts) {
-    if (item.keywords.some(keyword => {
-      if (keyword === 'moto') {
-        return lowerTitle.includes('moto') || (lowerUrl.includes('moto') && !lowerUrl.includes('motor'));
-      }
-      return lowerTitle.includes(keyword) || lowerUrl.includes(keyword);
-    })) {
+    if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
       return item.key;
     }
   }
@@ -656,12 +673,7 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
 
   // --- 3. URLにカテゴリIDがない場合のフォールバック判定（タイトルやキーワードによる判定） ---
   for (const item of cachedFobCosts) {
-    if (item.keywords.some(keyword => {
-      if (keyword === 'moto') {
-        return lowerTitle.includes('moto') || (lowerUrl.includes('moto') && !lowerUrl.includes('motor'));
-      }
-      return lowerTitle.includes(keyword) || lowerUrl.includes(keyword);
-    })) {
+    if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
       return item.fob;
     }
   }
@@ -764,12 +776,7 @@ export const calculateDefaultShippingCost = (title?: string | null, url?: string
 
   // --- 3. URLにカテゴリIDがない場合のフォールバック判定（タイトルやキーワードによる判定） ---
   for (const item of cachedShippingCosts) {
-    if (item.keywords.some(keyword => {
-      if (keyword === 'moto') {
-        return lowerTitle.includes('moto') || (lowerUrl.includes('moto') && !lowerUrl.includes('motor'));
-      }
-      return lowerTitle.includes(keyword) || lowerUrl.includes(keyword);
-    })) {
+    if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
       return item.shipping;
     }
   }

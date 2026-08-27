@@ -3158,6 +3158,7 @@ export default function Home() {
       // DBの翻訳結果を優先し、無い場合のみ翻訳APIを叩く
       const requestsWithTranslation = await Promise.all(convertedRequests.map(async (req: any) => {
         let title = req.productTitle || '';
+        const originalTitle = req.productTitle || '';
         if (lang === 'es') {
           if (req.productTitleEs) title = req.productTitleEs;
           else if (title) title = await translateSingleTitle(title, lang);
@@ -3165,7 +3166,7 @@ export default function Home() {
           if (req.productTitlePt) title = req.productTitlePt;
           else if (title) title = await translateSingleTitle(title, lang);
         }
-        return { ...req, productTitle: title };
+        return { ...req, productTitleJa: originalTitle, productTitle: title };
       }));
 
       setMyRequests(requestsWithTranslation);
@@ -4774,7 +4775,7 @@ export default function Home() {
                               : `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(
                                   request.productPrice,
                                   selectedCurrency,
-                                  request.productTitle,
+                                  request.productTitleJa || request.productTitle,
                                   request.productUrl,
                                   undefined,
                                   request.productId

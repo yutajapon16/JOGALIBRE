@@ -28,6 +28,7 @@ export interface BidRequest {
   id: string;
   productId?: string;
   productTitle: string;
+  productTitleJa?: string;
   productTitleEs?: string;
   productTitlePt?: string;
   productUrl: string;
