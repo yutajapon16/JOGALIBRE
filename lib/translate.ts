@@ -5,14 +5,16 @@
 
 import { notifyAdminError, hasJapaneseCharacters } from '@/lib/error-notifier';
 
-// 公式の高速・高スループット安定モデルを優先順に設定
+// 現在利用可能な公式の超高速・高スループット安定モデルを最速順に設定
 const GEMINI_MODELS = [
+  'gemini-3.5-flash-lite', // 最速 (約800ms)
+  'gemini-3.5-flash',
+  'gemini-3.6-flash',
+  'gemini-3.7-flash',
   'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-8b',
-  'gemini-2.5-pro'
+  'gemini-flash-latest'
 ];
+
 
 // 1. 英語＋カタカナ・漢字の重複パターン除去（例: SONY ソニー -> SONY, ソニー SONY -> SONY）
 const BRAND_DUPLICATE_RULES: { pattern: RegExp; replacement: string }[] = [

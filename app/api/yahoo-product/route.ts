@@ -624,14 +624,16 @@ Descrição do produto:
 ${textToSummarize}`;
 
   const prompt = targetLang === 'es' ? promptEs : promptPt;
-  // 公式の高速・高スループット安定モデルを優先順に設定
+  // 現在利用可能な公式の超高速・高スループット安定モデルを最速順に設定
   const models = [
+    'gemini-3.5-flash-lite', // 最速 (約800ms)
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
+    'gemini-3.7-flash',
     'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-8b',
-    'gemini-2.5-pro'
+    'gemini-flash-latest'
   ];
+
 
   for (const model of models) {
     try {
