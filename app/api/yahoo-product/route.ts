@@ -4,8 +4,8 @@ export const revalidate = 0;
 import { NextResponse } from 'next/server';
 import { parseJstDateTime, parseDbDateTime, parseAnyDateTime } from '@/lib/utils';
 import { translateTitle, translateText, cleanupBrandNames } from '@/lib/translate';
-import { notifyAdminError, hasJapaneseCharacters } from '@/lib/error-notifier';
-
+import { notifyAdminError, hasJapaneseCharacters, ErrorUserInfo } from '@/lib/error-notifier';
+import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 
 // AI要約・翻訳データの高速キャッシュ (6時間TTL)
 interface ProductCacheItem {
@@ -25,6 +25,22 @@ const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6時間
 export async function POST(request: Request) {
   let requestUrl = '';
   let requestLang = 'es';
+  let userInfo: ErrorUserInfo | undefined = undefined;
+
+  try {
+    const authUser = await getUserFromRequest(request);
+    if (authUser && authUser.email) {
+      const details = await getUserInfoByEmail(authUser.email);
+      userInfo = {
+        id: authUser.id,
+        email: authUser.email,
+        customerId: details?.customer_id || undefined,
+        name: details?.full_name || undefined,
+        role: details?.role || undefined
+      };
+    }
+  } catch {}
+
   try {
     const body = await request.json();
     const url = body.url;
@@ -34,6 +50,7 @@ export async function POST(request: Request) {
     const skipDescription = body.skipDescription || false;
     const skipAiSummary = body.skipAiSummary || false;
     const forceRefresh = body.forceRefresh || body.refresh || false;
+
 
     if (!url || !url.includes('auctions.yahoo.co.jp')) {
       return NextResponse.json(
@@ -352,7 +369,7 @@ export async function POST(request: Request) {
     // タイトル高速翻訳タスク
     if (needTitleTrans) {
       parallelTasks.push(
-        translateTitle(title, lang)
+        translateTitle(title, lang, userInfo)
           .then((trans) => {
             if (trans) translatedTitle = trans;
             if (lang !== 'ja' && hasJapaneseCharacters(translatedTitle)) {
@@ -362,9 +379,10 @@ export async function POST(request: Request) {
                 message: `商品詳細取得時にタイトルの翻訳結果に日本語文字が含まれています。`,
                 productId,
                 url,
+                user: userInfo,
                 details: { originalTitle: title, translatedTitle },
                 severity: 'warning',
-                throttleKey: `product-title-trans:${productId}`
+                throttleKey: `product-title-trans:${productId}:${userInfo?.customerId || 'guest'}`
               }).catch(e => console.error('Admin notify error:', e));
             }
           })
@@ -376,7 +394,7 @@ export async function POST(request: Request) {
     if (needAi) {
       const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 3000);
       parallelTasks.push(
-        generateAiSummary(cleanDesc, targetLangForAi, undefined, productId, url)
+        generateAiSummary(cleanDesc, targetLangForAi, undefined, productId, url, userInfo)
           .then((summary) => {
             if (targetLangForAi === 'es') aiSummaryEs = summary;
             else aiSummaryPt = summary;
@@ -389,13 +407,14 @@ export async function POST(request: Request) {
                 message: `商品ID: ${productId} のAI要約結果に日本語（漢字・ひらがな・カタカナ）が含まれていることが検知されました。`,
                 productId,
                 url,
+                user: userInfo,
                 details: {
                   targetLang: targetLangForAi,
                   summarySnippet: summary.substring(0, 400),
                   rawDescSnippet: cleanDesc.substring(0, 200)
                 },
                 severity: 'error',
-                throttleKey: `ai-summary-japanese:${productId}`
+                throttleKey: `ai-summary-japanese:${productId}:${userInfo?.customerId || 'guest'}`
               }).catch(e => console.error('Admin notify error:', e));
             }
           })
@@ -407,6 +426,7 @@ export async function POST(request: Request) {
           })
       );
     }
+
 
     if (parallelTasks.length > 0) {
       await Promise.all(parallelTasks);
@@ -551,7 +571,8 @@ async function generateAiSummary(
   targetLang: 'es' | 'pt',
   translatedDesc?: string,
   productId?: string,
-  url?: string
+  url?: string,
+  user?: ErrorUserInfo
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -559,12 +580,14 @@ async function generateAiSummary(
       category: 'ai_summary',
       title: 'Gemini APIキー未設定エラー',
       message: 'GEMINI_API_KEY 環境変数が設定されていないため、AI要約がフォールバックモードで動作しています。',
+      user,
       severity: 'critical',
       throttleKey: 'gemini-apikey-missing'
     }).catch(e => console.error('Admin notify error:', e));
 
     return await buildFallbackSummary(translatedDesc || description, targetLang);
   }
+
 
   // 翻訳済みまたは原文の説明文を使用
   const textToSummarize = (translatedDesc && translatedDesc.length > 50) ? translatedDesc : description;
@@ -688,10 +711,12 @@ ${textToSummarize}`;
     message: `Gemini のすべてのモデル(${models.join(', ')})へのリクエストが失敗し、フォールバック要約が適用されました。APIクォータ超過またはGoogle側の障害の可能性があります。`,
     productId,
     url,
+    user,
     details: { targetLang, productId },
     severity: 'error',
     throttleKey: 'gemini-all-models-failed'
   }).catch(e => console.error('Admin notify error:', e));
+
 
 
   return await buildFallbackSummary(translatedDesc || description, targetLang);

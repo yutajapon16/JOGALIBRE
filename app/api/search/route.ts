@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { parseYahooTimeRaw, parseJstDateTime } from '@/lib/utils';
 import { batchTranslateTitles, translateText } from '@/lib/translate';
-import { notifyAdminError } from '@/lib/error-notifier';
+import { notifyAdminError, ErrorUserInfo } from '@/lib/error-notifier';
+import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,6 +12,23 @@ export async function GET(request: Request) {
   const urlParam = searchParams.get('url');
   const page = parseInt(searchParams.get('page') || '1');
   const cond = searchParams.get('cond') || 'all';
+
+  // 操作ユーザー情報の取得（エラー通知連携用）
+  let userInfo: ErrorUserInfo | undefined = undefined;
+  try {
+    const authUser = await getUserFromRequest(request);
+    if (authUser && authUser.email) {
+      const details = await getUserInfoByEmail(authUser.email);
+      userInfo = {
+        id: authUser.id,
+        email: authUser.email,
+        customerId: details?.customer_id || undefined,
+        name: details?.full_name || undefined,
+        role: details?.role || undefined
+      };
+    }
+  } catch {}
+
 
   // デフォルトは50件。URLパラメータに n= があればそれを優先する
   let itemsPerPage = 50;
@@ -472,7 +490,7 @@ export async function GET(request: Request) {
     if (items.length > 0 && lang !== 'ja') {
       try {
         const rawTitles = items.map(item => (typeof item.title === 'string' ? item.title : '') || '');
-        const translatedTitles = await batchTranslateTitles(rawTitles, lang);
+        const translatedTitles = await batchTranslateTitles(rawTitles, lang, userInfo);
         if (translatedTitles && translatedTitles.length === items.length) {
           items.forEach((item, idx) => {
             if (translatedTitles[idx]) {
@@ -485,6 +503,7 @@ export async function GET(request: Request) {
         // 翻訳に失敗した場合はそのまま日本語のタイトルで続行する（フェールセーフ）
       }
     }
+
 
     return NextResponse.json({ items, translatedKeyword, nextPage });
   } catch (error) {

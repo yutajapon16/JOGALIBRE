@@ -3,7 +3,8 @@
  * インメモリキャッシュ + Gemini 2.5 Flash Lite による超高速・高品質なバッチ翻訳
  */
 
-import { notifyAdminError, hasJapaneseCharacters } from '@/lib/error-notifier';
+import { notifyAdminError, hasJapaneseCharacters, ErrorUserInfo } from '@/lib/error-notifier';
+
 
 // 現在利用可能な公式の超高速・高スループット安定モデルを最速順に設定
 const GEMINI_MODELS = [
@@ -160,12 +161,12 @@ function setCachedTranslation(text: string, targetLang: string, translated: stri
 /**
  * 単一タイトルの翻訳
  */
-export async function translateTitle(title: string, targetLang: string): Promise<string> {
+export async function translateTitle(title: string, targetLang: string, user?: ErrorUserInfo): Promise<string> {
   if (!title || targetLang === 'ja') return title;
   const cached = getCachedTranslation(title, targetLang);
   if (cached) return cached;
 
-  const results = await batchTranslateTitles([title], targetLang);
+  const results = await batchTranslateTitles([title], targetLang, user);
   return results[0] || title;
 }
 
@@ -174,9 +175,10 @@ export async function translateTitle(title: string, targetLang: string): Promise
  * インメモリキャッシュを最優先参照し、未翻訳分のみを Gemini で並列バッチ翻訳
  * @param titles 翻訳対象のタイトル配列
  * @param targetLang 翻訳先言語（'es' または 'pt' 等）
+ * @param user 操作している顧客情報（エラー通知用）
  * @returns 翻訳されたタイトル配列（元の配列と同じ長さ・順序）
  */
-export async function batchTranslateTitles(titles: string[], targetLang: string): Promise<string[]> {
+export async function batchTranslateTitles(titles: string[], targetLang: string, user?: ErrorUserInfo): Promise<string[]> {
   if (!titles || titles.length === 0 || targetLang === 'ja') {
     return titles || [];
   }
@@ -235,14 +237,20 @@ export async function batchTranslateTitles(titles: string[], targetLang: string)
 
     results[origIdx] = transTitle;
 
-    // 日本語残存チェック（ターゲット言語がes/ptで、結果に日本語が含まれているか未翻訳のまま）
+    // 日本語残存・未翻訳チェック
+    // 1. 翻訳結果に日本語（漢字・ひらがな・カタカナ）が含まれている
+    // 2. または、元のタイトルに日本語が含まれていたのに翻訳結果が元の日本語のまま変わっていない
     if (targetLang !== 'ja' && origTitle && origTitle.length > 3) {
-      if (hasJapaneseCharacters(transTitle) || transTitle === origTitle) {
+      const origHasJp = hasJapaneseCharacters(origTitle);
+      const transHasJp = hasJapaneseCharacters(transTitle);
+      const isFailed = transHasJp || (origHasJp && transTitle === origTitle);
+
+      if (isFailed) {
         failedTitles.push({ original: origTitle, translated: transTitle });
       }
     }
 
-    if (transTitle && transTitle !== origTitle && !hasJapaneseCharacters(transTitle)) {
+    if (transTitle && !hasJapaneseCharacters(transTitle)) {
       setCachedTranslation(origTitle, targetLang, transTitle);
     }
   });
@@ -253,18 +261,20 @@ export async function batchTranslateTitles(titles: string[], targetLang: string)
       category: 'translation',
       title: `商品タイトルの${targetLang.toUpperCase()}翻訳エラー（日本語残存/未翻訳検知）`,
       message: `${failedTitles.length}件の商品タイトルの翻訳において、日本語が残存しているか翻訳に失敗した可能性があります。`,
+      user,
       details: {
         targetLang,
         failedCount: failedTitles.length,
         sampleFailures: failedTitles.slice(0, 5)
       },
       severity: 'warning',
-      throttleKey: `translation:${targetLang}:${failedTitles[0]?.original?.substring(0, 20)}`
+      throttleKey: `translation:${targetLang}:${failedTitles[0]?.original?.substring(0, 20)}:${user?.customerId || user?.email || 'guest'}`
     }).catch(e => console.error('Failed to notify translation error:', e));
   }
 
   return results;
 }
+
 
 
 /**
