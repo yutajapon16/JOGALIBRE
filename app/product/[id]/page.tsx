@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
 import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds } from '@/lib/utils';
+import { getOptimizedImageUrl } from '@/lib/image-cache';
 
 // オークションIDまたはURLからキャッシュキーを正規化して生成する関数
 const getProductCacheKey = (url: string | null, auctionId?: string, currentLang: string = 'es') => {
@@ -929,7 +930,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="relative aspect-video w-full bg-gray-100 flex items-center justify-center">
             {productImages.length > 0 ? (
               <Image
-                src={productImages[currentImageIndex] || productImages[0] || '/icons/customer-icon.png'}
+                src={getOptimizedImageUrl(productImages[currentImageIndex] || productImages[0])}
                 alt={`${product?.title || 'Product'} - Image ${currentImageIndex + 1}`}
                 fill
                 unoptimized
@@ -939,7 +940,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 sizes="(max-width: 768px) 100vw, 640px"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  if (target && !target.src.includes('customer-icon.png')) {
+                  const originalSrc = productImages[currentImageIndex] || productImages[0];
+                  // キャッシュプロキシURLで失敗した場合は、まず元のヤフオク公式URLにフォールバック
+                  if (target && target.src.includes('/api/image-cache') && originalSrc) {
+                    target.src = originalSrc;
+                  } else if (target && !target.src.includes('customer-icon.png')) {
                     target.src = '/icons/customer-icon.png';
                   }
                 }}

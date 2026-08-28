@@ -6,6 +6,7 @@ import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword,
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
 import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds } from '@/lib/utils';
+import { getOptimizedImageUrl } from '@/lib/image-cache';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
 
@@ -7872,12 +7873,18 @@ export default function Home() {
                                     <div>
                                       <div className="relative w-full h-28 sm:h-32 rounded-lg overflow-hidden bg-gray-50 mb-2 flex items-center justify-center">
                                         <img
-                                          src={item.imageUrl || (item.images && item.images[0]) || ''}
+                                          src={getOptimizedImageUrl(item.imageUrl || (item.images && item.images[0]) || '')}
                                           alt={item.title}
                                           className={`w-full h-full object-cover ${itemOffered ? '' : 'group-hover:scale-105'} transition duration-300`}
                                           loading="lazy"
                                           onError={(e) => {
-                                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&auto=format&fit=crop&q=80';
+                                            const target = e.target as HTMLImageElement;
+                                            const originalSrc = item.imageUrl || (item.images && item.images[0]);
+                                            if (target && target.src.includes('/api/image-cache') && originalSrc) {
+                                              target.src = originalSrc;
+                                            } else {
+                                              target.src = 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&auto=format&fit=crop&q=80';
+                                            }
                                           }}
                                         />
                                         <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
@@ -8093,12 +8100,19 @@ export default function Home() {
                   {selectedProduct.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={selectedProduct.imageUrl}
+                      src={getOptimizedImageUrl(selectedProduct.imageUrl)}
                       alt={selectedProduct.title || 'Product'}
                       loading="lazy"
                       decoding="async"
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        const originalSrc = selectedProduct.imageUrl;
+                        if (target && target.src.includes('/api/image-cache') && originalSrc) {
+                          target.src = originalSrc;
+                        }
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-semibold">
