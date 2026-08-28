@@ -18,6 +18,42 @@ const BACKUP_TABLES = [
   'asaas_webhook_logs',
 ];
 
+/**
+ * 1,000件制限を回避し、テーブルの全レコードを確実に取得するヘルパー関数
+ */
+async function fetchAllRowsFromTable(tableName: string): Promise<any[]> {
+  const PAGE_SIZE = 1000;
+  let allRows: any[] = [];
+  let from = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const to = from + PAGE_SIZE - 1;
+    const { data, error } = await supabaseAdmin
+      .from(tableName)
+      .select('*')
+      .range(from, to);
+
+    if (error) {
+      console.warn(`Table [${tableName}] backup query error:`, error.message);
+      break;
+    }
+
+    if (data && data.length > 0) {
+      allRows = allRows.concat(data);
+      if (data.length < PAGE_SIZE) {
+        hasMore = false;
+      } else {
+        from += PAGE_SIZE;
+      }
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allRows;
+}
+
 export async function GET(request: Request) {
   // 1. Vercel Cron 認証チェック
   const authHeader = request.headers.get('authorization');
@@ -42,17 +78,12 @@ export async function GET(request: Request) {
 
     let totalRecords = 0;
 
-    // 2. 全テーブルのデータを並列抽出
+    // 2. 全テーブルのデータを全件抽出（1000件制限を突破するページネーション対応）
     for (const table of BACKUP_TABLES) {
       try {
-        const { data, error } = await supabaseAdmin.from(table).select('*');
-        if (error) {
-          console.warn(`Table [${table}] backup query error:`, error.message);
-          backupData[table] = [];
-        } else {
-          backupData[table] = data || [];
-          totalRecords += (data || []).length;
-        }
+        const rows = await fetchAllRowsFromTable(table);
+        backupData[table] = rows;
+        totalRecords += rows.length;
       } catch (err: any) {
         console.warn(`Exception reading table [${table}]:`, err.message);
         backupData[table] = [];

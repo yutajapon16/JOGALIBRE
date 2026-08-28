@@ -5,13 +5,62 @@ import { VAPID_PUBLIC_KEY } from '@/lib/constants';
 import { sendEvolutionWhatsAppMessage } from '@/lib/whatsapp-evolution';
 
 // Web Push設定
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 
-webpush.setVapidDetails(
-    'mailto:admin@jogalibre.com',
-    VAPID_PUBLIC_KEY,
-    VAPID_PRIVATE_KEY
-);
+if (VAPID_PRIVATE_KEY) {
+    try {
+        webpush.setVapidDetails(
+            'mailto:admin@jogalibre.com',
+            VAPID_PUBLIC_KEY,
+            VAPID_PRIVATE_KEY
+        );
+    } catch (e) {
+        console.warn('[PushSend] VAPID details initialization warning:', e);
+    }
+}
+
+/**
+ * 言語およびロールに応じた通知タイトルと本文を整形するヘルパー関数
+ */
+function formatNotificationContent({
+    rawTitle,
+    rawBody,
+    bidReq,
+    isAdmin,
+    userLang
+}: {
+    rawTitle?: string;
+    rawBody?: string;
+    bidReq?: { product_title?: string; product_title_es?: string; product_title_pt?: string } | null;
+    isAdmin: boolean;
+    userLang: string;
+}) {
+    let formattedBody = rawBody || '';
+    if (bidReq) {
+        if (isAdmin) {
+            formattedBody = `商品: ${bidReq.product_title || 'リクエスト商品'}`;
+        } else if (userLang === 'pt') {
+            formattedBody = `Produto: ${bidReq.product_title_pt || bidReq.product_title_es || bidReq.product_title}`;
+        } else {
+            formattedBody = `Producto: ${bidReq.product_title_es || bidReq.product_title_pt || bidReq.product_title}`;
+        }
+    } else {
+        if (isAdmin) {
+            formattedBody = formattedBody.replace(/^(Producto|Produto):\s*/i, '商品: ');
+        } else if (userLang === 'pt') {
+            formattedBody = formattedBody.replace(/^(商品|Producto):\s*/i, 'Produto: ');
+        } else {
+            formattedBody = formattedBody.replace(/^(商品|Produto):\s*/i, 'Producto: ');
+        }
+    }
+
+    let cleanTitle = rawTitle || '';
+    if (!cleanTitle || cleanTitle === 'JOGALIBRE' || cleanTitle === 'Administrador' || cleanTitle === '管理画面') {
+        cleanTitle = isAdmin ? '🔔 通知' : (userLang === 'pt' ? '🔔 Notificação' : '🔔 Notificación');
+    }
+
+    return { title: cleanTitle, body: formattedBody };
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -92,36 +141,18 @@ export async function POST(request: NextRequest) {
                 const isAdmin = uInfo?.role === 'admin';
                 const uLang = uInfo?.language || 'es';
 
-                let formattedBody = body || '';
-                if (bidReq) {
-                    if (isAdmin) {
-                        formattedBody = `商品: ${bidReq.product_title || 'リクエスト商品'}`;
-                    } else if (uLang === 'pt') {
-                        formattedBody = `Produto: ${bidReq.product_title_pt || bidReq.product_title_es || bidReq.product_title}`;
-                    } else {
-                        formattedBody = `Producto: ${bidReq.product_title_es || bidReq.product_title_pt || bidReq.product_title}`;
-                    }
-                } else {
-                    // bidReqがない場合もプレフィックスを受信者言語に強制補正
-                    if (isAdmin) {
-                        formattedBody = formattedBody.replace(/^(Producto|Produto):\s*/i, '商品: ');
-                    } else if (uLang === 'pt') {
-                        formattedBody = formattedBody.replace(/^(商品|Producto):\s*/i, 'Produto: ');
-                    } else {
-                        formattedBody = formattedBody.replace(/^(商品|Produto):\s*/i, 'Producto: ');
-                    }
-                }
-
-                // 不要な「JOGALIBRE」「From 管理画面」「Administrador」タイトルを除正
-                let cleanTitle = title || '';
-                if (!cleanTitle || cleanTitle === 'JOGALIBRE' || cleanTitle === 'Administrador' || cleanTitle === '管理画面') {
-                    cleanTitle = isAdmin ? '🔔 通知' : (uLang === 'pt' ? '🔔 Notificação' : '🔔 Notificación');
-                }
+                const formatted = formatNotificationContent({
+                    rawTitle: title,
+                    rawBody: body,
+                    bidReq,
+                    isAdmin,
+                    userLang: uLang
+                });
 
                 return {
                     user_id: uid,
-                    title: cleanTitle,
-                    body: formattedBody,
+                    title: formatted.title,
+                    body: formatted.body,
                     url: url || '/',
                     is_read: false
                 };
@@ -150,35 +181,19 @@ export async function POST(request: NextRequest) {
 
             const uLang = uInfo?.language || (isAdmin ? 'ja' : 'es');
 
-            let formattedBody = body || '';
-            if (bidReq) {
-                if (isAdmin) {
-                    formattedBody = `商品: ${bidReq.product_title || 'リクエスト商品'}`;
-                } else if (uLang === 'pt') {
-                    formattedBody = `Produto: ${bidReq.product_title_pt || bidReq.product_title_es || bidReq.product_title}`;
-                } else {
-                    formattedBody = `Producto: ${bidReq.product_title_es || bidReq.product_title_pt || bidReq.product_title}`;
-                }
-            } else {
-                if (isAdmin) {
-                    formattedBody = formattedBody.replace(/^(Producto|Produto):\s*/i, '商品: ');
-                } else if (uLang === 'pt') {
-                    formattedBody = formattedBody.replace(/^(商品|Producto):\s*/i, 'Produto: ');
-                } else {
-                    formattedBody = formattedBody.replace(/^(商品|Produto):\s*/i, 'Producto: ');
-                }
-            }
-
-            let cleanTitle = title || '';
-            if (!cleanTitle || cleanTitle === 'JOGALIBRE' || cleanTitle === 'Administrador' || cleanTitle === '管理画面') {
-                cleanTitle = isAdmin ? '🔔 通知' : (uLang === 'pt' ? '🔔 Notificação' : '🔔 Notificación');
-            }
+            const formatted = formatNotificationContent({
+                rawTitle: title,
+                rawBody: body,
+                bidReq,
+                isAdmin,
+                userLang: uLang
+            });
 
             // WhatsApp用の見やすいフォーマット
             const messageLines = [
                 `*JOGALIBRE*`,
-                cleanTitle,
-                formattedBody,
+                formatted.title,
+                formatted.body,
                 '',
                 targetUrl
             ].filter(line => line !== null && line !== undefined);
@@ -195,7 +210,7 @@ export async function POST(request: NextRequest) {
         // --- 2. Web Push 通知処理 ---
         const { data: subscriptions, error: fetchError } = await supabaseAdmin
             .from('push_subscriptions')
-            .select('user_id, subscription')
+            .select('id, user_id, subscription')
             .in('user_id', targetUserIds);
 
         if (fetchError) {
@@ -203,38 +218,24 @@ export async function POST(request: NextRequest) {
         }
 
         const pushPromises = (subscriptions || []).map(async (sub) => {
+            if (!VAPID_PRIVATE_KEY) return { success: false, skipped: true };
+
             try {
                 const uInfo = roleMap.get(sub.user_id);
                 const isAdmin = uInfo?.role === 'admin';
                 const uLang = uInfo?.language || 'es';
 
-                let formattedBody = body || '新しい通知があります';
-                if (bidReq) {
-                    if (isAdmin) {
-                        formattedBody = `商品: ${bidReq.product_title || 'リクエスト商品'}`;
-                    } else if (uLang === 'pt') {
-                        formattedBody = `Produto: ${bidReq.product_title_pt || bidReq.product_title_es || bidReq.product_title}`;
-                    } else {
-                        formattedBody = `Producto: ${bidReq.product_title_es || bidReq.product_title_pt || bidReq.product_title}`;
-                    }
-                } else {
-                    if (isAdmin) {
-                        formattedBody = formattedBody.replace(/^(Producto|Produto):\s*/i, '商品: ');
-                    } else if (uLang === 'pt') {
-                        formattedBody = formattedBody.replace(/^(商品|Producto):\s*/i, 'Produto: ');
-                    } else {
-                        formattedBody = formattedBody.replace(/^(商品|Produto):\s*/i, 'Producto: ');
-                    }
-                }
-
-                let cleanTitle = title || '';
-                if (!cleanTitle || cleanTitle === 'JOGALIBRE' || cleanTitle === 'Administrador' || cleanTitle === '管理画面') {
-                    cleanTitle = isAdmin ? '🔔 通知' : (uLang === 'pt' ? '🔔 Notificação' : '🔔 Notificación');
-                }
+                const formatted = formatNotificationContent({
+                    rawTitle: title,
+                    rawBody: body || '新しい通知があります',
+                    bidReq,
+                    isAdmin,
+                    userLang: uLang
+                });
 
                 const payload = JSON.stringify({
-                    title: cleanTitle,
-                    body: formattedBody,
+                    title: formatted.title,
+                    body: formatted.body,
                     icon: '/icons/customer-icon.png',
                     url: url || '/',
                 });
@@ -246,10 +247,11 @@ export async function POST(request: NextRequest) {
                 if (err && typeof err === 'object' && 'statusCode' in err) {
                     const statusCode = (err as { statusCode: number }).statusCode;
                     if (statusCode === 410 || statusCode === 404) {
-                        await supabaseAdmin
-                            .from('push_subscriptions')
-                            .delete()
-                            .eq('user_id', sub.user_id);
+                        if (sub.id) {
+                            await supabaseAdmin.from('push_subscriptions').delete().eq('id', sub.id);
+                        } else {
+                            await supabaseAdmin.from('push_subscriptions').delete().eq('subscription', sub.subscription);
+                        }
                     }
                 }
                 console.error('プッシュ送信エラー:', err);

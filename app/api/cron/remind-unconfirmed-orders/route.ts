@@ -114,17 +114,19 @@ export async function GET(req: Request) {
 
       await Promise.allSettled(autoConfirmNotificationsPromises);
 
-      // DB更新: customer_confirmed を true に更新
-      for (const reqData of autoConfirmRequests) {
-        const updatedMsg = ((reqData.customer_message || '') + ' [Auto_Confirmed_24h]').trim();
-        await supabaseAdmin
-          .from('bid_requests')
-          .update({
-            customer_confirmed: true,
-            customer_message: updatedMsg,
-          })
-          .eq('id', reqData.id);
-      }
+      // DB更新: customer_confirmed を true に並列更新
+      await Promise.all(
+        autoConfirmRequests.map(async (reqData) => {
+          const updatedMsg = ((reqData.customer_message || '') + ' [Auto_Confirmed_24h]').trim();
+          return supabaseAdmin
+            .from('bid_requests')
+            .update({
+              customer_confirmed: true,
+              customer_message: updatedMsg,
+            })
+            .eq('id', reqData.id);
+        })
+      );
 
       autoConfirmedCount = autoConfirmIds.length;
     }

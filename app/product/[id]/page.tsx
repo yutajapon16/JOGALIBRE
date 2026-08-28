@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
-import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds } from '@/lib/utils';
+import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, syncLocalOfferedIds } from '@/lib/utils';
 import { getOptimizedImageUrl } from '@/lib/image-cache';
 
 // オークションIDまたはURLからキャッシュキーを正規化して生成する関数
@@ -823,7 +823,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   // AI要約（aiSummaryEs または aiSummaryPt）の取得、無い場合はGoogle翻訳テキストをフォールバックに
   const aiSummary = lang === 'es' ? product.aiSummaryEs : product.aiSummaryPt;
-  const showFallbackDescription = !aiSummary;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">

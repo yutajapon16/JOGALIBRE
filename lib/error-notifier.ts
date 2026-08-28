@@ -171,7 +171,7 @@ export async function notifyAdminError(options: NotifyAdminErrorOptions): Promis
       if (VAPID_PRIVATE_KEY) {
         const { data: subs } = await supabaseAdmin
           .from('push_subscriptions')
-          .select('user_id, subscription')
+          .select('id, user_id, subscription')
           .in('user_id', adminUserIds);
 
         if (subs && subs.length > 0) {
@@ -189,7 +189,11 @@ export async function notifyAdminError(options: NotifyAdminErrorOptions): Promis
                 await webpush.sendNotification(subObj, pushPayload);
               } catch (subErr: any) {
                 if (subErr?.statusCode === 410 || subErr?.statusCode === 404) {
-                  await supabaseAdmin.from('push_subscriptions').delete().eq('user_id', sub.user_id);
+                  if (sub.id) {
+                    await supabaseAdmin.from('push_subscriptions').delete().eq('id', sub.id);
+                  } else {
+                    await supabaseAdmin.from('push_subscriptions').delete().eq('subscription', sub.subscription);
+                  }
                 }
               }
             })

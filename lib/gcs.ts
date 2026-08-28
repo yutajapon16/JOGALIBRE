@@ -12,7 +12,7 @@ export function getStorageClient(): Storage | null {
   try {
     // 1. JSON文字列 または Base64 エンコードされたサービスアカウントキー
     if (process.env.GCP_SERVICE_ACCOUNT_KEY) {
-      let credentialsJson = process.env.GCP_SERVICE_ACCOUNT_KEY.trim();
+      const credentialsJson = process.env.GCP_SERVICE_ACCOUNT_KEY.trim();
       let credentials: any;
       if (credentialsJson.startsWith('{')) {
         credentials = JSON.parse(credentialsJson);

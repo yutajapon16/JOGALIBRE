@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest } from '@/lib/auth-helpers';
 import { calculateJapanSendAmount } from '@/lib/utils';
 import { foxbitClient } from '@/lib/foxbit';
+import { getResilientExchangeRate } from '@/lib/exchange';
 
 /**
  * 管理者権限チェックヘルパー
@@ -80,18 +81,15 @@ export async function GET(request: Request) {
       joga_usdt_address: process.env.JOGA_USDT_WALLET_ADDRESS || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc',
     };
 
-    // 3. JPY為替レートの取得 (日本送金額計算用)
-    let jpyRate = 150;
-    const { data: exchangeRateData } = await supabaseAdmin
-      .from('exchange_rates')
-      .select('rate')
-      .eq('currency', 'JPY')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (exchangeRateData?.rate) {
-      jpyRate = Number(exchangeRateData.rate);
+    // 3. JPY為替レートの取得 (日本送金額計算用: リアルタイム為替レート連携)
+    let jpyRate = 155.0;
+    try {
+      const rateData = await getResilientExchangeRate();
+      if (rateData?.rates?.JPY && rateData.rates.JPY > 50) {
+        jpyRate = rateData.rates.JPY;
+      }
+    } catch (rateErr) {
+      console.warn('[Foxbit API] Exchange rate fetch warning:', rateErr);
     }
 
     // 4. 未送金の落札・決済済み注文を抽出

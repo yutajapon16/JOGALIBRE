@@ -450,7 +450,7 @@ ${JSON.stringify(titles)}`;
         // レートリミット・一時混雑時は少し待機してから次のモデルへ
         await new Promise(r => setTimeout(r, 600));
       }
-    } catch (e) {
+    } catch {
       // 次のモデルへ
     }
   }

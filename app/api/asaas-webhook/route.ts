@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { notifyAdminError } from '@/lib/error-notifier';
+import { generateAndUploadReceipt } from '@/lib/receipt-generator';
+import { sendReceiptEmail } from '@/lib/resend';
 
 // ASAAS Webhook認証トークン（環境変数から取得）
 const ASAAS_WEBHOOK_TOKEN = process.env.ASAAS_WEBHOOK_TOKEN;
@@ -142,9 +144,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true, error: 'Internal processing error' });
   }
 }
-
-import { generateAndUploadReceipt } from '@/lib/receipt-generator';
-import { sendReceiptEmail } from '@/lib/resend';
 
 /**
  * 支払い確認時の処理
