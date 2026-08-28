@@ -64,6 +64,29 @@ const BRAND_DUPLICATE_RULES: { pattern: RegExp; replacement: string }[] = [
   { pattern: /(?:DUNLOP\s*ダンロップ|ダンロップ\s*DUNLOP)/gi, replacement: 'Dunlop' },
   { pattern: /(?:MICHELIN\s*ミシュラン|ミシュラン\s*MICHELIN)/gi, replacement: 'Michelin' },
 
+  // 工具・電動工具
+  { pattern: /(?:MAKITA\s*マキタ|マキタ\s*MAKITA)/gi, replacement: 'Makita' },
+  { pattern: /(?:HIKOKI\s*(?:ハイコーキ|日立工機)|(?:ハイコーキ|日立工機)\s*HIKOKI)/gi, replacement: 'HiKOKI' },
+  { pattern: /(?:RYOBI\s*リョービ|リョービ\s*RYOBI)/gi, replacement: 'RYOBI' },
+  { pattern: /(?:KYOCERA\s*京セラ|京セラ\s*KYOCERA)/gi, replacement: 'Kyocera' },
+  { pattern: /(?:KTC\s*京都機械工具|京都機械工具\s*KTC)/gi, replacement: 'KTC' },
+  { pattern: /(?:TONE\s*トネ|トネ\s*TONE)/gi, replacement: 'TONE' },
+
+  // 車種名・モデル名重複
+  { pattern: /(?:SOARER\s*ソアラ|ソアラ\s*SOARER|Soアラ)/gi, replacement: 'Soarer' },
+  { pattern: /(?:SUPRA\s*スープラ|スープラ\s*SUPRA)/gi, replacement: 'Supra' },
+  { pattern: /(?:SILVIA\s*シルビア|シルビア\s*SILVIA)/gi, replacement: 'Silvia' },
+  { pattern: /(?:SKYLINE\s*スカイライン|スカイライン\s*SKYLINE)/gi, replacement: 'Skyline' },
+  { pattern: /(?:FAIRLADY\s*Z\s*フェアレディ\s*Z|フェアレディ\s*Z\s*FAIRLADY\s*Z|フェアレディZ)/gi, replacement: 'Fairlady Z' },
+  { pattern: /(?:CHASER\s*チェイサー|チェイサー\s*CHASER)/gi, replacement: 'Chaser' },
+  { pattern: /(?:MARK\s*II\s*マーク\s*II|マーク\s*II\s*MARK\s*II|マーク2|マークII)/gi, replacement: 'Mark II' },
+  { pattern: /(?:CRESTA\s*クレスタ|クレスタ\s*CRESTA)/gi, replacement: 'Cresta' },
+  { pattern: /(?:IMPREZA\s*インプレッサ|インプレッサ\s*IMPREZA)/gi, replacement: 'Impreza' },
+  { pattern: /(?:LANCER\s*EVOLUTION\s*ランサーエボリューション|ランサーエボリューション|ランエボ)/gi, replacement: 'Lancer Evolution' },
+  { pattern: /(?:ROADSTER\s*ロードスター|ロードスター\s*ROADSTER)/gi, replacement: 'Roadster' },
+  { pattern: /(?:ALTEZZA\s*アルテッツァ|アルテッツァ\s*ALTEZZA)/gi, replacement: 'Altezza' },
+  { pattern: /(?:CELICA\s*セリカ|セリカ\s*CELICA)/gi, replacement: 'Celica' },
+
   // 釣具・ホビー
   { pattern: /(?:SHIMANO\s*シマノ|シマノ\s*SHIMANO)/gi, replacement: 'Shimano' },
   { pattern: /(?:DAIWA\s*ダイワ|ダイワ\s*DAIWA)/gi, replacement: 'Daiwa' },
@@ -71,8 +94,26 @@ const BRAND_DUPLICATE_RULES: { pattern: RegExp; replacement: string }[] = [
   { pattern: /(?:BANDAI\s*バンダイ|バンダイ\s*BANDAI)/gi, replacement: 'Bandai' },
 ];
 
-// 2. 単独で残存したカタカナ・漢字ブランド名の変換
+// 2. 単独で残存したカタカナ・漢字ブランド名・車種名の変換
 const STANDALONE_BRAND_RULES: { pattern: RegExp; replacement: string }[] = [
+  { pattern: /マキタ/g, replacement: 'Makita' },
+  { pattern: /(?:ハイコーキ|日立工機)/g, replacement: 'HiKOKI' },
+  { pattern: /リョービ/g, replacement: 'RYOBI' },
+  { pattern: /京セラ/g, replacement: 'Kyocera' },
+  { pattern: /トネ/g, replacement: 'TONE' },
+  { pattern: /(?:ソアラ|Soアラ)/g, replacement: 'Soarer' },
+  { pattern: /スープラ/g, replacement: 'Supra' },
+  { pattern: /シルビア/g, replacement: 'Silvia' },
+  { pattern: /スカイライン/g, replacement: 'Skyline' },
+  { pattern: /フェアレディZ?/g, replacement: 'Fairlady Z' },
+  { pattern: /チェイサー/g, replacement: 'Chaser' },
+  { pattern: /(?:マークII|マーク2)/g, replacement: 'Mark II' },
+  { pattern: /クレスタ/g, replacement: 'Cresta' },
+  { pattern: /インプレッサ/g, replacement: 'Impreza' },
+  { pattern: /(?:ランサーエボリューション|ランエボ)/g, replacement: 'Lancer Evolution' },
+  { pattern: /ロードスター/g, replacement: 'Roadster' },
+  { pattern: /アルテッツァ/g, replacement: 'Altezza' },
+  { pattern: /セリカ/g, replacement: 'Celica' },
   { pattern: /コールマン/g, replacement: 'Coleman' },
   { pattern: /スノーピーク/g, replacement: 'Snow Peak' },
   { pattern: /ロゴス/g, replacement: 'LOGOS' },
@@ -108,6 +149,7 @@ const STANDALONE_BRAND_RULES: { pattern: RegExp; replacement: string }[] = [
   { pattern: /ダンロップ/g, replacement: 'Dunlop' },
   { pattern: /ミシュラン/g, replacement: 'Michelin' },
   { pattern: /シマノ/g, replacement: 'Shimano' },
+
   { pattern: /ダイワ/g, replacement: 'Daiwa' },
   { pattern: /タミヤ/g, replacement: 'Tamiya' },
   { pattern: /バンダイ/g, replacement: 'Bandai' },

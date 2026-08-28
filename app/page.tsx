@@ -3314,7 +3314,14 @@ export default function Home() {
     setSearchPage(page);
     const condToUse = forceCond || searchCondition;
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchWord)}&lang=${lang}&page=${page}&cond=${condToUse}`);
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchWord)}&lang=${lang}&page=${page}&cond=${condToUse}`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
       const data = await res.json();
       if (data.items) {
         setProducts(data.items);
@@ -3401,7 +3408,14 @@ export default function Home() {
 
     setActiveCategoryUrl(targetUrl);
     try {
-      const res = await fetch(`/api/search?url=${encodeURIComponent(targetUrl)}&page=${page}&lang=${lang}`);
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/search?url=${encodeURIComponent(targetUrl)}&page=${page}&lang=${lang}`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
       const data = await res.json();
       if (data.items) {
         setProducts(data.items);
@@ -3423,6 +3437,7 @@ export default function Home() {
       setLoading(false);
     }
   };
+
 
   const getStatusColor = (status: string) => {
     switch (status) {

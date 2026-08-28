@@ -18,13 +18,15 @@ if (VAPID_PRIVATE_KEY) {
 }
 
 /**
- * 日本語文字（ひらがな・カタカナ・漢字）が含まれているか判定するユーティリティ
+ * 日本語文字（ひらがな・カタカナ文字本体・漢字）が含まれているか判定するユーティリティ
+ * ※中黒記号（・ \u30FB）などの記号は誤検知防止のため除外
  */
 export function hasJapaneseCharacters(text: string): boolean {
   if (!text) return false;
-  // ひらがな (\u3040-\u309F)、カタカナ (\u30A0-\u30FF)、漢字 (\u4E00-\u9FAF)
-  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+  // ひらがな (\u3041-\u3096)、カタカナ本体 (\u30A1-\u30FA)、漢字 (\u4E00-\u9FAF)
+  return /[\u3041-\u3096\u30A1-\u30FA\u4E00-\u9FAF]/.test(text);
 }
+
 
 export type ErrorSeverity = 'warning' | 'error' | 'critical';
 
