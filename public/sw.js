@@ -20,8 +20,18 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// ネットワークファースト戦略（APIはキャッシュしない）
+// ネットワークファースト戦略（APIおよび非GETリクエストはキャッシュしない）
 self.addEventListener('fetch', (event) => {
+    // GET以外のリクエスト（POST, PUT, DELETE等）はキャッシュ非対応のためネットワークにそのまま委ねる
+    if (event.request.method !== 'GET') {
+        return;
+    }
+
+    // http/https 以外のスキーム（chrome-extension等）はスキップ
+    if (!event.request.url.startsWith('http')) {
+        return;
+    }
+
     // API リクエストはネットワークのみ
     if (event.request.url.includes('/api/')) {
         return;

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds, copyToClipboardSafe } from '@/lib/utils';
 import { getOptimizedImageUrl } from '@/lib/image-cache';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
@@ -1397,7 +1397,7 @@ export default function Home() {
 
   // テキストをクリップボードにコピーする関数
   const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+    copyToClipboardSafe(text);
     setCopiedText(label);
     setTimeout(() => setCopiedText(null), 2000);
   };
@@ -2765,16 +2765,15 @@ export default function Home() {
     }
   };
 
-  const handleCopyTrackingNumber = (itemId: string, trackingNumber: string) => {
+  const handleCopyTrackingNumber = async (itemId: string, trackingNumber: string) => {
     if (!trackingNumber) return;
-    navigator.clipboard.writeText(trackingNumber).then(() => {
+    const ok = await copyToClipboardSafe(trackingNumber);
+    if (ok) {
       setCopiedItemId(itemId);
       setTimeout(() => {
         setCopiedItemId(null);
       }, 2000);
-    }).catch(err => {
-      console.error('Failed to copy tracking number: ', err);
-    });
+    }
   };
 
   const getFilteredPurchasedItems = () => {
@@ -9000,8 +8999,8 @@ export default function Home() {
                           className="flex-1 px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-xs font-mono text-gray-600 outline-none"
                         />
                         <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(pixPaymentResult.qrCodeText);
+                          onClick={async () => {
+                            await copyToClipboardSafe(pixPaymentResult.qrCodeText);
                             alert(lang === 'es' ? '¡Código copiado!' : 'Código copiado!');
                           }}
                           className="px-4 py-2 bg-gray-800 text-white text-xs font-bold rounded-lg hover:bg-gray-900 transition"

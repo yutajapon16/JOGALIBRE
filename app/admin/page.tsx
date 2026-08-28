@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { signIn, signOut, getCurrentUser, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, calculateProductBidJpy, deliveryLocations, getCountryNameJa, getCityNameJa } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, calculateProductBidJpy, deliveryLocations, getCountryNameJa, getCityNameJa, copyToClipboardSafe } from '@/lib/utils';
 import { BidRequest, BidStatus, FinalStatus } from '@/lib/types';
 
 // 管理者画面用のPWA manifest差し替え
@@ -407,8 +407,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleCopyText = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const handleCopyText = async (text: string) => {
+    await copyToClipboardSafe(text);
     alert('コピーしました: ' + text);
   };
 
@@ -677,11 +677,13 @@ export default function AdminDashboard() {
   };
 
   // クリップボードコピー処理 (Foxbit送金用)
-  const handleCopyFoxbitText = (text: string, keyName: string) => {
+  const handleCopyFoxbitText = async (text: string, keyName: string) => {
     if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedKey(keyName);
-    setTimeout(() => setCopiedKey(null), 2000);
+    const ok = await copyToClipboardSafe(text);
+    if (ok) {
+      setCopiedKey(keyName);
+      setTimeout(() => setCopiedKey(null), 2000);
+    }
   };
 
   // 一括送金完了（mark_remitted）処理
@@ -1018,8 +1020,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     const handleButtonClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest('button') && navigator.vibrate) {
-        navigator.vibrate(10);
+      if (target.closest('button') && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate(10);
+        } catch {}
       }
     };
     document.addEventListener('click', handleButtonClick, true);
