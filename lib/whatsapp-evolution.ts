@@ -112,9 +112,11 @@ export async function sendEvolutionWhatsAppMessage({
     const endpoint = `${apiUrl}/message/sendText/${instanceName}`;
 
     // 送信ペイロード（Evolution API v2 仕様）
+    // linkPreview: false をトップレベルと options の両方に指定して OGP リンクプレビュー（巨大ロゴ・説明文）を完全無効化
     const payload = {
       number: normalizedNumber,
       text: message,
+      linkPreview: false,
       options: {
         delay: 1000,
         presence: 'composing',
