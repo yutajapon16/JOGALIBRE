@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { parseYahooTimeRaw } from '@/lib/utils';
 import { batchTranslateTitles } from '@/lib/translate';
+import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
+import { ErrorUserInfo } from '@/lib/error-notifier';
+
 
 // 日本の多様な人気・注目商品の検索キーワードプール
 const FEATURED_SEARCH_KEYWORDS = [
@@ -254,6 +257,22 @@ export async function GET(request: Request) {
   const lang = searchParams.get('lang') || 'es';
   const count = parseInt(searchParams.get('count') || '10', 10);
   
+  // 操作ユーザー情報の取得（エラー通知連携用）
+  let userInfo: ErrorUserInfo | undefined = undefined;
+  try {
+    const authUser = await getUserFromRequest(request);
+    if (authUser && authUser.email) {
+      const details = await getUserInfoByEmail(authUser.email);
+      userInfo = {
+        id: authUser.id,
+        email: authUser.email,
+        customerId: details?.customer_id || undefined,
+        name: details?.full_name || undefined,
+        role: details?.role || undefined
+      };
+    }
+  } catch {}
+
   const cacheKey = `${lang}_${count}`;
   const now = Date.now();
   
@@ -301,7 +320,7 @@ export async function GET(request: Request) {
     if (finalItems.length > 0 && lang !== 'ja') {
       try {
         const titlesToTranslate = finalItems.map((item) => item.titleJa || item.title || '');
-        const translated = await batchTranslateTitles(titlesToTranslate, lang);
+        const translated = await batchTranslateTitles(titlesToTranslate, lang, userInfo);
         if (translated && translated.length === finalItems.length) {
           finalItems.forEach((item, idx) => {
             if (translated[idx]) {
@@ -313,6 +332,7 @@ export async function GET(request: Request) {
         console.warn('Featured items translation error:', transErr);
       }
     }
+
     
     // キャッシュ保存
     cache[cacheKey] = {

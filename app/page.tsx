@@ -2099,7 +2099,14 @@ export default function Home() {
   const fetchFeaturedItems = async (targetLang: string = lang) => {
     setIsFeaturedLoading(true);
     try {
-      const res = await fetch(`/api/featured-items?lang=${targetLang}&count=12`);
+      const { data: { session: clientSession } } = await supabase.auth.getSession();
+      const accessToken = clientSession?.access_token;
+
+      const res = await fetch(`/api/featured-items?lang=${targetLang}&count=12`, {
+        headers: {
+          'Authorization': accessToken ? `Bearer ${accessToken}` : ''
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.items && Array.isArray(data.items)) {
@@ -2112,6 +2119,7 @@ export default function Home() {
       setIsFeaturedLoading(false);
     }
   };
+
 
   // プロフィール取得（fetchMyRequestsと同じ実証済みパターン）
   const fetchUserProfile = async (retryCount = 0) => {
