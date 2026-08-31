@@ -30,7 +30,20 @@ function useAdminManifest() {
 
 export default function AdminDashboard() {
   useAdminManifest();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('joga_admin_user') || localStorage.getItem('joga_user_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed?.role === 'admin') {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return null;
+  });
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -1037,13 +1050,14 @@ export default function AdminDashboard() {
     let isResolving = false;
     let lastResolvedUserId: string | null = null;
 
-    // ローカルストレージに Supabase または JOGALIBRE の認証情報があるか確認
+    // ローカルストレージに Supabase または JOGALIBRE の管理者認証情報があるか確認
     const hasStoredAuth = typeof window !== 'undefined' && (
       Object.keys(localStorage).some(k => k.startsWith('sb-') || k.includes('supabase')) ||
+      !!localStorage.getItem('joga_admin_user') ||
       !!localStorage.getItem('joga_user_cache')
     );
 
-    // 万が一のタイムアウト防止（最長5秒で強制的にローディング解除してログイン画面またはトップページへ）
+    // 万が一のタイムアウト防止（最長5秒で強制的にローディング解除して画面表示）
     const safetyTimer = setTimeout(() => {
       if (isMounted && !authResolved) {
         authResolved = true;
@@ -1064,6 +1078,13 @@ export default function AdminDashboard() {
         lastResolvedUserId = user?.id || null;
 
         if (user?.role === 'admin') {
+          // 管理者キャッシュを保存
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('joga_admin_user', JSON.stringify(user));
+            } catch {}
+          }
+
           // ① トップページ（申請タブ）の表示に必要な最重要データのみを待機（最速0.2〜0.4秒、最大2秒）
           try {
             const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
@@ -1096,6 +1117,9 @@ export default function AdminDashboard() {
         } else {
           if (isMounted) {
             setCurrentUser(null);
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('joga_admin_user');
+            }
           }
         }
       } catch (e) {
@@ -1162,6 +1186,9 @@ export default function AdminDashboard() {
         authResolved = true;
         lastResolvedUserId = null;
         setCurrentUser(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('joga_admin_user');
+        }
         setLoading(false);
         setIsLoggingIn(false);
       } else if (session?.user) {
@@ -1359,6 +1386,11 @@ export default function AdminDashboard() {
       } catch (err) {
         console.error('Push subscription cleanup error:', err);
       }
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('joga_admin_user');
+      localStorage.removeItem('joga_user_cache');
     }
 
     setIsLoggingIn(false);
