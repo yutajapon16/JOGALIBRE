@@ -72,7 +72,19 @@ const BRAND_DUPLICATE_RULES: { pattern: RegExp; replacement: string }[] = [
   { pattern: /(?:KTC\s*京都機械工具|京都機械工具\s*KTC)/gi, replacement: 'KTC' },
   { pattern: /(?:TONE\s*トネ|トネ\s*TONE)/gi, replacement: 'TONE' },
 
-  // 車種名・モデル名重複
+  // 車種名・モデル名重複・カッコ補足パターン
+  { pattern: /(?:VW\s*up!?\s*[\(（]アップ(?:\s*GTI)?[\)）]|[\(（]アップ(?:\s*GTI)?[\)）]\s*VW\s*up!?)/gi, replacement: 'VW up!' },
+  { pattern: /[\(（]アップ(?:\s*GTI)?[\)）]/gi, replacement: '' },
+  { pattern: /(?:VOLKSWAGEN\s*[\(（]フォルクスワーゲン[\)）]|フォルクスワーゲン\s*VOLKSWAGEN|VW\s*[\(（]フォルクスワーゲン[\)）]|フォルクスワーゲン\s*VW)/gi, replacement: 'Volkswagen' },
+  { pattern: /(?:GOLF\s*[\(（]ゴルフ[\)）]|[\(（]ゴルフ[\)）]\s*GOLF)/gi, replacement: 'Golf' },
+  { pattern: /(?:POLO\s*[\(（]ポロ[\)）]|[\(（]ポロ[\)）]\s*POLO)/gi, replacement: 'Polo' },
+  { pattern: /(?:PRIUS\s*[\(（]プリウス[\)）]|[\(（]プリウス[\)）]\s*PRIUS)/gi, replacement: 'Prius' },
+  { pattern: /(?:CIVIC\s*[\(（]シビック[\)）]|[\(（]シビック[\)）]\s*CIVIC)/gi, replacement: 'Civic' },
+  { pattern: /(?:INTEGRA\s*[\(（]インテグラ[\)）]|[\(（]インテグラ[\)）]\s*INTEGRA)/gi, replacement: 'Integra' },
+  { pattern: /(?:FIT\s*[\(（]フィット[\)）]|[\(（]フィット[\)）]\s*FIT)/gi, replacement: 'Fit' },
+  { pattern: /(?:YARIS\s*[\(（]ヤリス[\)）]|[\(（]ヤリス[\)）]\s*YARIS)/gi, replacement: 'Yaris' },
+  { pattern: /(?:COROLLA\s*[\(（]カローラ[\)）]|[\(（]カローラ[\)）]\s*COROLLA)/gi, replacement: 'Corolla' },
+  { pattern: /(?:KW\s*[\(（](?:カーヴェー|カーベ)[）\)]|[\(（](?:カーヴェー|カーベ)[）\)]\s*KW)/gi, replacement: 'KW' },
   { pattern: /(?:SOARER\s*ソアラ|ソアラ\s*SOARER|Soアラ)/gi, replacement: 'Soarer' },
   { pattern: /(?:SUPRA\s*スープラ|スープラ\s*SUPRA)/gi, replacement: 'Supra' },
   { pattern: /(?:SILVIA\s*シルビア|シルビア\s*SILVIA)/gi, replacement: 'Silvia' },
@@ -101,6 +113,30 @@ const STANDALONE_BRAND_RULES: { pattern: RegExp; replacement: string }[] = [
   { pattern: /リョービ/g, replacement: 'RYOBI' },
   { pattern: /京セラ/g, replacement: 'Kyocera' },
   { pattern: /トネ/g, replacement: 'TONE' },
+  { pattern: /(?:フォルクスワーゲン)/g, replacement: 'Volkswagen' },
+  { pattern: /(?:カーヴェー|カーベ)/g, replacement: 'KW' },
+  { pattern: /ゴルフ/g, replacement: 'Golf' },
+  { pattern: /ポロ/g, replacement: 'Polo' },
+  { pattern: /プリウス/g, replacement: 'Prius' },
+  { pattern: /シビック/g, replacement: 'Civic' },
+  { pattern: /インテグラ/g, replacement: 'Integra' },
+  { pattern: /フィット/g, replacement: 'Fit' },
+  { pattern: /ヤリス/g, replacement: 'Yaris' },
+  { pattern: /カローラ/g, replacement: 'Corolla' },
+  { pattern: /(?:ランクル|ランドクルーザー)/g, replacement: 'Land Cruiser' },
+  { pattern: /ハイエース/g, replacement: 'Hiace' },
+  { pattern: /アルファード/g, replacement: 'Alphard' },
+  { pattern: /ヴェルファイア/g, replacement: 'Vellfire' },
+  { pattern: /クラウン/g, replacement: 'Crown' },
+  { pattern: /ハリアー/g, replacement: 'Harrier' },
+  { pattern: /ヴォクシー/g, replacement: 'Voxy' },
+  { pattern: /ノア/g, replacement: 'Noah' },
+  { pattern: /セレナ/g, replacement: 'Serena' },
+  { pattern: /ジムニー/g, replacement: 'Jimny' },
+  { pattern: /エスクード/g, replacement: 'Escudo' },
+  { pattern: /スイフト/g, replacement: 'Swift' },
+  { pattern: /コペン/g, replacement: 'Copen' },
+  { pattern: /タント/g, replacement: 'Tanto' },
   { pattern: /(?:ソアラ|Soアラ)/g, replacement: 'Soarer' },
   { pattern: /スープラ/g, replacement: 'Supra' },
   { pattern: /シルビア/g, replacement: 'Silvia' },
@@ -138,6 +174,7 @@ const STANDALONE_BRAND_RULES: { pattern: RegExp; replacement: string }[] = [
   { pattern: /パナソニック/g, replacement: 'Panasonic' },
   { pattern: /パイオニア/g, replacement: 'Pioneer' },
   { pattern: /ケンウッド/g, replacement: 'Kenwood' },
+
   { pattern: /アルパイン/g, replacement: 'Alpine' },
   { pattern: /カロッツェリア/g, replacement: 'Carrozzeria' },
   { pattern: /(?:ビービーエス|ＢＢＳ)/g, replacement: 'BBS' },
@@ -439,12 +476,14 @@ Translate each of the following product titles from Japanese into ${targetLangNa
 
 CRITICAL RULES:
 1. Return ONLY a valid JSON array of ${titles.length} translated strings in the EXACT same order and array length as the input.
-2. Remove redundant Japanese katakana brand names when the Latin/English name is present (e.g. "SONY ソニー" -> "SONY", "TOYOTA トヨタ" -> "Toyota", "BBS ビービーエス" -> "BBS", "Coleman コールマン" -> "Coleman").
-3. Convert all standalone Japanese brand names to their official Latin/English equivalents (e.g. "ソニー" -> "SONY", "日産" -> "Nissan", "コールマン" -> "Coleman").
-4. Do NOT output markdown code fences, backticks, or any explanatory text. Return purely the JSON array.
+2. Remove redundant Japanese katakana brand/model names and parenthetical notes when the Latin/English name is present (e.g. "VW up! (アップ GTI)" -> "VW up! GTI", "Golf (ゴルフ)" -> "Golf", "SONY ソニー" -> "SONY", "TOYOTA トヨタ" -> "Toyota", "BBS ビービーエス" -> "BBS", "Coleman コールマン" -> "Coleman", "KW (カーヴェー)" -> "KW").
+3. Convert all standalone Japanese brand and car model names to their official Latin/English equivalents (e.g. "ソニー" -> "SONY", "日産" -> "Nissan", "コールマン" -> "Coleman", "ソアラ" -> "Soarer", "スープラ" -> "Supra", "プリウス" -> "Prius", "シビック" -> "Civic").
+4. Never leave untranslated Japanese katakana/kanji characters in the output.
+5. Do NOT output markdown code fences, backticks, or any explanatory text. Return purely the JSON array.
 
 Input JSON:
 ${JSON.stringify(titles)}`;
+
 
   for (const model of GEMINI_MODELS) {
     try {

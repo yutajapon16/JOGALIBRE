@@ -61,6 +61,8 @@ export interface NotifyAdminErrorOptions {
   throttleMinutes?: number;  // クールダウン時間（デフォルト10分）
 }
 
+import { waitUntil } from '@vercel/functions';
+
 // 直近送信されたエラー通知のメモリキャッシュ（スロットリング・アラートストーム防止）
 const alertCooldownMap = new Map<string, { lastSent: number; count: number }>();
 
@@ -111,9 +113,10 @@ export async function notifyAdminError(options: NotifyAdminErrorOptions): Promis
     }
   }
 
-  // 1. メール送信（admin@jogalibre.com）
-  const emailPromise = (async () => {
-    try {
+  // 通知配信の非同期タスク
+  const deliverTask = async () => {
+    // 1. メール送信（admin@jogalibre.com）- リトライ付き
+    const emailPromise = (async () => {
       const emailOpts: SystemAlertEmailOptions = {
         to: 'admin@jogalibre.com',
         type: category,
@@ -130,86 +133,103 @@ export async function notifyAdminError(options: NotifyAdminErrorOptions): Promis
           role: user.role
         } : undefined
       };
-      await sendSystemAlertEmail(emailOpts);
-    } catch (err) {
-      console.error('[ErrorNotifier] Failed to send alert email:', err);
-    }
-  })();
 
-  // 2. 管理者への Web Push 通知 & アプリ内通知保存
-  const pushPromise = (async () => {
-    try {
-      // role = 'admin' の管理者ユーザーを取得
-      const { data: adminUsers, error: adminErr } = await supabaseAdmin
-        .from('user_roles')
-        .select('id, email')
-        .eq('role', 'admin');
-
-      if (adminErr || !adminUsers || adminUsers.length === 0) {
-        return;
-      }
-
-      const adminUserIds = adminUsers.map(u => u.id);
-
-      const notificationTitle = `⚠️ [エラー検知] ${title}${userLabel}`;
-      const notificationBody = message.length > 120 ? message.substring(0, 117) + '...' : message;
-
-      // アプリ内通知テーブルに記録
-      try {
-        const notifications = adminUserIds.map(uid => ({
-          user_id: uid,
-          title: notificationTitle,
-          body: notificationBody,
-          url: url || '/admin',
-          is_read: false
-        }));
-
-        await supabaseAdmin.from('app_notifications').insert(notifications);
-      } catch (dbErr) {
-        console.error('[ErrorNotifier] DB app_notifications insert error:', dbErr);
-      }
-
-      // Web Push 送信
-      if (VAPID_PRIVATE_KEY) {
-        const { data: subs } = await supabaseAdmin
-          .from('push_subscriptions')
-          .select('id, user_id, subscription')
-          .in('user_id', adminUserIds);
-
-        if (subs && subs.length > 0) {
-          const pushPayload = JSON.stringify({
-            title: `⚠️ [システム警告] ${title}`,
-            body: `${notificationBody}${userLabel}`,
-            icon: '/icons/logo-mark.png',
-            url: url || '/admin'
-          });
-
-          await Promise.allSettled(
-            subs.map(async (sub) => {
-              try {
-                const subObj = JSON.parse(sub.subscription);
-                await webpush.sendNotification(subObj, pushPayload);
-              } catch (subErr: any) {
-                if (subErr?.statusCode === 410 || subErr?.statusCode === 404) {
-                  if (sub.id) {
-                    await supabaseAdmin.from('push_subscriptions').delete().eq('id', sub.id);
-                  } else {
-                    await supabaseAdmin.from('push_subscriptions').delete().eq('subscription', sub.subscription);
-                  }
-                }
-              }
-            })
-          );
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          await sendSystemAlertEmail(emailOpts);
+          break;
+        } catch (err) {
+          console.error(`[ErrorNotifier] Attempt ${attempt} failed to send alert email:`, err);
+          if (attempt === 1) {
+            await new Promise(r => setTimeout(r, 800));
+          }
         }
       }
-    } catch (pushErr) {
-      console.error('[ErrorNotifier] Failed to send push notification:', pushErr);
-    }
-  })();
+    })();
 
-  // バックグラウンドで両方の通知を実行（リクエストを極力ブロックしない）
-  await Promise.allSettled([emailPromise, pushPromise]);
+    // 2. 管理者への Web Push 通知 & アプリ内通知保存
+    const pushPromise = (async () => {
+      try {
+        // role = 'admin' の管理者ユーザーを取得
+        const { data: adminUsers, error: adminErr } = await supabaseAdmin
+          .from('user_roles')
+          .select('id, email')
+          .eq('role', 'admin');
+
+        if (adminErr || !adminUsers || adminUsers.length === 0) {
+          return;
+        }
+
+        const adminUserIds = adminUsers.map(u => u.id);
+
+        const notificationTitle = `⚠️ [エラー検知] ${title}${userLabel}`;
+        const notificationBody = message.length > 120 ? message.substring(0, 117) + '...' : message;
+
+        // アプリ内通知テーブルに記録
+        try {
+          const notifications = adminUserIds.map(uid => ({
+            user_id: uid,
+            title: notificationTitle,
+            body: notificationBody,
+            url: url || '/admin',
+            is_read: false
+          }));
+
+          await supabaseAdmin.from('app_notifications').insert(notifications);
+        } catch (dbErr) {
+          console.error('[ErrorNotifier] DB app_notifications insert error:', dbErr);
+        }
+
+        // Web Push 送信
+        if (VAPID_PRIVATE_KEY) {
+          const { data: subs } = await supabaseAdmin
+            .from('push_subscriptions')
+            .select('id, user_id, subscription')
+            .in('user_id', adminUserIds);
+
+          if (subs && subs.length > 0) {
+            const pushPayload = JSON.stringify({
+              title: `⚠️ [システム警告] ${title}`,
+              body: `${notificationBody}${userLabel}`,
+              icon: '/icons/logo-mark.png',
+              url: url || '/admin'
+            });
+
+            await Promise.allSettled(
+              subs.map(async (sub) => {
+                try {
+                  const subObj = JSON.parse(sub.subscription);
+                  await webpush.sendNotification(subObj, pushPayload);
+                } catch (subErr: any) {
+                  if (subErr?.statusCode === 410 || subErr?.statusCode === 404) {
+                    if (sub.id) {
+                      await supabaseAdmin.from('push_subscriptions').delete().eq('id', sub.id);
+                    } else {
+                      await supabaseAdmin.from('push_subscriptions').delete().eq('subscription', sub.subscription);
+                    }
+                  }
+                }
+              })
+            );
+          }
+        }
+      } catch (pushErr) {
+        console.error('[ErrorNotifier] Failed to send push notification:', pushErr);
+      }
+    })();
+
+    await Promise.allSettled([emailPromise, pushPromise]);
+  };
+
+  // Vercel Serverless 環境であれば waitUntil で非同期処理の完遂を保証
+  try {
+    waitUntil(deliverTask());
+  } catch {
+    // ローカル環境や waitUntil 非対応環境では通常のバックグラウンド実行
+    deliverTask().catch(e => console.error('[ErrorNotifier] Background delivery error:', e));
+  }
 
   return { notified: true, throttled: false };
 }
+
 
