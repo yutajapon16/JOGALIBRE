@@ -57,9 +57,9 @@ async function triggerUpdateLastLogin(force: boolean = false) {
   try {
     if (typeof window === 'undefined') return;
 
-    const cacheKey = 'joga_last_login_trigger';
+    const cacheKey = 'jogalibre_last_login_trigger';
     const now = Date.now();
-    const lastTrigger = localStorage.getItem(cacheKey);
+    const lastTrigger = localStorage.getItem(cacheKey) || localStorage.getItem('joga_last_login_trigger');
 
     // 強制更新（ログイン時）でない場合、前回の更新から24時間経過していなければスキップ
     if (!force && lastTrigger) {
@@ -114,8 +114,12 @@ export async function signIn(email: string, password: string) {
 export async function signOut() {
   // 1. キャッシュ・ローカルストレージ・クッキーの即時消去（ネットワーク非依存で0秒処理）
   if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('jogalibre_user_cache');
+    localStorage.removeItem('jogalibre_terms_accepted');
+    localStorage.removeItem('jogalibre_admin_user');
     localStorage.removeItem('joga_user_cache');
     localStorage.removeItem('joga_terms_accepted');
+    localStorage.removeItem('joga_admin_user');
   }
   if (typeof sessionStorage !== 'undefined') {
     sessionStorage.clear();
@@ -309,7 +313,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       };
 
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('joga_user_cache', JSON.stringify({
+        localStorage.setItem('jogalibre_user_cache', JSON.stringify({
           id: userData.id,
           role: userData.role,
           fullName: userData.fullName,
@@ -348,7 +352,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
 
     // 未ログイン（result=null）でも、既にセッションがあるならキャッシュを試す
     if (alreadyFetchedUser && typeof localStorage !== 'undefined') {
-      const cached = localStorage.getItem('joga_user_cache');
+      const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
       if (cached) {
         try {
           const cacheData = JSON.parse(cached);
@@ -371,7 +375,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
     
     // タイムアウトや例外時、キャッシュからの復旧を試みる
     if (alreadyFetchedUser && typeof localStorage !== 'undefined') {
-      const cached = localStorage.getItem('joga_user_cache');
+      const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
       if (cached) {
         try {
           const cacheData = JSON.parse(cached);

@@ -78,8 +78,9 @@ export async function GET(request: Request) {
 
     const foxbitSettings = settingsData?.value || {
       pix_key: process.env.FOXBIT_PIX_KEY || '',
-      joga_usdt_address: process.env.JOGA_USDT_WALLET_ADDRESS || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc',
+      japan_usdt_address: process.env.JAPAN_USDT_WALLET_ADDRESS || process.env.JOGA_USDT_WALLET_ADDRESS || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc',
     };
+    const resolvedJapanUsdt = foxbitSettings.japan_usdt_address || foxbitSettings.joga_usdt_address || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc';
 
     // 3. JPY為替レートの取得 (日本送金額計算用: リアルタイム為替レート連携)
     let jpyRate = 155.0;
@@ -211,7 +212,8 @@ export async function GET(request: Request) {
       },
       settings: {
         pix_key: foxbitSettings.pix_key || '',
-        joga_usdt_address: foxbitSettings.joga_usdt_address || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc',
+        japan_usdt_address: resolvedJapanUsdt,
+        joga_usdt_address: resolvedJapanUsdt,
       },
     });
   } catch (error: any) {
@@ -312,9 +314,10 @@ export async function POST(request: Request) {
       });
     }
 
-    // アクション 2: 設定情報の更新（Pixキー、JOGA USDTアドレス等）
+    // アクション 2: 設定情報の更新（Pixキー、日本受取USDTアドレス等）
     if (action === 'update_settings') {
-      const { pix_key, joga_usdt_address } = body;
+      const { pix_key, japan_usdt_address, joga_usdt_address } = body;
+      const targetUsdt = japan_usdt_address !== undefined ? japan_usdt_address : joga_usdt_address;
 
       const { data: existingSettings } = await supabaseAdmin
         .from('system_settings')
@@ -325,7 +328,8 @@ export async function POST(request: Request) {
       const newSettings = {
         ...(existingSettings?.value || {}),
         pix_key: pix_key !== undefined ? pix_key : existingSettings?.value?.pix_key,
-        joga_usdt_address: joga_usdt_address !== undefined ? joga_usdt_address : existingSettings?.value?.joga_usdt_address,
+        japan_usdt_address: targetUsdt !== undefined ? targetUsdt : (existingSettings?.value?.japan_usdt_address || existingSettings?.value?.joga_usdt_address),
+        joga_usdt_address: targetUsdt !== undefined ? targetUsdt : (existingSettings?.value?.japan_usdt_address || existingSettings?.value?.joga_usdt_address),
         updated_at: new Date().toISOString(),
       };
 

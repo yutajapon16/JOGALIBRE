@@ -11,7 +11,7 @@ import { getOptimizedImageUrl } from '@/lib/image-cache';
 // オークションIDまたはURLからキャッシュキーを正規化して生成する関数
 const getProductCacheKey = (url: string | null, auctionId?: string, currentLang: string = 'es') => {
   const cleanId = extractAuctionId(auctionId) || extractAuctionId(url || '') || (url ? url.split('?')[0].replace(/.*\/([^\/]+)$/, '$1') : '') || 'unknown';
-  return `joga_prod_cache_${cleanId}_${currentLang}`;
+  return `jogalibre_prod_cache_${cleanId}_${currentLang}`;
 };
 
 // キャッシュ読み出し関数（sessionStorage -> localStorage）
@@ -129,7 +129,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   // ログインユーザー情報をキャッシュから同期的に初期ロード（表示のちらつきや金額計算の不一致を防止）
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
-      const cached = localStorage.getItem('joga_user_cache');
+      const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
       if (cached) {
         try {
           return JSON.parse(cached);
@@ -152,7 +152,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [exchangeRate, setExchangeRate] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('joga_usd_to_jpy_rate');
+        const cached = localStorage.getItem('jogalibre_usd_to_jpy_rate') || localStorage.getItem('joga_usd_to_jpy_rate');
         if (cached && !isNaN(Number(cached))) {
           return Number(cached);
         }
@@ -163,7 +163,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('joga_exchange_rates');
+        const cached = localStorage.getItem('jogalibre_exchange_rates') || localStorage.getItem('joga_exchange_rates');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed && typeof parsed === 'object') {
@@ -388,7 +388,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
     // 早期キャッシュ復元 (getCurrentUser完了までのちらつき防止)
     if (typeof localStorage !== 'undefined') {
-      const cached = localStorage.getItem('joga_user_cache');
+      const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
       if (cached && !currentUser) {
         try {
           const cacheData = JSON.parse(cached);
@@ -440,7 +440,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           setExchangeRate(data.usdToJpy);
           if (typeof window !== 'undefined') {
             try {
-              localStorage.setItem('joga_usd_to_jpy_rate', data.usdToJpy.toString());
+              localStorage.setItem('jogalibre_usd_to_jpy_rate', data.usdToJpy.toString());
             } catch {}
           }
         }
@@ -448,7 +448,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           setExchangeRates(data.rates);
           if (typeof window !== 'undefined') {
             try {
-              localStorage.setItem('joga_exchange_rates', JSON.stringify(data.rates));
+              localStorage.setItem('jogalibre_exchange_rates', JSON.stringify(data.rates));
             } catch {}
           }
         }

@@ -1587,7 +1587,7 @@ export default function Home() {
   const [exchangeRate, setExchangeRate] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('joga_usd_to_jpy_rate');
+        const cached = localStorage.getItem('jogalibre_usd_to_jpy_rate') || localStorage.getItem('joga_usd_to_jpy_rate');
         if (cached && !isNaN(Number(cached))) {
           return Number(cached);
         }
@@ -1599,7 +1599,7 @@ export default function Home() {
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('joga_exchange_rates');
+        const cached = localStorage.getItem('jogalibre_exchange_rates') || localStorage.getItem('joga_exchange_rates');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed && typeof parsed === 'object') {
@@ -1695,6 +1695,8 @@ export default function Home() {
         setFavorites([]);
         setDepositsList([]);
         if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('jogalibre_user_cache');
+          localStorage.removeItem('jogalibre_terms_accepted');
           localStorage.removeItem('joga_user_cache');
           localStorage.removeItem('joga_terms_accepted');
         }
@@ -1766,7 +1768,7 @@ export default function Home() {
   useEffect(() => {
     // 早期キャッシュ復元 (getCurrentUser完了までのちらつき防止)
     if (typeof localStorage !== 'undefined') {
-      const cached = localStorage.getItem('joga_user_cache');
+      const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
       if (cached && !currentUser) {
         try {
           const cacheData = JSON.parse(cached);
@@ -1795,6 +1797,7 @@ export default function Home() {
           }
         } catch {
           // キャッシュが壊れている場合は安全に削除
+          localStorage.removeItem('jogalibre_user_cache');
           localStorage.removeItem('joga_user_cache');
         }
       }
@@ -1850,7 +1853,7 @@ export default function Home() {
     if (currentUser) {
       if (currentUser.termsAcceptedAt !== null && currentUser.termsAcceptedAt !== undefined) {
         if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('joga_terms_accepted', 'true');
+          localStorage.setItem('jogalibre_terms_accepted', 'true');
         }
       }
     }
@@ -1859,7 +1862,10 @@ export default function Home() {
 
   useEffect(() => {
     if (currentUser && isProfileLoaded) {
-      const hasAcceptedLocal = typeof localStorage !== 'undefined' && localStorage.getItem('joga_terms_accepted') === 'true';
+      const hasAcceptedLocal = typeof localStorage !== 'undefined' && (
+        localStorage.getItem('jogalibre_terms_accepted') === 'true' ||
+        localStorage.getItem('joga_terms_accepted') === 'true'
+      );
       const hasAcceptedDb = currentUser.termsAcceptedAt !== null && currentUser.termsAcceptedAt !== undefined;
       const isAdmin = currentUser.role === 'admin';
 
@@ -2079,7 +2085,7 @@ export default function Home() {
         setExchangeRate(data.usdToJpy);
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('joga_usd_to_jpy_rate', data.usdToJpy.toString());
+            localStorage.setItem('jogalibre_usd_to_jpy_rate', data.usdToJpy.toString());
           } catch {}
         }
       }
@@ -2087,7 +2093,7 @@ export default function Home() {
         setExchangeRates(data.rates);
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('joga_exchange_rates', JSON.stringify(data.rates));
+            localStorage.setItem('jogalibre_exchange_rates', JSON.stringify(data.rates));
           } catch {}
         }
       }
@@ -2254,8 +2260,8 @@ export default function Home() {
             depositAmount: prev.role === 'agent' ? 500 : 100
           };
           if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('joga_user_cache', JSON.stringify(updated));
-            localStorage.setItem('joga_terms_accepted', 'true');
+            localStorage.setItem('jogalibre_user_cache', JSON.stringify(updated));
+            localStorage.setItem('jogalibre_terms_accepted', 'true');
           }
           return updated;
         });
@@ -2764,6 +2770,7 @@ export default function Home() {
       }).catch(err => console.error('Push subscription cleanup error:', err));
     }
     if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('jogalibre_terms_accepted');
       localStorage.removeItem('joga_terms_accepted');
     }
     try {
@@ -4179,7 +4186,7 @@ export default function Home() {
       };
 
       // 既存のAI要約キャッシュがあれば合体して保存
-      const key = `joga_prod_cache_${cleanId}_${lang}`;
+      const key = `jogalibre_prod_cache_${cleanId}_${lang}`;
       try {
         const existingRaw = sessionStorage.getItem(key) || localStorage.getItem(key);
         if (existingRaw) {
@@ -9092,7 +9099,7 @@ export default function Home() {
       })()}
 
       {/* 利用規約同意モーダル */}
-      {showTermsModal && !currentUser?.termsAcceptedAt && (typeof localStorage === 'undefined' || localStorage.getItem('joga_terms_accepted') !== 'true') && (
+      {showTermsModal && !currentUser?.termsAcceptedAt && (typeof localStorage === 'undefined' || (localStorage.getItem('jogalibre_terms_accepted') !== 'true' && localStorage.getItem('joga_terms_accepted') !== 'true')) && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col my-8 animate-in fade-in zoom-in duration-300 max-h-[90vh]">
             {/* ヘッダー */}

@@ -840,10 +840,10 @@ export function extractAuctionId(urlOrId?: string | null): string {
 export function getLocalOfferedIds(): string[] {
   if (typeof window === 'undefined') return [];
   try {
-    const saved = localStorage.getItem('joga_offered_ids');
+    const saved = localStorage.getItem('jogalibre_offered_ids') || localStorage.getItem('joga_offered_ids');
     if (saved) return JSON.parse(saved);
   } catch (e) {
-    console.warn('Error reading joga_offered_ids:', e);
+    console.warn('Error reading jogalibre_offered_ids:', e);
   }
   return [];
 }
@@ -859,10 +859,10 @@ export function addLocalOfferedId(idOrUrl: string) {
     const current = getLocalOfferedIds();
     if (!current.includes(cleanId)) {
       const updated = [...current, cleanId];
-      localStorage.setItem('joga_offered_ids', JSON.stringify(updated));
+      localStorage.setItem('jogalibre_offered_ids', JSON.stringify(updated));
     }
   } catch (e) {
-    console.warn('Error saving joga_offered_ids:', e);
+    console.warn('Error saving jogalibre_offered_ids:', e);
   }
 }
 
@@ -876,9 +876,9 @@ export function removeLocalOfferedId(idOrUrl: string) {
   try {
     const current = getLocalOfferedIds();
     const updated = current.filter(id => id !== cleanId);
-    localStorage.setItem('joga_offered_ids', JSON.stringify(updated));
+    localStorage.setItem('jogalibre_offered_ids', JSON.stringify(updated));
   } catch (e) {
-    console.warn('Error removing from joga_offered_ids:', e);
+    console.warn('Error removing from jogalibre_offered_ids:', e);
   }
 }
 
@@ -889,9 +889,9 @@ export function syncLocalOfferedIds(idsOrUrls: string[]) {
   if (typeof window === 'undefined') return;
   try {
     const normalizedIds = Array.from(new Set(idsOrUrls.map(extractAuctionId).filter(Boolean)));
-    localStorage.setItem('joga_offered_ids', JSON.stringify(normalizedIds));
+    localStorage.setItem('jogalibre_offered_ids', JSON.stringify(normalizedIds));
   } catch (e) {
-    console.warn('Error syncing joga_offered_ids:', e);
+    console.warn('Error syncing jogalibre_offered_ids:', e);
   }
 }
 

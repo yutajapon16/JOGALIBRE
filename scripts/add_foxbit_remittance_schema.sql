@@ -16,7 +16,7 @@ ON bid_requests(final_status, foxbit_remittance_status);
 INSERT INTO system_settings (key, value) VALUES
 ('foxbit_settings', '{
   "pix_key": "",
-  "joga_usdt_address": "TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc"
+  "japan_usdt_address": "TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc"
 }') ON CONFLICT (key) DO NOTHING;
 
 -- 4. 過去にすでに完了している古い注文で、今回の送金対象から除外したい場合は以下を実行

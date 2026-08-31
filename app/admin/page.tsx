@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('joga_admin_user') || localStorage.getItem('joga_user_cache');
+        const cached = localStorage.getItem('jogalibre_admin_user') || localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_admin_user') || localStorage.getItem('joga_user_cache');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed?.role === 'admin') {
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
   const [exchangeRate, setExchangeRate] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('joga_usd_to_jpy_rate');
+        const cached = localStorage.getItem('jogalibre_usd_to_jpy_rate') || localStorage.getItem('joga_usd_to_jpy_rate');
         if (cached && !isNaN(Number(cached))) {
           return Number(cached);
         }
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const cached = localStorage.getItem('joga_exchange_rates');
+        const cached = localStorage.getItem('jogalibre_exchange_rates') || localStorage.getItem('joga_exchange_rates');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (parsed && typeof parsed === 'object') {
@@ -109,7 +109,8 @@ export default function AdminDashboard() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [isEditingFoxbitSettings, setIsEditingFoxbitSettings] = useState<boolean>(false);
   const [editPixKey, setEditPixKey] = useState<string>('');
-  const [editJogaUsdt, setEditJogaUsdt] = useState<string>('');
+  const [editJapanUsdt, setEditJapanUsdt] = useState<string>('');
+  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
   
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
@@ -679,7 +680,7 @@ export default function AdminDashboard() {
         setFoxbitData(data);
         if (data.settings) {
           setEditPixKey(data.settings.pix_key || '');
-          setEditJogaUsdt(data.settings.joga_usdt_address || '');
+          setEditJapanUsdt(data.settings.japan_usdt_address || data.settings.joga_usdt_address || '');
         }
       }
     } catch (error) {
@@ -740,8 +741,8 @@ export default function AdminDashboard() {
   };
 
   // Foxbit 送金先設定保存処理
-  const handleSaveFoxbitSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateFoxbitSettings = async () => {
+    setIsUpdatingSettings(true);
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -754,7 +755,8 @@ export default function AdminDashboard() {
         body: JSON.stringify({
           action: 'update_settings',
           pix_key: editPixKey,
-          joga_usdt_address: editJogaUsdt
+          japan_usdt_address: editJapanUsdt,
+          joga_usdt_address: editJapanUsdt
         })
       });
 
@@ -768,6 +770,8 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error saving Foxbit settings:', error);
       alert('通信エラーが発生しました。');
+    } finally {
+      setIsUpdatingSettings(false);
     }
   };
 
@@ -1053,6 +1057,8 @@ export default function AdminDashboard() {
     // ローカルストレージに Supabase または JOGALIBRE の管理者認証情報があるか確認
     const hasStoredAuth = typeof window !== 'undefined' && (
       Object.keys(localStorage).some(k => k.startsWith('sb-') || k.includes('supabase')) ||
+      !!localStorage.getItem('jogalibre_admin_user') ||
+      !!localStorage.getItem('jogalibre_user_cache') ||
       !!localStorage.getItem('joga_admin_user') ||
       !!localStorage.getItem('joga_user_cache')
     );
@@ -1081,7 +1087,7 @@ export default function AdminDashboard() {
           // 管理者キャッシュを保存
           if (typeof window !== 'undefined') {
             try {
-              localStorage.setItem('joga_admin_user', JSON.stringify(user));
+              localStorage.setItem('jogalibre_admin_user', JSON.stringify(user));
             } catch {}
           }
 
@@ -1118,6 +1124,7 @@ export default function AdminDashboard() {
           if (isMounted) {
             setCurrentUser(null);
             if (typeof window !== 'undefined') {
+              localStorage.removeItem('jogalibre_admin_user');
               localStorage.removeItem('joga_admin_user');
             }
           }
@@ -1389,6 +1396,8 @@ export default function AdminDashboard() {
     }
 
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('jogalibre_admin_user');
+      localStorage.removeItem('jogalibre_user_cache');
       localStorage.removeItem('joga_admin_user');
       localStorage.removeItem('joga_user_cache');
     }
@@ -1416,7 +1425,7 @@ export default function AdminDashboard() {
         setExchangeRate(data.usdToJpy);
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('joga_usd_to_jpy_rate', data.usdToJpy.toString());
+            localStorage.setItem('jogalibre_usd_to_jpy_rate', data.usdToJpy.toString());
           } catch {}
         }
       }
@@ -1424,7 +1433,7 @@ export default function AdminDashboard() {
         setExchangeRates(data.rates);
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem('joga_exchange_rates', JSON.stringify(data.rates));
+            localStorage.setItem('jogalibre_exchange_rates', JSON.stringify(data.rates));
           } catch {}
         }
       }
@@ -3101,68 +3110,6 @@ export default function AdminDashboard() {
                       </div>
                     )}
 
-                    {request.customerCounterOffer && !request.customerCounterOfferUsed && request.finalStatus !== 'won' && (
-                      <div className="mb-2 h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between w-full">
-                        <span className="text-xs text-gray-500 font-medium">顧客からのカウンターオファー:</span>
-                        <span className="text-base font-bold text-purple-700">
-                          $ {Math.round(request.customerCounterOffer).toLocaleString('en-US')}
-                        </span>
-                      </div>
-                    )}
-
-                    {request.adminNeedsConfirm && !request.customerCounterOffer && (
-                      <div className="mb-2 p-3 bg-red-50 rounded-lg">
-                        <p className="text-sm text-red-800 font-semibold">顧客がカウンターオファーを拒否しました</p>
-                      </div>
-                    )}
-
-                    {/* 商品渡し場所 (引渡場所) */}
-                    <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans text-xs">
-                      <span className="text-gray-500 font-medium">
-                        引渡場所:
-                      </span>
-                      <span className="font-semibold text-black">
-                        {getDeliveryLocationName(request.delivery_location, request.delivery_city)}
-                      </span>
-                    </div>
-
-                    {/* 現地費用 */}
-                    {request.delivery_location !== 'JP' && (
-                      <>
-                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans text-xs">
-                          <span className="text-gray-500 font-medium">
-                            現地費用:
-                          </span>
-                          <span className={`text-base font-bold ${typeof calculateLocalCost(request.delivery_location, request, request.shipping_method) === 'string' ? 'text-red-600' : 'text-gray-800'}`}>
-                            {formatLocalCost(calculateLocalCost(request.delivery_location, request, request.shipping_method), 'USD')}
-                          </span>
-                        </div>
-                        {/* 発送方法 */}
-                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans text-xs">
-                          <span className="text-gray-500 font-medium">
-                            発送方法:
-                          </span>
-                          <span className="font-semibold text-black">
-                            {request.shipping_method === 'air' ? '航空便 ✈️' : 'コンテナ 🚢'}
-                          </span>
-                        </div>
-                      </>
-                    )}
-
-                    {/* 各種アクションボタン */}
-                    {request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
-                      <button
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setActionType('reject');
-                        }}
-                        disabled={!!processingRequestId}
-                        className="w-full bg-red-600 text-white h-12 px-4 rounded-lg font-semibold hover:bg-red-700 transition text-sm sm:text-base mb-2 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        却下 (オファー取り消し)
-                      </button>
-                    )}
-
                     {request.customerCounterOffer && !request.customerCounterOfferUsed && request.finalStatus !== 'won' && !request.adminNeedsConfirm && request.status === 'counter_offer' && (
                       <div className="flex flex-col gap-2 w-full mb-2">
                         <button
@@ -4338,7 +4285,7 @@ export default function AdminDashboard() {
 
               {/* 送金先設定インライン編集モーダル */}
               {isEditingFoxbitSettings && (
-                <form onSubmit={handleSaveFoxbitSettings} className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 space-y-4">
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 space-y-4">
                   <div className="flex justify-between items-center border-b pb-2">
                     <h3 className="text-sm font-bold text-gray-800">⚙️ Foxbit・日本送金先情報の設定</h3>
                     <button
@@ -4368,8 +4315,8 @@ export default function AdminDashboard() {
                       </label>
                       <input
                         type="text"
-                        value={editJogaUsdt}
-                        onChange={(e) => setEditJogaUsdt(e.target.value)}
+                        value={editJapanUsdt}
+                        onChange={(e) => setEditJapanUsdt(e.target.value)}
                         placeholder="例: TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc (TRC-20)"
                         className="w-full h-10 border border-gray-300 rounded-lg px-3 text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 outline-none bg-white text-black font-mono"
                       />
@@ -4379,18 +4326,20 @@ export default function AdminDashboard() {
                     <button
                       type="button"
                       onClick={() => setIsEditingFoxbitSettings(false)}
-                      className="px-3 py-1.5 text-xs text-gray-600 font-semibold hover:bg-gray-200 rounded-lg transition"
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition"
                     >
                       キャンセル
                     </button>
                     <button
-                      type="submit"
-                      className="px-4 py-1.5 text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shadow-sm transition"
+                      type="button"
+                      onClick={handleUpdateFoxbitSettings}
+                      disabled={isUpdatingSettings}
+                      className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shadow-xs flex items-center gap-1"
                     >
-                      設定を保存
+                      {isUpdatingSettings ? '保存中...' : '設定を保存'}
                     </button>
                   </div>
-                </form>
+                </div>
               )}
 
               {/* リアルタイムFoxbit口座状況 & USD換算充足判定パネル */}
@@ -4546,10 +4495,10 @@ export default function AdminDashboard() {
                         <div className="text-xs text-purple-700 font-semibold mb-0.5">日本受取ウォレット（USDT TRC20）</div>
                         <div className="flex items-center justify-between bg-white border border-purple-200 rounded-lg px-3 py-2 shadow-xs">
                           <span className="text-xs font-bold text-gray-800 font-mono truncate mr-2">
-                            {foxbitData?.settings?.joga_usdt_address || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc'}
+                            {foxbitData?.settings?.japan_usdt_address || foxbitData?.settings?.joga_usdt_address || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc'}
                           </span>
                           <button
-                            onClick={() => handleCopyFoxbitText(foxbitData?.settings?.joga_usdt_address || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc', 'usdt_address')}
+                            onClick={() => handleCopyFoxbitText(foxbitData?.settings?.japan_usdt_address || foxbitData?.settings?.joga_usdt_address || 'TAgk4wvd5rYQFU9EdwPipBwb7pzUDX52Gc', 'usdt_address')}
                             className="text-xs bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold px-2.5 py-1 rounded shrink-0 transition"
                           >
                             {copiedKey === 'usdt_address' ? '✅ コピー済' : '📋 アドレスコピー'}
