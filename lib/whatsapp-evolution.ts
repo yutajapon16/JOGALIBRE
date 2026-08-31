@@ -118,7 +118,7 @@ export async function sendEvolutionWhatsAppMessage({
       options: {
         delay: 1000,
         presence: 'composing',
-        linkPreview: true
+        linkPreview: false
       }
     };
 
