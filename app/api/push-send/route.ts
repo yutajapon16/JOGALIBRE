@@ -189,14 +189,19 @@ export async function POST(request: NextRequest) {
                 userLang: uLang
             });
 
-            // WhatsApp用の見やすいフォーマット
+            // WhatsApp用の見やすいフォーマット（🇯🇵 *JOGALIBRE* ＋ 【標題】）
+            let subTitle = (formatted.title || '').trim();
+            if (subTitle && !subTitle.startsWith('【') && !subTitle.endsWith('】')) {
+                subTitle = `【${subTitle}】`;
+            }
+
             const messageLines = [
-                `*JOGALIBRE*`,
-                formatted.title,
+                `🇯🇵 *JOGALIBRE*`,
+                subTitle,
                 formatted.body,
                 '',
                 targetUrl
-            ].filter(line => line !== null && line !== undefined);
+            ].filter(line => line !== null && line !== undefined && line !== '');
 
             const messageText = messageLines.join('\n');
 
