@@ -1037,12 +1037,13 @@ export default function AdminDashboard() {
     let isResolving = false;
     let lastResolvedUserId: string | null = null;
 
-    // ローカルストレージに Supabase 認証情報があるか確認
-    const hasStoredAuth = typeof window !== 'undefined' && Object.keys(localStorage).some(
-      k => (k.startsWith('sb-') || k.includes('supabase')) && k.endsWith('-auth-token')
+    // ローカルストレージに Supabase または JOGALIBRE の認証情報があるか確認
+    const hasStoredAuth = typeof window !== 'undefined' && (
+      Object.keys(localStorage).some(k => k.startsWith('sb-') || k.includes('supabase')) ||
+      !!localStorage.getItem('joga_user_cache')
     );
 
-    // 万が一のタイムアウト防止（最長5秒で強制的にローディング解除）
+    // 万が一のタイムアウト防止（最長5秒で強制的にローディング解除してログイン画面またはトップページへ）
     const safetyTimer = setTimeout(() => {
       if (isMounted && !authResolved) {
         authResolved = true;
@@ -1063,9 +1064,9 @@ export default function AdminDashboard() {
         lastResolvedUserId = user?.id || null;
 
         if (user?.role === 'admin') {
-          // ① トップページ（申請タブ）の表示に必要な最重要データのみを最大2.5秒で待機
+          // ① トップページ（申請タブ）の表示に必要な最重要データのみを待機（最速0.2〜0.4秒、最大2秒）
           try {
-            const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2500));
+            const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
             await Promise.race([
               Promise.allSettled([
                 fetchBidRequests(),
@@ -1082,7 +1083,7 @@ export default function AdminDashboard() {
             setCurrentUser(user);
           }
 
-          // ② 他の重いタブデータはバックグラウンドで非同期に事前ロード（画面描画を一切ブロックしない）
+          // ② 他の重いタブデータ（落札済み・入金・顧客・財務・Foxbit等）はバックグラウンドで非同期に事前ロード（画面描画を一切ブロックしない）
           Promise.allSettled([
             fetchPurchasedItems(),
             fetchShippingContainers(),
@@ -1133,8 +1134,8 @@ export default function AdminDashboard() {
           return;
         }
 
-        // ストレージにも何もない、あるいはリフレッシュも失敗してセッションが無い場合のみログイン画面へ
-        if (isMounted) {
+        // ストレージに認証情報が全くない場合のみ、即座にログイン画面を表示
+        if (!hasStoredAuth && isMounted) {
           authResolved = true;
           setCurrentUser(null);
           setLoading(false);
@@ -1142,7 +1143,7 @@ export default function AdminDashboard() {
         }
       } catch (err) {
         console.error('Session check error in admin:', err);
-        if (isMounted) {
+        if (!hasStoredAuth && isMounted) {
           authResolved = true;
           setCurrentUser(null);
           setLoading(false);
@@ -1166,14 +1167,14 @@ export default function AdminDashboard() {
       } else if (session?.user) {
         // SIGNED_IN, TOKEN_REFRESHED, USER_UPDATED 等でセッション復元
         await resolveAdminUser(session.user);
-      } else if (event === 'INITIAL_SESSION' && hasStoredAuth) {
-        // ストレージにトークンがある場合の初期空セッション（リフレッシュ待ち）は無視し、initAuth側の完了を待つ！
-        return;
-      } else if (!hasStoredAuth) {
-        authResolved = true;
-        setCurrentUser(null);
-        setLoading(false);
-        setIsLoggingIn(false);
+      } else if (event === 'INITIAL_SESSION') {
+        // 初期空セッション時は、hasStoredAuth があれば initAuth 側のリフレッシュ完了を待つ
+        if (!hasStoredAuth) {
+          authResolved = true;
+          setCurrentUser(null);
+          setLoading(false);
+          setIsLoggingIn(false);
+        }
       }
     });
 
