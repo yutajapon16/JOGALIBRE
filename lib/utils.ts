@@ -576,13 +576,13 @@ export const calculateJapanSendAmount = (item: any, totalSalePrice: number, exch
   if (totalJpy && Number(totalJpy) > 0) {
     // 円建て日本支払額の計算 (円金額 / 目標除数)
     const jpySendAmount = Number(totalJpy) / targetDivisor;
-    // 直接ドル換算し、10ドル単位で切り上げ (Math.ceil)
-    return Math.ceil((jpySendAmount / exchangeRate) / 10) * 10;
+    // 直接ドル換算し、5ドル単位で切り上げ (Math.ceil)
+    return Math.ceil((jpySendAmount / exchangeRate) / 5) * 5;
   }
 
-  // 2. 元の日本円合計金額がない場合は、10ドル切り上げ済みのドル売価から逆算（-5 近似式）します。
-  const estimatedBasePrice = totalSalePrice - 5;
-  return Math.ceil(((estimatedBasePrice * ownDivisor) / targetDivisor) / 10) * 10;
+  // 2. 元の日本円合計金額がない場合は、5ドル切り上げ済みのドル売価から逆算（-2.5 近似式）します。
+  const estimatedBasePrice = totalSalePrice - 2.5;
+  return Math.ceil(((estimatedBasePrice * ownDivisor) / targetDivisor) / 5) * 5;
 };
 
 /**

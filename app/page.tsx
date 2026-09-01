@@ -5367,7 +5367,7 @@ export default function Home() {
                     if (item.paid_brazil) return sum;
                     const itemPrice = getItemPrice(item);
                     const itemSalePrice = itemPrice;
-                    const halfPriceBrl = Math.ceil(((itemSalePrice * 0.5) * brlRate) / 10) * 10;
+                    const halfPriceBrl = Math.ceil(((itemSalePrice * 0.5) * brlRate) / 5) * 5;
                     return sum + halfPriceBrl;
                   }, 0);
 
@@ -5473,10 +5473,10 @@ export default function Home() {
               }, 0);
               const brlRate = (exchangeRates && exchangeRates['BRL']) ? exchangeRates['BRL'] : 5.65;
 
-              // BRL金額算出：個々のアイテムを10の位で繰り上げて合計
+              // BRL金額算出：個々のアイテムを5の位で繰り上げて合計
               const totalBrl = selectedItems.reduce((sum, item) => {
                 const price = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0));
-                return sum + Math.ceil((price * brlRate) / 10) * 10;
+                return sum + Math.ceil((price * brlRate) / 5) * 5;
               }, 0);
 
               const allSelected = unpaidItems.length > 0 && selectedItems.length === unpaidItems.length;
@@ -5709,7 +5709,7 @@ export default function Home() {
 
                             // BRL換算
                             const brlRate = exchangeRates['BRL'] || 5.6;
-                            const halfPriceBrl = Math.ceil((halfPrice * brlRate) / 10) * 10;
+                            const halfPriceBrl = Math.ceil((halfPrice * brlRate) / 5) * 5;
 
                             // eslint-disable-next-line @typescript-eslint/no-unused-vars
                             const totalStr = totalSalePrice.toLocaleString('en-US');
@@ -6400,7 +6400,7 @@ export default function Home() {
                       : (item.counterOffer || item.maxBid || 0));
                     const totalSalePrice = Math.round(cost || 0);
                     const brlRate = exchangeRates['BRL'] || 5.6;
-                    const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
+                    const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 5) * 5;
                     const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
                     const japanSendAmount = item.japan_send_usd ?? calculateJapanSendAmount(item, totalSalePrice, exchangeRates['JPY'] || exchangeRate || 150);
 
@@ -8819,10 +8819,10 @@ export default function Home() {
           return sum + price;
         }, 0);
         const brlRate = (exchangeRates && exchangeRates['BRL']) ? exchangeRates['BRL'] : 5.65;
-        // サマリーカードと同じBRL金額算出方式（個々のアイテムを10の位で繰り上げて合計）
+        // サマリーカードと同じBRL金額算出方式（個々のアイテムを5の位で繰り上げて合計）
         const totalBrl = selectedItems.reduce((sum, item) => {
           const price = item.finalPrice || (item.customerCounterOffer && !item.customerCounterOfferUsed ? item.customerCounterOffer : (item.counterOffer || item.maxBid || 0));
-          return sum + Math.ceil((price * brlRate) / 10) * 10;
+          return sum + Math.ceil((price * brlRate) / 5) * 5;
         }, 0);
 
         const formatBrlModal = (val: number) => {

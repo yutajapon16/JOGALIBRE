@@ -163,7 +163,7 @@ export async function GET(request: Request) {
       // 顧客決済時に確定した japan_send_brl が保存されていればそれを優先使用（完全一致）、未設定の場合は実勢レートで切り上げ計算
       const orderBrlAmount = order.japan_send_brl !== null && order.japan_send_brl !== undefined && Number(order.japan_send_brl) > 0
         ? Number(order.japan_send_brl)
-        : Math.ceil((orderUsdAmount * usdtBrlRate) / 10) * 10;
+        : Math.ceil((orderUsdAmount * usdtBrlRate) / 5) * 5;
 
       totalBrlNeeded += orderBrlAmount;
       targetUsdNeeded += orderUsdAmount;

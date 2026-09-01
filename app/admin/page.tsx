@@ -3533,7 +3533,7 @@ export default function AdminDashboard() {
                               : (item.counterOffer || item.maxBid || 0));
                             const totalSalePrice = Math.round(cost || 0);
                             const brlRate = exchangeRates['BRL'] || 5.6;
-                            const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
+                            const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 5) * 5;
                             const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
 
                             const japanSendAmount = item.japan_send_usd ?? calculateJapanSendAmount(item, totalSalePrice, exchangeRates['JPY'] || exchangeRate || 150);
@@ -5340,7 +5340,7 @@ export default function AdminDashboard() {
                       const totalSalePrice = Math.round(cost || 0);
                       const brlRate = exchangeRates['BRL'] || 5.6;
                       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                      const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 10) * 10;
+                      const paidBrazilBrl = Math.ceil(((totalSalePrice * 0.5) * brlRate) / 5) * 5;
                       // eslint-disable-next-line @typescript-eslint/no-unused-vars
                       const paidParaguayUsd = Math.round(totalSalePrice * 0.5);
                       const japanSendAmount = item.japan_send_usd ?? calculateJapanSendAmount(item, totalSalePrice, exchangeRates['JPY'] || exchangeRate || 150);

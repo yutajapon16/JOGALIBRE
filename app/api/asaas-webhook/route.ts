@@ -184,7 +184,7 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
     for (let r = baseRate - 0.1; r <= baseRate + 0.1; r += 0.0001) {
       const testSum = items.reduce((sum, item) => {
         const p = item.final_price || (item.customer_counter_offer && !item.customer_counter_offer_used ? item.customer_counter_offer : (item.counter_offer || item.max_bid || 0));
-        return sum + Math.ceil((p * r) / 10) * 10;
+        return sum + Math.ceil((p * r) / 5) * 5;
       }, 0);
       
       if (testSum === payment.value) {
@@ -200,7 +200,7 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
       const p = item.final_price || (item.customer_counter_offer && !item.customer_counter_offer_used ? item.customer_counter_offer : (item.counter_offer || item.max_bid || 0));
       
       // 1. 当時のレートで丸められた正確なレアル価格を算出
-      const roundedBrl = Math.ceil((p * originalRate) / 10) * 10;
+      const roundedBrl = Math.ceil((p * originalRate) / 5) * 5;
       
       // 2. この商品単体の「実効為替レート」を計算（R$ ÷ USD）
       const itemEffectiveRate = p > 0 ? roundedBrl / p : originalRate;
@@ -259,7 +259,7 @@ async function handlePaymentConfirmed(payment: AsaasWebhookPayload['payment']) {
     const nowIso = new Date().toISOString();
     for (const item of items) {
       const p = item.final_price || (item.customer_counter_offer && !item.customer_counter_offer_used ? item.customer_counter_offer : (item.counter_offer || item.max_bid || 0));
-      const roundedBrl = Math.ceil((p * originalRate) / 10) * 10;
+      const roundedBrl = Math.ceil((p * originalRate) / 5) * 5;
       const itemEffectiveRate = p > 0 ? roundedBrl / p : originalRate;
       const itemRepasse = Math.round(((Number(item.japan_send_usd) || 0) * itemEffectiveRate) * 100) / 100;
 
