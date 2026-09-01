@@ -47,7 +47,20 @@ export default function AdminDashboard() {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [bidRequests, setBidRequests] = useState<BidRequest[]>([]);
+  const [bidRequests, setBidRequests] = useState<BidRequest[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('jogalibre_admin_bid_requests');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(true);
   const [rejectReason, setRejectReason] = useState('');
   const [shippingCostJpy, setShippingCostJpy] = useState('');
@@ -1398,6 +1411,7 @@ export default function AdminDashboard() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('jogalibre_admin_user');
       localStorage.removeItem('jogalibre_user_cache');
+      localStorage.removeItem('jogalibre_admin_bid_requests');
       localStorage.removeItem('joga_admin_user');
       localStorage.removeItem('joga_user_cache');
     }
@@ -1572,6 +1586,11 @@ export default function AdminDashboard() {
       }));
 
       setBidRequests(convertedRequests);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(convertedRequests));
+        } catch {}
+      }
     } catch (error) {
       console.error('Error fetching bid requests:', error);
     }
