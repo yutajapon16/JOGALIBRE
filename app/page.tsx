@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
@@ -327,6 +328,48 @@ interface Category {
   sub?: Category[];
   brand?: string;
 }
+
+// 顧客画面のナビゲーション状態（検索結果・カテゴリ階層・タブ・スクロール位置）のセッションキャッシュ
+const SEARCH_NAV_CACHE_KEY = 'jogalibre_search_nav_state';
+
+interface SearchNavState {
+  activeTab?: 'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping';
+  searchType?: 'url' | 'keyword' | 'categories';
+  categoryHistory?: Category[];
+  activeCategoryUrl?: string | null;
+  keyword?: string;
+  searchCondition?: 'all' | 'new' | 'used';
+  searchPage?: number;
+  nextPageExists?: boolean;
+  products?: SearchItem[];
+  scrollY?: number;
+}
+
+const getStoredNavState = (): SearchNavState | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(SEARCH_NAV_CACHE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.warn('Failed to read search nav state:', e);
+  }
+  return null;
+};
+
+const saveNavState = (state: Partial<SearchNavState>) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = getStoredNavState() || {};
+    const updated = {
+      ...existing,
+      ...state,
+      scrollY: typeof window !== 'undefined' ? window.scrollY : (state.scrollY ?? existing.scrollY ?? 0)
+    };
+    sessionStorage.setItem(SEARCH_NAV_CACHE_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.warn('Failed to save search nav state:', e);
+  }
+};
 
 const BRAND_LOGOS: Record<string, React.ReactNode> = {
   toyota: (
@@ -1191,7 +1234,9 @@ export default function Home() {
   const [deliveryCity, setDeliveryCity] = useState<string>('');
   const [shippingMethod, setShippingMethod] = useState<'sea' | 'air'>('sea');
   const [searchUrl, setSearchUrl] = useState('');
-  const [products, setProducts] = useState<SearchItem[]>([]);
+  const [products, setProducts] = useState<SearchItem[]>(() => {
+    return getStoredNavState()?.products || [];
+  });
   const [loading, setLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<SearchItem | null>(null);
   const [featuredItems, setFeaturedItems] = useState<SearchItem[]>([]);
@@ -1221,7 +1266,9 @@ export default function Home() {
     state: '',
     city: ''
   });
-  const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping'>(() => {
+    return getStoredNavState()?.activeTab || 'search';
+  });
   const [hasClosedDepositReminder, setHasClosedDepositReminder] = useState(false);
   const [showDepositReminder, setShowDepositReminder] = useState(false);
 
@@ -1403,16 +1450,31 @@ export default function Home() {
   };
   const [favorites, setFavorites] = useState<SearchItem[]>([]);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState<string | null>(null);
-  const [searchType, setSearchType] = useState<'url' | 'keyword' | 'categories'>('categories');
+  const [searchType, setSearchType] = useState<'url' | 'keyword' | 'categories'>(() => {
+    return getStoredNavState()?.searchType || 'categories';
+  });
   const resultsRef = useRef<HTMLDivElement>(null);
-  const [keyword, setKeyword] = useState('');
-  const [searchCondition, setSearchCondition] = useState<'all' | 'new' | 'used'>('all');
+  const [keyword, setKeyword] = useState<string>(() => {
+    return getStoredNavState()?.keyword || '';
+  });
+  const [searchCondition, setSearchCondition] = useState<'all' | 'new' | 'used'>(() => {
+    return getStoredNavState()?.searchCondition || 'all';
+  });
   const [isSearching, setIsSearching] = useState(false);
-  const [categoryHistory, setCategoryHistory] = useState<Category[]>([]);
+  const [categoryHistory, setCategoryHistory] = useState<Category[]>(() => {
+    return getStoredNavState()?.categoryHistory || [];
+  });
   const currentCategory = categoryHistory.length > 0 ? categoryHistory[categoryHistory.length - 1] : null;
-  const [searchPage, setSearchPage] = useState(1);
-  const [nextPageExists, setNextPageExists] = useState(false);
-  const [activeCategoryUrl, setActiveCategoryUrl] = useState<string | null>(null);
+  const [searchPage, setSearchPage] = useState<number>(() => {
+    return getStoredNavState()?.searchPage || 1;
+  });
+  const [nextPageExists, setNextPageExists] = useState<boolean>(() => {
+    return getStoredNavState()?.nextPageExists || false;
+  });
+  const [activeCategoryUrl, setActiveCategoryUrl] = useState<string | null>(() => {
+    const s = getStoredNavState();
+    return s?.activeCategoryUrl !== undefined ? s.activeCategoryUrl : null;
+  });
   const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
   const [processingOfferId, setProcessingOfferId] = useState<string | null>(null);
   const [isSubmittingEditOffer, setIsSubmittingEditOffer] = useState(false);
@@ -1556,6 +1618,35 @@ export default function Home() {
       setCategorySearchKeyword('');
     }
   }, [categoryHistory, activeCategoryUrl]);
+
+  // 初回マウント時のスクロール位置復元
+  const isInitialScrollRestored = useRef(false);
+  useEffect(() => {
+    if (!isInitialScrollRestored.current && typeof window !== 'undefined') {
+      isInitialScrollRestored.current = true;
+      const s = getStoredNavState();
+      if (s && typeof s.scrollY === 'number' && s.scrollY > 0) {
+        setTimeout(() => {
+          window.scrollTo({ top: s.scrollY, behavior: 'instant' });
+        }, 100);
+      }
+    }
+  }, []);
+
+  // 検索・ナビゲーション状態の自動セッション保存
+  useEffect(() => {
+    saveNavState({
+      activeTab,
+      searchType,
+      categoryHistory,
+      activeCategoryUrl,
+      keyword,
+      searchCondition,
+      searchPage,
+      nextPageExists,
+      products
+    });
+  }, [activeTab, searchType, categoryHistory, activeCategoryUrl, keyword, searchCondition, searchPage, nextPageExists, products]);
 
   // キャッシュ済みのメタデータから確実に入力欄を初期復元する
   useEffect(() => {
@@ -4166,6 +4257,20 @@ export default function Home() {
   const prepareProductCache = (prod: SearchItem, dispPrice?: string, curr: string = selectedCurrency) => {
     if (typeof window === 'undefined') return;
     try {
+      // 画面遷移直前の状態とスクロール位置を確実に記録
+      saveNavState({
+        activeTab,
+        searchType,
+        categoryHistory,
+        activeCategoryUrl,
+        keyword,
+        searchCondition,
+        searchPage,
+        nextPageExists,
+        products,
+        scrollY: window.scrollY
+      });
+
       const cleanId = extractAuctionId(prod.id || prod.url) || prod.id;
       if (!cleanId) return;
 
@@ -4238,8 +4343,9 @@ export default function Home() {
       <div key={`product-${isFavoriteTab ? 'fav' : 'search'}-${index}-${product.id}`} className="bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col h-full group">
 
         <div className="relative aspect-square w-full bg-gray-100 overflow-hidden">
-          <a
+          <Link
             href={detailHref}
+            scroll={false}
             onClick={() => prepareProductCache(product, displayPriceVal, selectedCurrency)}
             className="block w-full h-full cursor-pointer"
           >
@@ -4258,7 +4364,7 @@ export default function Home() {
                 No Image
               </div>
             )}
-          </a>
+          </Link>
 
           {/* お気に入り（★）ボタン（画像上・右下） */}
           <button
@@ -4282,22 +4388,24 @@ export default function Home() {
           </button>
         </div>
         <div className="p-3 sm:p-4 flex flex-col flex-1">
-          <a
+          <Link
             href={detailHref}
+            scroll={false}
             onClick={() => prepareProductCache(product, displayPriceVal, selectedCurrency)}
             className="block mb-2 group-hover:text-indigo-600 transition-colors"
           >
             <h3 className="font-semibold text-xs sm:text-sm text-gray-800 line-clamp-2 leading-[1.25rem] h-[2.5rem] overflow-hidden w-full">{product.title}</h3>
-          </a>
+          </Link>
 
           <div className="mt-auto space-y-1.5">
-            <a
+            <Link
               href={detailHref}
+              scroll={false}
               onClick={() => prepareProductCache(product, displayPriceVal, selectedCurrency)}
               className="w-full h-9 bg-[#ff0033] hover:opacity-90 rounded text-center text-xs text-white font-bold flex items-center justify-center cursor-pointer transition-opacity"
             >
               {t.viewOnYahoo}
-            </a>
+            </Link>
             <div className="h-9 flex justify-between items-center bg-gray-50 px-2.5 sm:px-3 rounded">
               <span className="text-[10px] sm:text-xs text-gray-500 font-medium">{t.bidsLabel}:</span>
               <span className="text-[10px] sm:text-xs font-bold text-gray-700 bg-white px-1.5 sm:px-2 py-0.5 rounded shadow-sm">{product.bids || 0}</span>
@@ -4776,16 +4884,40 @@ export default function Home() {
                           {/* 4. ヤフオクURLボタン (h-7) */}
                           <div className="w-full">
                             {request.productUrl ? (
-                              <a
-                                href={request.productId?.startsWith('m-') ? request.productUrl : `/product/${request.productId}?url=${encodeURIComponent(request.productUrl || '')}&lang=${lang}`}
-                                target={request.productId?.startsWith('m-') ? "_blank" : undefined}
-                                rel={request.productId?.startsWith('m-') ? "noopener noreferrer" : undefined}
-                                className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
-                                  request.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
-                                }`}
-                              >
-                                {request.productId?.startsWith('m-') ? 'URL' : t.viewOnYahoo}
-                              </a>
+                              request.productId?.startsWith('m-') ? (
+                                <a
+                                  href={request.productUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-blue-600"
+                                >
+                                  URL
+                                </a>
+                              ) : (
+                                <Link
+                                  href={`/product/${request.productId}?url=${encodeURIComponent(request.productUrl || '')}&lang=${lang}`}
+                                  scroll={false}
+                                  onClick={() => {
+                                    if (typeof window !== 'undefined') {
+                                      saveNavState({
+                                        activeTab,
+                                        searchType,
+                                        categoryHistory,
+                                        activeCategoryUrl,
+                                        keyword,
+                                        searchCondition,
+                                        searchPage,
+                                        nextPageExists,
+                                        products,
+                                        scrollY: window.scrollY
+                                      });
+                                    }
+                                  }}
+                                  className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-[#ff0033]"
+                                >
+                                  {t.viewOnYahoo}
+                                </Link>
+                              )
                             ) : (
                               <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none font-sans">
                                 {lang === 'es' ? 'Sin URL' : 'Sem URL'}
@@ -5628,16 +5760,40 @@ export default function Home() {
                             {/* 4. ヤフオクURLボタン (h-7) */}
                             <div className="w-full">
                               {item.productUrl ? (
-                                <a
-                                  href={item.productId?.startsWith('m-') ? item.productUrl : `/product/${item.productId}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}`}
-                                  target={item.productId?.startsWith('m-') ? "_blank" : undefined}
-                                  rel={item.productId?.startsWith('m-') ? "noopener noreferrer" : undefined}
-                                  className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
-                                    item.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
-                                  }`}
-                                >
-                                  {item.productId?.startsWith('m-') ? 'URL' : t.viewOnYahoo}
-                                </a>
+                                item.productId?.startsWith('m-') ? (
+                                  <a
+                                    href={item.productUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-blue-600"
+                                  >
+                                    URL
+                                  </a>
+                                ) : (
+                                  <Link
+                                    href={`/product/${item.productId}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}`}
+                                    scroll={false}
+                                    onClick={() => {
+                                      if (typeof window !== 'undefined') {
+                                        saveNavState({
+                                          activeTab,
+                                          searchType,
+                                          categoryHistory,
+                                          activeCategoryUrl,
+                                          keyword,
+                                          searchCondition,
+                                          searchPage,
+                                          nextPageExists,
+                                          products,
+                                          scrollY: window.scrollY
+                                        });
+                                      }
+                                    }}
+                                    className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-[#ff0033]"
+                                  >
+                                    {t.viewOnYahoo}
+                                  </Link>
+                                )
                               ) : (
                                 <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none font-sans">
                                   {lang === 'es' ? 'Sin URL' : 'Sem URL'}
@@ -6481,16 +6637,40 @@ export default function Home() {
 
                             <div className="w-full">
                               {item.productUrl ? (
-                                <a
-                                  href={item.productId?.startsWith('m-') ? item.productUrl : `/product/${item.productId}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}`}
-                                  target={item.productId?.startsWith('m-') ? "_blank" : undefined}
-                                  rel={item.productId?.startsWith('m-') ? "noopener noreferrer" : undefined}
-                                  className={`text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans ${
-                                    item.productId?.startsWith('m-') ? 'bg-blue-600' : 'bg-[#ff0033]'
-                                  }`}
-                                >
-                                  {item.productId?.startsWith('m-') ? 'URL' : t.viewOnYahoo}
-                                </a>
+                                item.productId?.startsWith('m-') ? (
+                                  <a
+                                    href={item.productUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-blue-600"
+                                  >
+                                    URL
+                                  </a>
+                                ) : (
+                                  <Link
+                                    href={`/product/${item.productId}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}`}
+                                    scroll={false}
+                                    onClick={() => {
+                                      if (typeof window !== 'undefined') {
+                                        saveNavState({
+                                          activeTab,
+                                          searchType,
+                                          categoryHistory,
+                                          activeCategoryUrl,
+                                          keyword,
+                                          searchCondition,
+                                          searchPage,
+                                          nextPageExists,
+                                          products,
+                                          scrollY: window.scrollY
+                                        });
+                                      }
+                                    }}
+                                    className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-[#ff0033]"
+                                  >
+                                    {t.viewOnYahoo}
+                                  </Link>
+                                )
                               ) : (
                                 <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none">
                                   {lang === 'es' ? 'Sin URL' : 'Sem URL'}
@@ -8195,8 +8375,9 @@ export default function Home() {
                     const featuredDispPrice = calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id, selectedProduct.id);
                     const modalDetailHref = buildProductDetailUrl(selectedProduct, featuredDispPrice);
                     return (
-                      <a
+                      <Link
                         href={modalDetailHref}
+                        scroll={false}
                         onClick={() => {
                           prepareProductCache(selectedProduct, featuredDispPrice, selectedCurrency);
                           setSelectedProduct(null);
@@ -8204,7 +8385,7 @@ export default function Home() {
                         className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 flex items-center justify-center bg-[#ff0033] rounded px-2 w-full cursor-pointer"
                       >
                         {t.viewOnYahoo}
-                      </a>
+                      </Link>
                     );
                   })()}
                 </div>

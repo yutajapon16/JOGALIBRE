@@ -771,7 +771,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       if (res.ok) {
         addLocalOfferedId(product?.id || product?.url || targetUrl || '');
         alert(t.offerSuccess);
-        router.back();
+        handleBack();
       } else {
         alert(data.message || t.offerError);
         setMessage({ type: 'error', text: data.message || t.offerError });
@@ -782,6 +782,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       setMessage({ type: 'error', text: t.offerError });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // 安全な「戻る」処理（履歴がない場合はトップ画面へフォールバック）
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/');
     }
   };
 
@@ -806,7 +815,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-6 rounded-xl shadow text-center">
           <p className="text-red-500 font-bold mb-4">{t.errorUrl}</p>
-          <button onClick={() => router.back()} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg">{t.back}</button>
+          <button onClick={handleBack} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg">{t.back}</button>
         </div>
       </div>
     );
@@ -830,7 +839,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       <header className="bg-white shadow sticky top-0 z-40">
         <div className="max-w-3xl mx-auto px-4 py-2 grid grid-cols-3 gap-2 items-center">
           <button
-            onClick={() => router.back()}
+            onClick={handleBack}
             className="h-12 w-full bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 active:scale-[0.98] transition flex items-center justify-center text-xs font-bold text-center"
           >
             {t.back}
