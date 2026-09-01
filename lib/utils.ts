@@ -652,10 +652,70 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
   const lowerUrl = decodedUrl.toLowerCase();
   const lowerTitle = (title || '').toLowerCase();
 
+  // --- 0. パーツ・部品（フロントガラス、ライト、ホイール、シート等）の判定 ---
+  // タイトルやURLにパーツ関連の単語がある場合は、車種名（シルビア、スープラ等）が含まれていても車両FOB（54,000円）を適用しない
+  const isCarPart = 
+    lowerTitle.includes('フロントガラス') ||
+    lowerTitle.includes('ガラス') ||
+    lowerTitle.includes('バンパー') ||
+    lowerTitle.includes('フェンダー') ||
+    lowerTitle.includes('ドア') ||
+    lowerTitle.includes('ボンネット') ||
+    lowerTitle.includes('トランク') ||
+    lowerTitle.includes('スポイラー') ||
+    lowerTitle.includes('ウイング') ||
+    lowerTitle.includes('グリル') ||
+    lowerTitle.includes('ライト') ||
+    lowerTitle.includes('ヘッドライト') ||
+    lowerTitle.includes('テールランプ') ||
+    lowerTitle.includes('テール') ||
+    lowerTitle.includes('ウインカー') ||
+    lowerTitle.includes('マフラー') ||
+    lowerTitle.includes('エキマニ') ||
+    lowerTitle.includes('パイプ') ||
+    lowerTitle.includes('サスペンション') ||
+    lowerTitle.includes('サス') ||
+    lowerTitle.includes('車高調') ||
+    lowerTitle.includes('ショック') ||
+    lowerTitle.includes('スプリング') ||
+    lowerTitle.includes('シート') ||
+    lowerTitle.includes('ステアリング') ||
+    lowerTitle.includes('ハンドル') ||
+    lowerTitle.includes('メーター') ||
+    lowerTitle.includes('ホイール') ||
+    lowerTitle.includes('タイヤ') ||
+    lowerTitle.includes('ブレーキ') ||
+    lowerTitle.includes('キャリパー') ||
+    lowerTitle.includes('ローター') ||
+    lowerTitle.includes('ミッション') ||
+    lowerTitle.includes('クラッチ') ||
+    lowerTitle.includes('デフ') ||
+    lowerTitle.includes('ドライブシャフト') ||
+    lowerTitle.includes('タービン') ||
+    lowerTitle.includes('インタークーラー') ||
+    lowerTitle.includes('ラジエーター') ||
+    lowerTitle.includes('ecu') ||
+    lowerTitle.includes('コンピューター') ||
+    lowerTitle.includes('ハーネス') ||
+    lowerTitle.includes('配線') ||
+    lowerTitle.includes('スイッチ') ||
+    lowerTitle.includes('センサー') ||
+    lowerTitle.includes('純正') ||
+    lowerTitle.includes('外装') ||
+    lowerTitle.includes('内装') ||
+    lowerTitle.includes('パネル') ||
+    lowerTitle.includes('カバー') ||
+    lowerTitle.includes('パーツ') ||
+    lowerTitle.includes('部品');
+
   // --- 1. URL内のヤフオクカテゴリIDによる厳密な判定 ---
   let matchedItem: FobCostItem | null = null;
   for (const item of cachedFobCosts) {
-    if (item.categoryIds.some(id => lowerUrl.includes(id))) {
+    if (item.categoryIds.length > 0 && item.categoryIds.some(id => lowerUrl.includes(id))) {
+      // 車両本体FOB（54,000円以上）の場合、パーツ単語が含まれていたら除外
+      if (item.fob >= 50000 && isCarPart) {
+        continue;
+      }
       matchedItem = item;
       break;
     }
@@ -668,11 +728,21 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
   // --- 2. jcatがあればマスタデータからFOB費用を取得 (上記カテゴリIDで一致しなかった場合) ---
   if (jcat) {
     const sizeCost = cachedFobCosts.find(i => i.key === jcat);
-    if (sizeCost) return sizeCost.fob;
+    if (sizeCost) {
+      if (sizeCost.fob >= 50000 && isCarPart) {
+        return 1500;
+      }
+      return sizeCost.fob;
+    }
   }
 
-  // --- 3. URLにカテゴリIDがない場合のフォールバック判定（タイトルやキーワードによる判定） ---
+  // --- 3. キーワード判定（車両本体FOBは自動車車体カテゴリ26360または部品取り2084061280がある場合のみ） ---
+  const isVehicleCategory = lowerUrl.includes('26360') || lowerUrl.includes('2084061280') || lowerUrl.includes('26316');
   for (const item of cachedFobCosts) {
+    if (item.fob >= 50000 && (!isVehicleCategory || isCarPart)) {
+      // 車両本体FOBは車両カテゴリ以外またはパーツ商品には絶対に適用しない
+      continue;
+    }
     if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
       return item.fob;
     }
@@ -680,6 +750,7 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
 
   return 1500;
 };
+
 
 /**
  * 商品タイトルやURLから、自動車部品カテゴリに応じたデフォルトの送料（JPY）を判定して返す関数

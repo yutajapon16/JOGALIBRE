@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getUserFromRequest } from '@/lib/auth-helpers';
+import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
 import { parseAnyDateTime, parseDbDateTime, parseJstDateTime } from '@/lib/utils';
 import { sendWonEmail, sendShippingInfoEmail } from '@/lib/resend';
+import { ErrorUserInfo } from '@/lib/error-notifier';
 
 export async function POST(request: Request) {
   try {
@@ -30,15 +31,29 @@ export async function POST(request: Request) {
     // 顧客の場合は自身のメールアドレスを強制使用
     const finalEmail = isAdmin ? customerEmail : effectiveUser.email;
 
-    // 非同期でタイトルを翻訳 (並列で実行)
+    // 操作ユーザー情報を取得
+    let userInfo: ErrorUserInfo | undefined = undefined;
+    try {
+      const userDetails = await getUserInfoByEmail(finalEmail);
+      userInfo = {
+        id: effectiveUser.id,
+        email: finalEmail,
+        customerId: userDetails?.customer_id || undefined,
+        name: userDetails?.full_name || customerName || undefined,
+        role: userDetails?.role || undefined
+      };
+    } catch {}
+
+    // 非同期でタイトルを翻訳 (並列で実行、ユーザー情報を連携)
     let productTitleEs = null;
     let productTitlePt = null;
     if (productTitle) {
       [productTitleEs, productTitlePt] = await Promise.all([
-        translateTitle(productTitle, 'es'),
-        translateTitle(productTitle, 'pt')
+        translateTitle(productTitle, 'es', userInfo),
+        translateTitle(productTitle, 'pt', userInfo)
       ]);
     }
+
 
     const bidRequest = {
       id: Date.now().toString() + Math.floor(1000 + Math.random() * 9000).toString(),
