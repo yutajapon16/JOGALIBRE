@@ -7409,9 +7409,9 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div className="bg-white rounded-2xl shadow-md pt-3 px-3.5 pb-4 sm:pt-4 sm:px-6 sm:pb-5 mb-0">
               {/* 検索タイプ切り替え (3タブ化) */}
-              <div className="flex border-b mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
+              <div className="flex border-b mb-4 overflow-x-auto whitespace-nowrap scrollbar-hide">
                 <button
                   onClick={() => {
                     setSearchType('categories');
@@ -7421,7 +7421,7 @@ export default function Home() {
                     setKeyword('');
                     setSearchUrl('');
                   }}
-                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
+                  className={`flex-1 min-w-[100px] py-2.5 sm:py-3 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'categories' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
                   {t.categoriesTab}
                 </button>
@@ -7433,7 +7433,7 @@ export default function Home() {
                     setActiveCategoryUrl(null);
                     setSearchUrl('');
                   }}
-                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
+                  className={`flex-1 min-w-[100px] py-2.5 sm:py-3 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'keyword' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
                   {t.searchTab}
                 </button>
@@ -7445,7 +7445,7 @@ export default function Home() {
                     setActiveCategoryUrl(null);
                     setKeyword('');
                   }}
-                  className={`flex-1 min-w-[100px] py-4 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
+                  className={`flex-1 min-w-[100px] py-2.5 sm:py-3 px-2 text-xs font-bold tracking-wider border-b-2 transition ${searchType === 'url' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-400 font-medium'}`}
                 >
                   {t.urlTab}
                 </button>
@@ -8338,7 +8338,7 @@ export default function Home() {
 
             {/* 並び替えドロップダウン（LOCAL DE ENTREGAの下、右揃え） */}
             {(products.length > 0 || isSearching || loading) && (
-              <div className="flex justify-end items-center mt-3 mb-1">
+              <div className="flex justify-end items-center my-3">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-bold text-gray-500">
                     {lang === 'es' ? 'Ordenar:' : 'Ordenar:'}
@@ -8374,7 +8374,7 @@ export default function Home() {
               </div>
             )}
 
-            <div ref={resultsRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mt-4">
+            <div ref={resultsRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               {products.map((product, index) => renderProductCard(product, index, false))}
             </div>
 
