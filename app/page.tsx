@@ -371,6 +371,17 @@ const saveNavState = (state: Partial<SearchNavState>) => {
   }
 };
 
+// B001傘下顧客およびブラジルエージェント（ブラジル在住）の判定関数
+const isBrlDefaultUser = (user: any): boolean => {
+  if (!user) return false;
+  if (user.agentCustomerId === 'B001' || user.agent_customer_id === 'B001') return true;
+  if (user.customerId === 'B001' || user.customer_id === 'B001') return true;
+  const country = (user.country || '').trim().toLowerCase();
+  if (country === 'brasil' || country === 'brazil') return true;
+  if (user.role === 'agent' && (country === 'brasil' || country === 'brazil')) return true;
+  return false;
+};
+
 const BRAND_LOGOS: Record<string, React.ReactNode> = {
   toyota: (
     <svg viewBox="0 0 24 24" className="w-7 h-7 fill-current text-[#111111] mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
@@ -1651,6 +1662,13 @@ export default function Home() {
   // キャッシュ済みのメタデータから確実に入力欄を初期復元する
   useEffect(() => {
     if (currentUser) {
+      if (typeof window !== 'undefined') {
+        const savedUserCurrency = localStorage.getItem('jogalibre_user_selected_currency');
+        // 手動選択の履歴がない場合、B001傘下顧客またはブラジルエージェントならデフォルトBRLにする
+        if (!savedUserCurrency && isBrlDefaultUser(currentUser)) {
+          setSelectedCurrency('BRL');
+        }
+      }
       setProfileForm(prev => {
         if (!prev.fullName && currentUser.fullName) prev.fullName = currentUser.fullName;
         if (!prev.whatsapp && currentUser.whatsapp) prev.whatsapp = currentUser.whatsapp;
@@ -1686,7 +1704,22 @@ export default function Home() {
     }
     return 150;
   });
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const savedUserCurrency = localStorage.getItem('jogalibre_user_selected_currency');
+      if (savedUserCurrency) return savedUserCurrency;
+      try {
+        const cachedUserRaw = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
+        if (cachedUserRaw) {
+          const cachedUser = JSON.parse(cachedUserRaw);
+          if (isBrlDefaultUser(cachedUser)) {
+            return 'BRL';
+          }
+        }
+      } catch {}
+    }
+    return 'USD';
+  });
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number }>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -4649,7 +4682,13 @@ export default function Home() {
               </span>
               <select
                 value={selectedCurrency}
-                onChange={(e) => setSelectedCurrency(e.target.value)}
+                onChange={(e) => {
+                  const newCurr = e.target.value;
+                  setSelectedCurrency(newCurr);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('jogalibre_user_selected_currency', newCurr);
+                  }
+                }}
                 className="h-12 border border-gray-300 rounded-lg pl-20 pr-4 bg-white text-sm sm:text-base font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full text-center appearance-none"
               >
                 <option value="USD">USD 🇺🇸</option>

@@ -57,52 +57,98 @@ const safeDecodeURIComponent = (str: string | null | undefined): string => {
   }
 };
 
-// 太字 **...** を安全にパースするヘルパー
-const parseInlineMarkdown = (text: string) => {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return (
-        <strong key={i} className="font-extrabold text-gray-900">
-          {part.slice(2, -2)}
-        </strong>
-      );
+// B001傘下顧客およびブラジルエージェント（ブラジル在住）の判定関数
+const isBrlDefaultUser = (user: any): boolean => {
+  if (!user) return false;
+  if (user.agentCustomerId === 'B001' || user.agent_customer_id === 'B001') return true;
+  if (user.customerId === 'B001' || user.customer_id === 'B001') return true;
+  const country = (user.country || '').trim().toLowerCase();
+  if (country === 'brasil' || country === 'brazil') return true;
+  if (user.role === 'agent' && (country === 'brasil' || country === 'brazil')) return true;
+  return false;
+};
+
+interface AiSummarySection {
+  title: string;
+  content: string;
+}
+
+// AI要約テキストを項目（仕様、状態、動作、付属品、配送等）ごとに分解する関数
+const parseAiSummarySections = (rawText: string): AiSummarySection[] => {
+  if (!rawText) return [];
+
+  const clean = rawText.replace(/<[^>]*>/g, ' ').trim();
+
+  // "• 項目名: 内容" や "* 項目名: 内容" または "1. 項目名: 内容" を検出（改行なしの1行テキストにも完全対応）
+  const regex = /(?:^|[\s\n]+)(?:[•\*\-]|(?:\d+\.))\s*([^\n:]{2,50}?)\s*:\s*/g;
+
+  const matches: { title: string; index: number; length: number }[] = [];
+  let match;
+  while ((match = regex.exec(clean)) !== null) {
+    matches.push({
+      title: match[1].replace(/\*\*/g, '').trim(),
+      index: match.index,
+      length: match[0].length
+    });
+  }
+
+  if (matches.length > 0) {
+    const sections: AiSummarySection[] = [];
+    for (let i = 0; i < matches.length; i++) {
+      const current = matches[i];
+      const startContent = current.index + current.length;
+      const endContent = i + 1 < matches.length ? matches[i + 1].index : clean.length;
+      const content = clean.substring(startContent, endContent).trim();
+      
+      sections.push({
+        title: current.title,
+        content: content.replace(/^\*\*/, '').replace(/\*\*$/, '').trim()
+      });
     }
-    return part;
-  });
+    return sections;
+  }
+
+  // もし箇条書き記号がない場合でも改行で分割
+  const paragraphs = clean.split(/\n+/).map(p => p.trim()).filter(Boolean);
+  if (paragraphs.length > 1) {
+    return paragraphs.map(p => {
+      const colonIdx = p.indexOf(':');
+      if (colonIdx > 0 && colonIdx < 40) {
+        return {
+          title: p.substring(0, colonIdx).replace(/^[•\*\-\s]+/, '').replace(/\*\*/g, '').trim(),
+          content: p.substring(colonIdx + 1).trim()
+        };
+      }
+      return {
+        title: '',
+        content: p
+      };
+    });
+  }
+
+  return [{ title: '', content: clean }];
 };
 
 // AI要約テキストを項目ごとに1行空けて段落を変えて表示するレンダラー
 const renderFormattedAiSummary = (text: string) => {
-  if (!text) return null;
-
-  // 1. 空行（\n\n）で分割
-  let sections = text.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
-
-  // 2. もし空行で分割されなかった場合、箇条書き記号（•, -, *）で分割
-  if (sections.length <= 1) {
-    sections = text.split(/(?=(?:^|\n)\s*[•\-\*]\s+)/).map(s => s.trim()).filter(Boolean);
-  }
-
-  // 3. それでも1つの場合、改行で分割
-  if (sections.length <= 1) {
-    sections = text.split('\n').map(s => s.trim()).filter(Boolean);
-  }
+  const sections = parseAiSummarySections(text);
+  if (!sections || sections.length === 0) return null;
 
   return (
-    <div className="space-y-3.5">
-      {sections.map((section, idx) => {
-        const lines = section.split('\n').map(l => l.trim()).filter(Boolean);
-        return (
-          <div key={idx} className="leading-relaxed text-xs text-gray-800 font-medium">
-            {lines.map((line, lineIdx) => (
-              <div key={lineIdx} className={lineIdx > 0 ? "mt-0.5 text-gray-700 pl-3.5" : "text-gray-900 font-semibold"}>
-                {parseInlineMarkdown(line)}
-              </div>
-            ))}
+    <div className="space-y-4 font-sans">
+      {sections.map((sec, idx) => (
+        <div key={idx} className="leading-relaxed text-xs">
+          {sec.title && (
+            <div className="font-extrabold text-gray-900 text-xs sm:text-sm mb-1.5 flex items-baseline gap-1.5">
+              <span className="text-indigo-600 font-bold">•</span>
+              <span>{sec.title}</span>
+            </div>
+          )}
+          <div className={`text-gray-700 font-medium ${sec.title ? 'pl-3' : ''} whitespace-pre-wrap leading-relaxed`}>
+            {sec.content}
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 };
@@ -191,8 +237,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     return null;
   });
   
-  // 選択された通貨のState (パラメータがあれば優先、デフォルトはUSD)
-  const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyParam || 'USD');
+  // 選択された通貨のState (パラメータがあれば優先、キャッシュやユーザー属性から復元、デフォルトはUSD)
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(() => {
+    if (currencyParam) return currencyParam;
+    if (typeof window !== 'undefined') {
+      const savedUserCurrency = localStorage.getItem('jogalibre_user_selected_currency');
+      if (savedUserCurrency) return savedUserCurrency;
+      try {
+        const cachedUserRaw = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
+        if (cachedUserRaw) {
+          const cachedUser = JSON.parse(cachedUserRaw);
+          if (isBrlDefaultUser(cachedUser)) {
+            return 'BRL';
+          }
+        }
+      } catch {}
+    }
+    return 'USD';
+  });
   // 引渡し場所のState (デフォルトはJP)
   const [deliveryCountry, setDeliveryCountry] = useState<string>('JP');
   const [deliveryCity, setDeliveryCity] = useState<string>('');
@@ -451,6 +513,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     getCurrentUser().then(user => {
       if (user) {
         setCurrentUser(user);
+        if (!currencyParam && typeof window !== 'undefined') {
+          const savedUserCurrency = localStorage.getItem('jogalibre_user_selected_currency');
+          if (!savedUserCurrency && isBrlDefaultUser(user)) {
+            setSelectedCurrency('BRL');
+          }
+        }
         fetchUserProfile(user);
         fetchMyRequests(user.email);
       }
@@ -897,7 +965,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           
           <select
             value={selectedCurrency}
-            onChange={(e) => setSelectedCurrency(e.target.value)}
+            onChange={(e) => {
+              const newCurr = e.target.value;
+              setSelectedCurrency(newCurr);
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('jogalibre_user_selected_currency', newCurr);
+              }
+            }}
             className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full text-center"
             style={{ textAlignLast: 'center', textAlign: 'center' }}
           >
