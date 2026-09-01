@@ -57,6 +57,56 @@ const safeDecodeURIComponent = (str: string | null | undefined): string => {
   }
 };
 
+// 太字 **...** を安全にパースするヘルパー
+const parseInlineMarkdown = (text: string) => {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={i} className="font-extrabold text-gray-900">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+};
+
+// AI要約テキストを項目ごとに1行空けて段落を変えて表示するレンダラー
+const renderFormattedAiSummary = (text: string) => {
+  if (!text) return null;
+
+  // 1. 空行（\n\n）で分割
+  let sections = text.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+
+  // 2. もし空行で分割されなかった場合、箇条書き記号（•, -, *）で分割
+  if (sections.length <= 1) {
+    sections = text.split(/(?=(?:^|\n)\s*[•\-\*]\s+)/).map(s => s.trim()).filter(Boolean);
+  }
+
+  // 3. それでも1つの場合、改行で分割
+  if (sections.length <= 1) {
+    sections = text.split('\n').map(s => s.trim()).filter(Boolean);
+  }
+
+  return (
+    <div className="space-y-3.5">
+      {sections.map((section, idx) => {
+        const lines = section.split('\n').map(l => l.trim()).filter(Boolean);
+        return (
+          <div key={idx} className="leading-relaxed text-xs text-gray-800 font-medium">
+            {lines.map((line, lineIdx) => (
+              <div key={lineIdx} className={lineIdx > 0 ? "mt-0.5 text-gray-700 pl-3.5" : "text-gray-900 font-semibold"}>
+                {parseInlineMarkdown(line)}
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1067,8 +1117,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           {aiSummary ? (
             // 段落ごとに空行と箇条書きで区切られた見やすいAI要約デザイン
             <div className="space-y-3">
-              <div className="text-xs text-gray-800 leading-relaxed whitespace-pre-line font-medium bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans animate-in fade-in duration-300">
-                {aiSummary}
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans animate-in fade-in duration-300">
+                {renderFormattedAiSummary(aiSummary)}
               </div>
               {/* AI要約の免責事項（AI要約完了時のみ表示） */}
               <p className="text-[10px] font-semibold leading-normal p-3 rounded-xl border bg-indigo-50 text-indigo-700 border-indigo-200 animate-in fade-in duration-300">
