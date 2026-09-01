@@ -8,12 +8,12 @@ import { notifyAdminError, hasJapaneseCharacters, ErrorUserInfo } from '@/lib/er
 
 // 現在利用可能な公式の超高速・高スループット安定モデルを最速順に設定
 const GEMINI_MODELS = [
-  'gemini-3.5-flash-lite', // 最速 (約800ms)
-  'gemini-3.5-flash',
-  'gemini-3.6-flash',
-  'gemini-3.7-flash',
   'gemini-2.5-flash',
-  'gemini-flash-latest'
+  'gemini-2.5-flash-lite',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro'
 ];
 
 
@@ -360,25 +360,55 @@ export async function batchTranslateTitles(titles: string[], targetLang: string,
  * 1チャンク（最大10件）の高速翻訳 + 多重フォールバック
  */
 async function translateChunkWithFallback(chunk: string[], targetLang: string, apiKey?: string): Promise<string[]> {
+  // 1. Gemini Batch 翻訳（第一優先: 高品質・文脈理解）
   if (apiKey) {
     const geminiResult = await translateWithGeminiBatch(chunk, targetLang, apiKey);
     if (geminiResult && geminiResult.length === chunk.length) {
-      return geminiResult;
+      // 全て翻訳完了したか確認
+      const hasAnyJp = geminiResult.some(t => hasJapaneseCharacters(t));
+      if (!hasAnyJp) {
+        return geminiResult;
+      }
+      // 日本語が残っているタイトルのみ個別補完
+      return Promise.all(geminiResult.map(async (t, i) => {
+        if (hasJapaneseCharacters(t)) {
+          const singleFallback = await translateWithGtxSingle(chunk[i], targetLang);
+          return hasJapaneseCharacters(singleFallback) ? (await translateWithMyMemory(chunk[i], targetLang)) : singleFallback;
+        }
+        return t;
+      }));
     }
   }
 
-  // GTX バッチフォールバック
+  // 2. GTX バッチフォールバック（第二優先: 高速Google翻訳）
   const gtxResult = await translateWithGtxBatch(chunk, targetLang);
   if (gtxResult && gtxResult.length === chunk.length) {
-    return gtxResult;
+    const hasAnyJp = gtxResult.some(t => hasJapaneseCharacters(t));
+    if (!hasAnyJp) {
+      return gtxResult;
+    }
+    // 日本語が残っているタイトルのみ個別補完
+    return Promise.all(gtxResult.map(async (t, i) => {
+      if (hasJapaneseCharacters(t)) {
+        const singleFallback = await translateWithGtxSingle(chunk[i], targetLang);
+        return hasJapaneseCharacters(singleFallback) ? (await translateWithMyMemory(chunk[i], targetLang)) : singleFallback;
+      }
+      return t;
+    }));
   }
 
-  // 個別 MyMemory フォールバック
+  // 3. 個別 Google Translate (GTX Single) フォールバック
   try {
-    const memoryResults = await Promise.all(
-      chunk.map(t => translateWithMyMemory(t, targetLang, 'ja').catch(() => t))
+    const singleResults = await Promise.all(
+      chunk.map(async (t) => {
+        const gtxSingle = await translateWithGtxSingle(t, targetLang);
+        if (hasJapaneseCharacters(gtxSingle)) {
+          return translateWithMyMemory(t, targetLang, 'ja').catch(() => gtxSingle);
+        }
+        return gtxSingle;
+      })
     );
-    return memoryResults;
+    return singleResults;
   } catch {
     return chunk;
   }
@@ -592,6 +622,36 @@ async function translateWithGtxBatch(titles: string[], targetLang: string): Prom
     console.warn('GTX batch translate error:', e);
   }
   return null;
+}
+
+/**
+ * Google Translate (gtx) を用いた単一テキスト翻訳内部関数
+ */
+async function translateWithGtxSingle(text: string, targetLang: string, sourceLang: string = 'ja'): Promise<string> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        signal: controller.signal
+      }
+    );
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json();
+      const translated = data?.[0]?.map((x: string[]) => x[0]).join('');
+      if (translated && translated.trim()) {
+        return translated.trim();
+      }
+    }
+  } catch (e) {
+    // フォールバックへ
+  }
+  return text;
 }
 
 /**
