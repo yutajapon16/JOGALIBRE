@@ -339,6 +339,7 @@ interface SearchNavState {
   activeCategoryUrl?: string | null;
   keyword?: string;
   searchCondition?: 'all' | 'new' | 'used';
+  sortOrder?: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new';
   searchPage?: number;
   nextPageExists?: boolean;
   products?: SearchItem[];
@@ -1471,6 +1472,9 @@ export default function Home() {
   const [searchCondition, setSearchCondition] = useState<'all' | 'new' | 'used'>(() => {
     return getStoredNavState()?.searchCondition || 'all';
   });
+  const [sortOrder, setSortOrder] = useState<'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new'>(() => {
+    return getStoredNavState()?.sortOrder || 'featured';
+  });
   const [isSearching, setIsSearching] = useState(false);
   const [categoryHistory, setCategoryHistory] = useState<Category[]>(() => {
     return getStoredNavState()?.categoryHistory || [];
@@ -1653,11 +1657,12 @@ export default function Home() {
       activeCategoryUrl,
       keyword,
       searchCondition,
+      sortOrder,
       searchPage,
       nextPageExists,
       products
     });
-  }, [activeTab, searchType, categoryHistory, activeCategoryUrl, keyword, searchCondition, searchPage, nextPageExists, products]);
+  }, [activeTab, searchType, categoryHistory, activeCategoryUrl, keyword, searchCondition, sortOrder, searchPage, nextPageExists, products]);
 
   // キャッシュ済みのメタデータから確実に入力欄を初期復元する
   useEffect(() => {
@@ -3438,7 +3443,7 @@ export default function Home() {
     }
   };
 
-  const handleKeywordSearch = async (eOrWord?: React.FormEvent | string, page: number = 1, forceCond?: 'all' | 'new' | 'used') => {
+  const handleKeywordSearch = async (eOrWord?: React.FormEvent | string, page: number = 1, forceCond?: 'all' | 'new' | 'used', forceSort?: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new') => {
     let searchWord = keyword;
     if (typeof eOrWord === 'string') {
       searchWord = eOrWord;
@@ -3452,11 +3457,12 @@ export default function Home() {
     setLoading(true);
     setSearchPage(page);
     const condToUse = forceCond || searchCondition;
+    const sortToUse = forceSort || sortOrder;
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchWord)}&lang=${lang}&page=${page}&cond=${condToUse}`, {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchWord)}&lang=${lang}&page=${page}&cond=${condToUse}&sort=${sortToUse}`, {
         headers: {
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         }
@@ -3533,7 +3539,7 @@ export default function Home() {
     fetchCategoryItems(searchUrl, 1);
   };
 
-  const fetchCategoryItems = async (url: string, page: number = 1) => {
+  const fetchCategoryItems = async (url: string, page: number = 1, forceSort?: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new') => {
     setIsSearching(true);
     setLoading(true);
     setSearchPage(page);
@@ -3545,12 +3551,13 @@ export default function Home() {
       targetUrl += `${connector}exflg=1`;
     }
 
+    const sortToUse = forceSort || sortOrder;
     setActiveCategoryUrl(targetUrl);
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
-      const res = await fetch(`/api/search?url=${encodeURIComponent(targetUrl)}&page=${page}&lang=${lang}`, {
+      const res = await fetch(`/api/search?url=${encodeURIComponent(targetUrl)}&page=${page}&lang=${lang}&sort=${sortToUse}`, {
         headers: {
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         }
@@ -3574,6 +3581,18 @@ export default function Home() {
     } finally {
       setIsSearching(false);
       setLoading(false);
+    }
+  };
+
+  // 並び替え（ソート順）変更時のハンドラー
+  const handleSortChange = (newSort: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new') => {
+    setSortOrder(newSort);
+    if (searchType === 'keyword' && keyword.trim()) {
+      handleKeywordSearch(keyword, 1, undefined, newSort);
+    } else if (activeCategoryUrl) {
+      fetchCategoryItems(activeCategoryUrl, 1, newSort);
+    } else if (currentCategory?.url) {
+      fetchCategoryItems(currentCategory.url, 1, newSort);
     }
   };
 
@@ -4298,6 +4317,7 @@ export default function Home() {
         activeCategoryUrl,
         keyword,
         searchCondition,
+        sortOrder,
         searchPage,
         nextPageExists,
         products,
@@ -8315,6 +8335,44 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* 並び替えドロップダウン（LOCAL DE ENTREGAの下、右揃え） */}
+            {(products.length > 0 || isSearching || loading) && (
+              <div className="flex justify-end items-center mt-3 mb-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-gray-500">
+                    {lang === 'es' ? 'Ordenar:' : 'Ordenar:'}
+                  </span>
+                  <div className="relative flex items-center justify-between h-9 px-3 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-bold shadow-sm cursor-pointer hover:bg-gray-50 transition-colors">
+                    <span className="truncate pr-4">
+                      {sortOrder === 'price_asc'
+                        ? (lang === 'es' ? 'Precio: Menor a Mayor' : 'Preço: Menor para Maior')
+                        : sortOrder === 'price_desc'
+                        ? (lang === 'es' ? 'Precio: Mayor a Menor' : 'Preço: Maior para Menor')
+                        : sortOrder === 'bids_desc'
+                        ? (lang === 'es' ? 'Más populares' : 'Mais populares')
+                        : sortOrder === 'new'
+                        ? (lang === 'es' ? 'Más recientes' : 'Mais recentes')
+                        : (lang === 'es' ? 'Recomendados' : 'Recomendados')}
+                    </span>
+                    <svg className="w-3.5 h-3.5 text-gray-400 absolute right-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                    </svg>
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => handleSortChange(e.target.value as any)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    >
+                      <option value="featured">{lang === 'es' ? 'Recomendados' : 'Recomendados'}</option>
+                      <option value="price_asc">{lang === 'es' ? 'Precio: Menor a Mayor' : 'Preço: Menor para Maior'}</option>
+                      <option value="price_desc">{lang === 'es' ? 'Precio: Mayor a Menor' : 'Preço: Maior para Menor'}</option>
+                      <option value="bids_desc">{lang === 'es' ? 'Más populares' : 'Mais populares'}</option>
+                      <option value="new">{lang === 'es' ? 'Más recientes' : 'Mais recentes'}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div ref={resultsRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mt-4">
               {products.map((product, index) => renderProductCard(product, index, false))}

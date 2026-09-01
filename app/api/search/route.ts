@@ -12,6 +12,29 @@ export async function GET(request: Request) {
   const urlParam = searchParams.get('url');
   const page = parseInt(searchParams.get('page') || '1');
   const cond = searchParams.get('cond') || 'all';
+  const sort = searchParams.get('sort') || 'featured';
+
+  // ソートパラメータの決定 (Yahooオークション標準)
+  // featured: おすすめ順 (s1=score&o1=d)
+  // price_asc: 価格が安い順 (s1=cbids&o1=a)
+  // price_desc: 価格が高い順 (s1=cbids&o1=d)
+  // bids_desc: 入札数が多い順 (s1=bids&o1=d)
+  // new: 新着順 (s1=new&o1=d)
+  let s1 = 'score';
+  let o1 = 'd';
+  if (sort === 'price_asc') {
+    s1 = 'cbids';
+    o1 = 'a';
+  } else if (sort === 'price_desc') {
+    s1 = 'cbids';
+    o1 = 'd';
+  } else if (sort === 'bids_desc') {
+    s1 = 'bids';
+    o1 = 'd';
+  } else if (sort === 'new') {
+    s1 = 'new';
+    o1 = 'd';
+  }
 
   // 操作ユーザー情報の取得（エラー通知連携用）
   let userInfo: ErrorUserInfo | undefined = undefined;
@@ -58,6 +81,18 @@ export async function GET(request: Request) {
         // 既存のbを置換
         searchUrl = searchUrl.replace(/b=\d+/, `b=${start}`);
       }
+
+      // ソートパラメータの適用
+      if (searchUrl.includes('s1=')) {
+        searchUrl = searchUrl.replace(/[?&]s1=[^&]+/, (m) => m[0] + `s1=${s1}`);
+      } else {
+        searchUrl += `&s1=${s1}`;
+      }
+      if (searchUrl.includes('o1=')) {
+        searchUrl = searchUrl.replace(/[?&]o1=[^&]+/, (m) => m[0] + `o1=${o1}`);
+      } else {
+        searchUrl += `&o1=${o1}`;
+      }
     } else if (q) {
       if (lang === 'ja') {
         translatedKeyword = q;
@@ -86,7 +121,7 @@ export async function GET(request: Request) {
         condParam = '&istatus=2';
       }
 
-      searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(translatedKeyword)}&va=${encodeURIComponent(translatedKeyword)}&exflg=1&b=${start}&n=${itemsPerPage}&s1=score&o1=d${condParam}`;
+      searchUrl = `https://auctions.yahoo.co.jp/search/search?p=${encodeURIComponent(translatedKeyword)}&va=${encodeURIComponent(translatedKeyword)}&exflg=1&b=${start}&n=${itemsPerPage}&s1=${s1}&o1=${o1}${condParam}`;
     }
 
     // 検索URLからカテゴリIDを抽出
