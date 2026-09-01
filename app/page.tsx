@@ -4525,21 +4525,27 @@ export default function Home() {
           </div>
 
           {/* 2行目: 顧客ID/氏名 & 言語選択 & お知らせボタン */}
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between gap-2 min-w-0">
             {currentUser ? (
-              <span className="text-xs sm:text-sm text-gray-700 font-bold truncate max-w-[180px] min-[375px]:max-w-[220px] sm:max-w-[360px] mr-2 flex-1 min-w-0">
-                {currentUser.customerId && <span className="text-indigo-600 font-extrabold mr-1.5">{currentUser.customerId}</span>}
-                {currentUser.fullName}
-              </span>
+              <div className="flex items-center min-w-0 flex-1 mr-1 overflow-hidden">
+                <span className="text-xs sm:text-sm text-gray-700 font-bold truncate block">
+                  {currentUser.customerId && (
+                    <span className="text-indigo-600 font-extrabold mr-1.5 shrink-0">
+                      {currentUser.customerId}
+                    </span>
+                  )}
+                  <span className="truncate">{currentUser.fullName}</span>
+                </span>
+              </div>
             ) : (
               <div className="flex-1 min-w-0" />
             )}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <select
                 value={lang}
                 onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                className="bg-gray-50 border border-gray-200 text-gray-700 h-7 sm:h-8 px-2 rounded-full text-[10px] sm:text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-[84px] text-center cursor-pointer transition-colors shadow-sm"
+                className="bg-gray-50 border border-gray-200 text-gray-700 h-7 sm:h-8 px-1 rounded-full text-[9px] sm:text-[10px] font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-[84px] text-center cursor-pointer transition-colors shadow-sm"
                 style={{ textAlignLast: 'center', textAlign: 'center' }}
               >
                 <option value="es">Español</option>
@@ -4551,7 +4557,7 @@ export default function Home() {
                   setShowNotifications(true);
                   fetchNotifications();
                 }}
-                className="relative flex items-center justify-center gap-1 w-[84px] h-7 sm:h-8 px-2.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors shadow-sm"
+                className="relative flex items-center justify-center gap-1 w-[84px] h-7 sm:h-8 px-2 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors shadow-sm shrink-0"
               >
                 <span>{lang === 'es' ? 'Avisos' : 'Avisos'}</span>
                 {unreadCount > 0 && (
@@ -4559,7 +4565,7 @@ export default function Home() {
                     {unreadCount}
                   </span>
                 )}
-                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
               </button>
