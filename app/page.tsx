@@ -4557,10 +4557,10 @@ export default function Home() {
             </button>
           </div>
 
-          {/* 2行目: 顧客ID/氏名 & 言語選択 & お知らせボタン */}
-          <div className="flex items-center justify-between gap-2 min-w-0">
+          {/* 2行目: 顧客ID/氏名（左列・Consultaと等幅） & 言語選択 + Avisos（右列・Pushと等幅） */}
+          <div className="grid grid-cols-2 gap-2 items-center">
             {currentUser ? (
-              <div className="flex items-center min-w-0 flex-1 mr-1 overflow-hidden">
+              <div className="flex items-center min-w-0 overflow-hidden pr-1">
                 <span className="text-xs sm:text-sm text-gray-700 font-bold truncate block">
                   {currentUser.customerId && (
                     <span className="text-indigo-600 font-extrabold mr-1.5 shrink-0">
@@ -4571,13 +4571,13 @@ export default function Home() {
                 </span>
               </div>
             ) : (
-              <div className="flex-1 min-w-0" />
+              <div className="min-w-0" />
             )}
 
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* 言語選択ドロップダウン（iOSでもフォントサイズを完全制御するOverlayパターン） */}
-              <div className="relative flex items-center justify-between w-[94px] h-7 sm:h-8 px-2.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-full text-[10px] sm:text-xs font-bold shadow-sm cursor-pointer hover:bg-gray-100 transition-colors">
-                <span className="truncate">
+            <div className="flex items-center gap-1.5 sm:gap-2 w-full">
+              {/* 言語選択ドロップダウン（flex-1で残り幅を活用し、文字をゆったり収める） */}
+              <div className="relative flex-1 min-w-0 flex items-center justify-between h-7 sm:h-8 px-2 sm:px-2.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-full text-[10px] sm:text-xs font-bold shadow-sm cursor-pointer hover:bg-gray-100 transition-colors">
+                <span className="truncate flex-1 text-center">
                   {lang === 'es' ? 'Español' : 'Português'}
                 </span>
                 <svg className="w-3 h-3 text-gray-400 shrink-0 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4593,12 +4593,13 @@ export default function Home() {
                 </select>
               </div>
 
+              {/* Avisosボタン（コンパクト化: shrink-0 で必要最小限の幅に収める） */}
               <button
                 onClick={() => {
                   setShowNotifications(true);
                   fetchNotifications();
                 }}
-                className="relative flex items-center justify-center gap-1 w-[94px] h-7 sm:h-8 px-2 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors shadow-sm shrink-0"
+                className="relative flex items-center justify-center gap-1 shrink-0 h-7 sm:h-8 px-2.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors shadow-sm"
               >
                 <span>{lang === 'es' ? 'Avisos' : 'Avisos'}</span>
                 {unreadCount > 0 && (
@@ -4606,7 +4607,7 @@ export default function Home() {
                     {unreadCount}
                   </span>
                 )}
-                <svg className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
               </button>
