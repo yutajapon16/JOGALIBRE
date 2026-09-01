@@ -4,7 +4,8 @@
       "key": "motor",
       "shipping": 10000,
       "categoryIds": [
-        "2084200282"
+        "2084200282",
+        "2084005256"
       ],
       "keywords": [
         "motor",
@@ -27,10 +28,54 @@
       ]
     },
     {
+      "key": "carroceria",
+      "shipping": 10000,
+      "categoryIds": [
+        "2084005255",
+        "2084200196"
+      ],
+      "keywords": [
+        "外装",
+        "フロントガラス",
+        "ガラス",
+        "ドア",
+        "バンパー",
+        "フェンダー",
+        "ボンネット",
+        "トランク",
+        "エアロ",
+        "スポイラー",
+        "ウイング",
+        "carroceria",
+        "paragolpe",
+        "puerta",
+        "capo",
+        "parabrisas"
+      ]
+    },
+    {
+      "key": "escape",
+      "shipping": 8000,
+      "categoryIds": [
+        "2084005143",
+        "2084200216"
+      ],
+      "keywords": [
+        "マフラー",
+        "エキマニ",
+        "フロントパイプ",
+        "触媒",
+        "中間パイプ",
+        "リアピース",
+        "escape",
+        "escapamento",
+        "silenciador"
+      ]
+    },
+    {
       "key": "llantas",
       "shipping": 8000,
       "categoryIds": [
-        "2084226162",
         "2084200183",
         "2084200188",
         "2084200189",
@@ -84,6 +129,44 @@
       "shipping": 6000,
       "categoryIds": [],
       "keywords": []
+    },
+    {
+      "key": "luces",
+      "shipping": 3000,
+      "categoryIds": [
+        "2084008495",
+        "2084015633"
+      ],
+      "keywords": [
+        "ヘッドライト",
+        "テールランプ",
+        "テールライト",
+        "ウインカー",
+        "フォグランプ",
+        "ライト",
+        "レンズ",
+        "luces",
+        "faros",
+        "farol",
+        "lanterna"
+      ]
+    },
+    {
+      "key": "volante",
+      "shipping": 2000,
+      "categoryIds": [
+        "2084005142"
+      ],
+      "keywords": [
+        "ステアリング",
+        "ハンドル",
+        "momo",
+        "nardi",
+        "ナルディ",
+        "モモ",
+        "volante",
+        "steering"
+      ]
     },
     {
       "key": "suspension",
@@ -682,7 +765,9 @@
     {
       "key": "supra",
       "fob": 54000,
-      "categoryIds": [],
+      "categoryIds": [
+        "26360"
+      ],
       "keywords": [
         "supra",
         "スープラ",
@@ -692,7 +777,9 @@
     {
       "key": "skyline",
       "fob": 54000,
-      "categoryIds": [],
+      "categoryIds": [
+        "26360"
+      ],
       "keywords": [
         "skyline",
         "スカイライン",
@@ -706,7 +793,9 @@
     {
       "key": "lancer",
       "fob": 54000,
-      "categoryIds": [],
+      "categoryIds": [
+        "26360"
+      ],
       "keywords": [
         "lancer",
         "ランエボ",
@@ -717,7 +806,9 @@
     {
       "key": "rx7",
       "fob": 54000,
-      "categoryIds": [],
+      "categoryIds": [
+        "26360"
+      ],
       "keywords": [
         "rx-7",
         "rx7",
@@ -728,7 +819,9 @@
     {
       "key": "silvia",
       "fob": 54000,
-      "categoryIds": [],
+      "categoryIds": [
+        "26360"
+      ],
       "keywords": [
         "silvia",
         "シルビア",
@@ -741,7 +834,9 @@
     {
       "key": "impreza",
       "fob": 54000,
-      "categoryIds": [],
+      "categoryIds": [
+        "26360"
+      ],
       "keywords": [
         "impreza",
         "インプレッサ",
@@ -791,7 +886,8 @@
       "key": "motor",
       "fob": 1500,
       "categoryIds": [
-        "2084200282"
+        "2084200282",
+        "2084005256"
       ],
       "keywords": [
         "motor",
@@ -814,10 +910,54 @@
       ]
     },
     {
+      "key": "carroceria",
+      "fob": 1500,
+      "categoryIds": [
+        "2084005255",
+        "2084200196"
+      ],
+      "keywords": [
+        "外装",
+        "フロントガラス",
+        "ガラス",
+        "ドア",
+        "バンパー",
+        "フェンダー",
+        "ボンネット",
+        "トランク",
+        "エアロ",
+        "スポイラー",
+        "ウイング",
+        "carroceria",
+        "paragolpe",
+        "puerta",
+        "capo",
+        "parabrisas"
+      ]
+    },
+    {
+      "key": "escape",
+      "fob": 1500,
+      "categoryIds": [
+        "2084005143",
+        "2084200216"
+      ],
+      "keywords": [
+        "マフラー",
+        "エキマニ",
+        "フロントパイプ",
+        "触媒",
+        "中間パイプ",
+        "リアピース",
+        "escape",
+        "escapamento",
+        "silenciador"
+      ]
+    },
+    {
       "key": "llantas",
       "fob": 1500,
       "categoryIds": [
-        "2084226162",
         "2084200183",
         "2084200188",
         "2084200189",
@@ -871,6 +1011,44 @@
       "fob": 1500,
       "categoryIds": [],
       "keywords": []
+    },
+    {
+      "key": "luces",
+      "fob": 1500,
+      "categoryIds": [
+        "2084008495",
+        "2084015633"
+      ],
+      "keywords": [
+        "ヘッドライト",
+        "テールランプ",
+        "テールライト",
+        "ウインカー",
+        "フォグランプ",
+        "ライト",
+        "レンズ",
+        "luces",
+        "faros",
+        "farol",
+        "lanterna"
+      ]
+    },
+    {
+      "key": "volante",
+      "fob": 1500,
+      "categoryIds": [
+        "2084005142"
+      ],
+      "keywords": [
+        "ステアリング",
+        "ハンドル",
+        "momo",
+        "nardi",
+        "ナルディ",
+        "モモ",
+        "volante",
+        "steering"
+      ]
     },
     {
       "key": "suspension",

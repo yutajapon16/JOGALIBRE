@@ -1,7 +1,9 @@
 key,shipping,category_ids,keywords
-motor,10000,2084200282,motor|エンジン
+motor,10000,"2084200282,2084005256",motor|エンジン
 transmision,8000,2084008426,transmisión|transmision|transmissão|transmissao|トランスミッション|ミッション
-llantas,8000,"2084226162,2084200183,2084200188,2084200189,2084200190",
+carroceria,10000,"2084005255,2084200196",外装|フロントガラス|ガラス|ドア|バンパー|フェンダー|ボンネット|トランク|エアロ|スポイラー|ウイング|carroceria|paragolpe|puerta|capo|parabrisas
+escape,8000,"2084005143,2084200216",マフラー|エキマニ|フロントパイプ|触媒|中間パイプ|リアピース|escape|escapamento|silenciador
+llantas,8000,"2084200183,2084200188,2084200189,2084200190",
 ll16,8000,,
 ll17,8000,,
 ll18,8000,,
@@ -9,11 +11,14 @@ aros,6000,"2084005140,2084008474,2084040548,2084040547",
 ar16,6000,,
 ar17,6000,,
 ar18,6000,,
+luces,3000,"2084008495,2084015633",ヘッドライト|テールランプ|テールライト|ウインカー|フォグランプ|ライト|レンズ|luces|faros|farol|lanterna
+volante,2000,2084005142,ステアリング|ハンドル|momo|nardi|ナルディ|モモ|volante|steering
 suspension,2000,2084005257,suspensión|suspension|suspensão|suspensao|サスペンション|サス|車高調|スプリング|ショック
 asiento,9000,2084005258,asiento|assento|シート|レカロ|recaro|セミバケ|フルバケ
 barras,3000,2084008461,barras|タワーバー|ロールバー|補強
 freno,4000,2084005259,freno|freio|ブレーキ|ブレンボ|brembo|キャリパー|ローター
 caraudio,3000,"23852,2084005294,2084048322,23864",audio|som|オーディオ|スピーカー|アンプ|ウーファー|サブウーファー|プレーヤー|player|reproductor|amplificador|subwoofer|altavoz|altavoces|alto-falantes
+
 reproductor,3000,,
 amplificador,3000,,
 subwoofer,3000,,
