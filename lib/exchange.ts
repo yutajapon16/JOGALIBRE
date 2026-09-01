@@ -157,7 +157,7 @@ export async function getResilientExchangeRate(forceRefresh: boolean = false): P
       const liveRate = await foxbitClient.getUsdtBrlRate();
       if (liveRate > 0) {
         foxbitRawRate = liveRate;
-        foxbitBrlRate = Math.round((liveRate + BRL_BUFFER) * 10000) / 10000;
+        foxbitBrlRate = Math.round((liveRate + BRL_BUFFER) * 100) / 100;
       }
     }
   } catch (err) {
@@ -179,7 +179,7 @@ export async function getResilientExchangeRate(forceRefresh: boolean = false): P
     if (data?.rates) {
       newRates = {
         JPY: jpyResult ? Math.round((jpyResult.rate - JPY_BUFFER) * 100) / 100 : (data.rates.JPY ? Math.round((data.rates.JPY - JPY_BUFFER) * 100) / 100 : newRates.JPY),
-        BRL: foxbitBrlRate || (data.rates.BRL ? Math.round((data.rates.BRL + BRL_BUFFER) * 10000) / 10000 : newRates.BRL),
+        BRL: foxbitBrlRate || (data.rates.BRL ? Math.round((data.rates.BRL + BRL_BUFFER) * 100) / 100 : newRates.BRL),
         PYG: data.rates.PYG ? Math.round(data.rates.PYG * 100) / 100 : newRates.PYG,
         CLP: data.rates.CLP ? Math.round(data.rates.CLP * 100) / 100 : newRates.CLP,
         BOB: data.rates.BOB ? Math.round(data.rates.BOB * 100) / 100 : newRates.BOB,

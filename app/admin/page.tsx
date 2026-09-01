@@ -224,7 +224,7 @@ export default function AdminDashboard() {
     
     let finalConverted = rounded;
     if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
-      finalConverted = Math.ceil(rounded / 10) * 10;
+      finalConverted = Math.ceil(rounded / 5) * 5;
     } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
       finalConverted = Math.ceil(rounded / 1000) * 1000;
     } else {
@@ -2468,9 +2468,9 @@ export default function AdminDashboard() {
           profitDivisor = 0.8;
         }
       }
-      const priceWithProfit = totalJpy / profitDivisor;
+      const priceWithProfit = Math.round((totalJpy / profitDivisor) * 100) / 100;
       const usdPrice = priceWithProfit / exchangeRate;
-      const roundedUsd = Math.ceil(usdPrice / 10) * 10;
+      const roundedUsd = Math.ceil(usdPrice / 5) * 5;
 
       updateStatus(selectedRequest.id, 'counter_offer', undefined, roundedUsd, shipping, totalJpy);
     }
@@ -5694,9 +5694,9 @@ export default function AdminDashboard() {
                         profitDivisor = 0.8; // 通常エージェント (利益率20%＝除数0.8)
                       }
                     }
-                    const priceWithProfit = totalJpy / profitDivisor;
+                    const priceWithProfit = Math.round((totalJpy / profitDivisor) * 100) / 100;
                     const usdPrice = priceWithProfit / exchangeRate;
-                    const roundedUsd = Math.ceil(usdPrice / 10) * 10;
+                    const roundedUsd = Math.ceil(usdPrice / 5) * 5;
                     return roundedUsd.toLocaleString('en-US');
                   })()}
                 </span>

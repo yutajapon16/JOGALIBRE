@@ -2921,9 +2921,9 @@ export default function Home() {
       }
       return 0.6;
     })();
-    const priceWithProfit = totalJpyPrice / profitDivisor;
+    const priceWithProfit = Math.round((totalJpyPrice / profitDivisor) * 100) / 100;
     const usdPrice = priceWithProfit / exchangeRate;
-    const roundedUp = Math.ceil(usdPrice / 10) * 10;
+    const roundedUp = Math.ceil(usdPrice / 5) * 5;
     return roundedUp.toLocaleString('en-US');
   };
 
@@ -2969,7 +2969,7 @@ export default function Home() {
         const rounded = Math.round(rawConverted);
         let finalConverted = rounded;
         if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
-          finalConverted = Math.ceil(rounded / 10) * 10;
+          finalConverted = Math.ceil(rounded / 5) * 5;
         } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
           finalConverted = Math.ceil(rounded / 1000) * 1000;
         } else {
@@ -3001,11 +3001,11 @@ export default function Home() {
       return 0.6;
     })();
     
-    const priceWithProfit = totalJpyPrice / profitDivisor;
+    const priceWithProfit = Math.round((totalJpyPrice / profitDivisor) * 100) / 100;
     
     const jpyRate = exchangeRates['JPY'] || exchangeRate || 150;
     const usdPrice = priceWithProfit / jpyRate;
-    const roundedUp = Math.ceil(usdPrice / 10) * 10;
+    const roundedUp = Math.ceil(usdPrice / 5) * 5;
     
     if (targetCurrency === 'USD') {
       return roundedUp.toLocaleString('en-US');
@@ -3016,7 +3016,7 @@ export default function Home() {
       
       let finalConverted = rounded;
       if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
-        finalConverted = Math.ceil(rounded / 10) * 10;
+        finalConverted = Math.ceil(rounded / 5) * 5;
       } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
         finalConverted = Math.ceil(rounded / 1000) * 1000;
       } else {
@@ -3037,7 +3037,7 @@ export default function Home() {
     
     let finalConverted = rounded;
     if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
-      finalConverted = Math.ceil(rounded / 10) * 10;
+      finalConverted = Math.ceil(rounded / 5) * 5;
     } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
       finalConverted = Math.ceil(rounded / 1000) * 1000;
     } else {

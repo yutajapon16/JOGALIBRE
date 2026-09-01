@@ -18,9 +18,9 @@ function computePatternAUsd(
     const fob = calculateDefaultFobCost(title, url);
     const shipping = calculateDefaultShippingCost(title, url);
     const totalJpy = jpyPrice + fob + shipping;
-    const priceWithProfit = totalJpy / profitDivisor;
+    const priceWithProfit = Math.round((totalJpy / profitDivisor) * 100) / 100;
     const usdPrice = priceWithProfit / jpyRate;
-    return Math.ceil(usdPrice / 10) * 10;
+    return Math.ceil(usdPrice / 5) * 5;
 }
 
 export async function GET(request: Request) {
