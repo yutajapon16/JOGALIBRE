@@ -4575,15 +4575,23 @@ export default function Home() {
             )}
 
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                className="bg-gray-50 border border-gray-200 text-gray-700 h-7 sm:h-8 pl-2 pr-1 rounded-full text-[10px] sm:text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-[94px] cursor-pointer transition-colors shadow-sm"
-                style={{ fontSize: '11px', fontWeight: 700 }}
-              >
-                <option value="es">Español</option>
-                <option value="pt">Português</option>
-              </select>
+              {/* 言語選択ドロップダウン（iOSでもフォントサイズを完全制御するOverlayパターン） */}
+              <div className="relative flex items-center justify-between w-[94px] h-7 sm:h-8 px-2.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-full text-[10px] sm:text-xs font-bold shadow-sm cursor-pointer hover:bg-gray-100 transition-colors">
+                <span className="truncate">
+                  {lang === 'es' ? 'Español' : 'Português'}
+                </span>
+                <svg className="w-3 h-3 text-gray-400 shrink-0 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                </svg>
+                <select
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                >
+                  <option value="es">Español</option>
+                  <option value="pt">Português</option>
+                </select>
+              </div>
 
               <button
                 onClick={() => {

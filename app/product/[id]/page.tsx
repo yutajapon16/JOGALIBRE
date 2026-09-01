@@ -146,6 +146,13 @@ interface AiSummarySection {
   content: string;
 }
 
+const normalizeTitle = (rawTitle: string): string => {
+  let t = rawTitle.replace(/\*\*/g, '').trim();
+  t = t.replace(/^Especificações\s*\/\s*Detalhes/i, 'Especificações');
+  t = t.replace(/^Especificaciones\s*\/\s*Detalles/i, 'Especificaciones');
+  return t;
+};
+
 // AI要約テキストを項目（仕様、状態、動作、付属品、配送等）ごとに分解する関数
 const parseAiSummarySections = (rawText: string, currentLang?: string): AiSummarySection[] => {
   if (!rawText) return [];
@@ -165,7 +172,7 @@ const parseAiSummarySections = (rawText: string, currentLang?: string): AiSummar
       const colonMatch = part.match(/^[•\*\-\s]*([^\n:]{2,60}?)\s*:\s*([\s\S]*)$/);
       if (colonMatch) {
         sections.push({
-          title: colonMatch[1].replace(/\*\*/g, '').trim(),
+          title: normalizeTitle(colonMatch[1]),
           content: colonMatch[2].replace(/^\*\*/, '').replace(/\*\*$/, '').trim()
         });
       } else {
@@ -188,7 +195,7 @@ const parseAiSummarySections = (rawText: string, currentLang?: string): AiSummar
       const colonMatch = p.match(/^[•\*\-\s]*([^\n:]{2,60}?)\s*:\s*([\s\S]*)$/);
       if (colonMatch) {
         return {
-          title: colonMatch[1].replace(/\*\*/g, '').trim(),
+          title: normalizeTitle(colonMatch[1]),
           content: colonMatch[2].trim()
         };
       }
@@ -1037,35 +1044,51 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {t.back}
           </button>
           
-          <select
-            value={selectedCurrency}
-            onChange={(e) => {
-              const newCurr = e.target.value;
-              setSelectedCurrency(newCurr);
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('jogalibre_user_selected_currency', newCurr);
-              }
-            }}
-            className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full text-center"
-            style={{ textAlignLast: 'center', textAlign: 'center', fontSize: '12px', fontWeight: 700 }}
-          >
-            <option value="USD">USD 🇺🇸</option>
-            <option value="BRL">BRL 🇧🇷</option>
-            <option value="PYG">PYG 🇵🇾</option>
-            <option value="CLP">CLP 🇨🇱</option>
-            <option value="BOB">BOB 🇧🇴</option>
-            <option value="ARS">ARS 🇦🇷</option>
-          </select>
+          {/* 通貨選択ドロップダウン (iOSでもフォントサイズを完全制御するOverlayパターン) */}
+          <div className="relative h-12 w-full bg-gray-100 border border-gray-200 text-gray-700 rounded-lg flex items-center justify-between px-2.5 text-xs font-bold shadow-sm cursor-pointer hover:bg-gray-200 transition-colors">
+            <span className="flex-1 text-center truncate">
+              {selectedCurrency} {selectedCurrency === 'USD' ? '🇺🇸' : selectedCurrency === 'BRL' ? '🇧🇷' : selectedCurrency === 'PYG' ? '🇵🇾' : selectedCurrency === 'CLP' ? '🇨🇱' : selectedCurrency === 'BOB' ? '🇧🇴' : selectedCurrency === 'ARS' ? '🇦🇷' : ''}
+            </span>
+            <svg className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+            </svg>
+            <select
+              value={selectedCurrency}
+              onChange={(e) => {
+                const newCurr = e.target.value;
+                setSelectedCurrency(newCurr);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('jogalibre_user_selected_currency', newCurr);
+                }
+              }}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            >
+              <option value="USD">USD 🇺🇸</option>
+              <option value="BRL">BRL 🇧🇷</option>
+              <option value="PYG">PYG 🇵🇾</option>
+              <option value="CLP">CLP 🇨🇱</option>
+              <option value="BOB">BOB 🇧🇴</option>
+              <option value="ARS">ARS 🇦🇷</option>
+            </select>
+          </div>
 
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-            className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full text-center"
-            style={{ textAlignLast: 'center', textAlign: 'center', fontSize: '12px', fontWeight: 700 }}
-          >
-            <option value="es">Español</option>
-            <option value="pt">Português</option>
-          </select>
+          {/* 言語選択ドロップダウン (iOSでもフォントサイズを完全制御するOverlayパターン) */}
+          <div className="relative h-12 w-full bg-gray-100 border border-gray-200 text-gray-700 rounded-lg flex items-center justify-between px-2.5 text-xs font-bold shadow-sm cursor-pointer hover:bg-gray-200 transition-colors">
+            <span className="flex-1 text-center truncate">
+              {lang === 'es' ? 'Español' : 'Português'}
+            </span>
+            <svg className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+            </svg>
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            >
+              <option value="es">Español</option>
+              <option value="pt">Português</option>
+            </select>
+          </div>
         </div>
         <div className="max-w-3xl mx-auto px-4 pb-2 space-y-2">
           {/* 引渡し場所（国名）選択ドロップダウン */}

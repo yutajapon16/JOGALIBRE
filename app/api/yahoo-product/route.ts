@@ -599,7 +599,7 @@ REGLAS CRÍTICAS:
 1. Debes redactar TODO absolutamente en ESPAÑOL. No incluyas ningún carácter en japonés (kanji, hiragana, katakana).
 2. Estructura el resumen EXACTAMENTE con los siguientes 5 bloques separados por un salto de línea entre cada uno, usando viñetas claras:
 
-• **Especificaciones / Detalles**:
+• **Especificaciones**:
 (marca, modelo, dimensiones, color, material, etc. Si no se indica, escribe "No especificado")
 
 • **Estado del producto**:
@@ -700,7 +700,7 @@ REGRAS CRÍTICAS DE IDIOMA E ORTOGRAFIA:
 2. Não inclua nenhum caractere em japonês (kanji, hiragana, katakana).
 3. Estruture o resumo EXATAMENTE com os seguintes 5 blocos separados por uma linha em branco entre cada um, usando marcadores claros:
 
-• **Especificações / Detalhes**:
+• **Especificações**:
 (marca, modelo, dimensões, cor, material, etc. Se não constar, escreva "Não especificado")
 
 • **Estado do produto**:
@@ -817,8 +817,8 @@ async function buildFallbackSummary(text: string, targetLang: 'es' | 'pt'): Prom
   }
 
   if (targetLang === 'pt') {
-    return `• **Especificações / Detalhes**:\nConsulte a descrição traduzida\n\n• **Estado do produto**:\nVerifique as fotos e o texto do anúncio\n\n• **Resumo da Descrição**:\n${snippet}`;
+    return `• **Especificações**:\nConsulte a descrição traduzida\n\n• **Estado do produto**:\nVerifique as fotos e o texto do anúncio\n\n• **Resumo da Descrição**:\n${snippet}`;
   } else {
-    return `• **Especificaciones / Detalles**:\nConsulte la descripción traducida\n\n• **Estado del producto**:\nRevise las fotos y el texto del anuncio\n\n• **Resumen de la Descripción**:\n${snippet}`;
+    return `• **Especificaciones**:\nConsulte la descripción traducida\n\n• **Estado del producto**:\nRevise las fotos y el texto del anuncio\n\n• **Resumen de la Descripción**:\n${snippet}`;
   }
 }
