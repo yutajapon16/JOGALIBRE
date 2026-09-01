@@ -4545,8 +4545,8 @@ export default function Home() {
               <select
                 value={lang}
                 onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                className="bg-gray-50 border border-gray-200 text-gray-700 h-7 sm:h-8 px-1 rounded-full text-[9px] sm:text-[10px] font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-[84px] text-center cursor-pointer transition-colors shadow-sm"
-                style={{ textAlignLast: 'center', textAlign: 'center' }}
+                className="bg-gray-50 border border-gray-200 text-gray-700 h-7 sm:h-8 px-2 rounded-full text-[10px] sm:text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-[84px] text-center cursor-pointer transition-colors shadow-sm appearance-none"
+                style={{ textAlignLast: 'center', textAlign: 'center', WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
               >
                 <option value="es">Español</option>
                 <option value="pt">Português</option>
