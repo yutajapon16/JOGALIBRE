@@ -155,44 +155,41 @@ const parseAiSummarySections = (rawText: string, currentLang?: string): AiSummar
     clean = fixPortugueseAccents(clean);
   }
 
-  // "• 項目名: 内容" や "* 項目名: 内容" または "1. 項目名: 内容" を検出（改行なしの1行テキストにも完全対応）
-  const regex = /(?:^|[\s\n]+)(?:[•\*\-]|(?:\d+\.))\s*([^\n:]{2,50}?)\s*:\s*/g;
+  // 1. 中黒箇条書き記号（•, *, -）の位置で分割（文中のピリオドや小数を絶対に誤認しない）
+  const rawParts = clean.split(/(?=(?:^|[\s\n]+)[•\*\-]\s+)/).map(p => p.trim()).filter(Boolean);
 
-  const matches: { title: string; index: number; length: number }[] = [];
-  let match;
-  while ((match = regex.exec(clean)) !== null) {
-    matches.push({
-      title: match[1].replace(/\*\*/g, '').trim(),
-      index: match.index,
-      length: match[0].length
-    });
-  }
-
-  if (matches.length > 0) {
+  if (rawParts.length > 0 && rawParts.some(p => p.startsWith('•') || p.startsWith('*') || p.startsWith('-'))) {
     const sections: AiSummarySection[] = [];
-    for (let i = 0; i < matches.length; i++) {
-      const current = matches[i];
-      const startContent = current.index + current.length;
-      const endContent = i + 1 < matches.length ? matches[i + 1].index : clean.length;
-      const content = clean.substring(startContent, endContent).trim();
-      
-      sections.push({
-        title: current.title,
-        content: content.replace(/^\*\*/, '').replace(/\*\*$/, '').trim()
-      });
+    for (const part of rawParts) {
+      // 最初のコロン（:）でタイトルと内容を分離
+      const colonMatch = part.match(/^[•\*\-\s]*([^\n:]{2,60}?)\s*:\s*([\s\S]*)$/);
+      if (colonMatch) {
+        sections.push({
+          title: colonMatch[1].replace(/\*\*/g, '').trim(),
+          content: colonMatch[2].replace(/^\*\*/, '').replace(/\*\*$/, '').trim()
+        });
+      } else {
+        const cleanPart = part.replace(/^[•\*\-\s]+/, '').replace(/\*\*/g, '').trim();
+        if (cleanPart) {
+          sections.push({
+            title: '',
+            content: cleanPart
+          });
+        }
+      }
     }
-    return sections;
+    if (sections.length > 0) return sections;
   }
 
-  // もし箇条書き記号がない場合でも改行で分割
+  // 2. 改行（\n\n または \n）で分割
   const paragraphs = clean.split(/\n+/).map(p => p.trim()).filter(Boolean);
   if (paragraphs.length > 1) {
     return paragraphs.map(p => {
-      const colonIdx = p.indexOf(':');
-      if (colonIdx > 0 && colonIdx < 40) {
+      const colonMatch = p.match(/^[•\*\-\s]*([^\n:]{2,60}?)\s*:\s*([\s\S]*)$/);
+      if (colonMatch) {
         return {
-          title: p.substring(0, colonIdx).replace(/^[•\*\-\s]+/, '').replace(/\*\*/g, '').trim(),
-          content: p.substring(colonIdx + 1).trim()
+          title: colonMatch[1].replace(/\*\*/g, '').trim(),
+          content: colonMatch[2].trim()
         };
       }
       return {
@@ -1035,6 +1032,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <button
             onClick={handleBack}
             className="h-12 w-full bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 active:scale-[0.98] transition flex items-center justify-center text-xs font-bold text-center"
+            style={{ fontSize: '12px', fontWeight: 700 }}
           >
             {t.back}
           </button>
@@ -1049,7 +1047,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               }
             }}
             className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full text-center"
-            style={{ textAlignLast: 'center', textAlign: 'center' }}
+            style={{ textAlignLast: 'center', textAlign: 'center', fontSize: '12px', fontWeight: 700 }}
           >
             <option value="USD">USD 🇺🇸</option>
             <option value="BRL">BRL 🇧🇷</option>
@@ -1063,7 +1061,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             value={lang}
             onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
             className="bg-gray-100 border border-gray-200 text-gray-700 h-12 px-2 rounded-lg text-xs font-bold w-full text-center"
-            style={{ textAlignLast: 'center', textAlign: 'center' }}
+            style={{ textAlignLast: 'center', textAlign: 'center', fontSize: '12px', fontWeight: 700 }}
           >
             <option value="es">Español</option>
             <option value="pt">Português</option>

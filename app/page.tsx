@@ -4579,6 +4579,7 @@ export default function Home() {
                 value={lang}
                 onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
                 className="bg-gray-50 border border-gray-200 text-gray-700 h-7 sm:h-8 pl-2 pr-1 rounded-full text-[10px] sm:text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-[94px] cursor-pointer transition-colors shadow-sm"
+                style={{ fontSize: '11px', fontWeight: 700 }}
               >
                 <option value="es">Español</option>
                 <option value="pt">Português</option>
