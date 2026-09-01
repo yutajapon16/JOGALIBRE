@@ -68,16 +68,92 @@ const isBrlDefaultUser = (user: any): boolean => {
   return false;
 };
 
+// ポルトガル語の代表的なアクセント抜け自動補正マップ
+const PT_ACCENT_REPLACEMENTS: [RegExp, string][] = [
+  [/\bNao\b/g, 'Não'],
+  [/\bnao\b/g, 'não'],
+  [/\bTenis\b/g, 'Tênis'],
+  [/\btenis\b/g, 'tênis'],
+  [/\bJapao\b/g, 'Japão'],
+  [/\bjapao\b/g, 'japão'],
+  [/\bAcessorios\b/g, 'Acessórios'],
+  [/\bacessorios\b/g, 'acessórios'],
+  [/\bEspecificacoes\b/g, 'Especificações'],
+  [/\bespecificacoes\b/g, 'especificações'],
+  [/\bCondicao\b/g, 'Condição'],
+  [/\bcondicao\b/g, 'condição'],
+  [/\bCondicoes\b/g, 'Condições'],
+  [/\bcondicoes\b/g, 'condições'],
+  [/\bDescricao\b/g, 'Descrição'],
+  [/\bdescricao\b/g, 'descrição'],
+  [/\bInclusoes\b/g, 'Inclusões'],
+  [/\binclusoes\b/g, 'inclusões'],
+  [/\bInformacao\b/g, 'Informação'],
+  [/\binformacao\b/g, 'informação'],
+  [/\bInformacoes\b/g, 'Informações'],
+  [/\binformacoes\b/g, 'informações'],
+  [/\bDimensao\b/g, 'Dimensão'],
+  [/\bdimensao\b/g, 'dimensão'],
+  [/\bDimensoes\b/g, 'Dimensões'],
+  [/\bdimensoes\b/g, 'dimensões'],
+  [/\bPadrao\b/g, 'Padrão'],
+  [/\bpadrao\b/g, 'padrão'],
+  [/\bVersao\b/g, 'Versão'],
+  [/\bversao\b/g, 'versão'],
+  [/\bAtencao\b/g, 'Atenção'],
+  [/\batencao\b/g, 'atenção'],
+  [/\bObservacao\b/g, 'Observação'],
+  [/\bobservacao\b/g, 'observação'],
+  [/\bObservacoes\b/g, 'Observações'],
+  [/\bobservacoes\b/g, 'observações'],
+  [/\bFabrica\b/g, 'Fábrica'],
+  [/\bfabrica\b/g, 'fábrica'],
+  [/\bEletronico\b/g, 'Eletrônico'],
+  [/\beletronico\b/g, 'eletrônico'],
+  [/\bEletronicos\b/g, 'Eletrônicos'],
+  [/\beletronicos\b/g, 'eletrônicos'],
+  [/\bOtimo\b/g, 'Ótimo'],
+  [/\botimo\b/g, 'ótimo'],
+  [/\bNumero\b/g, 'Número'],
+  [/\bnumero\b/g, 'número'],
+  [/\bNumeracao\b/g, 'Numeração'],
+  [/\bnumeracao\b/g, 'numeração'],
+  [/\bAutomovel\b/g, 'Automóvel'],
+  [/\bautomovel\b/g, 'automóvel'],
+  [/\bVeiculo\b/g, 'Veículo'],
+  [/\bveiculo\b/g, 'veículo'],
+  [/\bPreco\b/g, 'Preço'],
+  [/\bpreco\b/g, 'preço'],
+  [/\bPossivel\b/g, 'Possível'],
+  [/\bpossivel\b/g, 'possível'],
+  [/\bDisponivel\b/g, 'Disponível'],
+  [/\bdisponivel\b/g, 'disponível'],
+  [/\bJa\b/g, 'Já'],
+  [/\bja\b/g, 'já']
+];
+
+const fixPortugueseAccents = (text: string): string => {
+  if (!text) return '';
+  let result = text;
+  for (const [pattern, replacement] of PT_ACCENT_REPLACEMENTS) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+};
+
 interface AiSummarySection {
   title: string;
   content: string;
 }
 
 // AI要約テキストを項目（仕様、状態、動作、付属品、配送等）ごとに分解する関数
-const parseAiSummarySections = (rawText: string): AiSummarySection[] => {
+const parseAiSummarySections = (rawText: string, currentLang?: string): AiSummarySection[] => {
   if (!rawText) return [];
 
-  const clean = rawText.replace(/<[^>]*>/g, ' ').trim();
+  let clean = rawText.replace(/<[^>]*>/g, ' ').trim();
+  if (currentLang === 'pt' || !currentLang) {
+    clean = fixPortugueseAccents(clean);
+  }
 
   // "• 項目名: 内容" や "* 項目名: 内容" または "1. 項目名: 内容" を検出（改行なしの1行テキストにも完全対応）
   const regex = /(?:^|[\s\n]+)(?:[•\*\-]|(?:\d+\.))\s*([^\n:]{2,50}?)\s*:\s*/g;
@@ -130,8 +206,8 @@ const parseAiSummarySections = (rawText: string): AiSummarySection[] => {
 };
 
 // AI要約テキストを項目ごとに1行空けて段落を変えて表示するレンダラー
-const renderFormattedAiSummary = (text: string) => {
-  const sections = parseAiSummarySections(text);
+const renderFormattedAiSummary = (text: string, currentLang?: string) => {
+  const sections = parseAiSummarySections(text, currentLang);
   if (!sections || sections.length === 0) return null;
 
   return (
@@ -1192,7 +1268,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             // 段落ごとに空行と箇条書きで区切られた見やすいAI要約デザイン
             <div className="space-y-3">
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 font-sans animate-in fade-in duration-300">
-                {renderFormattedAiSummary(aiSummary)}
+                {renderFormattedAiSummary(aiSummary, lang)}
               </div>
               {/* AI要約の免責事項（AI要約完了時のみ表示） */}
               <p className="text-[10px] font-semibold leading-normal p-3 rounded-xl border bg-indigo-50 text-indigo-700 border-indigo-200 animate-in fade-in duration-300">

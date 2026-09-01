@@ -619,12 +619,86 @@ REGLAS CRÍTICAS:
 Descripción del producto:
 ${textToSummarize}`;
 
-  const promptPt = `Você é um assistente de compras internacional especializado para clientes lusófonos em uma plataforma de leilões do Yahoo! Japão.
-Sua tarefa é traduzir e resumir de forma clara, profissional e 100% em PORTUGUÊS a seguinte descrição de produto.
+// ポルトガル語の代表的なアクセント抜け自動補正マップ
+const PT_ACCENT_REPLACEMENTS: [RegExp, string][] = [
+  [/\bNao\b/g, 'Não'],
+  [/\bnao\b/g, 'não'],
+  [/\bTenis\b/g, 'Tênis'],
+  [/\btenis\b/g, 'tênis'],
+  [/\bJapao\b/g, 'Japão'],
+  [/\bjapao\b/g, 'japão'],
+  [/\bAcessorios\b/g, 'Acessórios'],
+  [/\bacessorios\b/g, 'acessórios'],
+  [/\bEspecificacoes\b/g, 'Especificações'],
+  [/\bespecificacoes\b/g, 'especificações'],
+  [/\bCondicao\b/g, 'Condição'],
+  [/\bcondicao\b/g, 'condição'],
+  [/\bCondicoes\b/g, 'Condições'],
+  [/\bcondicoes\b/g, 'condições'],
+  [/\bDescricao\b/g, 'Descrição'],
+  [/\bdescricao\b/g, 'descrição'],
+  [/\bInclusoes\b/g, 'Inclusões'],
+  [/\binclusoes\b/g, 'inclusões'],
+  [/\bInformacao\b/g, 'Informação'],
+  [/\binformacao\b/g, 'informação'],
+  [/\bInformacoes\b/g, 'Informações'],
+  [/\binformacoes\b/g, 'informações'],
+  [/\bDimensao\b/g, 'Dimensão'],
+  [/\bdimensao\b/g, 'dimensão'],
+  [/\bDimensoes\b/g, 'Dimensões'],
+  [/\bdimensoes\b/g, 'dimensões'],
+  [/\bPadrao\b/g, 'Padrão'],
+  [/\bpadrao\b/g, 'padrão'],
+  [/\bVersao\b/g, 'Versão'],
+  [/\bversao\b/g, 'versão'],
+  [/\bAtencao\b/g, 'Atenção'],
+  [/\batencao\b/g, 'atenção'],
+  [/\bObservacao\b/g, 'Observação'],
+  [/\bobservacao\b/g, 'observação'],
+  [/\bObservacoes\b/g, 'Observações'],
+  [/\bobservacoes\b/g, 'observações'],
+  [/\bFabrica\b/g, 'Fábrica'],
+  [/\bfabrica\b/g, 'fábrica'],
+  [/\bEletronico\b/g, 'Eletrônico'],
+  [/\beletronico\b/g, 'eletrônico'],
+  [/\bEletronicos\b/g, 'Eletrônicos'],
+  [/\beletronicos\b/g, 'eletrônicos'],
+  [/\bOtimo\b/g, 'Ótimo'],
+  [/\botimo\b/g, 'ótimo'],
+  [/\bNumero\b/g, 'Número'],
+  [/\bnumero\b/g, 'número'],
+  [/\bNumeracao\b/g, 'Numeração'],
+  [/\bnumeracao\b/g, 'numeração'],
+  [/\bAutomovel\b/g, 'Automóvel'],
+  [/\bautomovel\b/g, 'automóvel'],
+  [/\bVeiculo\b/g, 'Veículo'],
+  [/\bveiculo\b/g, 'veículo'],
+  [/\bPreco\b/g, 'Preço'],
+  [/\bpreco\b/g, 'preço'],
+  [/\bPossivel\b/g, 'Possível'],
+  [/\bpossivel\b/g, 'possível'],
+  [/\bDisponivel\b/g, 'Disponível'],
+  [/\bdisponivel\b/g, 'disponível'],
+  [/\bJa\b/g, 'Já'],
+  [/\bja\b/g, 'já']
+];
 
-REGLAS CRÍTICAS:
-1. Você deve redigir TUDO absolutamente em PORTUGUÊS. Não inclua nenhum caractere em japonês (kanji, hiragana, katakana).
-2. Estruture o resumo EXATAMENTE com os seguintes 5 blocos separados por uma linha em branco entre cada um, usando marcadores claros:
+function fixPortugueseAccents(text: string): string {
+  if (!text) return '';
+  let result = text;
+  for (const [pattern, replacement] of PT_ACCENT_REPLACEMENTS) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+}
+
+  const promptPt = `Você é um assistente de compras internacional especializado para clientes lusófonos em uma plataforma de leilões do Yahoo! Japão.
+Sua tarefa é traduzir e resumir de forma clara, profissional, gramaticalmente impecável e 100% em PORTUGUÊS (do Brasil) a seguinte descrição de produto.
+
+REGRAS CRÍTICAS DE IDIOMA E ORTOGRAFIA:
+1. Você deve redigir TUDO absolutamente em PORTUGUÊS fluente e natural, com ortografia e acentuação gráfica rigorosamente corretas (use sempre os acentos corretos como: Não, Tênis, Especificações, Acessórios, Japão, Dimensões, etc. NUNCA omita acentos nem use "Nao" ou "Tenis").
+2. Não inclua nenhum caractere em japonês (kanji, hiragana, katakana).
+3. Estruture o resumo EXATAMENTE com os seguintes 5 blocos separados por uma linha em branco entre cada um, usando marcadores claros:
 
 • **Especificações / Detalhes**:
 (marca, modelo, dimensões, cor, material, etc. Se não constar, escreva "Não especificado")
@@ -641,7 +715,7 @@ REGLAS CRÍTICAS:
 • **Envio no Japão**:
 (detalhes de envio se mencionados na descrição)
 
-3. Não inclua saudações nem despedidas. Apenas os 5 blocos com marcadores em português.
+4. Não inclua saudações nem despedidas. Apenas os 5 blocos com marcadores em português com acentuação estritamente correta.
 
 Descrição do produto:
 ${textToSummarize}`;
@@ -688,7 +762,11 @@ ${textToSummarize}`;
         const resData = await response.json();
         const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text && text.trim() && text.length > 20) {
-          return cleanupBrandNames(text.trim());
+          let cleaned = cleanupBrandNames(text.trim());
+          if (targetLang === 'pt') {
+            cleaned = fixPortugueseAccents(cleaned);
+          }
+          return cleaned;
         }
       } else {
         const errBody = await response.text();

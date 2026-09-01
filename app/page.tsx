@@ -4578,8 +4578,7 @@ export default function Home() {
               <select
                 value={lang}
                 onChange={(e) => setLang(e.target.value as 'es' | 'pt')}
-                className="bg-gray-50 border border-gray-200 text-gray-700 h-7 sm:h-8 px-2 rounded-full text-[10px] sm:text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-[84px] text-center cursor-pointer transition-colors shadow-sm appearance-none"
-                style={{ textAlignLast: 'center', textAlign: 'center', WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+                className="bg-gray-50 border border-gray-200 text-gray-700 h-7 sm:h-8 pl-2 pr-1 rounded-full text-[10px] sm:text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 w-[94px] cursor-pointer transition-colors shadow-sm"
               >
                 <option value="es">Español</option>
                 <option value="pt">Português</option>
@@ -4590,7 +4589,7 @@ export default function Home() {
                   setShowNotifications(true);
                   fetchNotifications();
                 }}
-                className="relative flex items-center justify-center gap-1 w-[84px] h-7 sm:h-8 px-2 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors shadow-sm shrink-0"
+                className="relative flex items-center justify-center gap-1 w-[94px] h-7 sm:h-8 px-2 bg-indigo-50 text-indigo-600 rounded-full text-[10px] sm:text-xs font-bold hover:bg-indigo-100 transition-colors shadow-sm shrink-0"
               >
                 <span>{lang === 'es' ? 'Avisos' : 'Avisos'}</span>
                 {unreadCount > 0 && (
