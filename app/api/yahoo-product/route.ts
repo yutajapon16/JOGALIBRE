@@ -6,6 +6,7 @@ import { parseJstDateTime, parseDbDateTime, parseAnyDateTime } from '@/lib/utils
 import { translateTitle, translateText, cleanupBrandNames } from '@/lib/translate';
 import { notifyAdminError, hasJapaneseCharacters, ErrorUserInfo } from '@/lib/error-notifier';
 import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // AI要約・翻訳データの高速キャッシュ (6時間TTL)
 interface ProductCacheItem {
@@ -340,15 +341,41 @@ export async function POST(request: Request) {
     // forceRefreshが指定されている場合は該当商品の古いキャッシュを消去
     if (forceRefresh) {
       productAiCache.delete(productId);
+      if (productId) {
+        try {
+          await supabaseAdmin.from('system_settings').delete().eq('key', `product_summary_${productId}`);
+        } catch {}
+      }
     }
 
-    // 商品IDから既存キャッシュを確認（フォールバック用文面や日本語が残っているキャッシュは無効化して再生成）
-    const cachedItem = productAiCache.get(productId);
+    // 商品IDから既存キャッシュを確認（メモリ ➜ なければ Supabase 永続キャッシュ）
+    let cachedItem = productAiCache.get(productId);
     const now = Date.now();
-    const isCacheValid = cachedItem && cachedItem.expiresAt > now;
 
-    let translatedDescription = isCacheValid ? (lang === 'pt' ? cachedItem.translatedDescPt : cachedItem.translatedDescEs) || '' : '';
-    let translatedTitle = isCacheValid ? (lang === 'pt' ? cachedItem.translatedTitlePt : cachedItem.translatedTitleEs) || title : title;
+    if (!cachedItem && productId && !forceRefresh) {
+      try {
+        const { data: dbSetting } = await supabaseAdmin
+          .from('system_settings')
+          .select('value')
+          .eq('key', `product_summary_${productId}`)
+          .maybeSingle();
+
+        if (dbSetting?.value) {
+          const item = dbSetting.value as ProductCacheItem;
+          if (item && item.expiresAt > now) {
+            cachedItem = item;
+            productAiCache.set(productId, item);
+          }
+        }
+      } catch (dbErr) {
+        console.warn('Supabase product cache lookup warning:', dbErr);
+      }
+    }
+
+    const isCacheValid = !!(cachedItem && cachedItem.expiresAt > now);
+
+    let translatedDescription = isCacheValid ? (lang === 'pt' ? cachedItem?.translatedDescPt : cachedItem?.translatedDescEs) || '' : '';
+    let translatedTitle = isCacheValid ? (lang === 'pt' ? cachedItem?.translatedTitlePt : cachedItem?.translatedTitleEs) || title : title;
 
     const isRealSummary = (s?: string) => {
       if (!s || s.length < 20) return false;
@@ -356,8 +383,8 @@ export async function POST(request: Request) {
       return true;
     };
 
-    let aiSummaryEs = isCacheValid && isRealSummary(cachedItem.aiSummaryEs) ? cachedItem.aiSummaryEs || '' : '';
-    let aiSummaryPt = isCacheValid && isRealSummary(cachedItem.aiSummaryPt) ? cachedItem.aiSummaryPt || '' : '';
+    let aiSummaryEs = isCacheValid && isRealSummary(cachedItem?.aiSummaryEs) ? cachedItem?.aiSummaryEs || '' : '';
+    let aiSummaryPt = isCacheValid && isRealSummary(cachedItem?.aiSummaryPt) ? cachedItem?.aiSummaryPt || '' : '';
 
     // 1. タイトル翻訳とAI要約を最優先・完全並列実行 (超高速化)
     const targetLangForAi: 'es' | 'pt' = lang === 'pt' ? 'pt' : 'es';
@@ -443,8 +470,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. キャッシュの更新（本物のAI要約のみキャッシュに記憶し、フォールバック文面はキャッシュしない）
-    productAiCache.set(productId, {
+    // 2. キャッシュの更新（メモリ ＋ Supabase 永続キャッシュ）
+    const updatedCacheItem: ProductCacheItem = {
       aiSummaryEs: isRealSummary(aiSummaryEs) ? aiSummaryEs : (isRealSummary(cachedItem?.aiSummaryEs) ? cachedItem?.aiSummaryEs : undefined),
       aiSummaryPt: isRealSummary(aiSummaryPt) ? aiSummaryPt : (isRealSummary(cachedItem?.aiSummaryPt) ? cachedItem?.aiSummaryPt : undefined),
       translatedTitleEs: lang === 'es' ? translatedTitle : cachedItem?.translatedTitleEs,
@@ -453,7 +480,21 @@ export async function POST(request: Request) {
       translatedDescPt: lang === 'pt' ? translatedDescription : cachedItem?.translatedDescPt,
       description: description || cachedItem?.description,
       expiresAt: now + CACHE_TTL_MS
-    });
+    };
+
+    productAiCache.set(productId, updatedCacheItem);
+
+    // Supabase に永続保存して次回以降の二重課金をゼロにする（7日間保持）
+    if (productId && (updatedCacheItem.aiSummaryEs || updatedCacheItem.aiSummaryPt)) {
+      Promise.resolve(
+        supabaseAdmin
+          .from('system_settings')
+          .upsert({
+            key: `product_summary_${productId}`,
+            value: updatedCacheItem
+          })
+      ).catch(err => console.warn('Failed to persist product summary cache:', err));
+    }
 
     const nowTs = Date.now();
     const parsedEndTime = endTime ? (parseDbDateTime(endTime) || parseJstDateTime(endTime) || parseAnyDateTime(endTime)) : null;
@@ -721,16 +762,13 @@ Descrição do produto:
 ${textToSummarize}`;
 
   const prompt = targetLang === 'es' ? promptEs : promptPt;
-  // 現在利用可能な公式の超高速・高スループット安定モデルを最速順に設定
+  // 公式の安定・超低コストモデルを最安順に設定 (404エラー完全防止)
   const models = [
-    'gemini-3.5-flash-lite', // 最速 (約800ms)
-    'gemini-3.5-flash',
-    'gemini-3.6-flash',
-    'gemini-3.7-flash',
     'gemini-2.5-flash',
+    'gemini-flash-lite-latest',
+    'gemini-3.5-flash-lite',
     'gemini-flash-latest'
   ];
-
 
   for (const model of models) {
     try {
@@ -751,7 +789,10 @@ ${textToSummarize}`;
           }],
           generationConfig: {
             maxOutputTokens: 2000,
-            temperature: 0.2
+            temperature: 0.2,
+            thinkingConfig: {
+              thinkingBudget: 0
+            }
           }
         }),
         signal: controller.signal

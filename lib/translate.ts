@@ -6,14 +6,12 @@
 import { notifyAdminError, hasJapaneseCharacters, ErrorUserInfo } from '@/lib/error-notifier';
 
 
-// 現在利用可能な公式の超高速・高スループット安定モデルを最速順に設定
+// 公式の超低コスト・高スループット安定モデルを最安順に設定 (404エラー完全防止)
 const GEMINI_MODELS = [
   'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-1.5-flash',
-  'gemini-1.5-pro'
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash-lite',
+  'gemini-flash-latest'
 ];
 
 
@@ -436,7 +434,13 @@ export async function translateText(text: string, targetLang: string, sourceLang
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { maxOutputTokens: 2000, temperature: 0.1 }
+              generationConfig: {
+                maxOutputTokens: 2000,
+                temperature: 0.1,
+                thinkingConfig: {
+                  thinkingBudget: 0
+                }
+              }
             }),
             signal: controller.signal
           });
@@ -529,7 +533,10 @@ ${JSON.stringify(titles)}`;
           generationConfig: {
             maxOutputTokens: 2500,
             temperature: 0.1,
-            responseMimeType: 'application/json'
+            responseMimeType: 'application/json',
+            thinkingConfig: {
+              thinkingBudget: 0
+            }
           }
         }),
         signal: controller.signal
