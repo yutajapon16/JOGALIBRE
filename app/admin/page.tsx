@@ -5759,12 +5759,7 @@ export default function AdminDashboard() {
               {/* 現地費用入力（日本以外渡しの場合） */}
               {selectedRequest.delivery_location && selectedRequest.delivery_location !== 'JP' && (
                 <div className="flex justify-between items-center text-sm pt-3 border-t mt-2">
-                  <div className="flex flex-col">
-                    <span className="text-gray-700 font-semibold">現地費用 (USD):</span>
-                    <span className="text-[11px] text-gray-500">
-                      {getDeliveryLocationName(selectedRequest.delivery_location, selectedRequest.delivery_city)}
-                    </span>
-                  </div>
+                  <span className="text-gray-700 font-semibold">現地費用（USD）：</span>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
                     <input
