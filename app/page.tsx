@@ -5246,21 +5246,13 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* 承認済みの場合のオファー金額引き上げ（増額）ボタン ＆ 削除ボタン */}
+                      {/* 承認済みの場合のオファー金額引き上げ（増額）ボタン */}
                       {request.status === 'approved' && !request.finalStatus && (() => {
                         const isWithin15Mins = request.productEndTime
                           ? (() => {
                               const endDate = parseDbDateTime(request.productEndTime) || parseJstDateTime(request.productEndTime);
                               if (!endDate) return false;
                               return (endDate.getTime() - Date.now()) < (15 * 60 * 1000);
-                            })()
-                          : false;
-
-                        const isWithin12Hours = request.productEndTime
-                          ? (() => {
-                              const endDate = parseDbDateTime(request.productEndTime) || parseJstDateTime(request.productEndTime);
-                              if (!endDate) return false;
-                              return (endDate.getTime() - Date.now()) < (12 * 60 * 60 * 1000);
                             })()
                           : false;
 
@@ -5274,17 +5266,6 @@ export default function Home() {
                               {isWithin15Mins
                                 ? (lang === 'es' ? '🔒 No se puede modificar (Fin cercano)' : '🔒 Não é possível alterar (Fim próximo)')
                                 : (lang === 'es' ? '⤴️ Aumentar monto de oferta' : '⤴️ Aumentar valor da oferta')}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteOffer(request.id)}
-                              disabled={isWithin12Hours || !!processingOfferId}
-                              className="w-full bg-red-100 text-red-600 h-12 rounded-lg hover:bg-red-200 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {processingOfferId === request.id 
-                                ? (lang === 'es' ? 'Eliminando...' : 'Excluindo...') 
-                                : (isWithin12Hours
-                                    ? (lang === 'es' ? '🔒 No se puede eliminar (<12h)' : '🔒 Não é possível excluir (<12h)')
-                                    : (lang === 'es' ? 'Eliminar oferta' : 'Excluir oferta'))}
                             </button>
                           </div>
                         );

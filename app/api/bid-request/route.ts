@@ -390,26 +390,13 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
 
-      let isWithin12Hours = false;
-      if (bidRequest.product_end_time) {
-        const endDate = parseDbDateTime(bidRequest.product_end_time) || parseJstDateTime(bidRequest.product_end_time);
-        if (endDate) {
-          isWithin12Hours = (endDate.getTime() - Date.now()) < (12 * 60 * 60 * 1000);
-        }
-      }
-
-      // 顧客は保留中・却下済み・確認済み、または承認済みかつ終了まで12時間以上のリクエストを削除可能
+      // 顧客は保留中・却下済み・確認済みのリクエストを削除可能
       const canDelete = bidRequest.status === 'pending' || 
                         bidRequest.status === 'rejected' || 
                         bidRequest.admin_needs_confirm || 
-                        bidRequest.final_status !== null ||
-                        (bidRequest.status === 'approved' && !isWithin12Hours);
+                        bidRequest.final_status !== null;
       if (!canDelete) {
-        return NextResponse.json({ 
-          error: isWithin12Hours 
-            ? 'Cannot delete approved offer within 12 hours of auction end' 
-            : 'Only pending, rejected, or eligible approved requests can be deleted' 
-        }, { status: 403 });
+        return NextResponse.json({ error: 'Only pending or rejected requests can be deleted' }, { status: 403 });
       }
     }
 
