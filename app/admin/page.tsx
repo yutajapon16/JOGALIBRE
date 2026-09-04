@@ -3089,6 +3089,18 @@ export default function AdminDashboard() {
                       );
                     })()}
 
+                    {/* カウンターオファーボックス (現地費用の上) */}
+                    {request.counterOffer && request.finalStatus !== 'won' && !(request.status === 'approved' && request.customerCounterOffer && !request.customerCounterOfferUsed) && (
+                      <div className="mb-2 h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between w-full">
+                        <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-base font-bold text-blue-700">
+                            $ {Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* 引渡場所が日本以外の場合の現地費用・引渡場所・発送方法ボックス */}
                     {request.delivery_location && request.delivery_location !== 'JP' && (() => {
                       const cost = calculateLocalCost(request.delivery_location, request, request.shipping_method);
@@ -3163,17 +3175,6 @@ export default function AdminDashboard() {
                         <span className="text-base font-bold text-green-800">
                           $ {Math.round(request.finalPrice || 0).toLocaleString('en-US')}
                         </span>
-                      </div>
-                    )}
-
-                    {request.counterOffer && request.finalStatus !== 'won' && !(request.status === 'approved' && request.customerCounterOffer && !request.customerCounterOfferUsed) && (
-                      <div className="mb-2 h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between w-full">
-                        <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-base font-bold text-blue-700">
-                            $ {Math.round(request.counterOffer || 0).toLocaleString('en-US')}
-                          </span>
-                        </div>
                       </div>
                     )}
 
