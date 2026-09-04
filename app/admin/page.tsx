@@ -1711,11 +1711,12 @@ export default function AdminDashboard() {
               ...item,
               status: status as BidStatus,
               rejectReason: reason || null,
-              counterOffer: counterOfferAmount || null,
+              counterOffer: counterOfferAmount !== undefined ? counterOfferAmount : item.counterOffer,
               shippingCostJpy: shippingJpy || null,
               local_cost: localCost !== undefined ? localCost : item.local_cost,
               totalJpy: totalJpy || null,
-              approvedAt: status === 'approved' ? new Date().toISOString() : item.approvedAt
+              approvedAt: status === 'approved' ? new Date().toISOString() : item.approvedAt,
+              maxBid: (status === 'approved' && item.customerCounterOffer) ? item.customerCounterOffer : item.maxBid
             };
           }
           return item;
@@ -3013,9 +3014,12 @@ export default function AdminDashboard() {
 
                     {/* 商品入札額 (日本円表示) */}
                     {(() => {
-                      const activeMaxBidUsd = request.customerCounterOffer && !request.customerCounterOfferUsed
-                        ? request.customerCounterOffer
-                        : (request.counterOffer || request.maxBid || 0);
+                      const activeMaxBidUsd = (() => {
+                        if (request.customerCounterOffer && (request.status === 'approved' || !request.customerCounterOfferUsed)) {
+                          return request.customerCounterOffer;
+                        }
+                        return request.counterOffer || request.maxBid || 0;
+                      })();
 
                       const jpyRate = exchangeRates['JPY'] || exchangeRate || 150;
                       const productBidJpy = calculateProductBidJpy(
@@ -3038,28 +3042,42 @@ export default function AdminDashboard() {
                       );
                     })()}
 
-                    <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-gray-500 font-medium">希望入札額:</span>
-                        <span className="text-base font-bold text-indigo-600">
-                          $ {Math.round(request.maxBid || 0).toLocaleString('en-US')}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleSyncYahooProduct(request)}
-                        disabled={isSyncing === request.id}
-                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1 bg-white border border-indigo-200 rounded px-2 py-1 shadow-sm active:scale-95 disabled:opacity-50"
-                      >
-                        {isSyncing === request.id ? (
-                          <svg className="animate-spin h-3.5 w-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          </svg>
-                        ) : '🔄'}
-                        <span>同期</span>
-                      </button>
-                    </div>
+                    {/* 希望入札額ボックス */}
+                    {(() => {
+                      const displayMaxBidUsd = (() => {
+                        if (request.status === 'approved') {
+                          if (request.customerCounterOffer) return request.customerCounterOffer;
+                          if (request.counterOffer) return request.counterOffer;
+                        }
+                        return request.maxBid || 0;
+                      })();
 
+                      return (
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500 font-medium">希望入札額:</span>
+                            <span className="text-base font-bold text-indigo-600">
+                              $ {Math.round(displayMaxBidUsd).toLocaleString('en-US')}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleSyncYahooProduct(request)}
+                            disabled={isSyncing === request.id}
+                            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1 bg-white border border-indigo-200 rounded px-2 py-1 shadow-sm active:scale-95 disabled:opacity-50"
+                          >
+                            {isSyncing === request.id ? (
+                              <svg className="animate-spin h-3.5 w-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                              </svg>
+                            ) : '🔄'}
+                            <span>同期</span>
+                          </button>
+                        </div>
+                      );
+                    })()}
+
+                    {/* 日本支払額ボックス */}
                     {(() => {
                       const isB001Linked = request.agentCustomerId === 'B001';
                       const countryLower = (request.customerCountry || '').trim().toLowerCase();
@@ -3067,9 +3085,13 @@ export default function AdminDashboard() {
 
                       if (!isB001Linked && !isBrasilAgent) return null;
 
-                      const cost = request.customerCounterOffer && !request.customerCounterOfferUsed
-                        ? request.customerCounterOffer
-                        : (request.counterOffer || request.maxBid || 0);
+                      const cost = (() => {
+                        if (request.customerCounterOffer && (request.status === 'approved' || !request.customerCounterOfferUsed)) {
+                          return request.customerCounterOffer;
+                        }
+                        return request.counterOffer || request.maxBid || 0;
+                      })();
+
                       let japanAmount = 0;
                       if (isB001Linked) {
                         japanAmount = Math.ceil(((cost * 0.5) / 0.6) / 10) * 10;
@@ -3089,8 +3111,8 @@ export default function AdminDashboard() {
                       );
                     })()}
 
-                    {/* 4. カウンターオファーボックス (管理者のカウンターオファー、青色ボックス) */}
-                    {request.counterOffer && request.finalStatus !== 'won' && (
+                    {/* 4. カウンターオファーボックス (管理者のカウンターオファー、青色ボックス - 顧客カウンター承認時は非表示) */}
+                    {request.counterOffer && request.finalStatus !== 'won' && !(request.status === 'approved' && request.customerCounterOffer) && (
                       <div className="mb-2 h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between w-full">
                         <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
                         <div className="flex items-center gap-1.5">

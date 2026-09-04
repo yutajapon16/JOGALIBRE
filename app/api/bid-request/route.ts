@@ -660,6 +660,9 @@ export async function PATCH(request: Request) {
 
     if (isAdmin && status === 'approved') {
       updateData.approved_at = new Date().toISOString();
+      if (currentRequest.customer_counter_offer) {
+        updateData.max_bid = currentRequest.customer_counter_offer;
+      }
     }
 
     // 管理者が顧客カウンターオファーを却下した場合
