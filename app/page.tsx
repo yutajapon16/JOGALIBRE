@@ -3772,18 +3772,20 @@ export default function Home() {
   // カウンターオファー合意状態および合意金額を取得するヘルパー関数
   const getAgreedCounterOffer = (request?: BidRequest | null): number | null => {
     if (!request) return null;
+    // 承認または落札ステータスでない場合は合意カウンターオファーではない
+    if (request.status !== 'approved' && !request.finalStatus) return null;
+
     // 1. 管理者が提示したカウンターオファーを顧客が承認した場合
     if (
       request.counterOffer &&
-      (request.customerCounterOfferUsed || (!request.customerCounterOffer && (request.status === 'approved' || !!request.finalStatus)))
+      (request.customerCounterOfferUsed || !request.customerCounterOffer)
     ) {
       return request.counterOffer;
     }
     // 2. 顧客が提示したカウンターオファーを管理者が承認した場合
     if (
       request.customerCounterOffer &&
-      !request.customerCounterOfferUsed &&
-      (request.status === 'approved' || !!request.finalStatus)
+      !request.customerCounterOfferUsed
     ) {
       return request.customerCounterOffer;
     }
@@ -5023,176 +5025,51 @@ export default function Home() {
                         </span>
                       </div>
 
-                      {/* 希望入札額ボックス / カウンターオファー合意時ボックス (h-12) */}
-                      {(() => {
-                        const agreedCounter = getAgreedCounterOffer(request);
-                        const isCounterAgreed = agreedCounter !== null && (!request.maxBid || agreedCounter >= request.maxBid);
-                        const isCustomerCounter = isCounterAgreed && request.customerCounterOffer && !request.customerCounterOfferUsed;
+                      {/* 2. オファー金額ボックス (h-12) */}
+                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                        <span className="text-xs text-gray-500 font-medium">{t.maxBid}:</span>
+                        <span className="text-base font-bold text-indigo-600">
+                          {convertUSDToSelectedCurrency(request.maxBid || 0)}
+                        </span>
+                      </div>
 
-                        if (isCounterAgreed) {
-                          return (
-                            <div className={`mb-2 h-12 px-3 ${isCustomerCounter ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'} rounded-lg flex items-center justify-between`}>
-                              <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                              <span className={`text-base font-bold ${isCustomerCounter ? 'text-purple-700' : 'text-blue-700'}`}>
-                                {convertUSDToSelectedCurrency(agreedCounter || 0)}
-                              </span>
-                            </div>
-                          );
-                        }
+                      {/* 3. カウンターオファーボックス (h-12) */}
+                      {(() => {
+                        const hasAdminCounter = !!request.counterOffer;
+                        const hasCustomerCounter = !!request.customerCounterOffer;
+
+                        if (!hasAdminCounter && !hasCustomerCounter) return null;
 
                         return (
-                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-500 font-medium">{t.maxBid}:</span>
-                            <span className="text-base font-bold text-indigo-600">
-                              {convertUSDToSelectedCurrency(request.maxBid || 0)}
-                            </span>
+                          <div className="flex flex-col gap-2 mb-2 w-full">
+                            {/* 管理者からのカウンターオファー */}
+                            {hasAdminCounter && (
+                              <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                                <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
+                                <span className="text-base font-bold text-blue-700">
+                                  {convertUSDToSelectedCurrency(request.counterOffer || 0)}
+                                </span>
+                              </div>
+                            )}
+                            {/* 顧客からのカウンターオファー */}
+                            {hasCustomerCounter && (
+                              <div className={`h-12 px-3 ${request.status === 'rejected' ? 'bg-gray-50 border-gray-100' : 'bg-purple-50 border-purple-100'} rounded-lg flex items-center justify-between`}>
+                                <span className={`text-xs ${request.status === 'rejected' ? 'text-gray-400' : 'text-gray-500'} font-medium`}>{t.yourCounterOffer}:</span>
+                                <div className="flex items-center gap-2">
+                                  {request.status === 'rejected' && (
+                                    <span className="text-xs font-semibold text-red-600">
+                                      {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
+                                    </span>
+                                  )}
+                                  <span className={`text-base font-bold ${request.status === 'rejected' ? 'text-gray-400' : 'text-purple-700'}`}>
+                                    {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
-
-                      {/* --- 1. カウンターオファー関連ブロック ＋ ステータスメッセージの表示 --- */}
-                      
-                      {/* 却下理由のみ（ケース4A, 4B以外の純粋な却下） */}
-                      {request.status === 'rejected' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
-                        <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs gap-1.5 shadow-sm mb-2">
-                          <span className="text-xs text-gray-500 font-medium">{t.rejectReason}:</span>
-                          <span className="text-xs text-red-800 font-semibold truncate">{request.rejectReason || '-'}</span>
-                        </div>
-                      )}
-
-                      {/* ケース1: 最初の管理者カウンターオファー（顧客未返答） */}
-                      {request.counterOffer && request.status === 'counter_offer' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
-                        <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between mb-2">
-                          <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                          <span className="text-base font-bold text-blue-700">
-                            {convertUSDToSelectedCurrency(request.counterOffer || 0)}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* ケース2: 顧客がカウンターオファー送信済み（管理者返答待ち） */}
-                      {request.customerCounterOffer && !request.adminNeedsConfirm && !request.customerCounterOfferUsed && request.status === 'counter_offer' && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                            <span className="text-base font-bold text-blue-700">
-                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
-                            </span>
-                          </div>
-                          <div className="h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-500 font-medium">{t.yourCounterOffer}:</span>
-                            <span className="text-base font-bold text-purple-700">
-                              {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ケース3A: 管理者が顧客のカウンターオファーを承認 */}
-                      {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
-                        <div className="mb-2 h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center w-full">
-                          <p className="text-xs font-semibold text-green-700">
-                            {lang === 'es' 
-                              ? 'Tu contraoferta fue aceptada. Esperando el resultado de la subasta.' 
-                              : 'Sua contraoferta foi aceita. Aguardando o resultado do leilão.'}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* ケース3B & 3C: 顧客が管理者のカウンターオファーを承認 */}
-                      {((request.customerCounterOffer && request.customerCounterOfferUsed) || (!request.customerCounterOffer && request.counterOffer)) && request.status === 'approved' && !request.finalStatus && (
-                        <div className="mb-2 h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center w-full">
-                          <p className="text-xs font-semibold text-green-700">
-                            {lang === 'es' ? 'Aceptaste la contraoferta. Esperando el resultado de la subasta.' : 'Você aceitou a contraoferta. Aguardando o resultado do leilão.'}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* 汎用承認完了メッセージ */}
-                      {request.status === 'approved' && !request.finalStatus && !request.customerCounterOffer && !request.counterOffer && (
-                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center">
-                          <p className="text-xs font-semibold text-green-600">
-                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando o resultado do leilão.'}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* ケース4A: 顧客が最初のカウンターオファーを却下 → 金額・メッセージ */}
-                      {request.adminNeedsConfirm && !request.customerCounterOffer && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                            <span className="text-base font-bold text-blue-700">
-                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
-                            </span>
-                          </div>
-                          <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center shadow-sm">
-                            <p className="text-xs font-semibold text-red-800">
-                              {lang === 'es' ? 'Rechazaste la contraoferta.' : 'Você rejeitou a contraoferta.'}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ケース4B: 管理者が顧客カウンターオファーを却下 */}
-                      {request.status === 'rejected' && request.customerCounterOffer && (
-                        <div className="flex flex-col gap-2 mb-2 w-full">
-                          <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-400 font-medium">{t.yourCounterOffer}:</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold text-red-600">
-                                {lang === 'es' ? 'Rechazado' : 'Rejeitado'}
-                              </span>
-                              <span className="text-base font-bold text-gray-400">
-                                {convertUSDToSelectedCurrency(request.customerCounterOffer || 0)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* 却下理由ボックス */}
-                          {request.rejectReason && (
-                            <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-1.5 shadow-sm">
-                              <span className="text-xs text-gray-500 font-medium shrink-0">
-                                {lang === 'es' ? 'Razón de rechazo:' : 'Razão de rejeição:'}
-                              </span>
-                              <span className="text-xs font-semibold text-red-600 truncate">
-                                {request.rejectReason}
-                              </span>
-                            </div>
-                          )}
-
-                          <div className="h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                            <span className="text-xs text-gray-500 font-medium">Contraoferta:</span>
-                            <span className="text-base font-bold text-blue-700">
-                              {convertUSDToSelectedCurrency(request.counterOffer || 0)}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 落札（won）時の落札金額ボックス */}
-                      {request.finalStatus === 'won' && !request.customerConfirmed && (
-                        <div className="h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm mb-2 w-full">
-                          <span className="text-xs text-gray-500 font-medium">
-                            {lang === 'es' ? 'Precio de adjudicación:' : 'Valor de arremate:'}
-                          </span>
-                          <span className="text-base font-bold text-green-800">
-                            {convertUSDToSelectedCurrency(
-                              request.finalPrice ||
-                              (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
-                            )}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* 不落札（lost）時のメッセージ */}
-                      {request.finalStatus === 'lost' && (
-                        <div className="mb-2 h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs text-red-800 font-semibold shadow-sm w-full">
-                          {t.lost}
-                        </div>
-                      )}
-
-                      {/* --- 2. 現地費用 ＋ 引渡場所 ＋ 発送方法 の表示 --- */}
 
                       {/* 4. 現地費用ボックス (オレンジトーン) */}
                       {request.delivery_location && request.delivery_location !== 'JP' && (() => {
@@ -5239,7 +5116,7 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* --- 3. 顧客情報ボックス --- */}
+                      {/* 7. 顧客情報ボックス */}
                       <div className="mb-2 h-12 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs box-border grid grid-cols-2 gap-2">
                         <div className="flex flex-col justify-center h-full min-w-0">
                           <span className="text-gray-500 text-[10px] leading-tight">
@@ -5262,6 +5139,88 @@ export default function Home() {
                           </span>
                         </div>
                       </div>
+
+                      {/* 8. 状況（オファー拒否・承認・却下理由などのステータスメッセージ） */}
+
+                      {/* ケース4A: 顧客が管理者のカウンターオファーを却下 */}
+                      {request.adminNeedsConfirm && !request.customerCounterOffer && (
+                        <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center shadow-sm mb-2 w-full">
+                          <p className="text-xs font-semibold text-red-800">
+                            {lang === 'es' ? 'Rechazaste la contraoferta.' : 'Você rejeitou a contraoferta.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* ケース4B: 管理者が顧客カウンターオファーを却下時の却下理由 */}
+                      {request.status === 'rejected' && request.customerCounterOffer && request.rejectReason && (
+                        <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center gap-1.5 shadow-sm mb-2 w-full">
+                          <span className="text-xs text-gray-500 font-medium shrink-0">
+                            {lang === 'es' ? 'Razón de rechazo:' : 'Razão de rejeição:'}
+                          </span>
+                          <span className="text-xs font-semibold text-red-600 truncate">
+                            {request.rejectReason}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 却下理由のみ（ケース4A, 4B以外の純粋な却下） */}
+                      {request.status === 'rejected' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
+                        <div className="h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs gap-1.5 shadow-sm mb-2 w-full">
+                          <span className="text-xs text-gray-500 font-medium">{t.rejectReason}:</span>
+                          <span className="text-xs text-red-800 font-semibold truncate">{request.rejectReason || '-'}</span>
+                        </div>
+                      )}
+
+                      {/* ケース3A: 管理者が顧客のカウンターオファーを承認 */}
+                      {request.customerCounterOffer && !request.customerCounterOfferUsed && request.status === 'approved' && !request.finalStatus && (
+                        <div className="mb-2 h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center w-full">
+                          <p className="text-xs font-semibold text-green-700">
+                            {lang === 'es' 
+                              ? 'Tu contraoferta fue aceptada. Esperando el resultado de la subasta.' 
+                              : 'Sua contraoferta foi aceita. Aguardando o resultado do leilão.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* ケース3B & 3C: 顧客が管理者のカウンターオファーを承認 */}
+                      {((request.customerCounterOffer && request.customerCounterOfferUsed) || (!request.customerCounterOffer && request.counterOffer)) && request.status === 'approved' && !request.finalStatus && (
+                        <div className="mb-2 h-12 px-3 bg-green-50 border border-green-100 rounded-lg flex items-center w-full">
+                          <p className="text-xs font-semibold text-green-700">
+                            {lang === 'es' ? 'Aceptaste la contraoferta. Esperando el resultado de la subasta.' : 'Você aceitou a contraoferta. Aguardando o resultado do leilão.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* 汎用承認完了メッセージ */}
+                      {request.status === 'approved' && !request.finalStatus && !request.customerCounterOffer && !request.counterOffer && (
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center w-full">
+                          <p className="text-xs font-semibold text-green-600">
+                            {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando o resultado do leilão.'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* 落札（won）時の落札金額ボックス */}
+                      {request.finalStatus === 'won' && !request.customerConfirmed && (
+                        <div className="h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm mb-2 w-full">
+                          <span className="text-xs text-gray-500 font-medium">
+                            {lang === 'es' ? 'Precio de adjudicación:' : 'Valor de arremate:'}
+                          </span>
+                          <span className="text-base font-bold text-green-800">
+                            {convertUSDToSelectedCurrency(
+                              request.finalPrice ||
+                              (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
+                            )}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* 不落札（lost）時のメッセージ */}
+                      {request.finalStatus === 'lost' && (
+                        <div className="mb-2 h-12 px-3 bg-red-100 border border-red-200 rounded-lg flex items-center text-xs text-red-800 font-semibold shadow-sm w-full">
+                          {t.lost}
+                        </div>
+                      )}
 
 
                       {/* 保留中（未処理）の場合のオファー金額変更・削除ボタン */}
