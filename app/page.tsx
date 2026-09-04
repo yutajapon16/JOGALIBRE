@@ -3795,7 +3795,7 @@ export default function Home() {
   const openEditOfferModal = (request: BidRequest) => {
     setEditingOfferRequest(request);
     const agreedCounter = getAgreedCounterOffer(request);
-    const effectiveCurrentBid = (agreedCounter !== null && (!request.maxBid || agreedCounter >= request.maxBid))
+    const effectiveCurrentBid = agreedCounter !== null
       ? agreedCounter
       : (request.maxBid || 0);
     setEditingOfferAmount(effectiveCurrentBid ? String(effectiveCurrentBid) : '');
@@ -5025,17 +5025,20 @@ export default function Home() {
                         </span>
                       </div>
 
-                      {/* 2. オファー金額ボックス (h-12) */}
-                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
-                        <span className="text-xs text-gray-500 font-medium">{t.maxBid}:</span>
-                        <span className="text-base font-bold text-indigo-600">
-                          {convertUSDToSelectedCurrency(request.maxBid || 0)}
-                        </span>
-                      </div>
+                      {/* 2. オファー金額ボックス (h-12) - 顧客カウンター承認時は顧客カウンター金額が表示されるため非表示 */}
+                      {!(request.status === 'approved' && request.customerCounterOffer && !request.customerCounterOfferUsed) && (
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
+                          <span className="text-xs text-gray-500 font-medium">{t.maxBid}:</span>
+                          <span className="text-base font-bold text-indigo-600">
+                            {convertUSDToSelectedCurrency(request.maxBid || 0)}
+                          </span>
+                        </div>
+                      )}
 
                       {/* 3. カウンターオファーボックス (h-12) */}
                       {(() => {
-                        const hasAdminCounter = !!request.counterOffer;
+                        const isCustomerCounterApproved = request.status === 'approved' && !!request.customerCounterOffer && !request.customerCounterOfferUsed;
+                        const hasAdminCounter = !!request.counterOffer && !isCustomerCounterApproved;
                         const hasCustomerCounter = !!request.customerCounterOffer;
 
                         if (!hasAdminCounter && !hasCustomerCounter) return null;
@@ -5243,7 +5246,7 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* 承認済みの場合のオファー金額引き上げ（増額）ボタン */}
+                      {/* 承認済みの場合のオファー金額引き上げ（増額）ボタン ＆ 削除ボタン */}
                       {request.status === 'approved' && !request.finalStatus && (() => {
                         const isWithin15Mins = request.productEndTime
                           ? (() => {
@@ -5252,6 +5255,15 @@ export default function Home() {
                               return (endDate.getTime() - Date.now()) < (15 * 60 * 1000);
                             })()
                           : false;
+
+                        const isWithin12Hours = request.productEndTime
+                          ? (() => {
+                              const endDate = parseDbDateTime(request.productEndTime) || parseJstDateTime(request.productEndTime);
+                              if (!endDate) return false;
+                              return (endDate.getTime() - Date.now()) < (12 * 60 * 60 * 1000);
+                            })()
+                          : false;
+
                         return (
                           <div className="flex flex-col gap-2 mb-2 w-full">
                             <button
@@ -5262,6 +5274,17 @@ export default function Home() {
                               {isWithin15Mins
                                 ? (lang === 'es' ? '🔒 No se puede modificar (Fin cercano)' : '🔒 Não é possível alterar (Fim próximo)')
                                 : (lang === 'es' ? '⤴️ Aumentar monto de oferta' : '⤴️ Aumentar valor da oferta')}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteOffer(request.id)}
+                              disabled={isWithin12Hours || !!processingOfferId}
+                              className="w-full bg-red-100 text-red-600 h-12 rounded-lg hover:bg-red-200 transition text-sm sm:text-base flex items-center justify-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {processingOfferId === request.id 
+                                ? (lang === 'es' ? 'Eliminando...' : 'Excluindo...') 
+                                : (isWithin12Hours
+                                    ? (lang === 'es' ? '🔒 No se puede eliminar (<12h)' : '🔒 Não é possível excluir (<12h)')
+                                    : (lang === 'es' ? 'Eliminar oferta' : 'Excluir oferta'))}
                             </button>
                           </div>
                         );
@@ -8595,7 +8618,7 @@ export default function Home() {
       {/* オファー金額変更モーダル */}
       {isEditOfferModalOpen && editingOfferRequest && (() => {
         const agreedCounter = getAgreedCounterOffer(editingOfferRequest);
-        const isCounterAgreed = agreedCounter !== null && (!editingOfferRequest.maxBid || agreedCounter >= editingOfferRequest.maxBid);
+        const isCounterAgreed = agreedCounter !== null;
         const effectiveCurrentBid = isCounterAgreed ? (agreedCounter || 0) : (editingOfferRequest.maxBid || 0);
 
         return (
