@@ -3089,13 +3089,25 @@ export default function AdminDashboard() {
                       );
                     })()}
 
-                    {/* カウンターオファーボックス (現地費用の上) */}
-                    {request.counterOffer && request.finalStatus !== 'won' && !(request.status === 'approved' && request.customerCounterOffer && !request.customerCounterOfferUsed) && (
+                    {/* 4. カウンターオファーボックス (管理者のカウンターオファー、青色ボックス) */}
+                    {request.counterOffer && request.finalStatus !== 'won' && (
                       <div className="mb-2 h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between w-full">
                         <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-base font-bold text-blue-700">
                             $ {Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 5. カウンターオファーボックス (顧客のカウンターオファー、紫色のボックス) */}
+                    {request.customerCounterOffer && request.finalStatus !== 'won' && (
+                      <div className="mb-2 h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between w-full">
+                        <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-base font-bold text-purple-700">
+                            $ {Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
                           </span>
                         </div>
                       </div>
