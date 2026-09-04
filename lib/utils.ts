@@ -493,6 +493,12 @@ export const getCityCode = (deliveryLocation?: string): string => {
 export const calculateLocalCost = (deliveryLocation?: string, item?: any, shippingMethod?: string): number | string => {
   const cityCode = getCityCode(deliveryLocation);
   if (cityCode === 'JP') return 0;
+
+  // 管理者等が手動設定した現地費用（local_cost）がある場合は優先して使用
+  if (item?.local_cost !== undefined && item?.local_cost !== null && !isNaN(Number(item.local_cost))) {
+    return Number(item.local_cost);
+  }
+
   // 都市コードが「その他（OTH_XX）」で始まる場合は無条件で「要問い合わせ」を返す
   if (cityCode.startsWith('OTH')) {
     return '要問い合わせ';

@@ -65,6 +65,7 @@ export default function AdminDashboard() {
   const [rejectReason, setRejectReason] = useState('');
   const [shippingCostJpy, setShippingCostJpy] = useState('');
   const [fobCostJpy, setFobCostJpy] = useState('1,500');
+  const [localCostUsd, setLocalCostUsd] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'reject' | 'counter' | 'won' | null>(null);
@@ -1582,6 +1583,7 @@ export default function AdminDashboard() {
         shipping_method: req.shipping_method as string | undefined,
         paid_local: req.paid_local || false,
         paid_local_at: req.paid_local_at as string | null | undefined,
+        local_cost: req.local_cost != null ? Number(req.local_cost) : null,
         totalJpy: req.total_jpy
       }));
 
@@ -1641,6 +1643,7 @@ export default function AdminDashboard() {
         shipping_method: item.shipping_method as string | undefined,
         paid_local: item.paid_local || false,
         paid_local_at: item.paid_local_at as string | null | undefined,
+        local_cost: item.local_cost != null ? Number(item.local_cost) : null,
         totalJpy: item.total_jpy,
         cancelledAt: item.cancelledAt as string | null | undefined,
         shippingStatus: item.shipping_status as string | undefined,
@@ -1676,7 +1679,7 @@ export default function AdminDashboard() {
       .reduce((sum, item) => sum + (item.finalPrice || 0), 0);
   };
 
-  const updateStatus = async (id: string, status: string, reason?: string, counterOfferAmount?: number, shippingJpy?: number, totalJpy?: number) => {
+  const updateStatus = async (id: string, status: string, reason?: string, counterOfferAmount?: number, shippingJpy?: number, totalJpy?: number, localCost?: number | null) => {
     if (processingRequestId) return;
     setProcessingRequestId(id);
     try {
@@ -1695,7 +1698,8 @@ export default function AdminDashboard() {
           rejectReason: reason,
           counterOffer: counterOfferAmount,
           shippingCostJpy: shippingJpy,
-          totalJpy: totalJpy
+          totalJpy: totalJpy,
+          localCost: localCost !== undefined ? localCost : undefined
         })
       });
 
@@ -1709,6 +1713,7 @@ export default function AdminDashboard() {
               rejectReason: reason || null,
               counterOffer: counterOfferAmount || null,
               shippingCostJpy: shippingJpy || null,
+              local_cost: localCost !== undefined ? localCost : item.local_cost,
               totalJpy: totalJpy || null,
               approvedAt: status === 'approved' ? new Date().toISOString() : item.approvedAt
             };
@@ -1721,6 +1726,7 @@ export default function AdminDashboard() {
         setRejectReason('');
         setShippingCostJpy('');
         setFobCostJpy('1,500');
+        setLocalCostUsd('');
 
         // プッシュ通知を送信（対象顧客のリクエストを特定）
         const targetRequest = bidRequests.find(r => r.id === id);
@@ -2471,8 +2477,10 @@ export default function AdminDashboard() {
       const priceWithProfit = Math.round((totalJpy / profitDivisor) * 100) / 100;
       const usdPrice = priceWithProfit / exchangeRate;
       const roundedUsd = Math.ceil(usdPrice / 5) * 5;
+      const localCostClean = localCostUsd.replace(/,/g, '').trim();
+      const localCostNum = localCostClean !== '' && !isNaN(Number(localCostClean)) ? parseFloat(localCostClean) : null;
 
-      updateStatus(selectedRequest.id, 'counter_offer', undefined, roundedUsd, shipping, totalJpy);
+      updateStatus(selectedRequest.id, 'counter_offer', undefined, roundedUsd, shipping, totalJpy, localCostNum);
     }
   };
 
@@ -3081,6 +3089,46 @@ export default function AdminDashboard() {
                       );
                     })()}
 
+                    {/* 引渡場所が日本以外の場合の現地費用・引渡場所・発送方法ボックス */}
+                    {request.delivery_location && request.delivery_location !== 'JP' && (() => {
+                      const cost = calculateLocalCost(request.delivery_location, request, request.shipping_method);
+                      const isNumericCost = typeof cost === 'number' && !isNaN(cost) && cost > 0;
+
+                      return (
+                        <>
+                          {/* 1. 現地費用ボックス (顧客画面のCosto Localと同じオレンジトーン) */}
+                          <div className="mb-2 h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
+                            <span className="text-xs font-semibold text-orange-700">現地費用:</span>
+                            {isNumericCost ? (
+                              <span className="text-base font-extrabold text-orange-700">
+                                $ {Math.round(cost).toLocaleString('en-US')}
+                              </span>
+                            ) : (
+                              <span className="text-sm font-extrabold text-red-600">
+                                要確認
+                              </span>
+                            )}
+                          </div>
+
+                          {/* 2. 引渡場所ボックス */}
+                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                            <span className="text-gray-500 font-medium">引渡場所:</span>
+                            <span className="font-semibold text-black">
+                              {getDeliveryLocationName(request.delivery_location, request.delivery_city)}
+                            </span>
+                          </div>
+
+                          {/* 3. 発送方法ボックス */}
+                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                            <span className="text-gray-500 font-medium">発送方法:</span>
+                            <span className="font-semibold text-black">
+                              {request.shipping_method === 'air' ? '航空便 ✈️' : 'コンテナ 🚢'}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
+
                     <div className="h-24 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs mb-2 box-border grid grid-rows-2 grid-cols-2">
                       <div className="flex flex-col justify-center h-12">
                         <span className="text-gray-500 text-[10px] leading-tight">ID:</span>
@@ -3174,6 +3222,12 @@ export default function AdminDashboard() {
                             setFobCostJpy(defaultFob.toLocaleString('en-US'));
                             const defaultShipping = calculateDefaultShippingCost(request.productTitle, request.productUrl);
                             setShippingCostJpy(defaultShipping > 0 ? defaultShipping.toLocaleString('en-US') : '');
+                            const currentLocalCost = calculateLocalCost(request.delivery_location, request, request.shipping_method);
+                            if (typeof currentLocalCost === 'number' && !isNaN(currentLocalCost) && currentLocalCost > 0) {
+                              setLocalCostUsd(currentLocalCost.toLocaleString('en-US'));
+                            } else {
+                              setLocalCostUsd('');
+                            }
                             setActionType('counter');
                           }}
                           disabled={!!processingRequestId}
@@ -5701,6 +5755,28 @@ export default function AdminDashboard() {
                   })()}
                 </span>
               </div>
+
+              {/* 現地費用入力（日本以外渡しの場合） */}
+              {selectedRequest.delivery_location && selectedRequest.delivery_location !== 'JP' && (
+                <div className="flex justify-between items-center text-sm pt-3 border-t mt-2">
+                  <div className="flex flex-col">
+                    <span className="text-gray-700 font-semibold">現地費用 (USD):</span>
+                    <span className="text-[11px] text-gray-500">
+                      {getDeliveryLocationName(selectedRequest.delivery_location, selectedRequest.delivery_city)}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                    <input
+                      type="text"
+                      placeholder="0"
+                      value={localCostUsd}
+                      onChange={(e) => setLocalCostUsd(formatCommaSeparatedNumber(e.target.value))}
+                      className="w-32 h-12 border border-gray-300 rounded pl-7 pr-3 py-0 text-base text-right box-border focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black font-bold"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3">
@@ -5710,6 +5786,7 @@ export default function AdminDashboard() {
                   setActionType(null);
                   setShippingCostJpy('');
                   setFobCostJpy('1,500');
+                  setLocalCostUsd('');
                 }}
                 disabled={!!processingRequestId}
                 className="flex-1 border border-gray-300 text-gray-700 h-12 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center disabled:opacity-50"

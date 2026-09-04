@@ -433,7 +433,7 @@ export async function PATCH(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();    
-    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, maxBid, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, stockNumber, invoiceNumber, totalJpy, japanSendUsd, cancelledAt,
+    const { id, status, rejectReason, counterOffer, shippingCostJpy, finalStatus, finalPrice, customerConfirmed, customerMessage, customerAction, customerCounterOffer, maxBid, paid, paid_brazil, paid_paraguay, paid_japan, paid_local, local_cost, localCost, stockNumber, invoiceNumber, totalJpy, japanSendUsd, cancelledAt,
       // 発送追跡
       shipping_status, shipped_at, carrier, tracking_number, tracking_url, estimated_arrival_date
     } = body;
@@ -469,6 +469,10 @@ export async function PATCH(request: Request) {
       if (rejectReason !== undefined) updateData.reject_reason = rejectReason;
       if (counterOffer !== undefined) updateData.counter_offer = counterOffer;
       if (shippingCostJpy !== undefined) updateData.shipping_cost_jpy = shippingCostJpy;
+      if (local_cost !== undefined || localCost !== undefined) {
+        const val = local_cost !== undefined ? local_cost : localCost;
+        updateData.local_cost = val !== null && val !== '' && !isNaN(Number(val)) ? Number(val) : null;
+      }
       if (finalStatus !== undefined) {
         updateData.final_status = finalStatus;
         if (finalStatus === 'won' && currentRequest.final_status !== 'won') {

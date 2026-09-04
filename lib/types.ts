@@ -79,6 +79,7 @@ export interface BidRequest {
   shipping_method?: string;
   paid_local?: boolean;
   paid_local_at?: string | null;
+  local_cost?: number | null;
   total_jpy?: number | null;
   japan_send_usd?: number | null;
   cancelledAt?: string | null;

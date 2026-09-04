@@ -1,0 +1,2 @@
+ALTER TABLE bid_requests
+ADD COLUMN IF NOT EXISTS local_cost NUMERIC;

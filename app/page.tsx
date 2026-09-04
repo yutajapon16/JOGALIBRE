@@ -2459,6 +2459,7 @@ export default function Home() {
         shipping_method: item.shipping_method as string | undefined,
         paid_local: item.paid_local || false,
         paid_local_at: item.paid_local_at as string | null | undefined,
+        local_cost: item.local_cost != null ? Number(item.local_cost) : null,
         cancelledAt: item.cancelledAt as string | null | undefined,
         shippingStatus: item.shipping_status as string | undefined,
         shippedAt: item.shipped_at as string | null | undefined,
@@ -3293,6 +3294,7 @@ export default function Home() {
         shipping_method: req.shipping_method as string | undefined,
         paid_local: req.paid_local || false,
         paid_local_at: req.paid_local_at as string | null | undefined,
+        local_cost: req.local_cost != null ? Number(req.local_cost) : null,
       }));
 
       // 取得した有効なリクエストの全IDでローカルストレージキャッシュを完全同期（削除されたものは消える）
