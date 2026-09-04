@@ -5050,31 +5050,7 @@ export default function Home() {
                         );
                       })()}
 
-                      {/* 申請詳細情報のh-12ボックス化 */}
-                      <div className="mb-2 h-12 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs box-border grid grid-cols-2 gap-2">
-                        <div className="flex flex-col justify-center h-full min-w-0">
-                          <span className="text-gray-500 text-[10px] leading-tight">
-                            {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
-                              lang === 'es' ? 'Tu agente:' : 'Seu agente:'
-                            ) : (
-                              'Cliente:'
-                            )}
-                          </span>
-                          <span className="font-semibold truncate text-black leading-tight">
-                            {request.customerName}
-                          </span>
-                        </div>
-                        <div className="flex flex-col justify-center h-full min-w-0">
-                          <span className="text-gray-500 text-[10px] leading-tight">
-                            {lang === 'es' ? 'Fecha de solicitud:' : 'Data de solicitação:'}
-                          </span>
-                          <span className="font-semibold truncate text-black leading-tight">
-                            {request.createdAt ? formatDateTime(request.createdAt, 'customer') : '-'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* --- 1. 金額ボックス ＋ ステータスメッセージの表示 --- */}
+                      {/* --- 1. カウンターオファー関連ブロック ＋ ステータスメッセージの表示 --- */}
                       
                       {/* 却下理由のみ（ケース4A, 4B以外の純粋な却下） */}
                       {request.status === 'rejected' && !request.customerCounterOffer && !request.adminNeedsConfirm && (
@@ -5194,7 +5170,6 @@ export default function Home() {
                         </div>
                       )}
 
-
                       {/* 落札（won）時の落札金額ボックス */}
                       {request.finalStatus === 'won' && !request.customerConfirmed && (
                         <div className="h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm mb-2 w-full">
@@ -5217,9 +5192,32 @@ export default function Home() {
                         </div>
                       )}
 
-                      {/* --- 2. 商品渡し場所 ＋ 現地費用 (JP以外) の表示 --- */}
+                      {/* --- 2. 現地費用 ＋ 引渡場所 ＋ 発送方法 の表示 --- */}
 
-                      {/* 商品渡し場所 (Lugar de Entrega / Local de Entrega) */}
+                      {/* 4. 現地費用ボックス (オレンジトーン) */}
+                      {request.delivery_location && request.delivery_location !== 'JP' && (() => {
+                        const localCost = calculateLocalCost(request.delivery_location, request, request.shipping_method);
+                        const isStringCost = typeof localCost === 'string';
+
+                        return (
+                          <div className="mb-2 h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
+                            <span className="text-xs font-semibold text-orange-700">
+                              {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
+                            </span>
+                            {isStringCost ? (
+                              <span className="text-sm font-extrabold text-red-600">
+                                {formatLocalCost(localCost)}
+                              </span>
+                            ) : (
+                              <span className="text-base font-extrabold text-orange-700">
+                                {formatLocalCost(localCost)}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* 5. 引渡場所ボックス (Lugar de Entrega / Local de Entrega) */}
                       <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
                         <span className="text-xs text-gray-500 font-medium">
                           {lang === 'es' ? 'Lugar de Entrega:' : 'Local de Entrega:'}
@@ -5229,52 +5227,41 @@ export default function Home() {
                         </span>
                       </div>
 
-                      {/* 現地費用 (Costo Local / Custo Local) */}
-                      {request.delivery_location !== 'JP' && (() => {
-                        const localCost = calculateLocalCost(request.delivery_location, request, request.shipping_method);
-                        const isStringCost = typeof localCost === 'string';
-                        if (isStringCost) {
-                          return (
-                            <>
-                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center text-black font-sans">
-                                <span className="text-sm font-black text-red-600 tracking-wide">
-                                  {formatLocalCost(localCost)}
-                                </span>
-                              </div>
-                              {/* 発送方法 */}
-                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
-                                <span className="text-xs text-gray-500 font-medium">
-                                  {t.shippingMethodLabel}:
-                                </span>
-                                <span className="text-sm font-semibold text-black">
-                                  {request.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
-                                </span>
-                              </div>
-                            </>
-                          );
-                        }
-                        return (
-                          <>
-                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
-                              <span className="text-xs text-gray-500 font-medium">
-                                {lang === 'es' ? 'Costo Local:' : 'Custo Local:'}
-                              </span>
-                              <span className="text-base font-bold text-gray-800">
-                                {formatLocalCost(localCost)}
-                              </span>
-                            </div>
-                            {/* 発送方法 */}
-                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
-                              <span className="text-xs text-gray-500 font-medium">
-                                {t.shippingMethodLabel}:
-                              </span>
-                              <span className="text-sm font-semibold text-black">
-                                {request.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
-                              </span>
-                            </div>
-                          </>
-                        );
-                      })()}
+                      {/* 6. 発送方法ボックス (引渡場所が日本以外の場合) */}
+                      {request.delivery_location && request.delivery_location !== 'JP' && (
+                        <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between text-black font-sans">
+                          <span className="text-xs text-gray-500 font-medium">
+                            {t.shippingMethodLabel}:
+                          </span>
+                          <span className="text-sm font-semibold text-black">
+                            {request.shipping_method === 'air' ? t.shippingMethodAir : t.shippingMethodSea}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* --- 3. 顧客情報ボックス --- */}
+                      <div className="mb-2 h-12 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs box-border grid grid-cols-2 gap-2">
+                        <div className="flex flex-col justify-center h-full min-w-0">
+                          <span className="text-gray-500 text-[10px] leading-tight">
+                            {currentUser?.role === 'customer' && currentUser?.agentCustomerId ? (
+                              lang === 'es' ? 'Tu agente:' : 'Seu agente:'
+                            ) : (
+                              'Cliente:'
+                            )}
+                          </span>
+                          <span className="font-semibold truncate text-black leading-tight">
+                            {request.customerName}
+                          </span>
+                        </div>
+                        <div className="flex flex-col justify-center h-full min-w-0">
+                          <span className="text-gray-500 text-[10px] leading-tight">
+                            {lang === 'es' ? 'Fecha de solicitud:' : 'Data de solicitação:'}
+                          </span>
+                          <span className="font-semibold truncate text-black leading-tight">
+                            {request.createdAt ? formatDateTime(request.createdAt, 'customer') : '-'}
+                          </span>
+                        </div>
+                      </div>
 
 
                       {/* 保留中（未処理）の場合のオファー金額変更・削除ボタン */}
