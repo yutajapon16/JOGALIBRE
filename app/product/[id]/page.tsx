@@ -882,12 +882,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)
   const formatLocalCost = (cost: number | string): string => {
     if (typeof cost === 'string') {
-      const lower = cost.trim().toLowerCase();
+      const trimmed = cost.trim();
+      const lower = trimmed.toLowerCase();
       if (lower === 'unavailable' || lower === '発送不可' || lower === 'no disponible' || lower === 'não disponível') {
         return lang === 'es' ? 'No disponible ❌' : 'Não disponível ❌';
       }
-      if (lower === 'consultar' || lower === '要問い合わせ' || lower === '要問合せ') {
-        return lang === 'es' ? 'Consultar 💬' : 'Consultar 💬';
+      if (lower === 'consultar' || lower === '要問い合わせ' || lower === '要問合せ' || lower === '要確認') {
+        return lang === 'es' ? 'Confirmar en contraoferta 💬' : 'Confirmar na contraoferta 💬';
+      }
+      const num = parseFloat(trimmed.replace(/[^0-9.-]/g, ''));
+      if (!isNaN(num) && trimmed !== '') {
+        return convertUSDToSelectedCurrency(num);
       }
       return cost;
     }
@@ -898,9 +903,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const getLocalCost = (productUrl: string | null): number | string => {
     if (deliveryCountry === 'JP') return 0;
     // キーワード検索（st === 'keyword'）または URL検索（st === 'url'）の場合、
-    // 日本以外を選択した場合は常に「要問い合わせ」を表示する。
+    // 日本以外を選択した場合は常に「要確認」を表示する。
     if (st === 'keyword' || st === 'url') {
-      return '要問い合わせ';
+      return '要確認';
     }
     const loc = deliveryCity;
     let finalUrl = productUrl || '';
@@ -1264,7 +1269,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <div className="h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
                   <span className="text-xs">{t.localCostLabel}</span>
                   <span className="text-sm sm:text-base font-extrabold">
-                    $ {cost.toLocaleString('en-US')}
+                    {formatLocalCost(cost)}
                   </span>
                 </div>
                 {/* 発送方法 */}

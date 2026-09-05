@@ -3212,12 +3212,17 @@ export default function Home() {
   // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)
   const formatLocalCost = (cost: number | string): string => {
     if (typeof cost === 'string') {
-      const lower = cost.trim().toLowerCase();
+      const trimmed = cost.trim();
+      const lower = trimmed.toLowerCase();
       if (lower === 'unavailable' || lower === '発送不可' || lower === 'no disponible' || lower === 'não disponível') {
         return lang === 'es' ? 'No disponible ❌' : 'Não disponível ❌';
       }
-      if (lower === 'consultar' || lower === '要問い合わせ' || lower === '要問合せ') {
-        return lang === 'es' ? 'Consultar 💬' : 'Consultar 💬';
+      if (lower === 'consultar' || lower === '要問い合わせ' || lower === '要問合せ' || lower === '要確認') {
+        return lang === 'es' ? 'Confirmar en contraoferta 💬' : 'Confirmar na contraoferta 💬';
+      }
+      const num = parseFloat(trimmed.replace(/[^0-9.-]/g, ''));
+      if (!isNaN(num) && trimmed !== '') {
+        return convertUSDToSelectedCurrency(num);
       }
       return cost;
     }
@@ -3228,9 +3233,9 @@ export default function Home() {
   const getLocalCost = (product: SearchItem): number | string => {
     if (deliveryCountry === 'JP') return 0;
     // キーワード検索（searchType === 'keyword'）または URL検索（searchType === 'url'）の場合、
-    // 日本以外を選択した場合は常に「要問い合わせ」を表示する。
+    // 日本以外を選択した場合は常に「要確認」を表示する。
     if (searchType === 'keyword' || searchType === 'url') {
-      return '要問い合わせ';
+      return '要確認';
     }
     const loc = deliveryCity;
     let finalUrl = product.url || '';
@@ -3266,7 +3271,7 @@ export default function Home() {
         productTitlePt: req.product_title_pt as string | null,
         productUrl: req.product_url as string,
         productImage: req.product_image as string,
-        productPrice: req.product_price,
+        productPrice: req.product_price != null && !isNaN(Number(req.product_price)) ? Number(req.product_price) : req.product_price,
         productEndTime: req.product_end_time,
         maxBid: req.max_bid,
         customerName: req.customer_name,
@@ -4510,8 +4515,7 @@ export default function Home() {
                   </span>
                   <div className="flex items-center">
                     <span className="font-extrabold text-orange-700 text-base sm:text-lg leading-none tabular-nums tracking-tight">
-                      <span className="text-xs font-semibold mr-0.5">$</span>
-                      {cost.toLocaleString('en-US')}
+                      {formatLocalCost(cost)}
                     </span>
                   </div>
                 </div>
@@ -5010,11 +5014,11 @@ export default function Home() {
                       <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                         <span className="text-xs text-gray-500 font-medium">{t.currentPrice}:</span>
                         <span className="text-base font-bold text-gray-800">
-                          {request.productPrice && request.productPrice > 0
+                          {request.productPrice && Number(request.productPrice) > 0
                             ? (request.productId?.startsWith('m-') || (request.productUrl && !request.productUrl.includes('auctions.yahoo.co.jp') && !request.productUrl.includes('page.auctions.yahoo.co.jp')))
-                              ? convertUSDToSelectedCurrency(request.productPrice)
+                              ? convertUSDToSelectedCurrency(Number(request.productPrice))
                               : `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(
-                                  request.productPrice,
+                                  Number(request.productPrice),
                                   selectedCurrency,
                                   request.productTitleJa || request.productTitle,
                                   request.productUrl,
@@ -8422,7 +8426,7 @@ export default function Home() {
                           {t.localCostLabel}
                         </span>
                         <span className="font-extrabold text-sm text-indigo-700">
-                          $ {cost.toLocaleString('en-US')}
+                          {formatLocalCost(cost)}
                         </span>
                       </div>
                     );

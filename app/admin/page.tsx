@@ -237,12 +237,17 @@ export default function AdminDashboard() {
 
   const formatLocalCost = (cost: number | string, targetCurrency: string = selectedCurrency): string => {
     if (typeof cost === 'string') {
-      const lower = cost.trim().toLowerCase();
+      const trimmed = cost.trim();
+      const lower = trimmed.toLowerCase();
       if (lower === 'unavailable' || lower === '発送不可' || lower === 'no disponible' || lower === 'não disponível') {
         return '発送不可 ❌';
       }
-      if (lower === 'consultar' || lower === '要問い合わせ' || lower === '要問合せ') {
-        return '要問い合わせ 💬';
+      if (lower === 'consultar' || lower === '要問い合わせ' || lower === '要問合せ' || lower === '要確認') {
+        return '要確認 💬';
+      }
+      const num = parseFloat(trimmed.replace(/[^0-9.-]/g, ''));
+      if (!isNaN(num) && trimmed !== '') {
+        return convertUSDToSelectedCurrency(num, targetCurrency);
       }
       return cost;
     }

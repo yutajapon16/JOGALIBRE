@@ -499,15 +499,15 @@ export const calculateLocalCost = (deliveryLocation?: string, item?: any, shippi
     return Number(item.local_cost);
   }
 
-  // 都市コードが「その他（OTH_XX）」で始まる場合は無条件で「要問い合わせ」を返す
+  // 都市コードが「その他（OTH_XX）」で始まる場合は無条件で「要確認」を返す
   if (cityCode.startsWith('OTH')) {
-    return '要問い合わせ';
+    return '要確認';
   }
   
   loadCostsData();
 
-  // タイトルとURLからカテゴリキーを特定
-  const title = item?.productTitle || item?.product_title || '';
+  // タイトルとURLからカテゴリキーを特定 (日本語タイトルがあれば優先)
+  const title = item?.productTitleJa || item?.productTitle || item?.product_title || '';
   const url = item?.productUrl || item?.product_url || '';
   const categoryKey = detectCategoryKey(title, url);
 
