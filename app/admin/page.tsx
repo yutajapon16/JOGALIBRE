@@ -2299,12 +2299,13 @@ export default function AdminDashboard() {
             <select
               value={getSelectedContainerCode(item.id)}
               onChange={(e) => handleSelectContainer(item.id, e.target.value)}
-              className="border border-gray-300 rounded bg-white text-black text-xs font-semibold h-8 flex-1 mx-2 min-w-0"
+              className="border border-gray-300 rounded bg-white text-black text-xs font-bold h-8 flex-1 mx-2 min-w-0"
               style={{
                 appearance: 'none',
                 WebkitAppearance: 'none',
                 padding: '0 8px',
                 lineHeight: '30px',
+                fontSize: '12px',
               }}
             >
               <option value="">選択</option>
@@ -2325,7 +2326,8 @@ export default function AdminDashboard() {
               padding: '0 8px',
               lineHeight: '30px',
               textAlign: 'center',
-              textAlignLast: 'center'
+              textAlignLast: 'center',
+              fontSize: '12px',
             }}
           >
             <option value="not_shipped">未発送</option>
@@ -3887,42 +3889,43 @@ export default function AdminDashboard() {
                               );
                             })()}
 
+                            {/* 現地費用 (通常顧客用・チェックボックス付) */}
+                            {item.delivery_location !== 'JP' && (
+                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                                <label className="flex items-center cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={item.paid_local}
+                                    onChange={(e) => updatePaidSplitStatus(item.id, { paid_local: e.target.checked })}
+                                    className="w-4 h-4 mr-1.5 cursor-pointer text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                  />
+                                  <span className="text-gray-500">現地費用:</span>
+                                  {item.paid_local && item.paid_local_at && (
+                                    <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
+                                      ✓ 支払済 ({formatDateTime(item.paid_local_at)})
+                                    </span>
+                                  )}
+                                </label>
+                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black')}`}>
+                                  {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
+                                </span>
+                              </div>
+                            )}
+
                             {/* 商品渡し場所 (通常顧客用) */}
                             <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
                               <span className="text-gray-500 font-medium">引渡場所:</span>
                               <span className="font-semibold text-black">{getDeliveryLocationName(item.delivery_location, item.delivery_city)}</span>
                             </div>
 
-                            {/* 現地費用 (通常顧客用・チェックボックス付) */}
+                            {/* 発送方法 */}
                             {item.delivery_location !== 'JP' && (
-                              <>
-                                <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
-                                  <label className="flex items-center cursor-pointer select-none">
-                                    <input
-                                      type="checkbox"
-                                      checked={item.paid_local}
-                                      onChange={(e) => updatePaidSplitStatus(item.id, { paid_local: e.target.checked })}
-                                      className="w-4 h-4 mr-1.5 cursor-pointer text-green-600 border-gray-300 rounded focus:ring-green-500"
-                                    />
-                                    <span className="text-gray-500">現地費用:</span>
-                                    {item.paid_local && item.paid_local_at && (
-                                      <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
-                                        ✓ 支払済 ({formatDateTime(item.paid_local_at)})
-                                      </span>
-                                    )}
-                                  </label>
-                                  <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black')}`}>
-                                    {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
-                                  </span>
-                                </div>
-                                {/* 発送方法 */}
-                                <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
-                                  <span className="text-gray-500 font-medium">発送方法:</span>
-                                  <span className="font-semibold text-black">
-                                    {item.shipping_method === 'air' ? '航空便 ✈️' : 'コンテナ 🚢'}
-                                  </span>
-                                </div>
-                              </>
+                              <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                                <span className="text-gray-500 font-medium">発送方法:</span>
+                                <span className="font-semibold text-black">
+                                  {item.shipping_method === 'air' ? '航空便 ✈️' : 'コンテナ 🚢'}
+                                </span>
+                              </div>
                             )}
                           </>
                         )}
@@ -5590,78 +5593,76 @@ export default function AdminDashboard() {
                             </div>
                           </div>
 
-                          {/* 支払情報 & 金額ボックス */}
-                          <div className="space-y-2 mb-2 bg-gray-50 p-3 rounded-lg border border-gray-100 font-sans text-xs">
-                            <div className="flex items-center justify-between font-sans text-xs">
-                              <div className="flex items-center font-semibold text-gray-700">
-                                <span>顧客支払額:</span>
-                                <div className="flex flex-col gap-0.5 ml-1.5">
-                                  {item.paid && item.paidAt && (
-                                    <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded whitespace-nowrap font-bold font-sans">
-                                      ✓ 支払済 ({formatDateTime(item.paidAt)})
-                                    </span>
-                                  )}
-                                  {item.cancelledAt && (
-                                    <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded whitespace-nowrap font-bold font-sans">
-                                      ✗ 取消済 ({formatDateTime(item.cancelledAt)})
-                                    </span>
-                                  )}
-                                  {!item.paid && !item.cancelledAt && (
-                                    <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[9px] rounded whitespace-nowrap font-medium font-sans">
-                                      未入金
-                                    </span>
-                                  )}
-                                </div>
+                          {/* 顧客支払額ボックス */}
+                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                            <div className="flex items-center font-semibold text-gray-700">
+                              <span>顧客支払額:</span>
+                              <div className="flex flex-col gap-0.5 ml-1.5">
+                                {item.paid && item.paidAt && (
+                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded whitespace-nowrap font-bold font-sans">
+                                    ✓ 支払済 ({formatDateTime(item.paidAt)})
+                                  </span>
+                                )}
+                                {item.cancelledAt && (
+                                  <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded whitespace-nowrap font-bold font-sans">
+                                    ✗ 取消済 ({formatDateTime(item.cancelledAt)})
+                                  </span>
+                                )}
+                                {!item.paid && !item.cancelledAt && (
+                                  <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[9px] rounded whitespace-nowrap font-medium font-sans">
+                                    未入金
+                                  </span>
+                                )}
                               </div>
-                              <span className={`text-base font-bold whitespace-nowrap ${item.cancelledAt || item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
-                                $ {totalSalePrice.toLocaleString('en-US')}
+                            </div>
+                            <span className={`text-base font-bold whitespace-nowrap ${item.cancelledAt || item.paid ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
+                              $ {totalSalePrice.toLocaleString('en-US')}
+                            </span>
+                          </div>
+
+                          {/* 日本支払額ボックス (ブラジルエージェント or B001用) */}
+                          {(item.agentCustomerId === 'B001' || (item.customerId?.startsWith('A') && ((item.customerCountry || '').toLowerCase().trim() === 'brasil' || (item.customerCountry || '').toLowerCase().trim() === 'brazil'))) && (
+                            <div className="mb-2 h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                              <div className="flex items-center font-semibold text-gray-700">
+                                <span className="text-red-600 font-black">日本支払額:</span>
+                                {item.paid_japan && item.paid_japan_at && (
+                                  <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-bold font-sans">
+                                    ✓ 支払済 ({formatDateTime(item.paid_japan_at)})
+                                  </span>
+                                )}
+                                {!item.paid_japan && (
+                                  <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
+                                    未入金
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`text-base font-bold ${item.paid_japan ? 'text-red-400 line-through' : 'text-red-600'}`}>
+                                $ {Math.round(japanSendAmount).toLocaleString('en-US')}
                               </span>
                             </div>
+                          )}
 
-                            {/* 日本支払額 (ブラジルエージェント or B001用) */}
-                            {(item.agentCustomerId === 'B001' || (item.customerId?.startsWith('A') && ((item.customerCountry || '').toLowerCase().trim() === 'brasil' || (item.customerCountry || '').toLowerCase().trim() === 'brazil'))) && (
-                              <div className="flex items-center justify-between font-sans text-xs border-t border-gray-200/50 pt-2">
-                                <div className="flex items-center font-semibold text-gray-700">
-                                  <span className="text-red-600 font-black">日本支払額:</span>
-                                  {item.paid_japan && item.paid_japan_at && (
-                                    <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-bold font-sans">
-                                      ✓ 支払済 ({formatDateTime(item.paid_japan_at)})
-                                    </span>
-                                  )}
-                                  {!item.paid_japan && (
-                                    <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
-                                      未入金
-                                    </span>
-                                  )}
-                                </div>
-                                <span className={`text-base font-bold ${item.paid_japan ? 'text-red-400 line-through' : 'text-red-600'}`}>
-                                  $ {Math.round(japanSendAmount).toLocaleString('en-US')}
-                                </span>
+                          {/* 現地費用ボックス */}
+                          {item.delivery_location !== 'JP' && (
+                            <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                              <div className="flex items-center font-semibold text-gray-700">
+                                <span className="text-gray-500">現地費用:</span>
+                                {item.paid_local && item.paid_local_at && (
+                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
+                                    ✓ 支払済 ({formatDateTime(item.paid_local_at)})
+                                  </span>
+                                )}
+                                {!item.paid_local && (
+                                  <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
+                                    未入金
+                                  </span>
+                                )}
                               </div>
-                            )}
-
-                            {/* 現地費用 */}
-                            {item.delivery_location !== 'JP' && (
-                              <div className="flex items-center justify-between font-sans text-xs border-t border-gray-200/50 pt-2">
-                                <div className="flex items-center font-semibold text-gray-700">
-                                  <span className="text-gray-500">現地費用:</span>
-                                  {item.paid_local && item.paid_local_at && (
-                                    <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
-                                      ✓ 支払済 ({formatDateTime(item.paid_local_at)})
-                                    </span>
-                                  )}
-                                  {!item.paid_local && (
-                                    <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[9px] rounded ml-1.5 whitespace-nowrap font-medium font-sans">
-                                      未入金
-                                    </span>
-                                  )}
-                                </div>
-                                <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black')}`}>
-                                  {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                              <span className={`text-base font-bold ${item.paid_local ? 'text-gray-400 line-through' : (typeof calculateLocalCost(item.delivery_location, item, item.shipping_method) === 'string' ? 'text-red-600' : 'text-black')}`}>
+                                {formatLocalCost(calculateLocalCost(item.delivery_location, item, item.shipping_method), 'USD')}
+                              </span>
+                            </div>
+                          )}
 
                           {/* 商品渡し場所 */}
                           <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
