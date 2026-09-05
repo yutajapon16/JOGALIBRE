@@ -3205,45 +3205,46 @@ export default function AdminDashboard() {
                       </div>
                     )}
 
-                    {/* 引渡場所が日本以外の場合の現地費用・引渡場所・発送方法ボックス */}
+                    {/* 引渡場所が日本以外の場合の現地費用ボックス */}
                     {request.delivery_location && request.delivery_location !== 'JP' && (() => {
                       const cost = calculateLocalCost(request.delivery_location, request, request.shipping_method);
                       const isNumericCost = typeof cost === 'number' && !isNaN(cost) && cost > 0;
 
                       return (
-                        <>
-                          {/* 1. 現地費用ボックス (顧客画面のCosto Localと同じオレンジトーン) */}
-                          <div className="mb-2 h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
-                            <span className="text-xs font-semibold text-orange-700">現地費用:</span>
-                            {isNumericCost ? (
-                              <span className="text-base font-extrabold text-orange-700">
-                                $ {Math.round(cost).toLocaleString('en-US')}
-                              </span>
-                            ) : (
-                              <span className="text-sm font-extrabold text-red-600">
-                                要確認
-                              </span>
-                            )}
-                          </div>
-
-                          {/* 2. 引渡場所ボックス */}
-                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
-                            <span className="text-gray-500 font-medium">引渡場所:</span>
-                            <span className="font-semibold text-black">
-                              {getDeliveryLocationName(request.delivery_location, request.delivery_city)}
+                        <div className="mb-2 h-12 px-3 bg-orange-50 border border-orange-100 rounded-lg flex items-center justify-between text-orange-700 font-bold shadow-sm">
+                          <span className="text-xs font-semibold text-orange-700">現地費用:</span>
+                          {isNumericCost ? (
+                            <span className="text-base font-extrabold text-orange-700">
+                              $ {Math.round(cost).toLocaleString('en-US')}
                             </span>
-                          </div>
-
-                          {/* 3. 発送方法ボックス */}
-                          <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
-                            <span className="text-gray-500 font-medium">発送方法:</span>
-                            <span className="font-semibold text-black">
-                              {request.shipping_method === 'air' ? '航空便 ✈️' : 'コンテナ 🚢'}
+                          ) : (
+                            <span className="text-sm font-extrabold text-red-600">
+                              要確認
                             </span>
-                          </div>
-                        </>
+                          )}
+                        </div>
                       );
                     })()}
+
+                    {/* 引渡場所ボックス (日本または海外都市) */}
+                    <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                      <span className="text-gray-500 font-medium">引渡場所:</span>
+                      <span className="font-semibold text-black">
+                        {(!request.delivery_location || request.delivery_location === 'JP')
+                          ? '日本 🇯🇵'
+                          : getDeliveryLocationName(request.delivery_location, request.delivery_city)}
+                      </span>
+                    </div>
+
+                    {/* 発送方法ボックス (引渡場所が日本以外の場合のみ) */}
+                    {request.delivery_location && request.delivery_location !== 'JP' && (
+                      <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between font-sans text-xs">
+                        <span className="text-gray-500 font-medium">発送方法:</span>
+                        <span className="font-semibold text-black">
+                          {request.shipping_method === 'air' ? '航空便 ✈️' : 'コンテナ 🚢'}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="h-24 px-3 py-0 bg-gray-50 border border-gray-100 rounded-lg text-xs mb-2 box-border grid grid-rows-2 grid-cols-2">
                       <div className="flex flex-col justify-center h-12">
