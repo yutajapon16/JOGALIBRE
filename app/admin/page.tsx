@@ -3014,8 +3014,26 @@ export default function AdminDashboard() {
 
                     {/* 商品入札額 (日本円表示) */}
                     {(() => {
+                      const agreedCounterAmount = (() => {
+                        if (request.status === 'approved') {
+                          // 1. 顧客のカウンターオファーを管理者が承認した場合
+                          if (request.customerCounterOffer && !request.customerCounterOfferUsed) {
+                            return request.customerCounterOffer;
+                          }
+                          // 2. 管理者のカウンターオファーを顧客が承認した場合
+                          if (request.counterOffer && (request.customerCounterOfferUsed || !request.customerCounterOffer)) {
+                            return request.counterOffer;
+                          }
+                        }
+                        return null;
+                      })();
+
                       const activeMaxBidUsd = (() => {
-                        if (request.customerCounterOffer && (request.status === 'approved' || !request.customerCounterOfferUsed)) {
+                        if (request.status === 'approved') {
+                          if (agreedCounterAmount !== null) return agreedCounterAmount;
+                          return request.maxBid || 0;
+                        }
+                        if (request.customerCounterOffer && !request.customerCounterOfferUsed) {
                           return request.customerCounterOffer;
                         }
                         return request.counterOffer || request.maxBid || 0;
@@ -3044,10 +3062,21 @@ export default function AdminDashboard() {
 
                     {/* 希望入札額ボックス */}
                     {(() => {
-                      const displayMaxBidUsd = (() => {
+                      const agreedCounterAmount = (() => {
                         if (request.status === 'approved') {
-                          if (request.customerCounterOffer) return request.customerCounterOffer;
-                          if (request.counterOffer) return request.counterOffer;
+                          if (request.customerCounterOffer && !request.customerCounterOfferUsed) {
+                            return request.customerCounterOffer;
+                          }
+                          if (request.counterOffer && (request.customerCounterOfferUsed || !request.customerCounterOffer)) {
+                            return request.counterOffer;
+                          }
+                        }
+                        return null;
+                      })();
+
+                      const displayMaxBidUsd = (() => {
+                        if (request.status === 'approved' && agreedCounterAmount !== null) {
+                          return agreedCounterAmount;
                         }
                         return request.maxBid || 0;
                       })();
@@ -3085,8 +3114,24 @@ export default function AdminDashboard() {
 
                       if (!isB001Linked && !isBrasilAgent) return null;
 
+                      const agreedCounterAmount = (() => {
+                        if (request.status === 'approved') {
+                          if (request.customerCounterOffer && !request.customerCounterOfferUsed) {
+                            return request.customerCounterOffer;
+                          }
+                          if (request.counterOffer && (request.customerCounterOfferUsed || !request.customerCounterOffer)) {
+                            return request.counterOffer;
+                          }
+                        }
+                        return null;
+                      })();
+
                       const cost = (() => {
-                        if (request.customerCounterOffer && (request.status === 'approved' || !request.customerCounterOfferUsed)) {
+                        if (request.status === 'approved') {
+                          if (agreedCounterAmount !== null) return agreedCounterAmount;
+                          return request.maxBid || 0;
+                        }
+                        if (request.customerCounterOffer && !request.customerCounterOfferUsed) {
                           return request.customerCounterOffer;
                         }
                         return request.counterOffer || request.maxBid || 0;
@@ -3111,29 +3156,42 @@ export default function AdminDashboard() {
                       );
                     })()}
 
-                    {/* 4. カウンターオファーボックス (管理者のカウンターオファー、青色ボックス - 顧客カウンター承認時は非表示) */}
-                    {request.counterOffer && request.finalStatus !== 'won' && !(request.status === 'approved' && request.customerCounterOffer) && (
-                      <div className="mb-2 h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between w-full">
-                        <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-base font-bold text-blue-700">
-                            $ {Math.round(request.counterOffer || 0).toLocaleString('en-US')}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    {/* カウンターオファーボックス (4. 管理者青色 / 5. 顧客紫色) */}
+                    {(() => {
+                      const isCustomerCounterApproved = request.status === 'approved' && !!request.customerCounterOffer && !request.customerCounterOfferUsed;
+                      const isAdminCounterApproved = request.status === 'approved' && !!request.counterOffer && (request.customerCounterOfferUsed || !request.customerCounterOffer);
 
-                    {/* 5. カウンターオファーボックス (顧客のカウンターオファー、紫色のボックス) */}
-                    {request.customerCounterOffer && request.finalStatus !== 'won' && (
-                      <div className="mb-2 h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between w-full">
-                        <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-base font-bold text-purple-700">
-                            $ {Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                      const hasAdminCounter = !!request.counterOffer && request.finalStatus !== 'won' && !isCustomerCounterApproved;
+                      const hasCustomerCounter = !!request.customerCounterOffer && request.finalStatus !== 'won' && !isAdminCounterApproved;
+
+                      return (
+                        <>
+                          {/* 4. カウンターオファーボックス (管理者のカウンターオファー、青色ボックス) */}
+                          {hasAdminCounter && (
+                            <div className="mb-2 h-12 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between w-full">
+                              <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-base font-bold text-blue-700">
+                                  $ {Math.round(request.counterOffer || 0).toLocaleString('en-US')}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 5. カウンターオファーボックス (顧客のカウンターオファー、紫色のボックス) */}
+                          {hasCustomerCounter && (
+                            <div className="mb-2 h-12 px-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between w-full">
+                              <span className="text-xs text-gray-500 font-medium">カウンターオファー:</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-base font-bold text-purple-700">
+                                  $ {Math.round(request.customerCounterOffer || 0).toLocaleString('en-US')}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
 
                     {/* 引渡場所が日本以外の場合の現地費用・引渡場所・発送方法ボックス */}
                     {request.delivery_location && request.delivery_location !== 'JP' && (() => {

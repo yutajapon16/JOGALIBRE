@@ -677,6 +677,9 @@ export async function PATCH(request: Request) {
       updateData.status = 'approved';
       updateData.approved_at = new Date().toISOString();
       updateData.customer_counter_offer_used = true;
+      if (currentRequest.counter_offer) {
+        updateData.max_bid = currentRequest.counter_offer;
+      }
     }
 
     // 顧客がカウンターオファーを却下した場合

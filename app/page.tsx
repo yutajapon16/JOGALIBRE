@@ -3668,7 +3668,7 @@ export default function Home() {
         setMyRequests(prev => prev.map(item => {
           if (item.id === requestId) {
             if (action === 'accept') {
-              return { ...item, status: 'approved', customerCounterOfferUsed: true };
+              return { ...item, status: 'approved', customerCounterOfferUsed: true, maxBid: item.counterOffer || item.maxBid };
             } else if (action === 'reject') {
               return { ...item, status: 'rejected', rejectReason: 'Offer declined by customer' };
             } else if (action === 'counter' && counterAmount) {
@@ -5025,8 +5025,8 @@ export default function Home() {
                         </span>
                       </div>
 
-                      {/* 2. オファー金額ボックス (h-12) - 顧客カウンター承認時は顧客カウンター金額が表示されるため非表示 */}
-                      {!(request.status === 'approved' && request.customerCounterOffer && !request.customerCounterOfferUsed) && (
+                      {/* 2. オファー金額ボックス (h-12) - カウンターオファー合意・承認時は合意カウンターオファーが表示されるため非表示 */}
+                      {!(request.status === 'approved' && (request.counterOffer || request.customerCounterOffer)) && (
                         <div className="mb-2 h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
                           <span className="text-xs text-gray-500 font-medium">{t.maxBid}:</span>
                           <span className="text-base font-bold text-indigo-600">
@@ -5038,8 +5038,10 @@ export default function Home() {
                       {/* 3. カウンターオファーボックス (h-12) */}
                       {(() => {
                         const isCustomerCounterApproved = request.status === 'approved' && !!request.customerCounterOffer && !request.customerCounterOfferUsed;
+                        const isAdminCounterApproved = request.status === 'approved' && !!request.counterOffer && (request.customerCounterOfferUsed || !request.customerCounterOffer);
+
                         const hasAdminCounter = !!request.counterOffer && !isCustomerCounterApproved;
-                        const hasCustomerCounter = !!request.customerCounterOffer;
+                        const hasCustomerCounter = !!request.customerCounterOffer && !isAdminCounterApproved;
 
                         if (!hasAdminCounter && !hasCustomerCounter) return null;
 
