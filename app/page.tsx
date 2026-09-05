@@ -5076,6 +5076,21 @@ export default function Home() {
                         );
                       })()}
 
+                      {/* 落札（won）時の落札金額ボックス (現地費用ボックスの上に配置) */}
+                      {request.finalStatus === 'won' && !request.customerConfirmed && (
+                        <div className="h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm mb-2 w-full">
+                          <span className="text-xs text-gray-500 font-medium">
+                            {lang === 'es' ? 'Precio de adjudicación:' : 'Valor de arremate:'}
+                          </span>
+                          <span className="text-base font-bold text-green-800">
+                            {convertUSDToSelectedCurrency(
+                              request.finalPrice ||
+                              (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
+                            )}
+                          </span>
+                        </div>
+                      )}
+
                       {/* 4. 現地費用ボックス (オレンジトーン) */}
                       {request.delivery_location && request.delivery_location !== 'JP' && (() => {
                         const localCost = calculateLocalCost(request.delivery_location, request, request.shipping_method);
@@ -5202,21 +5217,6 @@ export default function Home() {
                           <p className="text-xs font-semibold text-green-600">
                             {lang === 'es' ? 'Esperando resultado de la subasta.' : 'Aguardando o resultado do leilão.'}
                           </p>
-                        </div>
-                      )}
-
-                      {/* 落札（won）時の落札金額ボックス */}
-                      {request.finalStatus === 'won' && !request.customerConfirmed && (
-                        <div className="h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm mb-2 w-full">
-                          <span className="text-xs text-gray-500 font-medium">
-                            {lang === 'es' ? 'Precio de adjudicación:' : 'Valor de arremate:'}
-                          </span>
-                          <span className="text-base font-bold text-green-800">
-                            {convertUSDToSelectedCurrency(
-                              request.finalPrice ||
-                              (request.customerCounterOffer && !request.customerCounterOfferUsed ? request.customerCounterOffer : (request.counterOffer || request.maxBid || 0))
-                            )}
-                          </span>
                         </div>
                       )}
 

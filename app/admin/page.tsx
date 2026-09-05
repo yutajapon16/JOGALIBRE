@@ -3156,13 +3156,15 @@ export default function AdminDashboard() {
                       );
                     })()}
 
-                    {/* カウンターオファーボックス (4. 管理者青色 / 5. 顧客紫色) */}
+                    {/* カウンターオファーボックス (4. 管理者青色 / 5. 顧客紫色) - 落札時（won）は非表示 */}
                     {(() => {
+                      if (request.finalStatus === 'won') return null;
+
                       const isCustomerCounterApproved = request.status === 'approved' && !!request.customerCounterOffer && !request.customerCounterOfferUsed;
                       const isAdminCounterApproved = request.status === 'approved' && !!request.counterOffer && (request.customerCounterOfferUsed || !request.customerCounterOffer);
 
-                      const hasAdminCounter = !!request.counterOffer && request.finalStatus !== 'won' && !isCustomerCounterApproved;
-                      const hasCustomerCounter = !!request.customerCounterOffer && request.finalStatus !== 'won' && !isAdminCounterApproved;
+                      const hasAdminCounter = !!request.counterOffer && !isCustomerCounterApproved;
+                      const hasCustomerCounter = !!request.customerCounterOffer && !isAdminCounterApproved;
 
                       return (
                         <>
@@ -3192,6 +3194,16 @@ export default function AdminDashboard() {
                         </>
                       );
                     })()}
+
+                    {/* 落札（won）時の落札金額ボックス (現地費用ボックスの上に配置) */}
+                    {request.finalStatus === 'won' && (
+                      <div className="mb-2 h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm">
+                        <span className="text-xs text-gray-500 font-medium">落札金額:</span>
+                        <span className="text-base font-bold text-green-800">
+                          $ {Math.round(request.finalPrice || 0).toLocaleString('en-US')}
+                        </span>
+                      </div>
+                    )}
 
                     {/* 引渡場所が日本以外の場合の現地費用・引渡場所・発送方法ボックス */}
                     {request.delivery_location && request.delivery_location !== 'JP' && (() => {
@@ -3258,15 +3270,6 @@ export default function AdminDashboard() {
                       <div className="h-12 px-3 bg-red-50 rounded-lg flex items-center text-xs mb-2 gap-1.5">
                         <span className="text-xs text-gray-500 font-medium">却下理由:</span>
                         <span className="text-xs font-semibold text-red-700 truncate">{request.rejectReason}</span>
-                      </div>
-                    )}
-
-                    {request.finalStatus === 'won' && (
-                      <div className="mb-2 h-12 px-3 bg-green-100 border border-green-200 rounded-lg flex items-center justify-between shadow-sm">
-                        <span className="text-xs text-gray-500 font-medium">落札金額:</span>
-                        <span className="text-base font-bold text-green-800">
-                          $ {Math.round(request.finalPrice || 0).toLocaleString('en-US')}
-                        </span>
                       </div>
                     )}
 
