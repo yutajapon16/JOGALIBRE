@@ -339,7 +339,7 @@ interface SearchNavState {
   activeCategoryUrl?: string | null;
   keyword?: string;
   searchCondition?: 'all' | 'new' | 'used';
-  sortOrder?: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new';
+  sortOrder?: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new' | 'end_asc';
   searchPage?: number;
   nextPageExists?: boolean;
   products?: SearchItem[];
@@ -1472,7 +1472,7 @@ export default function Home() {
   const [searchCondition, setSearchCondition] = useState<'all' | 'new' | 'used'>(() => {
     return getStoredNavState()?.searchCondition || 'all';
   });
-  const [sortOrder, setSortOrder] = useState<'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new'>(() => {
+  const [sortOrder, setSortOrder] = useState<'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new' | 'end_asc'>(() => {
     return getStoredNavState()?.sortOrder || 'featured';
   });
   const [isSearching, setIsSearching] = useState(false);
@@ -3445,7 +3445,7 @@ export default function Home() {
     }
   };
 
-  const handleKeywordSearch = async (eOrWord?: React.FormEvent | string, page: number = 1, forceCond?: 'all' | 'new' | 'used', forceSort?: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new') => {
+  const handleKeywordSearch = async (eOrWord?: React.FormEvent | string, page: number = 1, forceCond?: 'all' | 'new' | 'used', forceSort?: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new' | 'end_asc') => {
     let searchWord = keyword;
     if (typeof eOrWord === 'string') {
       searchWord = eOrWord;
@@ -3541,7 +3541,7 @@ export default function Home() {
     fetchCategoryItems(searchUrl, 1);
   };
 
-  const fetchCategoryItems = async (url: string, page: number = 1, forceSort?: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new') => {
+  const fetchCategoryItems = async (url: string, page: number = 1, forceSort?: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new' | 'end_asc') => {
     setIsSearching(true);
     setLoading(true);
     setSearchPage(page);
@@ -3587,7 +3587,7 @@ export default function Home() {
   };
 
   // 並び替え（ソート順）変更時のハンドラー
-  const handleSortChange = (newSort: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new') => {
+  const handleSortChange = (newSort: 'featured' | 'price_asc' | 'price_desc' | 'bids_desc' | 'new' | 'end_asc') => {
     setSortOrder(newSort);
     if (searchType === 'keyword' && keyword.trim()) {
       handleKeywordSearch(keyword, 1, undefined, newSort);
@@ -8293,6 +8293,8 @@ export default function Home() {
                         ? (lang === 'es' ? 'Más populares' : 'Mais populares')
                         : sortOrder === 'new'
                         ? (lang === 'es' ? 'Más recientes' : 'Mais recentes')
+                        : sortOrder === 'end_asc'
+                        ? (lang === 'es' ? 'Termina pronto' : 'Terminando em breve')
                         : (lang === 'es' ? 'Recomendados' : 'Recomendados')}
                     </span>
                     <svg className="w-3.5 h-3.5 text-gray-400 absolute right-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -8304,6 +8306,7 @@ export default function Home() {
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     >
                       <option value="featured">{lang === 'es' ? 'Recomendados' : 'Recomendados'}</option>
+                      <option value="end_asc">{lang === 'es' ? 'Termina pronto' : 'Terminando em breve'}</option>
                       <option value="price_asc">{lang === 'es' ? 'Precio: Menor a Mayor' : 'Preço: Menor para Maior'}</option>
                       <option value="price_desc">{lang === 'es' ? 'Precio: Mayor a Menor' : 'Preço: Maior para Menor'}</option>
                       <option value="bids_desc">{lang === 'es' ? 'Más populares' : 'Mais populares'}</option>

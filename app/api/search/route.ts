@@ -20,6 +20,7 @@ export async function GET(request: Request) {
   // price_desc: 価格が高い順 (s1=cbids&o1=d)
   // bids_desc: 入札数が多い順 (s1=bids&o1=d)
   // new: 新着順 (s1=new&o1=d)
+  // end_asc: 残り時間の短い順 (s1=end&o1=a)
   let s1 = 'score';
   let o1 = 'd';
   if (sort === 'price_asc') {
@@ -34,6 +35,9 @@ export async function GET(request: Request) {
   } else if (sort === 'new') {
     s1 = 'new';
     o1 = 'd';
+  } else if (sort === 'end_asc') {
+    s1 = 'end';
+    o1 = 'a';
   }
 
   // 操作ユーザー情報の取得（エラー通知連携用）
