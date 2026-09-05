@@ -191,7 +191,16 @@ const STANDALONE_BRAND_RULES: { pattern: RegExp; replacement: string }[] = [
   { pattern: /カシオ/g, replacement: 'Casio' },
   { pattern: /セイコー/g, replacement: 'Seiko' },
   { pattern: /シチズン/g, replacement: 'Citizen' },
+
+  // 自動車・バイクの型式表記・パーツ用語
+  { pattern: /([A-Za-z0-9-]+)改/g, replacement: '$1 (Modified)' },
+  { pattern: /前期型/g, replacement: 'Early Model' },
+  { pattern: /後期型/g, replacement: 'Late Model' },
+  { pattern: /中期型/g, replacement: 'Mid Model' },
+  { pattern: /ドンガラ(?:ボディ)?/g, replacement: 'Bare Chassis' },
+  { pattern: /改\b/g, replacement: '(Modified)' },
 ];
+
 
 
 /**

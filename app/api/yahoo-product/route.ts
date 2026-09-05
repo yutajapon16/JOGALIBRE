@@ -572,11 +572,6 @@ export async function POST(request: Request) {
       url: url,
       categoryId: categoryId,
       source: 'yahoo_url_import',
-      shippingCost: shippingCost,
-      shippingUnknown: shippingUnknown,
-      description: description,
-      translatedDescription: translatedDescription,
-      titleJa: title,
       images: allImages.length > 0 ? allImages : [imageUrl],
       aiSummaryEs: finalAiSummaryEs,
       aiSummaryPt: finalAiSummaryPt
@@ -629,7 +624,6 @@ async function generateAiSummary(
     return await buildFallbackSummary(translatedDesc || description, targetLang);
   }
 
-
   // 翻訳済みまたは原文の説明文を使用
   const textToSummarize = (translatedDesc && translatedDesc.length > 50) ? translatedDesc : description;
 
@@ -638,7 +632,9 @@ Tu tarea es traducir y resumir de forma clara, profesional y 100% en ESPAÑOL la
 
 REGLAS CRÍTICAS:
 1. Debes redactar TODO absolutamente en ESPAÑOL. No incluyas ningún carácter en japonés (kanji, hiragana, katakana).
+   - IMPORTANTE: Incluso sufijos japoneses en códigos de modelo o especificaciones como "改" (e.g. E-EG2改 -> E-EG2 Modificado), "型" (e.g. 後期型 -> Modelo tardío / Restyling), o "ドンガラ" -> (Chasis despojado) DEBEN traducirse al español. NUNCA dejes caracteres kanji.
 2. Estructura el resumen EXACTAMENTE con los siguientes 5 bloques separados por un salto de línea entre cada uno, usando viñetas claras:
+
 
 • **Especificaciones**:
 (marca, modelo, dimensiones, color, material, etc. Si no se indica, escribe "No especificado")
@@ -734,12 +730,16 @@ function fixPortugueseAccents(text: string): string {
 }
 
   const promptPt = `Você é um assistente de compras internacional especializado para clientes lusófonos em uma plataforma de leilões do Yahoo! Japão.
+
 Sua tarefa é traduzir e resumir de forma clara, profissional, gramaticalmente impecável e 100% em PORTUGUÊS (do Brasil) a seguinte descrição de produto.
 
 REGRAS CRÍTICAS DE IDIOMA E ORTOGRAFIA:
 1. Você deve redigir TUDO absolutamente em PORTUGUÊS fluente e natural, com ortografia e acentuação gráfica rigorosamente corretas (use sempre os acentos corretos como: Não, Tênis, Especificações, Acessórios, Japão, Dimensões, etc. NUNCA omita acentos nem use "Nao" ou "Tenis").
+   - IMPORTANTE: Mesmo sufixos japoneses em códigos de modelo como "改" (ex: E-EG2改 -> E-EG2 Modificado), "型" (ex: 後期型 -> Modelo tardio / Restyling), ou "ドンガラ" -> (Chassi sem acabamento) DEVEM ser traduzidos para o português. NUNCA deixe caracteres kanji.
+
 2. Não inclua nenhum caractere em japonês (kanji, hiragana, katakana).
 3. Estruture o resumo EXATAMENTE com os seguintes 5 blocos separados por uma linha em branco entre cada um, usando marcadores claros:
+
 
 • **Especificações**:
 (marca, modelo, dimensões, cor, material, etc. Se não constar, escreva "Não especificado")
@@ -804,11 +804,14 @@ ${textToSummarize}`;
         const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text && text.trim() && text.length > 20) {
           let cleaned = cleanupBrandNames(text.trim());
+          cleaned = cleaned.replace(/([A-Za-z0-9-]+)改/g, targetLang === 'es' ? '$1 (Modificado)' : '$1 (Modificado)');
+          cleaned = cleaned.replace(/\b改\b/g, targetLang === 'es' ? '(Modificado)' : '(Modificado)');
           if (targetLang === 'pt') {
             cleaned = fixPortugueseAccents(cleaned);
           }
           return cleaned;
         }
+
       } else {
         const errBody = await response.text();
         console.warn(`Gemini model ${model} status ${response.status}:`, errBody.substring(0, 200));
