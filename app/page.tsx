@@ -8617,6 +8617,7 @@ export default function Home() {
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
                   <input
                     type="number"
+                    step="5"
                     value={editingOfferAmount}
                     onChange={(e) => setEditingOfferAmount(e.target.value)}
                     className="w-full h-14 pl-10 pr-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-lg font-bold text-black focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
