@@ -4,7 +4,7 @@ import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
 import { parseAnyDateTime, parseDbDateTime, parseJstDateTime } from '@/lib/utils';
 import { sendWonEmail, sendShippingInfoEmail } from '@/lib/resend';
-import { ErrorUserInfo } from '@/lib/error-notifier';
+import { ErrorUserInfo, hasJapaneseCharacters } from '@/lib/error-notifier';
 
 export async function POST(request: Request) {
   try {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { productId, productTitle, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language, deliveryLocation, deliveryCountry, deliveryCity, shippingMethod } = body;
+    const { productId, productTitle, productTitleJa, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language, deliveryLocation, deliveryCountry, deliveryCity, shippingMethod } = body;
 
     // 顧客の場合は自身のメールアドレスを強制使用
     const finalEmail = isAdmin ? customerEmail : effectiveUser.email;
@@ -44,13 +44,62 @@ export async function POST(request: Request) {
       };
     } catch {}
 
+    // 日本語タイトルの決定と安全防護策（クライアントから外国語タイトルが送られた場合の自動補正）
+    let finalProductTitleJa = productTitleJa || productTitle || '';
+    if (productId && (!finalProductTitleJa || !hasJapaneseCharacters(finalProductTitleJa))) {
+      try {
+        // ① まず永続キャッシュ（system_settings）を確認
+        const { data: cacheSetting } = await supabaseAdmin
+          .from('system_settings')
+          .select('value')
+          .eq('key', `product_summary_${productId}`)
+          .maybeSingle();
+
+        if (cacheSetting?.value?.originalTitle && hasJapaneseCharacters(cacheSetting.value.originalTitle)) {
+          finalProductTitleJa = cacheSetting.value.originalTitle;
+        } else if (productUrl && productUrl.includes('auctions.yahoo.co.jp')) {
+          // ② キャッシュに無ければヤフオク商品URLから直接日本語タイトルを抽出
+          const cleanAuctionUrl = `https://auctions.yahoo.co.jp/jp/auction/${productId}`;
+          const resYahoo = await fetch(cleanAuctionUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+            },
+            signal: AbortSignal.timeout(4000)
+          });
+          if (resYahoo.ok) {
+            const htmlText = await resYahoo.text();
+            const nextDataMatch = htmlText.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+            if (nextDataMatch) {
+              const jsonData = JSON.parse(nextDataMatch[1]);
+              const item = jsonData.props?.pageProps?.initialState?.item?.detail?.item;
+              const scrapedTitle = item?.title || item?.name || '';
+              if (scrapedTitle && hasJapaneseCharacters(scrapedTitle)) {
+                finalProductTitleJa = scrapedTitle;
+              }
+            }
+            if (!finalProductTitleJa || !hasJapaneseCharacters(finalProductTitleJa)) {
+              const titleTag = htmlText.match(/<title>([^<]+)<\/title>/i);
+              if (titleTag) {
+                const scraped = titleTag[1].split('-')[0].replace(/Yahoo!オークション\s*[-–]\s*/i, '').trim();
+                if (scraped && hasJapaneseCharacters(scraped)) {
+                  finalProductTitleJa = scraped;
+                }
+              }
+            }
+          }
+        }
+      } catch (recoveryErr) {
+        console.warn('Fallback title recovery warning in POST /api/bid-request:', recoveryErr);
+      }
+    }
+
     // 非同期でタイトルを翻訳 (並列で実行、ユーザー情報を連携)
     let productTitleEs = null;
     let productTitlePt = null;
-    if (productTitle) {
+    if (finalProductTitleJa) {
       [productTitleEs, productTitlePt] = await Promise.all([
-        translateTitle(productTitle, 'es', userInfo),
-        translateTitle(productTitle, 'pt', userInfo)
+        translateTitle(finalProductTitleJa, 'es', userInfo),
+        translateTitle(finalProductTitleJa, 'pt', userInfo)
       ]);
     }
 
@@ -58,7 +107,7 @@ export async function POST(request: Request) {
     const bidRequest = {
       id: Date.now().toString() + Math.floor(1000 + Math.random() * 9000).toString(),
       product_id: productId,
-      product_title: productTitle,
+      product_title: finalProductTitleJa || productTitle,
       product_title_es: productTitleEs,
       product_title_pt: productTitlePt,
       product_url: productUrl,

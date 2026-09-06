@@ -10,6 +10,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // AI要約・翻訳データの高速キャッシュ (6時間TTL)
 interface ProductCacheItem {
+  originalTitle?: string;
   aiSummaryEs?: string;
   aiSummaryPt?: string;
   translatedTitleEs?: string;
@@ -472,6 +473,7 @@ export async function POST(request: Request) {
 
     // 2. キャッシュの更新（メモリ ＋ Supabase 永続キャッシュ）
     const updatedCacheItem: ProductCacheItem = {
+      originalTitle: title || cachedItem?.originalTitle,
       aiSummaryEs: isRealSummary(aiSummaryEs) ? aiSummaryEs : (isRealSummary(cachedItem?.aiSummaryEs) ? cachedItem?.aiSummaryEs : undefined),
       aiSummaryPt: isRealSummary(aiSummaryPt) ? aiSummaryPt : (isRealSummary(cachedItem?.aiSummaryPt) ? cachedItem?.aiSummaryPt : undefined),
       translatedTitleEs: lang === 'es' ? translatedTitle : cachedItem?.translatedTitleEs,
@@ -485,7 +487,7 @@ export async function POST(request: Request) {
     productAiCache.set(productId, updatedCacheItem);
 
     // Supabase に永続保存して次回以降の二重課金をゼロにする（7日間保持）
-    if (productId && (updatedCacheItem.aiSummaryEs || updatedCacheItem.aiSummaryPt)) {
+    if (productId && (updatedCacheItem.aiSummaryEs || updatedCacheItem.aiSummaryPt || updatedCacheItem.originalTitle)) {
       Promise.resolve(
         supabaseAdmin
           .from('system_settings')
@@ -562,6 +564,7 @@ export async function POST(request: Request) {
     const product = {
       id: productId,
       title: translatedTitle || 'タイトル取得失敗',
+      titleJa: title || cachedItem?.originalTitle || '',
       currentPrice: currentPrice,
       bids: bids,
       endTime: endTime,

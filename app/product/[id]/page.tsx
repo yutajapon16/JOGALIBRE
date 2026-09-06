@@ -716,6 +716,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             const updated = {
               ...prev,
               ...incoming,
+              titleJa: incoming.titleJa || prev?.titleJa || (titleJaParam ? safeDecodeURIComponent(titleJaParam) : undefined),
               aiSummaryEs: incoming.aiSummaryEs || prev?.aiSummaryEs || '',
               aiSummaryPt: incoming.aiSummaryPt || prev?.aiSummaryPt || '',
               images: incoming.images && incoming.images.length > 0 ? incoming.images : (prev?.images || []),
@@ -947,6 +948,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         finalUrl += (finalUrl.includes('?') ? '&' : '?') + `jcat=${jcat}`;
       }
       
+      const finalProductTitle = product.titleJa || (titleJaParam ? safeDecodeURIComponent(titleJaParam) : '') || product.title;
+
       const res = await fetch('/api/bid-request', {
         method: 'POST',
         headers: {
@@ -955,7 +958,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         },
         body: JSON.stringify({
           productId: product.id,
-          productTitle: product.titleJa || product.title,
+          productTitle: finalProductTitle,
+          productTitleJa: finalProductTitle,
           productUrl: finalUrl,
           productImage: product.imageUrl,
           productPrice: product.currentPrice,

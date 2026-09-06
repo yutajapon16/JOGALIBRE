@@ -3375,7 +3375,12 @@ export default function Home() {
         const detail = data.product;
         setSelectedProduct(prev => {
           if (prev && (prev.url === detail.url || prev.id === detail.id)) {
-            return { ...prev, ...detail, images: detail.images || prev.images || [detail.imageUrl] };
+            return {
+              ...prev,
+              ...detail,
+              titleJa: detail.titleJa || prev.titleJa,
+              images: detail.images || prev.images || [detail.imageUrl]
+            };
           }
           return prev;
         });
@@ -3385,7 +3390,7 @@ export default function Home() {
         const newCalculatedBid = calculateConvertedPrice(
           detail.currentPrice,
           'USD',
-          detail.titleJa || detail.title,
+          detail.titleJa || (selectedProduct?.titleJa) || detail.title,
           detailUrlWithCat,
           currentCategory?.id,
           detail.id
@@ -3398,12 +3403,22 @@ export default function Home() {
 
         // 商品リスト(products)を同期更新
         setProducts(prev => prev.map(p =>
-          (p.url === detail.url || p.id === detail.id) ? { ...p, ...detail, images: detail.images || [detail.imageUrl] } : p
+          (p.url === detail.url || p.id === detail.id) ? {
+            ...p,
+            ...detail,
+            titleJa: detail.titleJa || p.titleJa,
+            images: detail.images || [detail.imageUrl]
+          } : p
         ));
 
         // お気に入りリスト(favorites)も同期更新（もし存在すれば）
         setFavorites(prev => prev.map(f =>
-          (f.url === detail.url || f.id === detail.id) ? { ...f, ...detail, images: detail.images || [detail.imageUrl] } : f
+          (f.url === detail.url || f.id === detail.id) ? {
+            ...f,
+            ...detail,
+            titleJa: detail.titleJa || f.titleJa,
+            images: detail.images || [detail.imageUrl]
+          } : f
         ));
       }
     } catch (error) {
