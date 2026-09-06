@@ -320,6 +320,137 @@ export const matchesCostKeyword = (text: string, keyword: string): boolean => {
 };
 
 /**
+ * 商品タイトルやURLから、「エンジン本体（重量物・ASSY）」であるかを多層判定するヘルパー関数
+ * - 優先度1 (本体確定): 「エンジン本体」「エンジンASSY」「コンプリートエンジン」等のキーワードがある場合は、
+ *                      カムシャフト等のパーツ名が併記されていても無条件で【エンジン本体】と判定する
+ * - 優先度2 (部品除外): 本体確定ワードがなく、パーツ単体名（ガスケット、カムシャフト、ピストン、プラグ、センサー、ボルト等）が
+ *                      含まれる場合は【通常パーツ】と判定（エンジン本体ではない）
+ * - 優先度3 (単体エンジン): 上記パーツ単体名がなく、「エンジン」単体や実動等の表記がある場合は【エンジン本体】と判定
+ */
+export const isEngineUnit = (title?: string | null, url?: string | null): boolean => {
+  if (!title && !url) return false;
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+  const text = `${lowerTitle} ${lowerUrl}`;
+
+  // 1. エンジン本体確定キーワード（これらがあれば、カムシャフト等の部品名が併記されていても100%エンジン本体とみなす）
+  const engineUnitKeywords = [
+    'エンジン本体',
+    'エンジン assy',
+    'エンジンassy',
+    'エンジン・assy',
+    'エンジン組品',
+    'コンプリートエンジン',
+    'リビルトエンジン',
+    'ベアエンジン',
+    'ショートブロック',
+    'ロングブロック',
+    'エンジン載せ替え',
+    'エンジン 載せ替え',
+    'エンジン載替',
+    'エンジン 載替',
+    '実動エンジン',
+    '実働エンジン',
+    'motor completo',
+    'complete engine'
+  ];
+
+  if (engineUnitKeywords.some(kw => text.includes(kw))) {
+    return true;
+  }
+
+  // 2. 部品・補修パーツ単体ワード（本体確定キーワードがなく、これらが含まれる場合はエンジン本体ではない）
+  const enginePartKeywords = [
+    'ガスケット',
+    'パッキン',
+    'シール',
+    'オイルシール',
+    'カムシャフト',
+    'ハイカム',
+    'ピストン',
+    'コンロッド',
+    'クランクシャフト',
+    'タイミングベルト',
+    'タイベル',
+    'ファンベルト',
+    'ベルト',
+    'テンショナー',
+    'プーリー',
+    'プラグ',
+    'スパークプラグ',
+    'イグニッションコイル',
+    'イグニッション',
+    'インジェクター',
+    'デリバリーパイプ',
+    '燃料ポンプ',
+    'フューエルポンプ',
+    'オイルパン',
+    'オイルポンプ',
+    'ウォーターポンプ',
+    'サーモスタット',
+    'ラジエーター',
+    'ラジエター',
+    'インタークーラー',
+    'オイルクーラー',
+    'タービン',
+    'ターボチャージャー',
+    '過給器',
+    'スーパーチャージャー',
+    'ブローオフ',
+    'ウェイストゲート',
+    'アクチュエーター',
+    'マニホールド',
+    'エキマニ',
+    'インマニ',
+    'スロットル',
+    'スロットルボディ',
+    'センサー',
+    'エアフロ',
+    'o2センサー',
+    'ソレノイド',
+    'バルブ',
+    'シリンダーヘッド',
+    'シリンダーブロック',
+    'タペットカバー',
+    'ヘッドカバー',
+    'ロッカーカバー',
+    'バルブスプリング',
+    'リフター',
+    'エンジンマウント',
+    'マウント',
+    'ボルト',
+    'ナット',
+    'スタッドボルト',
+    'ワッシャー',
+    'ホース',
+    'パイプ',
+    'チューブ',
+    'ステー',
+    'ブラケット',
+    'リペアキット',
+    'オーバーホールキット',
+    'o/hキット',
+    'キット',
+    'セット'
+  ];
+
+  if (enginePartKeywords.some(kw => text.includes(kw))) {
+    return false;
+  }
+
+  // 3. パーツ単体名がなく、「エンジン」が含まれている場合
+  if (text.includes('エンジンオイル') || text.includes('エンジンルーム')) {
+    return false;
+  }
+
+  if (matchesCostKeyword(lowerTitle, 'エンジン') || matchesCostKeyword(lowerUrl, 'エンジン') || matchesCostKeyword(text, 'motor')) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
  * 商品タイトルやURLからカテゴリキーを判定するヘルパー関数
  */
 export const detectCategoryKey = (title?: string | null, url?: string | null): string => {
@@ -341,11 +472,19 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
   // 1. カテゴリIDによる厳密な判定
   for (const item of cachedShippingCosts) {
     if (item.categoryIds.some(id => lowerUrl.includes(id))) {
+      // motor（エンジン本体）の場合、部品単体であれば除外
+      if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+        continue;
+      }
       return item.key;
     }
   }
   for (const item of cachedFobCosts) {
     if (item.categoryIds.some(id => lowerUrl.includes(id))) {
+      // motor（エンジン本体）の場合、部品単体であれば除外
+      if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+        continue;
+      }
       return item.key;
     }
   }
@@ -357,11 +496,23 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
 
   // 3. キーワードによるフォールバック判定
   for (const item of cachedShippingCosts) {
+    if (item.key === 'motor') {
+      if (isEngineUnit(lowerTitle, lowerUrl)) {
+        return item.key;
+      }
+      continue;
+    }
     if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
       return item.key;
     }
   }
   for (const item of cachedFobCosts) {
+    if (item.key === 'motor') {
+      if (isEngineUnit(lowerTitle, lowerUrl)) {
+        return item.key;
+      }
+      continue;
+    }
     if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
       return item.key;
     }
@@ -369,6 +520,7 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
 
   return 'default';
 };
+
 
 export interface City {
   code: string;
@@ -714,12 +866,22 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     lowerTitle.includes('パーツ') ||
     lowerTitle.includes('部品');
 
+  // --- 0.5 エンジン本体（重量物・ASSY）の判定 ---
+  if (isEngineUnit(lowerTitle, lowerUrl)) {
+    const motorCost = cachedFobCosts.find(i => i.key === 'motor');
+    return motorCost ? motorCost.fob : 1500;
+  }
+
   // --- 1. URL内のヤフオクカテゴリIDによる厳密な判定 ---
   let matchedItem: FobCostItem | null = null;
   for (const item of cachedFobCosts) {
     if (item.categoryIds.length > 0 && item.categoryIds.some(id => lowerUrl.includes(id))) {
       // 車両本体FOB（54,000円以上）の場合、パーツ単語が含まれていたら除外
       if (item.fob >= 50000 && isCarPart) {
+        continue;
+      }
+      // motor（エンジン本体）の場合、部品単体であれば除外
+      if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
         continue;
       }
       matchedItem = item;
@@ -738,6 +900,9 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
       if (sizeCost.fob >= 50000 && isCarPart) {
         return 1500;
       }
+      if (sizeCost.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+        return 1500;
+      }
       return sizeCost.fob;
     }
   }
@@ -749,6 +914,9 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
       // 車両本体FOBは車両カテゴリ以外またはパーツ商品には絶対に適用しない
       continue;
     }
+    if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+      continue;
+    }
     if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
       return item.fob;
     }
@@ -756,6 +924,7 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
 
   return 1500;
 };
+
 
 
 /**
@@ -799,10 +968,21 @@ export const calculateDefaultShippingCost = (title?: string | null, url?: string
     return 0;
   }
 
+  // --- 0.5 エンジン本体（重量物・ASSY）の判定 ---
+  // isEngineUnit が true の場合、パーツ名（カムシャフト等）が併記されていてもエンジン本体送料（10,000円）を最優先適用
+  if (isEngineUnit(lowerTitle, lowerUrl)) {
+    const motorCost = cachedShippingCosts.find(i => i.key === 'motor');
+    return motorCost ? motorCost.shipping : 10000;
+  }
+
   // --- 1. URL内のヤフオクカテゴリIDによる厳密な判定 ---
   let matchedItem: ShippingCostItem | null = null;
   for (const item of cachedShippingCosts) {
     if (item.categoryIds.some(id => lowerUrl.includes(id))) {
+      // motor（エンジン本体: 10,000円）の場合、部品単体であれば除外
+      if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+        continue;
+      }
       matchedItem = item;
       break;
     }
@@ -848,11 +1028,19 @@ export const calculateDefaultShippingCost = (title?: string | null, url?: string
   // --- 2. jcatがあればマスタデータから送料を取得 (上記カテゴリIDで一致しなかった場合) ---
   if (jcat) {
     const sizeCost = cachedShippingCosts.find(i => i.key === jcat);
-    if (sizeCost) return sizeCost.shipping;
+    if (sizeCost) {
+      if (sizeCost.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+        return 1000;
+      }
+      return sizeCost.shipping;
+    }
   }
 
   // --- 3. URLにカテゴリIDがない場合のフォールバック判定（タイトルやキーワードによる判定） ---
   for (const item of cachedShippingCosts) {
+    if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+      continue;
+    }
     if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
       return item.shipping;
     }

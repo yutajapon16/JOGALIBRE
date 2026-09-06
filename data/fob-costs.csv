@@ -9,7 +9,7 @@ desarme,65000,2084061280,desarme|desmanche|部品取り|丸車|書類無し
 
 moto,10000,26316,moto|バイク|オートバイ|二輪|motorcycle
 bicicleta,1500,26246,自転車|bicicleta
-motor,1500,"2084200282,2084005256",motor|エンジン
+motor,1500,2084200282,エンジン本体|エンジン assy|エンジンassy|コンプリートエンジン|リビルトエンジン|ベアエンジン|ショートブロック|ロングブロック|実動エンジン|実働エンジン|motor completo
 transmision,1500,2084008426,transmisión|transmision|transmissão|transmissao|トランスミッション|ミッション
 carroceria,1500,"2084005255,2084200196",外装|フロントガラス|ガラス|ドア|バンパー|フェンダー|ボンネット|トランク|エアロ|スポイラー|ウイング|carroceria|paragolpe|puerta|capo|parabrisas
 escape,1500,"2084005143,2084200216",マフラー|エキマニ|フロントパイプ|触媒|中間パイプ|リアピース|escape|escapamento|silenciador
