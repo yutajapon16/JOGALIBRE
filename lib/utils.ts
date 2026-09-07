@@ -451,6 +451,308 @@ export const isEngineUnit = (title?: string | null, url?: string | null): boolea
 };
 
 /**
+ * 商品タイトルやURLから、「外装・エアロ（大型品: 10,000円）」であるかを判定するヘルパー関数
+ * バンパー、ボンネット、ドア、フェンダー、トランク、ガラス等の大物を判定し、
+ * エンブレム、クリップ、ステッカー、ノズル等の小物は除外（通常送料1,000円）とする
+ */
+export const isCarroceriaUnit = (title?: string | null, url?: string | null): boolean => {
+  if (!title && !url) return false;
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+  const text = `${lowerTitle} ${lowerUrl}`;
+
+  // 1. 大型外装確定キーワード
+  const bigKeywords = [
+    'フロントバンパー', 'リアバンパー', 'リヤバンパー', 'バンパー',
+    'ボンネット', 'capo',
+    'フロントフェンダー', 'リアフェンダー', 'リヤフェンダー', 'フェンダー',
+    'フロントドア', 'リアドア', 'リヤドア', 'ドア本体',
+    'トランクパネル', 'トランク', 'リアゲート', 'リヤゲート', 'バックドア',
+    'フロントガラス', 'リアガラス', 'リヤガラス',
+    'サイドステップ', 'サイドスカート', 'エアロキット', 'フルエアロ',
+    'gtウイング', 'リアウイング', 'リヤウイング', 'リアスポイラー', 'リヤスポイラー',
+    'paragolpe', 'parabrisas'
+  ];
+
+  // 2. 外装小物・除外キーワード
+  const partKeywords = [
+    'エンブレム', 'emblem', 'ロゴ',
+    'クリップ', 'リベット', 'ファスナー', 'ボルト', 'ナット', 'ビス', 'ネジ', 'ステー', 'ブラケット',
+    'ドアノブ', 'アウターハンドル', 'インナーハンドル', 'ドアハンドル',
+    'モール', 'モールディング', 'ガーニッシュ', 'トリム', 'ピラー',
+    'ステッカー', 'デカール', 'フィルム', 'プロテクター',
+    'ウォッシャーノズル', 'ノズル', 'ワイパーアーム', 'ワイパーブレード', 'ワイパーゴム', 'ワイパー',
+    'ドアミラーレンズ', 'ミラーレンズ', 'ミラーカバー',
+    'ウェザーストリップ', 'ドアゴム',
+    'ガラスコーティング', 'コーティング', '撥水',
+    'フォグカバー', 'グリルバッジ', 'キーシリンダー'
+  ];
+
+  // 小物キーワードが含まれる場合は小物優先
+  const hasPart = partKeywords.some(kw => text.includes(kw));
+  if (hasPart) {
+    if (text.includes('クリップ') || text.includes('ボルト') || text.includes('ステー') || text.includes('エンブレム') || text.includes('ノズル') || text.includes('ステッカー') || text.includes('モール')) {
+      return false;
+    }
+    const isBig = bigKeywords.some(kw => text.includes(kw));
+    return isBig;
+  }
+
+  // 大物キーワード判定
+  if (bigKeywords.some(kw => text.includes(kw))) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
+ * 商品タイトルやURLから、「シート本体（大型品: 9,000円）」であるかを判定するヘルパー関数
+ * シート本体（レカロ、セミバケ、フルバケ等）を判定し、
+ * シートレール、シートベルト、シートカバー、遮熱シート等は除外（通常送料1,000円）とする
+ */
+export const isSeatUnit = (title?: string | null, url?: string | null): boolean => {
+  if (!title && !url) return false;
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+  const text = `${lowerTitle} ${lowerUrl}`;
+
+  // 1. シート小物・除外キーワード
+  const partKeywords = [
+    'シートレール', 'レール', 'ベースフレーム',
+    'シートベルト', 'ベルトバックル', 'バックル', 'キャッチ',
+    'シートカバー', 'カバー', 'プロテクター',
+    'シートヒーター', 'ヒータースイッチ', 'スイッチ',
+    'ヘッドレスト',
+    'ボルト', 'ナット', 'ワッシャー', 'スペーサー',
+    '防音シート', '遮熱シート', 'デッドニングシート', 'カーボンシート', 'ラッピングシート', '制振シート'
+  ];
+
+  if (partKeywords.some(kw => text.includes(kw))) {
+    return false;
+  }
+
+  // 2. シート本体キーワード
+  const bigKeywords = [
+    'シート本体', 'セミバケ', 'セミバケット', 'フルバケ', 'フルバケット',
+    'レカロシート', 'ブリッドシート', 'バケットシート',
+    '運転席シート', '助手席シート', 'フロントシート', 'リアシート', 'リヤシート',
+    '純正シート', 'レザーシート', 'recaro', 'bride', 'シート', 'asiento', 'assento'
+  ];
+
+  return bigKeywords.some(kw => text.includes(kw));
+};
+
+/**
+ * 商品タイトルやURLから、「マフラー本体（大型品: 8,000円）」であるかを判定するヘルパー関数
+ * マフラー本体、エキマニ、フロントパイプ、触媒等を判定し、
+ * ガスケット、ハンガーゴム、ボルト、インナーサイレンサー等は除外（通常送料1,000円）とする
+ */
+export const isMufflerUnit = (title?: string | null, url?: string | null): boolean => {
+  if (!title && !url) return false;
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+  const text = `${lowerTitle} ${lowerUrl}`;
+
+  // 1. マフラー小物・除外キーワード
+  const partKeywords = [
+    'ガスケット', 'マフラーガスケット',
+    'ハンガー', 'マフラーハンガー', '吊りゴム', 'マフラーゴム',
+    'バンド', 'マフラーバンド', 'クランプ',
+    'ボルト', 'ナット', 'スプリング',
+    'インナーサイレンサー', 'サイレンサー',
+    'マフラーカッター',
+    'センサーボス', 'o2センサー', 'メクラボルト',
+    'サーモバンテージ', 'バンテージ', '耐熱布', '遮熱板'
+  ];
+
+  if (partKeywords.some(kw => text.includes(kw))) {
+    return false;
+  }
+
+  // 2. マフラー本体キーワード
+  const bigKeywords = [
+    'マフラー本体', 'マフラー', 'エキゾースト', 'リアピース', 'リヤマフラー', '砲弾',
+    'エキマニ', 'エキゾーストマニホールド', 'タコ足',
+    'フロントパイプ', 'センターパイプ', '中間パイプ', '中間タイコ',
+    '触媒', 'キャタライザー', 'メタルキャタライザー', '触媒ストレート',
+    'escape', 'escapamento', 'silenciador'
+  ];
+
+  return bigKeywords.some(kw => text.includes(kw));
+};
+
+/**
+ * 商品タイトルやURLから、「ミッション・デフ本体（重量物: 8,000円）」であるかを判定するヘルパー関数
+ * トランスミッション本体、LSD・デフ本体等を判定し、
+ * シフトノブ、シフトブーツ、クラッチディスク、マウント、オイル等は除外（通常送料1,000円）とする
+ */
+export const isTransmissionUnit = (title?: string | null, url?: string | null): boolean => {
+  if (!title && !url) return false;
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+  const text = `${lowerTitle} ${lowerUrl}`;
+
+  // 1. ミッション小物・除外キーワード
+  const partKeywords = [
+    'シフトノブ', 'シフトレバー', 'クイックシフト', 'シフトブーツ',
+    'クラッチディスク', 'クラッチカバー', 'レリーズベアリング', 'クラッチマスター', 'オペレーティングシリンダー', 'クラッチホース', 'クラッチペダル',
+    'ミッションオイル', 'デフオイル', 'オイル',
+    'ミッションマウント', 'デフマウント', 'マウント',
+    'ドレンボルト', 'ドレンプラグ', 'ガスケット', 'シール', 'パッキン', 'オイルシール',
+    'シンクロ', 'シフトフォーク', 'ベアリング', 'ボルト', 'ナット'
+  ];
+
+  if (partKeywords.some(kw => text.includes(kw))) {
+    return false;
+  }
+
+  // 2. ミッション本体キーワード
+  const bigKeywords = [
+    'ミッション本体', 'トランスミッション本体', 'mt本体', 'at本体', 'cvt本体',
+    'トランスミッション', 'ミッション', 'transmision', 'transmisión', 'transmissao', 'transmissão',
+    'デフキャリア', 'デフ玉', 'デフassy', 'lsd本体', 'デフ',
+    'トランスファー', 'プロペラシャフト'
+  ];
+
+  return bigKeywords.some(kw => text.includes(kw));
+};
+
+/**
+ * ホイール・タイヤ商品における小物（ナット、キャップ、ハブリング等）を除外するヘルパー関数
+ */
+export const isWheelUnit = (title?: string | null, url?: string | null): boolean => {
+  if (!title && !url) return false;
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+  const text = `${lowerTitle} ${lowerUrl}`;
+
+  const partKeywords = [
+    'ホイールナット', 'ラグナット', 'レーシングナット', 'ロックナット', 'ナット',
+    'エアバルブ', 'バルブキャップ',
+    'センターキャップ', 'ホイールキャップ',
+    'ハブリング', 'ワイドトレッドスペーサー', 'ワイトレ', 'スペーサー',
+    'ホイールボルト', 'スタッドボルト',
+    'リムステッカー', 'リムガード',
+    'パンク修理', 'エアゲージ', '空気圧センサー'
+  ];
+
+  if (partKeywords.some(kw => text.includes(kw))) {
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * ブレーキ商品における小物・消耗品（パッド、ホース、シールキット等）を除外するヘルパー関数
+ */
+export const isBrakeUnit = (title?: string | null, url?: string | null): boolean => {
+  if (!title && !url) return false;
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+  const text = `${lowerTitle} ${lowerUrl}`;
+
+  const partKeywords = [
+    'ブレーキパッド', 'パッド', 'ブレーキパット',
+    'ブレーキホース', 'ステンメッシュホース', 'ホース',
+    'シールキット', 'キャリパーシール', 'リペアキット', 'オーバーホールキット',
+    'ブリーダーボルト', 'ブリーダーキャップ',
+    'ブレーキフルード', 'ブレーキオイル',
+    'パッドセンサー', 'ブレーキスイッチ'
+  ];
+
+  if (partKeywords.some(kw => text.includes(kw))) {
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * ライト商品における小物（バルブ、電球、リレーハーネス等）を除外するヘルパー関数
+ */
+export const isLightUnit = (title?: string | null, url?: string | null): boolean => {
+  if (!title && !url) return false;
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+  const text = `${lowerTitle} ${lowerUrl}`;
+
+  const partKeywords = [
+    'バルブ', 'ledバルブ', 'hidバーナー', 'バーナー', '電球', 'led球',
+    't10', 't20', 'd2s', 'd4s', 'h4', 'h11', 'hb3', 'hb4',
+    'リレー', 'リレーハーネス', 'ハーネス', '配線', 'ソケット', 'カプラー',
+    'バラスト', 'hidバラスト',
+    'スイッチ', 'レベライザースイッチ', '光軸調整'
+  ];
+
+  if (partKeywords.some(kw => text.includes(kw))) {
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * ステアリング商品における小物（ホーンボタン、ボルト、ボス等）を除外するヘルパー関数
+ */
+export const isSteeringUnit = (title?: string | null, url?: string | null): boolean => {
+  if (!title && !url) return false;
+  const lowerTitle = (title || '').toLowerCase();
+  const lowerUrl = (url || '').toLowerCase();
+  const text = `${lowerTitle} ${lowerUrl}`;
+
+  const partKeywords = [
+    'ホーンボタン', 'ホーンリング',
+    'ステアリングボス', 'ボス', 'ボススペーサー',
+    'ステアリングボルト', 'ボルト', 'ビス',
+    'パドルシフト', 'スイッチ'
+  ];
+
+  if (partKeywords.some(kw => text.includes(kw))) {
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * カテゴリキーに応じて、商品が「大物・本体」であるかを総合判定するディスパッチャー関数
+ * 小物・補修パーツと判定された場合は false を返し、通常送料（1,000円）へのフォールバックを促す
+ */
+export const isCategoryUnitItem = (categoryKey: string, title?: string | null, url?: string | null): boolean => {
+  switch (categoryKey) {
+    case 'motor':
+      return isEngineUnit(title, url);
+    case 'carroceria':
+      return isCarroceriaUnit(title, url);
+    case 'asiento':
+      return isSeatUnit(title, url);
+    case 'escape':
+      return isMufflerUnit(title, url);
+    case 'transmision':
+      return isTransmissionUnit(title, url);
+    case 'llantas':
+    case 'aros':
+    case 'll16':
+    case 'll17':
+    case 'll18':
+    case 'ar16':
+    case 'ar17':
+    case 'ar18':
+      return isWheelUnit(title, url);
+    case 'freno':
+      return isBrakeUnit(title, url);
+    case 'luces':
+      return isLightUnit(title, url);
+    case 'volante':
+      return isSteeringUnit(title, url);
+    default:
+      return true;
+  }
+};
+
+/**
  * 商品タイトルやURLからカテゴリキーを判定するヘルパー関数
  */
 export const detectCategoryKey = (title?: string | null, url?: string | null): string => {
@@ -472,8 +774,8 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
   // 1. カテゴリIDによる厳密な判定
   for (const item of cachedShippingCosts) {
     if (item.categoryIds.some(id => lowerUrl.includes(id))) {
-      // motor（エンジン本体）の場合、部品単体であれば除外
-      if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+      // 大物カテゴリの場合、部品単体・小物であれば除外
+      if (!isCategoryUnitItem(item.key, lowerTitle, lowerUrl)) {
         continue;
       }
       return item.key;
@@ -481,8 +783,8 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
   }
   for (const item of cachedFobCosts) {
     if (item.categoryIds.some(id => lowerUrl.includes(id))) {
-      // motor（エンジン本体）の場合、部品単体であれば除外
-      if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+      // 大物カテゴリの場合、部品単体・小物であれば除外
+      if (!isCategoryUnitItem(item.key, lowerTitle, lowerUrl)) {
         continue;
       }
       return item.key;
@@ -496,10 +798,7 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
 
   // 3. キーワードによるフォールバック判定
   for (const item of cachedShippingCosts) {
-    if (item.key === 'motor') {
-      if (isEngineUnit(lowerTitle, lowerUrl)) {
-        return item.key;
-      }
+    if (!isCategoryUnitItem(item.key, lowerTitle, lowerUrl)) {
       continue;
     }
     if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
@@ -507,10 +806,7 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
     }
   }
   for (const item of cachedFobCosts) {
-    if (item.key === 'motor') {
-      if (isEngineUnit(lowerTitle, lowerUrl)) {
-        return item.key;
-      }
+    if (!isCategoryUnitItem(item.key, lowerTitle, lowerUrl)) {
       continue;
     }
     if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
@@ -520,6 +816,7 @@ export const detectCategoryKey = (title?: string | null, url?: string | null): s
 
   return 'default';
 };
+
 
 
 export interface City {
@@ -866,10 +1163,26 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     lowerTitle.includes('パーツ') ||
     lowerTitle.includes('部品');
 
-  // --- 0.5 エンジン本体（重量物・ASSY）の判定 ---
+  // --- 0.5 大物自動車部品（エンジン、バンパー・外装、シート、マフラー、ミッション等）の最優先判定 ---
   if (isEngineUnit(lowerTitle, lowerUrl)) {
     const motorCost = cachedFobCosts.find(i => i.key === 'motor');
     return motorCost ? motorCost.fob : 1500;
+  }
+  if (isCarroceriaUnit(lowerTitle, lowerUrl)) {
+    const cost = cachedFobCosts.find(i => i.key === 'carroceria');
+    return cost ? cost.fob : 1500;
+  }
+  if (isSeatUnit(lowerTitle, lowerUrl)) {
+    const cost = cachedFobCosts.find(i => i.key === 'asiento');
+    return cost ? cost.fob : 1500;
+  }
+  if (isMufflerUnit(lowerTitle, lowerUrl)) {
+    const cost = cachedFobCosts.find(i => i.key === 'escape');
+    return cost ? cost.fob : 1500;
+  }
+  if (isTransmissionUnit(lowerTitle, lowerUrl)) {
+    const cost = cachedFobCosts.find(i => i.key === 'transmision');
+    return cost ? cost.fob : 1500;
   }
 
   // --- 1. URL内のヤフオクカテゴリIDによる厳密な判定 ---
@@ -880,8 +1193,8 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
       if (item.fob >= 50000 && isCarPart) {
         continue;
       }
-      // motor（エンジン本体）の場合、部品単体であれば除外
-      if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+      // 大物カテゴリの場合、部品単体・小物であれば除外
+      if (!isCategoryUnitItem(item.key, lowerTitle, lowerUrl)) {
         continue;
       }
       matchedItem = item;
@@ -900,7 +1213,7 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
       if (sizeCost.fob >= 50000 && isCarPart) {
         return 1500;
       }
-      if (sizeCost.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+      if (!isCategoryUnitItem(sizeCost.key, lowerTitle, lowerUrl)) {
         return 1500;
       }
       return sizeCost.fob;
@@ -914,7 +1227,7 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
       // 車両本体FOBは車両カテゴリ以外またはパーツ商品には絶対に適用しない
       continue;
     }
-    if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+    if (!isCategoryUnitItem(item.key, lowerTitle, lowerUrl)) {
       continue;
     }
     if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
@@ -968,19 +1281,35 @@ export const calculateDefaultShippingCost = (title?: string | null, url?: string
     return 0;
   }
 
-  // --- 0.5 エンジン本体（重量物・ASSY）の判定 ---
-  // isEngineUnit が true の場合、パーツ名（カムシャフト等）が併記されていてもエンジン本体送料（10,000円）を最優先適用
+  // --- 0.5 大物自動車部品（エンジン本体、バンパー・外装、シート本体、マフラー、ミッション等）の最優先判定 ---
+  // タイトルに明確に大物確定ワードがある場合は、正規の大型送料を最優先適用
   if (isEngineUnit(lowerTitle, lowerUrl)) {
-    const motorCost = cachedShippingCosts.find(i => i.key === 'motor');
-    return motorCost ? motorCost.shipping : 10000;
+    const cost = cachedShippingCosts.find(i => i.key === 'motor');
+    return cost ? cost.shipping : 10000;
+  }
+  if (isCarroceriaUnit(lowerTitle, lowerUrl)) {
+    const cost = cachedShippingCosts.find(i => i.key === 'carroceria');
+    return cost ? cost.shipping : 10000;
+  }
+  if (isSeatUnit(lowerTitle, lowerUrl)) {
+    const cost = cachedShippingCosts.find(i => i.key === 'asiento');
+    return cost ? cost.shipping : 9000;
+  }
+  if (isMufflerUnit(lowerTitle, lowerUrl)) {
+    const cost = cachedShippingCosts.find(i => i.key === 'escape');
+    return cost ? cost.shipping : 8000;
+  }
+  if (isTransmissionUnit(lowerTitle, lowerUrl)) {
+    const cost = cachedShippingCosts.find(i => i.key === 'transmision');
+    return cost ? cost.shipping : 8000;
   }
 
   // --- 1. URL内のヤフオクカテゴリIDによる厳密な判定 ---
   let matchedItem: ShippingCostItem | null = null;
   for (const item of cachedShippingCosts) {
     if (item.categoryIds.some(id => lowerUrl.includes(id))) {
-      // motor（エンジン本体: 10,000円）の場合、部品単体であれば除外
-      if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+      // 大物カテゴリ（外装、シート、マフラー、ミッション、ホイール、ブレーキ、ライト等）の場合、小物・補修品であれば除外
+      if (!isCategoryUnitItem(item.key, lowerTitle, lowerUrl)) {
         continue;
       }
       matchedItem = item;
@@ -1029,7 +1358,7 @@ export const calculateDefaultShippingCost = (title?: string | null, url?: string
   if (jcat) {
     const sizeCost = cachedShippingCosts.find(i => i.key === jcat);
     if (sizeCost) {
-      if (sizeCost.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+      if (!isCategoryUnitItem(sizeCost.key, lowerTitle, lowerUrl)) {
         return 1000;
       }
       return sizeCost.shipping;
@@ -1038,7 +1367,7 @@ export const calculateDefaultShippingCost = (title?: string | null, url?: string
 
   // --- 3. URLにカテゴリIDがない場合のフォールバック判定（タイトルやキーワードによる判定） ---
   for (const item of cachedShippingCosts) {
-    if (item.key === 'motor' && !isEngineUnit(lowerTitle, lowerUrl)) {
+    if (!isCategoryUnitItem(item.key, lowerTitle, lowerUrl)) {
       continue;
     }
     if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
