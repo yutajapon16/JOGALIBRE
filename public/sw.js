@@ -1,5 +1,5 @@
 // JOGALIBRE Service Worker
-const CACHE_NAME = 'jogalibre-v2';
+const CACHE_NAME = 'jogalibre-v3';
 
 // インストール時
 self.addEventListener('install', () => {
