@@ -1166,23 +1166,23 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
   // --- 0.5 大物自動車部品（エンジン、バンパー・外装、シート、マフラー、ミッション等）の最優先判定 ---
   if (isEngineUnit(lowerTitle, lowerUrl)) {
     const motorCost = cachedFobCosts.find(i => i.key === 'motor');
-    return motorCost ? motorCost.fob : 1500;
+    return motorCost ? motorCost.fob : 2000;
   }
   if (isCarroceriaUnit(lowerTitle, lowerUrl)) {
     const cost = cachedFobCosts.find(i => i.key === 'carroceria');
-    return cost ? cost.fob : 1500;
+    return cost ? cost.fob : 2000;
   }
   if (isSeatUnit(lowerTitle, lowerUrl)) {
     const cost = cachedFobCosts.find(i => i.key === 'asiento');
-    return cost ? cost.fob : 1500;
+    return cost ? cost.fob : 2000;
   }
   if (isMufflerUnit(lowerTitle, lowerUrl)) {
     const cost = cachedFobCosts.find(i => i.key === 'escape');
-    return cost ? cost.fob : 1500;
+    return cost ? cost.fob : 2000;
   }
   if (isTransmissionUnit(lowerTitle, lowerUrl)) {
     const cost = cachedFobCosts.find(i => i.key === 'transmision');
-    return cost ? cost.fob : 1500;
+    return cost ? cost.fob : 2000;
   }
 
   // --- 1. URL内のヤフオクカテゴリIDによる厳密な判定 ---
@@ -1211,10 +1211,10 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     const sizeCost = cachedFobCosts.find(i => i.key === jcat);
     if (sizeCost) {
       if (sizeCost.fob >= 50000 && isCarPart) {
-        return 1500;
+        return 2000;
       }
       if (!isCategoryUnitItem(sizeCost.key, lowerTitle, lowerUrl)) {
-        return 1500;
+        return 2000;
       }
       return sizeCost.fob;
     }
@@ -1235,7 +1235,7 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     }
   }
 
-  return 1500;
+  return 2000;
 };
 
 

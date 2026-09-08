@@ -64,7 +64,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [rejectReason, setRejectReason] = useState('');
   const [shippingCostJpy, setShippingCostJpy] = useState('');
-  const [fobCostJpy, setFobCostJpy] = useState('1,500');
+  const [fobCostJpy, setFobCostJpy] = useState('2,000');
   const [localCostUsd, setLocalCostUsd] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
@@ -1731,7 +1731,7 @@ export default function AdminDashboard() {
         setActionType(null);
         setRejectReason('');
         setShippingCostJpy('');
-        setFobCostJpy('1,500');
+        setFobCostJpy('2,000');
         setLocalCostUsd('');
 
         // プッシュ通知を送信（対象顧客のリクエストを特定）
@@ -2459,7 +2459,7 @@ export default function AdminDashboard() {
 
   const handleCounterOffer = () => {
     if (selectedRequest) {
-      const defaultFob = selectedRequest ? calculateDefaultFobCost(selectedRequest.productTitle, selectedRequest.productUrl) : 1500;
+      const defaultFob = selectedRequest ? calculateDefaultFobCost(selectedRequest.productTitle, selectedRequest.productUrl) : 2000;
       const fob = fobCostJpy.replace(/,/g, '').trim() ? parseFloat(fobCostJpy.replace(/,/g, '')) : defaultFob;
       const defaultShipping = selectedRequest ? calculateDefaultShippingCost(selectedRequest.productTitle, selectedRequest.productUrl) : 0;
       const shipping = shippingCostJpy.replace(/,/g, '').trim() ? parseFloat(shippingCostJpy.replace(/,/g, '')) : defaultShipping;
@@ -5786,7 +5786,7 @@ export default function AdminDashboard() {
                 <span className="text-gray-600">FOB費用:</span>
                 <input
                   type="text"
-                  placeholder="1,500"
+                  placeholder="2,000"
                   value={fobCostJpy}
                   onChange={(e) => setFobCostJpy(formatCommaSeparatedNumber(e.target.value))}
                   className="w-32 h-12 border border-gray-300 rounded px-3 py-0 text-base text-right box-border focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black font-bold"
@@ -5883,7 +5883,7 @@ export default function AdminDashboard() {
                   setSelectedRequest(null);
                   setActionType(null);
                   setShippingCostJpy('');
-                  setFobCostJpy('1,500');
+                  setFobCostJpy('2,000');
                   setLocalCostUsd('');
                 }}
                 disabled={!!processingRequestId}
