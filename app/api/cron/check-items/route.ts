@@ -95,6 +95,7 @@ export async function GET(request: Request) {
                 // 2. 12時間前通知チェック（未完了の全ステータス対象）
                 // 残り時間が12時間以内、かつ2時間超で、未通知の場合
                 if (diffHours > 2 && diffHours <= 12 && !currentMsg.includes('[12h_notified]')) {
+                    // 管理者宛て通知
                     const title = item.status === 'pending'
                         ? '⏰ 【残り12時間】未確認の申請あり'
                         : '🔔 【残り12時間】オークション終了間近';
@@ -110,8 +111,35 @@ export async function GET(request: Request) {
                                 body,
                                 url: '/admin'
                             })
-                        }).catch(e => console.error(`12h push error for item ${item.id}:`, e))
+                        }).catch(e => console.error(`12h admin push error for item ${item.id}:`, e))
                     );
+
+                    // 顧客・エージェント宛て通知
+                    if (item.customer_email) {
+                        const custTitle = lang === 'es'
+                            ? '⏰ ¡Quedan menos de 12 horas!'
+                            : '⏰ Faltam menos de 12 horas!';
+                        const itemTitle = lang === 'es'
+                            ? item.product_title_es || productTitle
+                            : item.product_title_pt || productTitle;
+                        const custBody = lang === 'es'
+                            ? `Producto: ${itemTitle}`
+                            : `Produto: ${itemTitle}`;
+
+                        pushPromises.push(
+                            fetch(`${origin}/api/push-send`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    customerEmail: item.customer_email,
+                                    bidRequestId: item.id,
+                                    title: custTitle,
+                                    body: custBody,
+                                    url: `/product/${item.product_id}`
+                                })
+                            }).catch(e => console.error(`12h customer push error for item ${item.id}:`, e))
+                        );
+                    }
 
                     currentMsg = `${currentMsg} [12h_notified]`.trim();
                 }
