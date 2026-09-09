@@ -60,7 +60,7 @@ async function fetchStoreShippingCost(params: {
     if (response.ok) {
       const json = await response.json();
 
-      if (json.isFreeShipping === true) {
+      if (json.isFreeShipping === true || json.lowestPrice === 0) {
         return {
           shippingCost: 0,
           shippingType: 'free',
@@ -145,7 +145,7 @@ async function fetchRegularAuctionShippingCost(auctionId: string): Promise<Resol
     if (apiResponse.ok) {
       const json = await apiResponse.json();
 
-      if (json.isFreeShipping === true) {
+      if (json.isFreeShipping === true || json.lowestPrice === 0) {
         return {
           shippingCost: 0,
           shippingType: 'free',
@@ -212,11 +212,11 @@ async function fetchRegularAuctionShippingCost(auctionId: string): Promise<Resol
  * 
  * 判定ロジック:
  * 1. 出品者負担（送料無料）の判定 ➜ 送料0円 (isShippingConfigured: true)
- * 2. ヤフオクストア出品判定（isStore または aucShoppingItemInfo） ➜ ストア送料API (/shipments/shopping?prefCode=08)
- * 3. 通常出品用ヤフオク送料API (/shipments/auction/items/{id}?prefCode=08)
- * 4. itemData未指定時の商品ページ自動取得によるストア再判定
+ * 2. itemDataが未指定の場合: 商品ページからitemDataを直接取得して補完
+ * 3. ヤフオクストア出品判定（isStore または aucShoppingItemInfo） ➜ ストア送料API (/shipments/shopping?prefCode=08)
+ * 4. 通常出品用ヤフオク送料API (/shipments/auction/items/{id}?prefCode=08)
  * 5. ページ内データ（全国一律送料など）の判定
- * 6. HTML内正規表現抽出フォールバック
+ * 6. HTML内正規表現抽出フォールバック（送料無料判定含む）
  * 7. 上記ですべて未設定（着払い、未定、落札後連絡など）の場合 ➜ 送料CSV (calculateDefaultShippingCost) から読み込み
  * 
  * @param params 商品ID、タイトル、URL、パース済みitemDataなど
@@ -229,10 +229,12 @@ export async function resolveItemShippingCost(params: {
   itemData?: any;
   html?: string;
 }): Promise<ResolvedShippingCost> {
-  const { auctionId, title, url, html } = params;
+  const { auctionId, title, url } = params;
   let itemData = params.itemData;
+  let pageHtml = params.html;
+  const cleanAid = auctionId && auctionId !== 'yjauctions' ? auctionId : '';
 
-  // 1. 送料無料の判定（出品者負担）
+  // 1. 引数itemDataがある場合の送料無料判定（出品者負担）
   const isFreeSeller =
     itemData?.chargeForShipping === 'free' ||
     itemData?.chargeForShipping === 'seller' ||
@@ -248,9 +250,48 @@ export async function resolveItemShippingCost(params: {
     };
   }
 
-  const cleanAid = auctionId && auctionId !== 'yjauctions' ? auctionId : '';
+  // 2. itemDataが未指定、または情報が不足している場合：商品ページから__NEXT_DATA__を取得して補完
+  if (cleanAid && (!itemData || !itemData.chargeForShipping)) {
+    try {
+      const pageUrl = `https://auctions.yahoo.co.jp/jp/auction/${cleanAid}`;
+      const res = await fetch(pageUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        signal: AbortSignal.timeout(3500)
+      });
+      if (res.ok) {
+        pageHtml = await res.text();
+        const match = pageHtml.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+        if (match) {
+          const parsed = JSON.parse(match[1]);
+          const scrapedItem = parsed?.props?.pageProps?.initialState?.item?.detail?.item;
+          if (scrapedItem) {
+            itemData = scrapedItem;
 
-  // 2. ヤフオクストア出品の場合の送料API呼び出し
+            // スクレイピングしたitemDataから送料無料判定（最優先）
+            if (
+              scrapedItem.chargeForShipping === 'free' ||
+              scrapedItem.chargeForShipping === 'seller' ||
+              scrapedItem.isFreeShipping === true
+            ) {
+              return {
+                shippingCost: 0,
+                shippingType: 'free',
+                shippingMethodName: '送料無料（出品者負担）',
+                isShippingConfigured: true,
+                deliveryNote: '出品者負担のため国内送料無料'
+              };
+            }
+          }
+        }
+      }
+    } catch (pageErr) {
+      console.warn(`HTML inspection fallback warning for ${cleanAid}:`, pageErr);
+    }
+  }
+
+  // 3. ヤフオクストア出品の場合の送料API呼び出し
   const isStore = itemData?.seller?.isStore === true || !!itemData?.aucShoppingItemInfo;
   if (cleanAid && isStore) {
     const sellerId = itemData?.aucShoppingItemInfo?.shoppingSellerId || itemData?.seller?.id;
@@ -273,59 +314,11 @@ export async function resolveItemShippingCost(params: {
     }
   }
 
-  // 3. 通常出品用ヤフオク送料API（茨城県宛: prefCode=08）の呼び出し
+  // 4. 通常出品用ヤフオク送料API（茨城県宛: prefCode=08）の呼び出し
   if (cleanAid) {
     const regularShipping = await fetchRegularAuctionShippingCost(cleanAid);
     if (regularShipping) {
       return regularShipping;
-    }
-  }
-
-  // 4. itemDataが渡されていない、かつ通常APIでも送料が取得できなかった場合：
-  // 商品ページから__NEXT_DATA__を取得してストア商品情報がないか再試行
-  if (cleanAid && !itemData) {
-    try {
-      const pageUrl = `https://auctions.yahoo.co.jp/jp/auction/${cleanAid}`;
-      const res = await fetch(pageUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        },
-        signal: AbortSignal.timeout(3500)
-      });
-      if (res.ok) {
-        const pageHtml = await res.text();
-        const match = pageHtml.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-        if (match) {
-          const parsed = JSON.parse(match[1]);
-          const scrapedItem = parsed?.props?.pageProps?.initialState?.item?.detail?.item;
-          if (scrapedItem) {
-            itemData = scrapedItem;
-            // ストア出品情報があればストアAPIを試行
-            if (itemData.seller?.isStore === true || itemData.aucShoppingItemInfo) {
-              const sellerId = itemData.aucShoppingItemInfo?.shoppingSellerId || itemData.seller?.id;
-              const itemCode = itemData.aucShoppingItemInfo?.shoppingItemCode || cleanAid;
-              const postageSet = itemData.aucShoppingItemInfo?.postageSetId || itemData.aucShoppingItemInfo?.shoppingItemInfo?.postageSet;
-              const price = itemData.taxinPrice || itemData.taxinStartPrice || itemData.price || itemData.currentPrice || 0;
-              const weight = itemData.aucShoppingItemInfo?.weight;
-
-              const storeShipping = await fetchStoreShippingCost({
-                auctionId: cleanAid,
-                sellerId,
-                itemCode,
-                price,
-                postageSet,
-                weight
-              });
-
-              if (storeShipping) {
-                return storeShipping;
-              }
-            }
-          }
-        }
-      }
-    } catch (pageErr) {
-      console.warn(`HTML inspection fallback warning for ${cleanAid}:`, pageErr);
     }
   }
 
@@ -355,14 +348,25 @@ export async function resolveItemShippingCost(params: {
   }
 
   // 6. HTML内からの送料抽出（正規表現フォールバック）
-  if (html) {
+  if (pageHtml) {
+    // 送料無料の文言マッチング
+    if (pageHtml.includes('送料無料（出品者負担）') || pageHtml.includes('送料無料(出品者負担)') || pageHtml.includes('>送料無料<')) {
+      return {
+        shippingCost: 0,
+        shippingType: 'free',
+        shippingMethodName: '送料無料（出品者負担）',
+        isShippingConfigured: true,
+        deliveryNote: '出品者負担のため国内送料無料'
+      };
+    }
+
     const shippingPatterns = [
       /送料[：:\s]*¥?([\d,]+)\s*円/,
       /配送料[：:\s]*¥?([\d,]+)\s*円/,
       /送料[^<]*?<[^>]*?>([\d,]+)円/
     ];
     for (const pattern of shippingPatterns) {
-      const match = html.match(pattern);
+      const match = pageHtml.match(pattern);
       if (match && match[1]) {
         const extracted = parseInt(match[1].replace(/,/g, ''), 10);
         if (!isNaN(extracted) && extracted > 0) {
@@ -379,7 +383,9 @@ export async function resolveItemShippingCost(params: {
   }
 
   // 7. 送料が未設定（着払い、送料未定、落札後連絡など）の場合: 送料CSVから読み込み
-  const fallbackShippingCost = calculateDefaultShippingCost(title, url);
+  const effectiveTitle = title || itemData?.title || itemData?.name || '';
+  const effectiveUrl = url || (cleanAid ? `https://auctions.yahoo.co.jp/jp/auction/${cleanAid}` : '');
+  const fallbackShippingCost = calculateDefaultShippingCost(effectiveTitle, effectiveUrl);
 
   return {
     shippingCost: fallbackShippingCost,
