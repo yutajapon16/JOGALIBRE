@@ -108,6 +108,10 @@ export interface SearchItem {
   source: string;
   isFavorite?: boolean;
   shippingCost?: number | null;
+  shippingType?: 'actual' | 'free' | 'csv_fallback';
+  shippingMethodName?: string;
+  isShippingConfigured?: boolean;
+  deliveryNote?: string;
   translatedDescription?: string | null;
   categoryId?: string;
 }

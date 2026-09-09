@@ -2461,7 +2461,9 @@ export default function AdminDashboard() {
     if (selectedRequest) {
       const defaultFob = selectedRequest ? calculateDefaultFobCost(selectedRequest.productTitle, selectedRequest.productUrl) : 2000;
       const fob = fobCostJpy.replace(/,/g, '').trim() ? parseFloat(fobCostJpy.replace(/,/g, '')) : defaultFob;
-      const defaultShipping = selectedRequest ? calculateDefaultShippingCost(selectedRequest.productTitle, selectedRequest.productUrl) : 0;
+      const defaultShipping = (selectedRequest?.shippingCostJpy !== null && selectedRequest?.shippingCostJpy !== undefined)
+        ? selectedRequest.shippingCostJpy
+        : (selectedRequest ? calculateDefaultShippingCost(selectedRequest.productTitle, selectedRequest.productUrl) : 0);
       const shipping = shippingCostJpy.replace(/,/g, '').trim() ? parseFloat(shippingCostJpy.replace(/,/g, '')) : defaultShipping;
 
       const totalJpy = (selectedRequest.productPrice || 0) + shipping + fob;
@@ -3324,8 +3326,10 @@ export default function AdminDashboard() {
                             setSelectedRequest(request);
                             const defaultFob = calculateDefaultFobCost(request.productTitle, request.productUrl);
                             setFobCostJpy(defaultFob.toLocaleString('en-US'));
-                            const defaultShipping = calculateDefaultShippingCost(request.productTitle, request.productUrl);
-                            setShippingCostJpy(defaultShipping > 0 ? defaultShipping.toLocaleString('en-US') : '');
+                            const defaultShipping = (request.shippingCostJpy !== null && request.shippingCostJpy !== undefined)
+                              ? request.shippingCostJpy
+                              : calculateDefaultShippingCost(request.productTitle, request.productUrl);
+                            setShippingCostJpy(defaultShipping > 0 ? defaultShipping.toLocaleString('en-US') : (defaultShipping === 0 ? '0' : ''));
                             const currentLocalCost = calculateLocalCost(request.delivery_location, request, request.shipping_method);
                             if (typeof currentLocalCost === 'number' && !isNaN(currentLocalCost) && currentLocalCost > 0) {
                               setLocalCostUsd(currentLocalCost.toLocaleString('en-US'));
@@ -3362,7 +3366,9 @@ export default function AdminDashboard() {
                               ? (request.counterOffer || request.maxBid || 0)
                               : (request.customerCounterOffer || request.counterOffer || request.maxBid || 0);
                             setFinalPriceInput(Math.round(suggestedPrice).toString());
-                            const defaultShipping = calculateDefaultShippingCost(request.productTitle, request.productUrl);
+                            const defaultShipping = (request.shippingCostJpy !== null && request.shippingCostJpy !== undefined)
+                              ? request.shippingCostJpy
+                              : calculateDefaultShippingCost(request.productTitle, request.productUrl);
                             const defaultFob = calculateDefaultFobCost(request.productTitle, request.productUrl);
                             setWonPriceJpyInput((request.productPrice || 0).toString());
                             setWonShippingJpyInput(defaultShipping.toString());

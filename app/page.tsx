@@ -3034,9 +3034,11 @@ export default function Home() {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const calculateUSDPrice = (jpyPrice: number, title?: string, url?: string) => {
+  const calculateUSDPrice = (jpyPrice: number, title?: string, url?: string, explicitShippingCost?: number | null) => {
     const FOB_COST = calculateDefaultFobCost(title, url);
-    const SHIPPING_COST = calculateDefaultShippingCost(title, url);
+    const SHIPPING_COST = (typeof explicitShippingCost === 'number' && explicitShippingCost >= 0)
+      ? explicitShippingCost
+      : calculateDefaultShippingCost(title, url);
     const totalJpyPrice = jpyPrice + FOB_COST + SHIPPING_COST;
     // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
     const profitDivisor = (() => {
@@ -3086,7 +3088,7 @@ export default function Home() {
     }
   };
 
-  const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency, title?: string, url?: string, explicitJcat?: string, productId?: string) => {
+  const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency, title?: string, url?: string, explicitJcat?: string, productId?: string, explicitShippingCost?: number | null) => {
     // ヤフオク以外の商品（手動登録商品や非ヤフオクドメインURL）の場合、jpyPrice には管理者が登録した販売価格（USD建て）が入っているため、それを基に通貨換算を行う
     const isNonYahoo = (productId && productId.startsWith('m-')) || (url && !url.includes('auctions.yahoo.co.jp') && !url.includes('page.auctions.yahoo.co.jp'));
     if (isNonYahoo) {
@@ -3114,7 +3116,9 @@ export default function Home() {
       urlWithJcat += (urlWithJcat.includes('?') ? '&' : '?') + `jcat=${explicitJcat}`;
     }
     const FOB_COST = calculateDefaultFobCost(title, urlWithJcat);
-    const SHIPPING_COST = calculateDefaultShippingCost(title, urlWithJcat);
+    const SHIPPING_COST = (typeof explicitShippingCost === 'number' && explicitShippingCost >= 0)
+      ? explicitShippingCost
+      : calculateDefaultShippingCost(title, urlWithJcat);
     const totalJpyPrice = jpyPrice + FOB_COST + SHIPPING_COST;
     
     // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)

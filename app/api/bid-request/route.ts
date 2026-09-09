@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
-import { parseAnyDateTime, parseDbDateTime, parseJstDateTime } from '@/lib/utils';
+import { parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateDefaultShippingCost } from '@/lib/utils';
 import { sendWonEmail, sendShippingInfoEmail } from '@/lib/resend';
 import { ErrorUserInfo, hasJapaneseCharacters } from '@/lib/error-notifier';
 
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     const isAdmin = roleData?.role === 'admin';
     const body = await request.json();
-    const { productId, productTitle, productTitleJa, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language, deliveryLocation, deliveryCountry, deliveryCity, shippingMethod } = body;
+    const { productId, productTitle, productTitleJa, productUrl, productImage, productPrice, productEndTime, maxBid, customerName, customerEmail, language, deliveryLocation, deliveryCountry, deliveryCity, shippingMethod, shippingCostJpy, shippingCost } = body;
 
     // 顧客の場合は自身のメールアドレスを強制使用
     const finalEmail = isAdmin ? customerEmail : effectiveUser.email;
@@ -122,7 +122,11 @@ export async function POST(request: Request) {
       approved_at: null,
       reject_reason: null,
       counter_offer: null,
-      shipping_cost_jpy: null,
+      shipping_cost_jpy: typeof shippingCostJpy === 'number'
+        ? shippingCostJpy
+        : typeof shippingCost === 'number'
+          ? shippingCost
+          : calculateDefaultShippingCost(finalProductTitleJa || productTitle, productUrl),
       customer_counter_offer: null,
       customer_counter_offer_used: false,
       final_status: null,

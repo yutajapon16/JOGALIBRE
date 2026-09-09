@@ -787,7 +787,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
     const effectiveTitle = titleJaParam ? safeDecodeURIComponent(titleJaParam) : (product?.titleJa || product?.title || '');
     const FOB_COST = calculateDefaultFobCost(effectiveTitle, productUrlWithCategory);
-    const SHIPPING_COST = calculateDefaultShippingCost(effectiveTitle, productUrlWithCategory);
+    // ヤフオク出品者側で送料が設定されている場合はその実送料を優先適用し、未設定時のみCSVから算出
+    const SHIPPING_COST = (product && typeof product.shippingCost === 'number')
+      ? product.shippingCost
+      : calculateDefaultShippingCost(effectiveTitle, productUrlWithCategory);
     const totalJpyPrice = effectivePrice + FOB_COST + SHIPPING_COST;
     
     // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
@@ -969,7 +972,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           deliveryLocation: deliveryCountry === 'JP' ? 'JP' : deliveryCity,
           deliveryCountry: getCountryNameJa(deliveryCountry),
           deliveryCity: deliveryCountry === 'JP' ? '' : getCityNameJa(deliveryCountry, deliveryCity),
-          shippingMethod: deliveryCountry === 'JP' ? 'sea' : shippingMethod
+          shippingMethod: deliveryCountry === 'JP' ? 'sea' : shippingMethod,
+          shippingCostJpy: typeof product?.shippingCost === 'number' ? product.shippingCost : null
         })
       });
 

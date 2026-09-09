@@ -101,7 +101,9 @@ export async function GET(request: Request) {
         : 'New';
 
       const rowFob = calculateDefaultFobCost(order.product_title, order.product_url);
-      const rowShipping = calculateDefaultShippingCost(order.product_title, order.product_url);
+      const rowShipping = (order.shipping_cost_jpy !== null && order.shipping_cost_jpy !== undefined)
+        ? order.shipping_cost_jpy
+        : calculateDefaultShippingCost(order.product_title, order.product_url);
 
       // カウンターオファーが承認された場合の合意金額を判定して反映する
       let finalMaxBidUsd = order.max_bid;

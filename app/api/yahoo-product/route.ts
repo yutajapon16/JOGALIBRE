@@ -7,6 +7,7 @@ import { translateTitle, translateText, cleanupBrandNames } from '@/lib/translat
 import { notifyAdminError, hasJapaneseCharacters, ErrorUserInfo } from '@/lib/error-notifier';
 import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { resolveItemShippingCost, ResolvedShippingCost } from '@/lib/yahoo-shipping';
 
 // AI要約・翻訳データの高速キャッシュ (6時間TTL)
 interface ProductCacheItem {
@@ -86,6 +87,7 @@ export async function POST(request: Request) {
     let allImages: string[] = [];
     let description = '';
     let isClosedJson: boolean | null = null;
+    let extractedItemData: any = {};
 
     const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
 
@@ -101,6 +103,7 @@ export async function POST(request: Request) {
           if (initialState) {
 
             const itemData = initialState.item?.detail?.item || {};
+            extractedItemData = itemData;
 
             // paymentとoptionの中身を確認
 
@@ -393,6 +396,24 @@ export async function POST(request: Request) {
     const needTitleTrans = lang !== 'ja' && (!translatedTitle || translatedTitle === title) && title;
 
     const parallelTasks: Promise<void>[] = [];
+    let resolvedShipping: ResolvedShippingCost | null = null;
+
+    // 国内送料（茨城県宛・設定送料優先 / 未設定時CSVフォールバック）解決タスク
+    parallelTasks.push(
+      resolveItemShippingCost({
+        auctionId: productId,
+        title,
+        url,
+        itemData: extractedItemData,
+        html
+      })
+        .then((res) => {
+          resolvedShipping = res;
+        })
+        .catch((e) => {
+          console.warn('Shipping resolution error in product route:', e);
+        })
+    );
 
     // タイトル高速翻訳タスク
     if (needTitleTrans) {
@@ -561,6 +582,13 @@ export async function POST(request: Request) {
     const finalAiSummaryEs = aiSummaryEs || (isRealSummary(cachedItem?.aiSummaryEs) ? cachedItem?.aiSummaryEs : '') || '';
     const finalAiSummaryPt = aiSummaryPt || (isRealSummary(cachedItem?.aiSummaryPt) ? cachedItem?.aiSummaryPt : '') || '';
 
+    // 確定送料の決定（解決エンジン結果 ➜ なければ従来のHTML抽出送料）
+    const resolvedShippingResult = resolvedShipping as ResolvedShippingCost | null;
+    const finalShippingCost = resolvedShippingResult ? resolvedShippingResult.shippingCost : (shippingCost > 0 ? shippingCost : 0);
+    const finalShippingType = resolvedShippingResult ? resolvedShippingResult.shippingType : (shippingCost > 0 ? 'actual' : 'csv_fallback');
+    const finalShippingMethod = resolvedShippingResult ? resolvedShippingResult.shippingMethodName : (shippingCost > 0 ? 'ヤフオク設定送料' : '国内送料');
+    const finalIsShippingConfigured = resolvedShippingResult ? resolvedShippingResult.isShippingConfigured : (shippingCost > 0);
+
     const product = {
       id: productId,
       title: translatedTitle || 'タイトル取得失敗',
@@ -577,7 +605,12 @@ export async function POST(request: Request) {
       source: 'yahoo_url_import',
       images: allImages.length > 0 ? allImages : [imageUrl],
       aiSummaryEs: finalAiSummaryEs,
-      aiSummaryPt: finalAiSummaryPt
+      aiSummaryPt: finalAiSummaryPt,
+      shippingCost: finalShippingCost,
+      shippingType: finalShippingType,
+      shippingMethodName: finalShippingMethod,
+      isShippingConfigured: finalIsShippingConfigured,
+      deliveryNote: resolvedShippingResult?.deliveryNote || ''
     };
 
     return NextResponse.json({ product });
