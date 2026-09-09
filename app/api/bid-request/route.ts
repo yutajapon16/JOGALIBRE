@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
-import { parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateDefaultShippingCost } from '@/lib/utils';
+import { parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateDefaultShippingCost, extractAuctionId } from '@/lib/utils';
+import { resolveItemShippingCost } from '@/lib/yahoo-shipping';
 import { sendWonEmail, sendShippingInfoEmail } from '@/lib/resend';
 import { ErrorUserInfo, hasJapaneseCharacters } from '@/lib/error-notifier';
 
@@ -104,6 +105,29 @@ export async function POST(request: Request) {
     }
 
 
+    // 国内送料の確定（クライアント送信値 ➜ なければヤフオク茨城県宛設定送料API ➜ 未設定時CSVフォールバック）
+    let resolvedShippingJpy: number | null = null;
+    if (typeof shippingCostJpy === 'number') {
+      resolvedShippingJpy = shippingCostJpy;
+    } else if (typeof shippingCost === 'number') {
+      resolvedShippingJpy = shippingCost;
+    } else if (productId || productUrl) {
+      try {
+        const cleanAid = extractAuctionId(productId || productUrl || '') || productId || '';
+        const shippingResult = await resolveItemShippingCost({
+          auctionId: cleanAid,
+          title: finalProductTitleJa || productTitle,
+          url: productUrl
+        });
+        resolvedShippingJpy = shippingResult.shippingCost;
+      } catch (e) {
+        console.warn('Fallback resolveItemShippingCost in bid-request error:', e);
+        resolvedShippingJpy = calculateDefaultShippingCost(finalProductTitleJa || productTitle, productUrl);
+      }
+    } else {
+      resolvedShippingJpy = calculateDefaultShippingCost(finalProductTitleJa || productTitle, productUrl);
+    }
+
     const bidRequest = {
       id: Date.now().toString() + Math.floor(1000 + Math.random() * 9000).toString(),
       product_id: productId,
@@ -122,11 +146,7 @@ export async function POST(request: Request) {
       approved_at: null,
       reject_reason: null,
       counter_offer: null,
-      shipping_cost_jpy: typeof shippingCostJpy === 'number'
-        ? shippingCostJpy
-        : typeof shippingCost === 'number'
-          ? shippingCost
-          : calculateDefaultShippingCost(finalProductTitleJa || productTitle, productUrl),
+      shipping_cost_jpy: resolvedShippingJpy,
       customer_counter_offer: null,
       customer_counter_offer_used: false,
       final_status: null,

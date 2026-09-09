@@ -3010,7 +3010,8 @@ export default function Home() {
           deliveryLocation: deliveryCountry === 'JP' ? 'JP' : deliveryCity,
           deliveryCountry: getCountryNameJa(deliveryCountry),
           deliveryCity: deliveryCountry === 'JP' ? '' : getCityNameJa(deliveryCountry, deliveryCity),
-          shippingMethod: deliveryCountry === 'JP' ? 'sea' : shippingMethod
+          shippingMethod: deliveryCountry === 'JP' ? 'sea' : shippingMethod,
+          shippingCostJpy: typeof selectedProduct.shippingCost === 'number' ? selectedProduct.shippingCost : null
         })
       });
 
@@ -3389,7 +3390,7 @@ export default function Home() {
           return prev;
         });
 
-        // オファー入力欄(maxBid)も最新の計算価格に自動同期更新
+        // オファー入力欄(maxBid)も最新の計算価格に自動同期更新（ヤフオク設定送料を優先反映）
         const detailUrlWithCat = detail.url + (detail.categoryId ? (detail.url.includes('?') ? '&' : '?') + 'auccat=' + detail.categoryId : '');
         const newCalculatedBid = calculateConvertedPrice(
           detail.currentPrice,
@@ -3397,7 +3398,8 @@ export default function Home() {
           detail.titleJa || (selectedProduct?.titleJa) || detail.title,
           detailUrlWithCat,
           currentCategory?.id,
-          detail.id
+          detail.id,
+          detail.shippingCost
         ).toString().replace(/,/g, '');
 
         setBidForm(prev => ({
@@ -4369,6 +4371,10 @@ export default function Home() {
         endTime: prod.endTime,
         timeLeft: prod.timeLeft,
         categoryId: prod.categoryId,
+        shippingCost: prod.shippingCost,
+        shippingType: prod.shippingType,
+        shippingMethodName: prod.shippingMethodName,
+        isShippingConfigured: prod.isShippingConfigured,
       };
 
       // 既存のAI要約キャッシュがあれば合体して保存
@@ -8424,7 +8430,7 @@ export default function Home() {
                       )}
                     </span>
                     <span className={`font-extrabold text-sm text-indigo-700 transition-opacity duration-200 ${isOfferUpdating ? 'opacity-50' : ''}`}>
-                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id, selectedProduct.id)}
+                      $ {calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id, selectedProduct.id, selectedProduct.shippingCost)}
                     </span>
                   </div>
                   {deliveryCountry !== 'JP' && (() => {
@@ -8451,7 +8457,7 @@ export default function Home() {
                     );
                   })()}
                   {(() => {
-                    const featuredDispPrice = calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id, selectedProduct.id);
+                    const featuredDispPrice = calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id, selectedProduct.id, selectedProduct.shippingCost);
                     const modalDetailHref = buildProductDetailUrl(selectedProduct, featuredDispPrice);
                     return (
                       <Link
