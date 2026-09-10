@@ -3,8 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 const brainDir = '/Users/jogainc./.gemini/antigravity-ide/brain/38c8ffe1-5f37-4e96-ab74-1ea6b2302b7d';
-const bannerDir = '/Users/jogainc./Desktop/yahoo-auction-proxy/public/images/banners';
-const logoPath = '/Users/jogainc./Desktop/yahoo-auction-proxy/public/icons/jogalibre-logo-full.png';
+
+const bannerDir = path.join(__dirname, '../public/images/banners');
+const logoPath = path.join(__dirname, '../public/icons/jogalibre-logo-full.png');
 
 const baseImages = {
   jdm: path.join(brainDir, 'base_jdm_parts_1786927632599.jpg'),
