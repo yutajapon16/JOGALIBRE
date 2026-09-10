@@ -243,6 +243,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const titleJaParam = searchParams.get('titleJa');
   const dispPriceParam = searchParams.get('dispPrice');
   const currencyParam = searchParams.get('currency');
+  const endTimeParam = searchParams.get('endTime');
+  const bidsParam = searchParams.get('bids');
 
   // 商品データのState (キャッシュまたはURLパラメータから0msで即座に初期化)
   const [product, setProduct] = useState<any>(() => {
@@ -254,7 +256,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         const pathParts = window.location.pathname.split('/');
         const idFromPath = pathParts[pathParts.length - 1];
         const cached = readProductCache(u, idFromPath, l);
-        if (cached) return cached;
+        const eTime = urlParams.get('endTime');
+        const bidsP = urlParams.get('bids');
+
+        if (cached) {
+          // キャッシュ側に終了日時が無いがURLパラメータにある場合は即時補完
+          if (!cached.endTime && eTime) {
+            cached.endTime = eTime;
+          }
+          if ((cached.bids === undefined || cached.bids === null) && bidsP && !isNaN(Number(bidsP))) {
+            cached.bids = Number(bidsP);
+          }
+          return cached;
+        }
 
         // キャッシュが無い場合でもURLから基本データを即時構築（画面を真っ白にしない）
         if (u) {
@@ -271,6 +285,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             currentPrice: origP && !isNaN(Number(origP)) ? Number(origP) : 0,
             displayPrice: dPrice || undefined,
             displayCurrency: curr,
+            endTime: eTime || undefined,
+            bids: bidsP && !isNaN(Number(bidsP)) ? Number(bidsP) : undefined,
             images: [],
           };
         }
@@ -977,6 +993,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           productUrl: finalUrl,
           productImage: product.imageUrl,
           productPrice: product.currentPrice,
+          productEndTime: product.endTime || (endTimeParam ? safeDecodeURIComponent(endTimeParam) : undefined),
           maxBid: Number(bidForm.maxBid),
           customerName: finalCustomerName,
           language: lang,
@@ -1246,7 +1263,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="h-12 px-3 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between">
             <span className="text-xs font-bold text-gray-500">{t.bids}</span>
             <span className="text-xs sm:text-sm font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm">
-              {product.bids || 0}
+              {product.bids !== undefined && product.bids !== null ? product.bids : (bidsParam || 0)}
             </span>
           </div>
 
@@ -1254,7 +1271,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="h-12 px-3 bg-red-50 border border-red-100 rounded-lg flex items-center justify-between text-red-700 font-semibold">
             <span className="text-xs font-bold">{t.endsIn}</span>
             <span className="text-xs sm:text-sm">
-              {getTimeRemaining(product.endTime || '', lang, product.timeLeft)}
+              {getTimeRemaining(product.endTime || (endTimeParam ? safeDecodeURIComponent(endTimeParam) : ''), lang, product.timeLeft)}
             </span>
           </div>
 

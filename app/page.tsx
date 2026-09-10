@@ -331,6 +331,8 @@ interface Category {
 
 // 顧客画面のナビゲーション状態（検索結果・カテゴリ階層・タブ・スクロール位置）のセッションキャッシュ
 const SEARCH_NAV_CACHE_KEY = 'jogalibre_search_nav_state';
+const MY_REQUESTS_CACHE_KEY = 'jogalibre_my_requests_cache';
+const PURCHASED_ITEMS_CACHE_KEY = 'jogalibre_purchased_items_cache';
 
 interface SearchNavState {
   activeTab?: 'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping';
@@ -1255,7 +1257,42 @@ export default function Home() {
   const [isFeaturedLoading, setIsFeaturedLoading] = useState(false);
   const [isOfferUpdating, setIsOfferUpdating] = useState(false);
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // ログインユーザー情報をキャッシュから同期的に初期ロード（ヘッダー顧客ID/氏名の表示遅延および金額計算の不一致を完全防止）
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
+        if (cached) {
+          const cacheData = JSON.parse(cached);
+          if (cacheData && cacheData.id && typeof cacheData === 'object') {
+            return {
+              id: cacheData.id,
+              email: cacheData.email || '',
+              role: cacheData.role || 'customer',
+              fullName: cacheData.fullName,
+              whatsapp: cacheData.whatsapp,
+              customerId: cacheData.customerId,
+              address: cacheData.address,
+              zipCode: cacheData.zipCode,
+              country: cacheData.country || '',
+              agentCustomerId: cacheData.agentCustomerId,
+              agentFullName: cacheData.agentFullName,
+              depositAmount: cacheData.depositAmount,
+              depositConfirmedAt: cacheData.depositConfirmedAt,
+              termsAcceptedAt: cacheData.termsAcceptedAt,
+              cpf: cacheData.cpf,
+              state: cacheData.state,
+              city: cacheData.city,
+              language: cacheData.language
+            } as any;
+          }
+        }
+      } catch (e) {
+        console.warn('Initial user state error:', e);
+      }
+    }
+    return null;
+  });
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [showSignUp, setShowSignUp] = useState(false);
   const [isEditOfferModalOpen, setIsEditOfferModalOpen] = useState(false);
@@ -1490,11 +1527,54 @@ export default function Home() {
     const s = getStoredNavState();
     return s?.activeCategoryUrl !== undefined ? s.activeCategoryUrl : null;
   });
-  const [myRequests, setMyRequests] = useState<BidRequest[]>([]);
+  // 申請中商品リスト（詳細画面からの戻りやリロード時に0msで即座に復元し商品消失を防止）
+  const [myRequests, setMyRequests] = useState<BidRequest[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = sessionStorage.getItem(MY_REQUESTS_CACHE_KEY) || localStorage.getItem(MY_REQUESTS_CACHE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {
+        console.warn('Initial myRequests state error:', e);
+      }
+    }
+    return [];
+  });
   const [processingOfferId, setProcessingOfferId] = useState<string | null>(null);
   const [isSubmittingEditOffer, setIsSubmittingEditOffer] = useState(false);
   const [isSubmittingCounter, setIsSubmittingCounter] = useState(false);
-  const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>([]);
+  // 購入済み商品リスト（キャッシュから即時復元）
+  const [purchasedItems, setPurchasedItems] = useState<BidRequest[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = sessionStorage.getItem(PURCHASED_ITEMS_CACHE_KEY) || localStorage.getItem(PURCHASED_ITEMS_CACHE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {
+        console.warn('Initial purchasedItems state error:', e);
+      }
+    }
+    return [];
+  });
+
+  // 申請中リスト・購入済みリストの自動キャッシュ保存（詳細画面遷移・戻り時の完全表示維持）
+  useEffect(() => {
+    if (typeof window !== 'undefined' && myRequests && myRequests.length > 0) {
+      try {
+        const serialized = JSON.stringify(myRequests);
+        sessionStorage.setItem(MY_REQUESTS_CACHE_KEY, serialized);
+        localStorage.setItem(MY_REQUESTS_CACHE_KEY, serialized);
+      } catch {}
+    }
+  }, [myRequests]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && purchasedItems && purchasedItems.length > 0) {
+      try {
+        const serialized = JSON.stringify(purchasedItems);
+        sessionStorage.setItem(PURCHASED_ITEMS_CACHE_KEY, serialized);
+        localStorage.setItem(PURCHASED_ITEMS_CACHE_KEY, serialized);
+      } catch {}
+    }
+  }, [purchasedItems]);
   // マイページ用state
   const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', addressNumber: '', complement: '', zipCode: '', agentCustomerId: '', cpf: '', state: '', city: '', language: '' });
   
@@ -1828,6 +1908,12 @@ export default function Home() {
           localStorage.removeItem('jogalibre_terms_accepted');
           localStorage.removeItem('joga_user_cache');
           localStorage.removeItem('joga_terms_accepted');
+          localStorage.removeItem(MY_REQUESTS_CACHE_KEY);
+          localStorage.removeItem(PURCHASED_ITEMS_CACHE_KEY);
+        }
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem(MY_REQUESTS_CACHE_KEY);
+          sessionStorage.removeItem(PURCHASED_ITEMS_CACHE_KEY);
         }
       } else if (session?.user) {
         // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
@@ -2902,6 +2988,14 @@ export default function Home() {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('jogalibre_terms_accepted');
       localStorage.removeItem('joga_terms_accepted');
+      localStorage.removeItem('jogalibre_user_cache');
+      localStorage.removeItem('joga_user_cache');
+      localStorage.removeItem(MY_REQUESTS_CACHE_KEY);
+      localStorage.removeItem(PURCHASED_ITEMS_CACHE_KEY);
+    }
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(MY_REQUESTS_CACHE_KEY);
+      sessionStorage.removeItem(PURCHASED_ITEMS_CACHE_KEY);
     }
     try {
       await signOut();
@@ -4336,7 +4430,7 @@ export default function Home() {
   }
 
   // 商品詳細を開く前に基本情報を事前キャッシュして詳細ページの0ms表示を実現する関数
-  const prepareProductCache = (prod: SearchItem, dispPrice?: string, curr: string = selectedCurrency) => {
+  const prepareProductCache = (prod: Partial<SearchItem> & { id: string }, dispPrice?: string, curr: string = selectedCurrency) => {
     if (typeof window === 'undefined') return;
     try {
       // 画面遷移直前の状態とスクロール位置を確実に記録
@@ -4377,18 +4471,31 @@ export default function Home() {
         isShippingConfigured: prod.isShippingConfigured,
       };
 
-      // 既存のAI要約キャッシュがあれば合体して保存
+      // 既存キャッシュがあれば安全に合体（入札数・終了日時・画像を保護）
       const key = `jogalibre_prod_cache_${cleanId}_${lang}`;
+      let finalData = { ...baseData };
       try {
         const existingRaw = sessionStorage.getItem(key) || localStorage.getItem(key);
         if (existingRaw) {
           const existing = JSON.parse(existingRaw);
-          if (existing.aiSummaryEs) (baseData as any).aiSummaryEs = existing.aiSummaryEs;
-          if (existing.aiSummaryPt) (baseData as any).aiSummaryPt = existing.aiSummaryPt;
+          finalData = {
+            ...existing,
+            ...baseData,
+            // 入札数: 新しい値が正の数なら採用、そうでなければ既存の入札数を維持
+            bids: (prod.bids !== undefined && prod.bids !== null && prod.bids > 0) ? prod.bids : (existing.bids ?? baseData.bids),
+            // 終了日時・残り時間: 新しい値があれば採用、なければ既存値を維持
+            endTime: prod.endTime || existing.endTime,
+            timeLeft: prod.timeLeft || existing.timeLeft,
+            // 画像: 新しい配列があれば採用、なければ既存画像を維持
+            images: (prod.images && prod.images.length > 0) ? prod.images : (existing.images && existing.images.length > 0 ? existing.images : baseData.images),
+            imageUrl: prod.imageUrl || existing.imageUrl || baseData.imageUrl,
+            aiSummaryEs: (baseData as any).aiSummaryEs || existing.aiSummaryEs,
+            aiSummaryPt: (baseData as any).aiSummaryPt || existing.aiSummaryPt,
+          };
         }
       } catch {}
-      try { sessionStorage.setItem(key, JSON.stringify(baseData)); } catch {}
-      try { localStorage.setItem(key, JSON.stringify(baseData)); } catch {}
+      try { sessionStorage.setItem(key, JSON.stringify(finalData)); } catch {}
+      try { localStorage.setItem(key, JSON.stringify(finalData)); } catch {}
     } catch (e) {
       console.warn('prepareProductCache error:', e);
     }
@@ -4404,6 +4511,8 @@ export default function Home() {
     if (searchType) searchParamsObj.set('st', searchType);
     if (product.currentPrice) searchParamsObj.set('origPrice', String(product.currentPrice));
     if (product.titleJa || product.title) searchParamsObj.set('titleJa', product.titleJa || product.title);
+    if (product.endTime) searchParamsObj.set('endTime', product.endTime);
+    if (product.bids !== undefined && product.bids !== null) searchParamsObj.set('bids', String(product.bids));
     if (displayPriceVal) searchParamsObj.set('dispPrice', displayPriceVal);
     searchParamsObj.set('currency', selectedCurrency);
 
@@ -5011,7 +5120,8 @@ export default function Home() {
                                     undefined,
                                     request.productId
                                   );
-                                  const requestDetailUrl = `/product/${encodeURIComponent(request.productId || '')}?url=${encodeURIComponent(request.productUrl || '')}&lang=${lang}&dispPrice=${requestDispPrice}&origPrice=${request.productPrice || ''}&currency=${selectedCurrency}&titleJa=${encodeURIComponent(request.productTitleJa || request.productTitle || '')}`;
+                                  const requestEndTime = request.productEndTime || '';
+                                  const requestDetailUrl = `/product/${encodeURIComponent(request.productId || '')}?url=${encodeURIComponent(request.productUrl || '')}&lang=${lang}&dispPrice=${requestDispPrice}&origPrice=${request.productPrice || ''}&currency=${selectedCurrency}&titleJa=${encodeURIComponent(request.productTitleJa || request.productTitle || '')}&endTime=${encodeURIComponent(requestEndTime)}`;
                                   return (
                                     <Link
                                       href={requestDetailUrl}
@@ -5024,8 +5134,7 @@ export default function Home() {
                                           url: request.productUrl,
                                           currentPrice: Number(request.productPrice) || 0,
                                           imageUrl: request.productImage,
-                                          bids: 0,
-                                          timeLeft: '',
+                                          endTime: request.productEndTime,
                                           source: 'yahoo'
                                         }, requestDispPrice, selectedCurrency);
                                         if (typeof window !== 'undefined') {
@@ -5852,29 +5961,45 @@ export default function Home() {
                                     URL
                                   </a>
                                 ) : (
-                                  <Link
-                                    href={`/product/${item.productId}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}`}
-                                    scroll={false}
-                                    onClick={() => {
-                                      if (typeof window !== 'undefined') {
-                                        saveNavState({
-                                          activeTab,
-                                          searchType,
-                                          categoryHistory,
-                                          activeCategoryUrl,
-                                          keyword,
-                                          searchCondition,
-                                          searchPage,
-                                          nextPageExists,
-                                          products,
-                                          scrollY: window.scrollY
-                                        });
-                                      }
-                                    }}
-                                    className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-[#ff0033]"
-                                  >
-                                    {t.viewOnYahoo}
-                                  </Link>
+                                  (() => {
+                                    const itemEndTime = item.productEndTime || '';
+                                    const itemDetailUrl = `/product/${encodeURIComponent(item.productId || '')}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}&origPrice=${item.productPrice || ''}&currency=${selectedCurrency}&titleJa=${encodeURIComponent(item.productTitleJa || item.productTitle || '')}&endTime=${encodeURIComponent(itemEndTime)}`;
+                                    return (
+                                      <Link
+                                        href={itemDetailUrl}
+                                        scroll={false}
+                                        onClick={() => {
+                                          prepareProductCache({
+                                            id: item.productId || '',
+                                            title: item.productTitle,
+                                            titleJa: item.productTitleJa || item.productTitle,
+                                            url: item.productUrl,
+                                            currentPrice: Number(item.productPrice) || 0,
+                                            imageUrl: item.productImage,
+                                            endTime: item.productEndTime,
+                                            source: 'yahoo'
+                                          }, undefined, selectedCurrency);
+                                          if (typeof window !== 'undefined') {
+                                            saveNavState({
+                                              activeTab,
+                                              searchType,
+                                              categoryHistory,
+                                              activeCategoryUrl,
+                                              keyword,
+                                              searchCondition,
+                                              searchPage,
+                                              nextPageExists,
+                                              products,
+                                              scrollY: window.scrollY
+                                            });
+                                          }
+                                        }}
+                                        className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-[#ff0033]"
+                                      >
+                                        {t.viewOnYahoo}
+                                      </Link>
+                                    );
+                                  })()
                                 )
                               ) : (
                                 <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none font-sans">
@@ -6719,29 +6844,45 @@ export default function Home() {
                                     URL
                                   </a>
                                 ) : (
-                                  <Link
-                                    href={`/product/${item.productId}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}`}
-                                    scroll={false}
-                                    onClick={() => {
-                                      if (typeof window !== 'undefined') {
-                                        saveNavState({
-                                          activeTab,
-                                          searchType,
-                                          categoryHistory,
-                                          activeCategoryUrl,
-                                          keyword,
-                                          searchCondition,
-                                          searchPage,
-                                          nextPageExists,
-                                          products,
-                                          scrollY: window.scrollY
-                                        });
-                                      }
-                                    }}
-                                    className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-[#ff0033]"
-                                  >
-                                    {t.viewOnYahoo}
-                                  </Link>
+                                  (() => {
+                                    const itemEndTime = item.productEndTime || '';
+                                    const itemDetailUrl = `/product/${encodeURIComponent(item.productId || '')}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}&origPrice=${item.productPrice || ''}&currency=${selectedCurrency}&titleJa=${encodeURIComponent(item.productTitleJa || item.productTitle || '')}&endTime=${encodeURIComponent(itemEndTime)}`;
+                                    return (
+                                      <Link
+                                        href={itemDetailUrl}
+                                        scroll={false}
+                                        onClick={() => {
+                                          prepareProductCache({
+                                            id: item.productId || '',
+                                            title: item.productTitle,
+                                            titleJa: item.productTitleJa || item.productTitle,
+                                            url: item.productUrl,
+                                            currentPrice: Number(item.productPrice) || 0,
+                                            imageUrl: item.productImage,
+                                            endTime: item.productEndTime,
+                                            source: 'yahoo'
+                                          }, undefined, selectedCurrency);
+                                          if (typeof window !== 'undefined') {
+                                            saveNavState({
+                                              activeTab,
+                                              searchType,
+                                              categoryHistory,
+                                              activeCategoryUrl,
+                                              keyword,
+                                              searchCondition,
+                                              searchPage,
+                                              nextPageExists,
+                                              products,
+                                              scrollY: window.scrollY
+                                            });
+                                          }
+                                        }}
+                                        className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-[#ff0033]"
+                                      >
+                                        {t.viewOnYahoo}
+                                      </Link>
+                                    );
+                                  })()
                                 )
                               ) : (
                                 <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none">
