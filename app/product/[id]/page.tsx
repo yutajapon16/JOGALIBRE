@@ -793,12 +793,22 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       : calculateDefaultShippingCost(effectiveTitle, productUrlWithCategory);
     const totalJpyPrice = effectivePrice + FOB_COST + SHIPPING_COST;
     
+    const activeUser = currentUser || (() => {
+      if (typeof window !== 'undefined') {
+        try {
+          const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
+          if (cached) return JSON.parse(cached);
+        } catch {}
+      }
+      return null;
+    })();
+
     // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
     const profitDivisor = (() => {
-      if (currentUser?.customerId === 'B001') return 0.9;
-      if (currentUser?.agentCustomerId === 'B001') return 0.5;
-      if (currentUser?.customerId?.startsWith('A')) {
-        const countryLower = (currentUser?.country || '').trim().toLowerCase();
+      if (activeUser?.customerId === 'B001') return 0.9;
+      if (activeUser?.agentCustomerId === 'B001') return 0.5;
+      if (activeUser?.customerId?.startsWith('A')) {
+        const countryLower = (activeUser?.country || '').trim().toLowerCase();
         if (countryLower === 'brasil' || countryLower === 'brazil') {
           return 0.7; // ブラジルエージェント: 30%利益率
         }
@@ -856,12 +866,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     if (!isBidManuallyChanged) {
-      if (dispPriceParam) {
+      const isUsdDisp = (currencyParam || selectedCurrency) === 'USD';
+      if (dispPriceParam && isUsdDisp) {
         setBidForm(prev => ({ 
           ...prev, 
           maxBid: dispPriceParam.toString().replace(/[^0-9]/g, '') 
         }));
-      } else if (product?.displayPrice) {
+      } else if (product?.displayPrice && product?.displayCurrency === 'USD') {
         setBidForm(prev => ({ 
           ...prev, 
           maxBid: product.displayPrice.toString().replace(/[^0-9]/g, '') 
@@ -881,7 +892,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product, currentUser, exchangeRates, selectedCurrency, origPriceParam, dispPriceParam]);
+  }, [product, currentUser, exchangeRates, selectedCurrency, origPriceParam, dispPriceParam, currencyParam]);
 
   // 現地費用を表示用にフォーマットする関数 (数値の場合は通貨換算し、文字列の場合はそのまま表示する)
   const formatLocalCost = (cost: number | string): string => {

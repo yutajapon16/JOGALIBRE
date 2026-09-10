@@ -5002,29 +5002,53 @@ export default function Home() {
                                   URL
                                 </a>
                               ) : (
-                                <Link
-                                  href={`/product/${request.productId}?url=${encodeURIComponent(request.productUrl || '')}&lang=${lang}`}
-                                  scroll={false}
-                                  onClick={() => {
-                                    if (typeof window !== 'undefined') {
-                                      saveNavState({
-                                        activeTab,
-                                        searchType,
-                                        categoryHistory,
-                                        activeCategoryUrl,
-                                        keyword,
-                                        searchCondition,
-                                        searchPage,
-                                        nextPageExists,
-                                        products,
-                                        scrollY: window.scrollY
-                                      });
-                                    }
-                                  }}
-                                  className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-[#ff0033]"
-                                >
-                                  {t.viewOnYahoo}
-                                </Link>
+                                (() => {
+                                  const requestDispPrice = calculateConvertedPrice(
+                                    Number(request.productPrice),
+                                    selectedCurrency,
+                                    request.productTitleJa || request.productTitle,
+                                    request.productUrl,
+                                    undefined,
+                                    request.productId
+                                  );
+                                  const requestDetailUrl = `/product/${encodeURIComponent(request.productId || '')}?url=${encodeURIComponent(request.productUrl || '')}&lang=${lang}&dispPrice=${requestDispPrice}&origPrice=${request.productPrice || ''}&currency=${selectedCurrency}&titleJa=${encodeURIComponent(request.productTitleJa || request.productTitle || '')}`;
+                                  return (
+                                    <Link
+                                      href={requestDetailUrl}
+                                      scroll={false}
+                                      onClick={() => {
+                                        prepareProductCache({
+                                          id: request.productId || '',
+                                          title: request.productTitle,
+                                          titleJa: request.productTitleJa || request.productTitle,
+                                          url: request.productUrl,
+                                          currentPrice: Number(request.productPrice) || 0,
+                                          imageUrl: request.productImage,
+                                          bids: 0,
+                                          timeLeft: '',
+                                          source: 'yahoo'
+                                        }, requestDispPrice, selectedCurrency);
+                                        if (typeof window !== 'undefined') {
+                                          saveNavState({
+                                            activeTab,
+                                            searchType,
+                                            categoryHistory,
+                                            activeCategoryUrl,
+                                            keyword,
+                                            searchCondition,
+                                            searchPage,
+                                            nextPageExists,
+                                            products,
+                                            scrollY: window.scrollY
+                                          });
+                                        }
+                                      }}
+                                      className="text-center text-xs text-white hover:underline hover:opacity-90 font-bold h-7 rounded px-2 flex items-center justify-center w-full box-border font-sans bg-[#ff0033]"
+                                    >
+                                      {t.viewOnYahoo}
+                                    </Link>
+                                  );
+                                })()
                               )
                             ) : (
                               <div className="text-center text-xs text-gray-400 font-bold h-7 bg-gray-100 border border-gray-200 rounded px-2 flex items-center justify-center w-full box-border select-none font-sans">
@@ -8457,7 +8481,7 @@ export default function Home() {
                     );
                   })()}
                   {(() => {
-                    const featuredDispPrice = calculateConvertedPrice(selectedProduct.currentPrice, 'USD', selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id, selectedProduct.id, selectedProduct.shippingCost);
+                    const featuredDispPrice = calculateConvertedPrice(selectedProduct.currentPrice, selectedCurrency, selectedProduct.titleJa || selectedProduct.title, selectedProduct.url + (selectedProduct.categoryId ? (selectedProduct.url.includes('?') ? '&' : '?') + 'auccat=' + selectedProduct.categoryId : ''), currentCategory?.id, selectedProduct.id, selectedProduct.shippingCost);
                     const modalDetailHref = buildProductDetailUrl(selectedProduct, featuredDispPrice);
                     return (
                       <Link
