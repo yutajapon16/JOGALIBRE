@@ -1529,3 +1529,119 @@ export async function copyToClipboardSafe(text: string): Promise<boolean> {
 
   return false;
 }
+
+export interface ConvertedPriceOptions {
+  targetCurrency?: string;
+  title?: string;
+  url?: string;
+  explicitJcat?: string | null;
+  productId?: string | null;
+  explicitShippingCost?: number | null;
+  currentUser?: {
+    customerId?: string | null;
+    agentCustomerId?: string | null;
+    country?: string | null;
+    role?: string | null;
+  } | null;
+  exchangeRates?: Record<string, number>;
+  exchangeRateFallback?: number;
+  origPriceParam?: number | string | null;
+}
+
+/**
+ * 日本円価格から指定通貨への換算・利益率上乗せ・FOB/送料込み価格を統一算出するコア関数
+ * トップページ・商品詳細ページ・管理画面の間で100%同一の計算結果を保証します。
+ */
+export function computeConvertedPrice(
+  jpyPrice: number,
+  options: ConvertedPriceOptions = {}
+): string {
+  const {
+    targetCurrency = 'USD',
+    title = '',
+    url = '',
+    explicitJcat,
+    productId,
+    explicitShippingCost,
+    currentUser,
+    exchangeRates = {},
+    exchangeRateFallback = 150,
+    origPriceParam
+  } = options;
+
+  // 検索タブ等から引き渡された価格（origPriceParam）があれば最優先
+  const effectivePrice = (origPriceParam !== undefined && origPriceParam !== null && !isNaN(Number(origPriceParam)))
+    ? Number(origPriceParam)
+    : jpyPrice;
+
+  // ヤフオク以外の商品（手動登録商品や非ヤフオクドメインURL）の場合、jpyPrice には管理者が登録した販売価格（USD建て）が入っている
+  const isNonYahoo = (productId && productId.startsWith('m-')) || (url && !url.includes('auctions.yahoo.co.jp') && !url.includes('page.auctions.yahoo.co.jp'));
+  if (isNonYahoo) {
+    const usdPrice = effectivePrice;
+    if (targetCurrency === 'USD') {
+      return Math.round(usdPrice).toLocaleString('en-US');
+    } else {
+      const rate = exchangeRates[targetCurrency] || 1;
+      const rawConverted = usdPrice * rate;
+      const rounded = Math.round(rawConverted);
+      let finalConverted = rounded;
+      if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
+        finalConverted = Math.ceil(rounded / 5) * 5;
+      } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
+        finalConverted = Math.ceil(rounded / 1000) * 1000;
+      } else {
+        finalConverted = Math.ceil(rounded);
+      }
+      return finalConverted.toLocaleString('en-US').replace(/,/g, '.');
+    }
+  }
+
+  let urlWithJcat = url || '';
+  if (explicitJcat) {
+    urlWithJcat += (urlWithJcat.includes('?') ? '&' : '?') + `jcat=${explicitJcat}`;
+  }
+  const FOB_COST = calculateDefaultFobCost(title, urlWithJcat);
+  const SHIPPING_COST = (typeof explicitShippingCost === 'number' && explicitShippingCost >= 0)
+    ? explicitShippingCost
+    : calculateDefaultShippingCost(title, urlWithJcat);
+  const totalJpyPrice = effectivePrice + FOB_COST + SHIPPING_COST;
+
+  // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
+  const profitDivisor = (() => {
+    if (currentUser?.customerId === 'B001') return 0.9;
+    if (currentUser?.agentCustomerId === 'B001') return 0.5;
+    if (currentUser?.customerId?.startsWith('A')) {
+      const countryLower = (currentUser?.country || '').trim().toLowerCase();
+      if (countryLower === 'brasil' || countryLower === 'brazil') {
+        return 0.7; // ブラジルエージェント: 30%利益率
+      }
+      return 0.8; // 通常エージェント: 20%利益率
+    }
+    return 0.6;
+  })();
+
+  const priceWithProfit = Math.round((totalJpyPrice / profitDivisor) * 100) / 100;
+
+  const jpyRate = exchangeRates['JPY'] || exchangeRateFallback || 150;
+  const usdPrice = priceWithProfit / jpyRate;
+  const roundedUp = Math.ceil(usdPrice / 5) * 5;
+
+  if (targetCurrency === 'USD') {
+    return roundedUp.toLocaleString('en-US');
+  } else {
+    const rate = exchangeRates[targetCurrency] || 1;
+    const rawConverted = roundedUp * rate;
+    const rounded = Math.round(rawConverted);
+
+    let finalConverted = rounded;
+    if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
+      finalConverted = Math.ceil(rounded / 5) * 5;
+    } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
+      finalConverted = Math.ceil(rounded / 1000) * 1000;
+    } else {
+      finalConverted = Math.ceil(rounded);
+    }
+
+    return finalConverted.toLocaleString('en-US').replace(/,/g, '.');
+  }
+}

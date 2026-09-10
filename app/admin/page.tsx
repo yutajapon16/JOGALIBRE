@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
 import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, calculateProductBidJpy, deliveryLocations, getCountryNameJa, getCityNameJa, copyToClipboardSafe } from '@/lib/utils';
 import { BidRequest, BidStatus, FinalStatus } from '@/lib/types';
+import { getOptimizedImageUrl } from '@/lib/image-cache';
 
 // 管理者画面用のPWA manifest差し替え
 function useAdminManifest() {
@@ -2908,11 +2909,17 @@ export default function AdminDashboard() {
                       <div className="relative w-32 h-32 flex-shrink-0">
                         {request.productImage ? (
                           <Image
-                            src={request.productImage}
+                            src={getOptimizedImageUrl(request.productImage)}
                             alt={request.productTitle}
                             fill
                             className="object-cover rounded"
                             sizes="128px"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              if (target && target.src.includes('/api/image-cache') && request.productImage) {
+                                target.src = request.productImage;
+                              }
+                            }}
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2 text-black font-sans">
@@ -3583,11 +3590,17 @@ export default function AdminDashboard() {
                           <div className="relative w-32 h-32 flex-shrink-0">
                             {item.productImage ? (
                               <Image
-                                src={item.productImage}
+                                src={getOptimizedImageUrl(item.productImage)}
                                 alt={item.productTitle}
                                 fill
                                 className="object-cover rounded"
                                 sizes="128px"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  if (target && target.src.includes('/api/image-cache') && item.productImage) {
+                                    target.src = item.productImage;
+                                  }
+                                }}
                               />
                             ) : (
                               <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2 text-black font-sans">
@@ -5522,11 +5535,17 @@ export default function AdminDashboard() {
                             <div className="relative w-32 h-32 flex-shrink-0">
                               {item.productImage ? (
                                 <Image
-                                  src={item.productImage}
+                                  src={getOptimizedImageUrl(item.productImage)}
                                   alt={item.productTitle}
                                   fill
                                   className="object-cover rounded"
                                   sizes="128px"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    if (target && target.src.includes('/api/image-cache') && item.productImage) {
+                                      target.src = item.productImage;
+                                    }
+                                  }}
                                 />
                               ) : (
                                 <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center border border-gray-200 text-center p-2 text-black font-sans">

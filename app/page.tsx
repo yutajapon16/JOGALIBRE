@@ -7,7 +7,7 @@ import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword,
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds, copyToClipboardSafe } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds, copyToClipboardSafe, computeConvertedPrice } from '@/lib/utils';
 import { getOptimizedImageUrl } from '@/lib/image-cache';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
@@ -3042,76 +3042,17 @@ export default function Home() {
   };
 
   const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency, title?: string, url?: string, explicitJcat?: string, productId?: string, explicitShippingCost?: number | null) => {
-    // ヤフオク以外の商品（手動登録商品や非ヤフオクドメインURL）の場合、jpyPrice には管理者が登録した販売価格（USD建て）が入っているため、それを基に通貨換算を行う
-    const isNonYahoo = (productId && productId.startsWith('m-')) || (url && !url.includes('auctions.yahoo.co.jp') && !url.includes('page.auctions.yahoo.co.jp'));
-    if (isNonYahoo) {
-      const usdPrice = jpyPrice;
-      if (targetCurrency === 'USD') {
-        return Math.round(usdPrice).toLocaleString('en-US');
-      } else {
-        const rate = exchangeRates[targetCurrency] || 1;
-        const rawConverted = usdPrice * rate;
-        const rounded = Math.round(rawConverted);
-        let finalConverted = rounded;
-        if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
-          finalConverted = Math.ceil(rounded / 5) * 5;
-        } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
-          finalConverted = Math.ceil(rounded / 1000) * 1000;
-        } else {
-          finalConverted = Math.ceil(rounded);
-        }
-        return finalConverted.toLocaleString('en-US').replace(/,/g, '.');
-      }
-    }
-
-    let urlWithJcat = url || '';
-    if (explicitJcat) {
-      urlWithJcat += (urlWithJcat.includes('?') ? '&' : '?') + `jcat=${explicitJcat}`;
-    }
-    const FOB_COST = calculateDefaultFobCost(title, urlWithJcat);
-    const SHIPPING_COST = (typeof explicitShippingCost === 'number' && explicitShippingCost >= 0)
-      ? explicitShippingCost
-      : calculateDefaultShippingCost(title, urlWithJcat);
-    const totalJpyPrice = jpyPrice + FOB_COST + SHIPPING_COST;
-    
-    // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
-    const profitDivisor = (() => {
-      if (currentUser?.customerId === 'B001') return 0.9;
-      if (currentUser?.agentCustomerId === 'B001') return 0.5;
-      if (currentUser?.customerId?.startsWith('A')) {
-        const countryLower = (currentUser?.country || '').trim().toLowerCase();
-        if (countryLower === 'brasil' || countryLower === 'brazil') {
-          return 0.7; // ブラジルエージェント: 30%利益率
-        }
-        return 0.8; // 通常エージェント: 20%利益率
-      }
-      return 0.6;
-    })();
-    
-    const priceWithProfit = Math.round((totalJpyPrice / profitDivisor) * 100) / 100;
-    
-    const jpyRate = exchangeRates['JPY'] || exchangeRate || 150;
-    const usdPrice = priceWithProfit / jpyRate;
-    const roundedUp = Math.ceil(usdPrice / 5) * 5;
-    
-    if (targetCurrency === 'USD') {
-      return roundedUp.toLocaleString('en-US');
-    } else {
-      const rate = exchangeRates[targetCurrency] || 1;
-      const rawConverted = roundedUp * rate;
-      const rounded = Math.round(rawConverted);
-      
-      let finalConverted = rounded;
-      if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
-        finalConverted = Math.ceil(rounded / 5) * 5;
-      } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
-        finalConverted = Math.ceil(rounded / 1000) * 1000;
-      } else {
-        finalConverted = Math.ceil(rounded);
-      }
-      
-      return finalConverted.toLocaleString('en-US').replace(/,/g, '.');
-    }
+    return computeConvertedPrice(jpyPrice, {
+      targetCurrency,
+      title,
+      url,
+      explicitJcat,
+      productId,
+      explicitShippingCost,
+      currentUser,
+      exchangeRates,
+      exchangeRateFallback: exchangeRate || 150,
+    });
   };
 
   const convertUSDToSelectedCurrency = (usdAmount: number, targetCurrency: string = selectedCurrency) => {
@@ -4406,12 +4347,18 @@ export default function Home() {
             {product.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={product.imageUrl}
+                src={getOptimizedImageUrl(product.imageUrl)}
                 alt={product.title || 'Product'}
                 loading="lazy"
                 decoding="async"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover transition-opacity duration-200"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target && target.src.includes('/api/image-cache') && product.imageUrl) {
+                    target.src = product.imageUrl;
+                  }
+                }}
               />
             ) : (
               <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-semibold">
@@ -4858,7 +4805,7 @@ export default function Home() {
                         <div className="relative w-32 h-32 flex-shrink-0">
                           {request.productImage ? (
                             <Image
-                              src={request.productImage}
+                              src={getOptimizedImageUrl(request.productImage)}
                               alt={request.productTitle}
                               fill
                               unoptimized
@@ -4867,7 +4814,9 @@ export default function Home() {
                               sizes="128px"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                if (target && !target.src.includes('customer-icon.png')) {
+                                if (target && target.src.includes('/api/image-cache') && request.productImage) {
+                                  target.src = request.productImage;
+                                } else if (target && !target.src.includes('customer-icon.png')) {
                                   target.src = '/icons/customer-icon.png';
                                 }
                               }}
@@ -5760,7 +5709,7 @@ export default function Home() {
                           <div className="relative w-32 h-32 flex-shrink-0">
                             {item.productImage ? (
                               <Image
-                                src={item.productImage}
+                                src={getOptimizedImageUrl(item.productImage)}
                                 alt={item.productTitle}
                                 fill
                                 unoptimized
@@ -5769,7 +5718,9 @@ export default function Home() {
                                 sizes="128px"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
-                                  if (target && !target.src.includes('customer-icon.png')) {
+                                  if (target && target.src.includes('/api/image-cache') && item.productImage) {
+                                    target.src = item.productImage;
+                                  } else if (target && !target.src.includes('customer-icon.png')) {
                                     target.src = '/icons/customer-icon.png';
                                   }
                                 }}
@@ -6651,7 +6602,7 @@ export default function Home() {
                           <div className="relative w-32 h-32 flex-shrink-0">
                             {item.productImage ? (
                               <Image
-                                src={item.productImage}
+                                src={getOptimizedImageUrl(item.productImage)}
                                 alt={item.productTitle}
                                 fill
                                 unoptimized
@@ -6660,7 +6611,9 @@ export default function Home() {
                                 sizes="128px"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
-                                  if (target && !target.src.includes('customer-icon.png')) {
+                                  if (target && target.src.includes('/api/image-cache') && item.productImage) {
+                                    target.src = item.productImage;
+                                  } else if (target && !target.src.includes('customer-icon.png')) {
                                     target.src = '/icons/customer-icon.png';
                                   }
                                 }}

@@ -438,18 +438,21 @@ export async function translateText(text: string, targetLang: string, sourceLang
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 6000);
           const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          const isThinkingModel = model.includes('2.5') || model.includes('thinking');
+          const generationConfig: Record<string, any> = {
+            maxOutputTokens: 2000,
+            temperature: 0.1,
+          };
+          if (isThinkingModel) {
+            generationConfig.thinkingConfig = { thinkingBudget: 0 };
+          }
+
           const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                maxOutputTokens: 2000,
-                temperature: 0.1,
-                thinkingConfig: {
-                  thinkingBudget: 0
-                }
-              }
+              generationConfig
             }),
             signal: controller.signal
           });
@@ -534,19 +537,22 @@ ${JSON.stringify(titles)}`;
       const timeout = setTimeout(() => controller.abort(), 7000);
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const isThinkingModel = model.includes('2.5') || model.includes('thinking');
+      const generationConfig: Record<string, any> = {
+        maxOutputTokens: 2500,
+        temperature: 0.1,
+        responseMimeType: 'application/json',
+      };
+      if (isThinkingModel) {
+        generationConfig.thinkingConfig = { thinkingBudget: 0 };
+      }
+
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            maxOutputTokens: 2500,
-            temperature: 0.1,
-            responseMimeType: 'application/json',
-            thinkingConfig: {
-              thinkingBudget: 0
-            }
-          }
+          generationConfig
         }),
         signal: controller.signal
       });

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
 import { useAuth } from '@/lib/auth-context';
-import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, syncLocalOfferedIds } from '@/lib/utils';
+import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, syncLocalOfferedIds, computeConvertedPrice } from '@/lib/utils';
 import { getOptimizedImageUrl } from '@/lib/image-cache';
 
 // オークションIDまたはURLからキャッシュキーを正規化して生成する関数
@@ -716,46 +716,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  // 通貨換算の計算ロジック（トップページと完全同期）
+  // 通貨換算の計算ロジック（lib/utils.ts のコア関数と完全同期）
   const calculateConvertedPrice = (jpyPrice: number, targetCurrency: string = selectedCurrency) => {
-    // 検索タブから引き渡された価格（origPrice）があればそれを最優先（検索タブと100%一致させる）
-    const effectivePrice = (origPriceParam && !isNaN(Number(origPriceParam))) 
-      ? Number(origPriceParam) 
-      : jpyPrice;
-
-    const isNonYahoo = (product?.id && product.id.startsWith('m-')) || (product?.url && !product.url.includes('auctions.yahoo.co.jp') && !product.url.includes('page.auctions.yahoo.co.jp'));
-    if (isNonYahoo) {
-      const usdPrice = effectivePrice;
-      if (targetCurrency === 'USD') {
-        return Math.round(usdPrice).toLocaleString('en-US');
-      } else {
-        const rate = exchangeRates[targetCurrency] || 1;
-        const rawConverted = usdPrice * rate;
-        const rounded = Math.round(rawConverted);
-        let finalConverted = rounded;
-        if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
-          finalConverted = Math.ceil(rounded / 5) * 5;
-        } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
-          finalConverted = Math.ceil(rounded / 1000) * 1000;
-        } else {
-          finalConverted = Math.ceil(rounded);
-        }
-        return finalConverted.toLocaleString('en-US').replace(/,/g, '.');
-      }
-    }
-
-    let productUrlWithCategory = (product?.url || targetUrl || '') + (product?.categoryId ? ((product?.url || targetUrl || '').includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : '');
-    if (jcat) {
-      productUrlWithCategory += (productUrlWithCategory.includes('?') ? '&' : '?') + `jcat=${jcat}`;
-    }
+    const productUrlWithCategory = (product?.url || targetUrl || '') + (product?.categoryId ? ((product?.url || targetUrl || '').includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : '');
     const effectiveTitle = titleJaParam ? safeDecodeURIComponent(titleJaParam) : (product?.titleJa || product?.title || '');
-    const FOB_COST = calculateDefaultFobCost(effectiveTitle, productUrlWithCategory);
-    // ヤフオク出品者側で送料が設定されている場合はその実送料を優先適用し、未設定時のみCSVから算出
-    const SHIPPING_COST = (product && typeof product.shippingCost === 'number')
-      ? product.shippingCost
-      : calculateDefaultShippingCost(effectiveTitle, productUrlWithCategory);
-    const totalJpyPrice = effectivePrice + FOB_COST + SHIPPING_COST;
-    
     const activeUser = currentUser || (() => {
       if (typeof window !== 'undefined') {
         try {
@@ -766,44 +730,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       return null;
     })();
 
-    // B001本人は0.9(10%利益)、B001紐づき顧客は0.5(50%利益)、ブラジルエージェントは0.7(30%利益)、通常エージェントは0.8(20%)、通常顧客は0.6(40%)
-    const profitDivisor = (() => {
-      if (activeUser?.customerId === 'B001') return 0.9;
-      if (activeUser?.agentCustomerId === 'B001') return 0.5;
-      if (activeUser?.customerId?.startsWith('A')) {
-        const countryLower = (activeUser?.country || '').trim().toLowerCase();
-        if (countryLower === 'brasil' || countryLower === 'brazil') {
-          return 0.7; // ブラジルエージェント: 30%利益率
-        }
-        return 0.8; // 通常エージェント: 20%利益率
-      }
-      return 0.6;
-    })();
-    
-    const priceWithProfit = Math.round((totalJpyPrice / profitDivisor) * 100) / 100;
-    
-    const jpyRate = exchangeRates['JPY'] || exchangeRate || 150;
-    const usdPrice = priceWithProfit / jpyRate;
-    const roundedUp = Math.ceil(usdPrice / 5) * 5;
-    
-    if (targetCurrency === 'USD') {
-      return roundedUp.toLocaleString('en-US');
-    } else {
-      const rate = exchangeRates[targetCurrency] || 1;
-      const rawConverted = roundedUp * rate;
-      const rounded = Math.round(rawConverted);
-      
-      let finalConverted = rounded;
-      if (targetCurrency === 'BRL' || targetCurrency === 'BOB') {
-        finalConverted = Math.ceil(rounded / 5) * 5;
-      } else if (targetCurrency === 'PYG' || targetCurrency === 'CLP' || targetCurrency === 'ARS') {
-        finalConverted = Math.ceil(rounded / 1000) * 1000;
-      } else {
-        finalConverted = Math.ceil(rounded);
-      }
-      
-      return finalConverted.toLocaleString('en-US').replace(/,/g, '.');
-    }
+    return computeConvertedPrice(jpyPrice, {
+      targetCurrency,
+      title: effectiveTitle,
+      url: productUrlWithCategory,
+      explicitJcat: jcat,
+      productId: product?.id,
+      explicitShippingCost: typeof product?.shippingCost === 'number' ? product.shippingCost : null,
+      currentUser: activeUser,
+      exchangeRates,
+      exchangeRateFallback: exchangeRate || 150,
+      origPriceParam,
+    });
   };
 
   const convertUSDToSelectedCurrency = (usdAmount: number, targetCurrency: string = selectedCurrency) => {

@@ -812,6 +812,15 @@ ${textToSummarize}`;
       const timeout = setTimeout(() => controller.abort(), 6000);
 
       const urlEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const isThinkingModel = model.includes('2.5') || model.includes('thinking');
+      const generationConfig: Record<string, any> = {
+        maxOutputTokens: 2000,
+        temperature: 0.2,
+      };
+      if (isThinkingModel) {
+        generationConfig.thinkingConfig = { thinkingBudget: 0 };
+      }
+
       const response = await fetch(urlEndpoint, {
         method: 'POST',
         headers: {
@@ -823,13 +832,7 @@ ${textToSummarize}`;
               text: prompt
             }]
           }],
-          generationConfig: {
-            maxOutputTokens: 2000,
-            temperature: 0.2,
-            thinkingConfig: {
-              thinkingBudget: 0
-            }
-          }
+          generationConfig
         }),
         signal: controller.signal
       });

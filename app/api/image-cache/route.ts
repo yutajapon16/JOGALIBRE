@@ -31,23 +31,25 @@ export async function GET(request: NextRequest) {
   try {
     const storage = getStorageClient();
 
-    // 1. GCS が設定されている場合、キャッシュを確認
+    // 1. GCS が設定されている場合、直接ダウンロードを試行（通信往復回数を1回に集約）
     if (storage) {
-      const exists = await fileExistsInGcs(bucketName, cacheKey);
-      if (exists) {
-        // GCS キャッシュヒット: GCS からストリーム取得して配信
+      try {
         const bucket = storage.bucket(bucketName);
         const file = bucket.file(cacheKey);
-        const [metadata] = await file.getMetadata();
         const [buffer] = await file.download();
+
+        const ext = cacheKey.split('.').pop()?.toLowerCase();
+        const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
 
         return new NextResponse(new Uint8Array(buffer), {
           headers: {
-            'Content-Type': metadata.contentType || 'image/jpeg',
+            'Content-Type': contentType,
             'Cache-Control': 'public, max-age=31536000, immutable',
             'X-Cache-Status': 'HIT',
           },
         });
+      } catch {
+        // キャッシュミス（未保存）の場合はヤフオクからのフェッチへ進む
       }
     }
 
