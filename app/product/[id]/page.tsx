@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
+import { useAuth } from '@/lib/auth-context';
 import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, syncLocalOfferedIds } from '@/lib/utils';
 import { getOptimizedImageUrl } from '@/lib/image-cache';
 
@@ -318,20 +319,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     return true;
   });
   
-  // ログインユーザー情報をキャッシュから同期的に初期ロード（表示のちらつきや金額計算の不一致を防止）
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
-      if (cached) {
-        try {
-          return JSON.parse(cached);
-        } catch {
-          return null;
-        }
-      }
-    }
-    return null;
-  });
+  // グローバル認証コンテキストからユーザー情報を取得（画面遷移時でもメモリ上に常時保持）
+  const { user: currentUser, setUser: setCurrentUser } = useAuth();
   
   // 選択された通貨のState (パラメータがあれば優先、キャッシュやユーザー属性から復元、デフォルトはUSD)
   const [selectedCurrency, setSelectedCurrency] = useState<string>(() => {
@@ -594,57 +583,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       }
     }
 
-    // 早期キャッシュ復元 (getCurrentUser完了までのちらつき防止)
-    if (typeof localStorage !== 'undefined') {
-      const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
-      if (cached && !currentUser) {
-        try {
-          const cacheData = JSON.parse(cached);
-          setCurrentUser(prev => prev ? prev : { ...cacheData, email: '' } as any);
-        } catch {}
-      }
-    }
-
-    // 初回ロードで現在のユーザー情報を取得
-    getCurrentUser().then(user => {
-      if (user) {
-        setCurrentUser(user);
-        if (!currencyParam && typeof window !== 'undefined') {
-          const savedUserCurrency = localStorage.getItem('jogalibre_user_selected_currency');
-          if (!savedUserCurrency && isBrlDefaultUser(user)) {
-            setSelectedCurrency('BRL');
-          }
-        }
-        fetchUserProfile(user);
-        fetchMyRequests(user.email);
-      }
-    }).catch(err => {
-      console.error('Fast failure in initial getCurrentUser:', err);
-    });
-
-    // セッションのリアルタイム変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setCurrentUser(null);
-      } else if (session?.user) {
-        const user = await getCurrentUser(session.user);
-        if (user) {
-          let updatedUser = user;
-          setCurrentUser(prev => {
-            const next = prev ? {
-              ...prev,
-              ...user,
-              customerId: user.customerId || prev.customerId,
-              fullName: user.fullName || prev.fullName
-            } : user;
-            updatedUser = next;
-            return next;
-          });
-          fetchUserProfile(updatedUser);
-        }
-      }
-    });
-
     // 為替レートの取得
     const fetchExchangeRate = async () => {
       try {
@@ -671,19 +609,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       }
     };
     fetchExchangeRate();
-
-    return () => subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
-  // ユーザーがロードされたら、名前の初期値をフォームにセット
+  // ユーザー情報に基づく通貨・プロフィール・申請リストの同期およびフォーム初期値セット
   useEffect(() => {
     if (currentUser) {
+      if (!currencyParam && typeof window !== 'undefined') {
+        const savedUserCurrency = localStorage.getItem('jogalibre_user_selected_currency');
+        if (!savedUserCurrency && isBrlDefaultUser(currentUser)) {
+          setSelectedCurrency('BRL');
+        }
+      }
+      fetchUserProfile(currentUser);
+      if (currentUser.email) {
+        fetchMyRequests(currentUser.email);
+      }
       const defaultName = (currentUser.role === 'customer' && currentUser.agentCustomerId)
         ? (currentUser.agentFullName || '')
         : (currentUser.fullName || '');
       setBidForm(prev => ({ ...prev, name: defaultName }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   // 商品詳細とAI要約の取得 (SWRパターン: キャッシュがあれば即時表示し、裏で最新情報を同期)

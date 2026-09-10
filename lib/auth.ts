@@ -315,6 +315,7 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('jogalibre_user_cache', JSON.stringify({
           id: userData.id,
+          email: userData.email,
           role: userData.role,
           fullName: userData.fullName,
           whatsapp: userData.whatsapp,

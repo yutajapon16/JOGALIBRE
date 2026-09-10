@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
+import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
 import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds, copyToClipboardSafe } from '@/lib/utils';
@@ -1257,43 +1258,8 @@ export default function Home() {
   const [isFeaturedLoading, setIsFeaturedLoading] = useState(false);
   const [isOfferUpdating, setIsOfferUpdating] = useState(false);
   const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
-  // ログインユーザー情報をキャッシュから同期的に初期ロード（ヘッダー顧客ID/氏名の表示遅延および金額計算の不一致を完全防止）
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
-        if (cached) {
-          const cacheData = JSON.parse(cached);
-          if (cacheData && cacheData.id && typeof cacheData === 'object') {
-            return {
-              id: cacheData.id,
-              email: cacheData.email || '',
-              role: cacheData.role || 'customer',
-              fullName: cacheData.fullName,
-              whatsapp: cacheData.whatsapp,
-              customerId: cacheData.customerId,
-              address: cacheData.address,
-              zipCode: cacheData.zipCode,
-              country: cacheData.country || '',
-              agentCustomerId: cacheData.agentCustomerId,
-              agentFullName: cacheData.agentFullName,
-              depositAmount: cacheData.depositAmount,
-              depositConfirmedAt: cacheData.depositConfirmedAt,
-              termsAcceptedAt: cacheData.termsAcceptedAt,
-              cpf: cacheData.cpf,
-              state: cacheData.state,
-              city: cacheData.city,
-              language: cacheData.language
-            } as any;
-          }
-        }
-      } catch (e) {
-        console.warn('Initial user state error:', e);
-      }
-    }
-    return null;
-  });
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  // グローバル認証コンテキストからユーザー情報を取得（画面遷移・詳細ページからの戻り時でもメモリ上に常時保持）
+  const { user: currentUser, setUser: setCurrentUser, isAuthChecking, login, logout } = useAuth();
   const [showSignUp, setShowSignUp] = useState(false);
   const [isEditOfferModalOpen, setIsEditOfferModalOpen] = useState(false);
   const [editingOfferRequest, setEditingOfferRequest] = useState<BidRequest | null>(null);
@@ -1880,72 +1846,11 @@ export default function Home() {
   }, [lang]);
 
   useEffect(() => {
-    // 初回セッション復元
-    getCurrentUser().then(user => {
-      if (user?.role === 'customer' || user?.role === 'agent') {
-        setCurrentUser(user);
-        if (user.language === 'es' || user.language === 'pt') {
-          setLang(user.language);
-          localStorage.setItem('lang', user.language);
-        }
-      }
-    }).catch(err => {
-      console.error('Fast failure in initial getCurrentUser:', err);
-    }).finally(() => {
-      setIsAuthChecking(false);
-    });
-
-    // セッション変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
-        setCurrentUser(null);
-        setMyRequests([]);
-        setPurchasedItems([]);
-        setFavorites([]);
-        setDepositsList([]);
-        if (typeof localStorage !== 'undefined') {
-          localStorage.removeItem('jogalibre_user_cache');
-          localStorage.removeItem('jogalibre_terms_accepted');
-          localStorage.removeItem('joga_user_cache');
-          localStorage.removeItem('joga_terms_accepted');
-          localStorage.removeItem(MY_REQUESTS_CACHE_KEY);
-          localStorage.removeItem(PURCHASED_ITEMS_CACHE_KEY);
-        }
-        if (typeof sessionStorage !== 'undefined') {
-          sessionStorage.removeItem(MY_REQUESTS_CACHE_KEY);
-          sessionStorage.removeItem(PURCHASED_ITEMS_CACHE_KEY);
-        }
-      } else if (session?.user) {
-        // SIGNED_IN, INITIAL_SESSION, TOKEN_REFRESHED 等でセッション復元
-        if (event === 'SIGNED_IN') {
-          // ログイン直後はSupabaseクライアントへのトークン伝播に遅延があるため、500ms待ってからDB（user_roles）を取得する
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-        const user = await getCurrentUser(session.user);
-        if (user?.role === 'customer' || user?.role === 'agent') {
-          setCurrentUser(prev => {
-             // すでにIDを持っている場合、新しく取得したデータが古い場合（タイムアウト等）は既存のIDを維持する
-             if (prev && prev.id === user.id) {
-               return {
-                 ...prev,
-                 ...user,
-                 customerId: user.customerId || prev.customerId,
-                 fullName: user.fullName || prev.fullName,
-                 whatsapp: user.whatsapp || prev.whatsapp
-               };
-             }
-             return user;
-          });
-          if (user.language === 'es' || user.language === 'pt') {
-            setLang(user.language);
-            localStorage.setItem('lang', user.language);
-          }
-        }
-      }
-      setIsAuthChecking(false);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+    if (currentUser?.language === 'es' || currentUser?.language === 'pt') {
+      setLang(currentUser.language);
+      localStorage.setItem('lang', currentUser.language);
+    }
+  }, [currentUser?.language]);
 
   // 通知状態チェック＆自動再登録（セッション復元時にも確実に実行されるようcurrentUserを監視）
   useEffect(() => {
@@ -1981,42 +1886,6 @@ export default function Home() {
   }, [currentUser]);
 
   useEffect(() => {
-    // 早期キャッシュ復元 (getCurrentUser完了までのちらつき防止)
-    if (typeof localStorage !== 'undefined') {
-      const cached = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
-      if (cached && !currentUser) {
-        try {
-          const cacheData = JSON.parse(cached);
-          if (cacheData && cacheData.id && typeof cacheData === 'object') {
-            // 仮のユーザー情報としてセット（後でgetCurrentUserによって上書きされる）
-            setCurrentUser(prev => prev ? prev : {
-              id: cacheData.id,
-              email: cacheData.email || '',
-              role: cacheData.role || 'customer',
-              fullName: cacheData.fullName,
-              whatsapp: cacheData.whatsapp,
-              customerId: cacheData.customerId,
-              address: cacheData.address,
-              zipCode: cacheData.zipCode,
-              country: cacheData.country || '',
-              agentCustomerId: cacheData.agentCustomerId,
-              agentFullName: cacheData.agentFullName,
-              depositAmount: cacheData.depositAmount,
-              depositConfirmedAt: cacheData.depositConfirmedAt,
-              termsAcceptedAt: cacheData.termsAcceptedAt,
-              cpf: cacheData.cpf,
-              state: cacheData.state,
-              city: cacheData.city,
-              language: cacheData.language
-            } as any);
-          }
-        } catch {
-          // キャッシュが壊れている場合は安全に削除
-          localStorage.removeItem('jogalibre_user_cache');
-          localStorage.removeItem('joga_user_cache');
-        }
-      }
-    }
 
     if (currentUser) {
       fetchUnreadCount();
@@ -2892,9 +2761,11 @@ export default function Home() {
     const password = (formData.get('password') as string) || loginForm.password;
 
     try {
-      await signIn(email, password);
-      // onAuthStateChange が SIGNED_IN イベントで自動的にユーザーを設定する
+      const loggedUser = await login(email, password);
       setLoginForm({ email: '', password: '', fullName: '', whatsapp: '', address: '', addressNumber: '', complement: '', zipCode: '', country: '', agentCustomerId: '', cpf: '', state: '', city: '' });
+      if (loggedUser?.language === 'es' || loggedUser?.language === 'pt') {
+        setLang(loggedUser.language);
+      }
     } catch (error) {
       console.error('Login error:', error);
       alert(lang === 'es'
@@ -2972,12 +2843,6 @@ export default function Home() {
     // モーダルを閉じ、画面UIを0秒で即座にログアウト状態（ログイン画面）にする
     setShowLogoutConfirm(false);
     const userId = currentUser?.id;
-    setCurrentUser(null);
-    setMyRequests([]);
-    setPurchasedItems([]);
-    setFavorites([]);
-    setDepositsList([]);
-
     if (userId) {
       fetch('/api/push-subscribe', {
         method: 'DELETE',
@@ -2985,22 +2850,15 @@ export default function Home() {
         body: JSON.stringify({ userId }),
       }).catch(err => console.error('Push subscription cleanup error:', err));
     }
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem('jogalibre_terms_accepted');
-      localStorage.removeItem('joga_terms_accepted');
-      localStorage.removeItem('jogalibre_user_cache');
-      localStorage.removeItem('joga_user_cache');
-      localStorage.removeItem(MY_REQUESTS_CACHE_KEY);
-      localStorage.removeItem(PURCHASED_ITEMS_CACHE_KEY);
-    }
-    if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.removeItem(MY_REQUESTS_CACHE_KEY);
-      sessionStorage.removeItem(PURCHASED_ITEMS_CACHE_KEY);
-    }
+    setMyRequests([]);
+    setPurchasedItems([]);
+    setFavorites([]);
+    setDepositsList([]);
+
     try {
-      await signOut();
+      await logout();
     } catch (err) {
-      console.error('Signout error:', err);
+      console.error('Logout error:', err);
     }
   };
 
