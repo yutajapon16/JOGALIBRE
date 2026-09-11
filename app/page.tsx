@@ -4934,7 +4934,8 @@ export default function Home() {
                                     request.productTitleJa || request.productTitle,
                                     request.productUrl,
                                     undefined,
-                                    request.productId
+                                    request.productId,
+                                    request.shippingCostJpy
                                   );
                                   const requestEndTime = request.productEndTime || '';
                                   const requestDetailUrl = `/product/${encodeURIComponent(request.productId || '')}?url=${encodeURIComponent(request.productUrl || '')}&lang=${lang}&dispPrice=${requestDispPrice}&origPrice=${request.productPrice || ''}&currency=${selectedCurrency}&titleJa=${encodeURIComponent(request.productTitleJa || request.productTitle || '')}&endTime=${encodeURIComponent(requestEndTime)}`;
@@ -5782,7 +5783,16 @@ export default function Home() {
                                 ) : (
                                   (() => {
                                     const itemEndTime = item.productEndTime || '';
-                                    const itemDetailUrl = `/product/${encodeURIComponent(item.productId || '')}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}&origPrice=${item.productPrice || ''}&currency=${selectedCurrency}&titleJa=${encodeURIComponent(item.productTitleJa || item.productTitle || '')}&endTime=${encodeURIComponent(itemEndTime)}`;
+                                    const itemDispPrice = calculateConvertedPrice(
+                                      Number(item.productPrice),
+                                      selectedCurrency,
+                                      item.productTitleJa || item.productTitle,
+                                      item.productUrl,
+                                      undefined,
+                                      item.productId,
+                                      item.shippingCostJpy
+                                    );
+                                    const itemDetailUrl = `/product/${encodeURIComponent(item.productId || '')}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}&dispPrice=${itemDispPrice}&origPrice=${item.productPrice || ''}&currency=${selectedCurrency}&titleJa=${encodeURIComponent(item.productTitleJa || item.productTitle || '')}&endTime=${encodeURIComponent(itemEndTime)}`;
                                     return (
                                       <Link
                                         href={itemDetailUrl}
@@ -5797,7 +5807,7 @@ export default function Home() {
                                             imageUrl: item.productImage,
                                             endTime: item.productEndTime,
                                             source: 'yahoo'
-                                          }, undefined, selectedCurrency);
+                                          }, itemDispPrice, selectedCurrency);
                                           if (typeof window !== 'undefined') {
                                             saveNavState({
                                               activeTab,
@@ -6667,7 +6677,16 @@ export default function Home() {
                                 ) : (
                                   (() => {
                                     const itemEndTime = item.productEndTime || '';
-                                    const itemDetailUrl = `/product/${encodeURIComponent(item.productId || '')}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}&origPrice=${item.productPrice || ''}&currency=${selectedCurrency}&titleJa=${encodeURIComponent(item.productTitleJa || item.productTitle || '')}&endTime=${encodeURIComponent(itemEndTime)}`;
+                                    const itemDispPrice = calculateConvertedPrice(
+                                      Number(item.productPrice),
+                                      selectedCurrency,
+                                      item.productTitleJa || item.productTitle,
+                                      item.productUrl,
+                                      undefined,
+                                      item.productId,
+                                      item.shippingCostJpy
+                                    );
+                                    const itemDetailUrl = `/product/${encodeURIComponent(item.productId || '')}?url=${encodeURIComponent(item.productUrl || '')}&lang=${lang}&dispPrice=${itemDispPrice}&origPrice=${item.productPrice || ''}&currency=${selectedCurrency}&titleJa=${encodeURIComponent(item.productTitleJa || item.productTitle || '')}&endTime=${encodeURIComponent(itemEndTime)}`;
                                     return (
                                       <Link
                                         href={itemDetailUrl}
@@ -6682,7 +6701,7 @@ export default function Home() {
                                             imageUrl: item.productImage,
                                             endTime: item.productEndTime,
                                             source: 'yahoo'
-                                          }, undefined, selectedCurrency);
+                                          }, itemDispPrice, selectedCurrency);
                                           if (typeof window !== 'undefined') {
                                             saveNavState({
                                               activeTab,

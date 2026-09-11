@@ -268,6 +268,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           if ((cached.bids === undefined || cached.bids === null) && bidsP && !isNaN(Number(bidsP))) {
             cached.bids = Number(bidsP);
           }
+          // URLパラメータに表示価格（dispPrice）がある場合は最新の検索タブ表示価格を即時優先
+          const dPrice = urlParams.get('dispPrice');
+          if (dPrice) {
+            cached.displayPrice = dPrice;
+          }
+          const curr = urlParams.get('currency');
+          if (curr) {
+            cached.displayCurrency = curr;
+          }
           return cached;
         }
 
@@ -382,8 +391,21 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   // カルーセル（画像）用のインデックス
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // オファー申請フォームのState
-  const [bidForm, setBidForm] = useState({ name: '', maxBid: '' });
+  // オファー申請フォームのState (URLパラメータのdispPriceから0msで即座に初期化)
+  const [bidForm, setBidForm] = useState(() => {
+    let initialMaxBid = '';
+    if (typeof window !== 'undefined') {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const dPrice = urlParams.get('dispPrice');
+        const curr = urlParams.get('currency') || 'USD';
+        if (dPrice && curr === 'USD') {
+          initialMaxBid = dPrice.toString().replace(/[^0-9]/g, '');
+        }
+      } catch {}
+    }
+    return { name: '', maxBid: initialMaxBid };
+  });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [myRequests, setMyRequests] = useState<any[]>([]);
@@ -767,8 +789,25 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     if (!isBidManuallyChanged) {
-      // 詳細情報（APIレスポンス）が取得完了している場合は、正確なカテゴリIDと確定送料をもとに再計算した金額を最優先適用
-      if (product?.shippingCost !== undefined || product?.categoryId) {
+      // 1. 詳細データ取得前（ロード中・初期表示）は、検索一覧からの引き継ぎ値を最優先適用（チラつき完全防止）
+      const isUsdDisp = (currencyParam || selectedCurrency) === 'USD';
+      if (dispPriceParam && isUsdDisp) {
+        setBidForm(prev => ({ 
+          ...prev, 
+          maxBid: dispPriceParam.toString().replace(/[^0-9]/g, '') 
+        }));
+        return;
+      }
+      if (product?.displayPrice && product?.displayCurrency === 'USD') {
+        setBidForm(prev => ({ 
+          ...prev, 
+          maxBid: product.displayPrice.toString().replace(/[^0-9]/g, '') 
+        }));
+        return;
+      }
+
+      // 2. 出品者の正規設定送料（数値）がAPIから届いた場合、または確定送料がある場合のみ再計算
+      if (typeof product?.shippingCost === 'number') {
         const effectivePrice = product?.currentPrice || (origPriceParam && !isNaN(Number(origPriceParam)) ? Number(origPriceParam) : 0);
         if (effectivePrice > 0) {
           const calculated = calculateConvertedPrice(effectivePrice, 'USD').toString().replace(/,/g, '');
@@ -780,30 +819,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         }
       }
 
-      // 詳細データ取得前（ロード中）の初期表示は、検索一覧からの引き継ぎ値を暫定適用（チラつき防止）
-      const isUsdDisp = (currencyParam || selectedCurrency) === 'USD';
-      if (dispPriceParam && isUsdDisp) {
-        setBidForm(prev => ({ 
-          ...prev, 
-          maxBid: dispPriceParam.toString().replace(/[^0-9]/g, '') 
-        }));
-      } else if (product?.displayPrice && product?.displayCurrency === 'USD') {
-        setBidForm(prev => ({ 
-          ...prev, 
-          maxBid: product.displayPrice.toString().replace(/[^0-9]/g, '') 
-        }));
-      } else {
-        const effectivePrice = (origPriceParam && !isNaN(Number(origPriceParam))) 
-          ? Number(origPriceParam) 
-          : product?.currentPrice;
+      // 3. その他フォールバック
+      const effectivePrice = (origPriceParam && !isNaN(Number(origPriceParam))) 
+        ? Number(origPriceParam) 
+        : product?.currentPrice;
 
-        if (effectivePrice) {
-          const calculated = calculateConvertedPrice(effectivePrice, 'USD').toString().replace(/,/g, '');
-          setBidForm(prev => ({ 
-            ...prev, 
-            maxBid: calculated 
-          }));
-        }
+      if (effectivePrice) {
+        const calculated = calculateConvertedPrice(effectivePrice, 'USD').toString().replace(/,/g, '');
+        setBidForm(prev => ({ 
+          ...prev, 
+          maxBid: calculated 
+        }));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1180,10 +1206,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <span className="text-sm sm:text-base font-extrabold">
               {(product?.id?.startsWith('m-') || (product?.url && !product.url.includes('auctions.yahoo.co.jp') && !product.url.includes('page.auctions.yahoo.co.jp')))
                 ? convertUSDToSelectedCurrency(product?.currentPrice || (origPriceParam ? Number(origPriceParam) : 0))
-                : (product?.shippingCost !== undefined || product?.categoryId)
-                  ? `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(product?.currentPrice || (origPriceParam ? Number(origPriceParam) : 0))}`
-                  : (selectedCurrency === (currencyParam || product?.displayCurrency || 'USD') && (dispPriceParam || product?.displayPrice))
-                    ? `${getCurrencySymbol(selectedCurrency)} ${dispPriceParam || product?.displayPrice}`
+                : (selectedCurrency === (currencyParam || product?.displayCurrency || 'USD') && (dispPriceParam || product?.displayPrice))
+                  ? `${getCurrencySymbol(selectedCurrency)} ${dispPriceParam || product?.displayPrice}`
+                  : (typeof product?.shippingCost === 'number')
+                    ? `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(product?.currentPrice || (origPriceParam ? Number(origPriceParam) : 0))}`
                     : `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(product?.currentPrice || (origPriceParam ? Number(origPriceParam) : 0))}`}
             </span>
           </div>

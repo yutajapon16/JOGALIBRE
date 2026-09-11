@@ -141,6 +141,7 @@ export async function POST(request: Request) {
       max_bid: maxBid,
       customer_name: customerName,
       customer_email: finalEmail,
+      customer_id: effectiveUser?.id || null,
       language: language,
       status: 'pending',
       approved_at: null,
