@@ -444,12 +444,18 @@ export async function POST(request: Request) {
       const cleanDesc = description.replace(/<[^>]*>/g, ' ').substring(0, 3000);
       parallelTasks.push(
         generateAiSummary(cleanDesc, targetLangForAi, undefined, productId, url, userInfo)
-          .then((summary) => {
-            if (targetLangForAi === 'es') aiSummaryEs = summary;
-            else aiSummaryPt = summary;
+          .then(async (summary) => {
+            // 自己修復（サニタイズ）処理を実行 (Gemini API は追加呼び出しせずサーバー内で完結)
+            let finalSummary = summary;
+            if (hasJapaneseCharacters(finalSummary)) {
+              finalSummary = await sanitizeAiSummary(finalSummary, targetLangForAi);
+            }
 
-            // AI要約結果の日本語残存チェック
-            if (hasJapaneseCharacters(summary)) {
+            if (targetLangForAi === 'es') aiSummaryEs = finalSummary;
+            else aiSummaryPt = finalSummary;
+
+            // 自己修復後も万一日本語が残っている場合のみ管理者に通知
+            if (hasJapaneseCharacters(finalSummary)) {
               notifyAdminError({
                 category: 'ai_summary',
                 title: `商品AI要約での日本語残存エラー検知 (${targetLangForAi.toUpperCase()})`,
@@ -459,7 +465,7 @@ export async function POST(request: Request) {
                 user: userInfo,
                 details: {
                   targetLang: targetLangForAi,
-                  summarySnippet: summary.substring(0, 400),
+                  summarySnippet: finalSummary.substring(0, 400),
                   rawDescSnippet: cleanDesc.substring(0, 200)
                 },
                 severity: 'error',
@@ -638,6 +644,64 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * AI要約結果の自動自己修復（サニタイズ）処理
+ * ※ Gemini API への追加リクエストは一切行わず、サーバー内部の正規表現および無料翻訳で完結するため、API課金は0円です。
+ */
+async function sanitizeAiSummary(text: string, targetLang: 'es' | 'pt'): Promise<string> {
+  if (!text || !hasJapaneseCharacters(text)) return text;
+
+  let cleaned = text;
+
+  // 1. 一般的なオークション用語・漢字のローカル辞書置換
+  const replacements: [RegExp, string][] = [
+    [/美品/g, targetLang === 'es' ? 'en excelente estado' : 'em excelente estado'],
+    [/良品/g, targetLang === 'es' ? 'en buen estado' : 'em bom estado'],
+    [/並品/g, targetLang === 'es' ? 'estado regular / usado' : 'estado regular / usado'],
+    [/並下/g, targetLang === 'es' ? 'con desgaste visible' : 'com desgaste visível'],
+    [/難あり/g, targetLang === 'es' ? 'con defectos' : 'com defeitos'],
+    [/ジャンク(?:品)?/g, targetLang === 'es' ? 'para repuestos / chatarra' : 'para peças / sucata'],
+    [/動作確認済み/g, targetLang === 'es' ? 'probado y funcionando' : 'testado e funcionando'],
+    [/通電確認のみ/g, targetLang === 'es' ? 'solo encendido comprobado' : 'apenas ligando verificado'],
+    [/未確認/g, targetLang === 'es' ? 'no verificado' : 'não verificado'],
+    [/手渡し不可/g, targetLang === 'es' ? 'no se permite entrega en mano' : 'sem retirada em mãos'],
+    [/元払い/g, targetLang === 'es' ? 'pago por adelantado' : 'frete pré-pago'],
+    [/着払い/g, targetLang === 'es' ? 'pago en destino' : 'frete a pagar'],
+    [/宅急便/g, targetLang === 'es' ? 'mensajería / paquetería' : 'serviço de entrega'],
+    [/営業所止め/g, targetLang === 'es' ? 'retiro en sucursal' : 'retirada na agência'],
+    [/個人宅配送不可/g, targetLang === 'es' ? 'no entregable a domicilio particular' : 'não entregável em residência'],
+    [/(\d+)番/g, targetLang === 'es' ? 'Nº $1' : 'Nº $1'],
+    [/([A-Za-z])番/g, targetLang === 'es' ? 'Cat. $1' : 'Cat. $1'],
+    [/有(?=[\s\.\,\)\]•\-:]|$)/g, targetLang === 'es' ? 'presente' : 'presente'],
+    [/無(?=[\s\.\,\)\]•\-:]|$)/g, targetLang === 'es' ? 'ninguno' : 'nenhum'],
+  ];
+
+  for (const [pattern, rep] of replacements) {
+    cleaned = cleaned.replace(pattern, rep);
+  }
+
+  // 2. まだ日本語文字が残っている場合、残存している日本語部分を translateText で翻訳置換
+  if (hasJapaneseCharacters(cleaned)) {
+    const jpRegex = /[\u3041-\u3096\u30A1-\u30FA\u4E00-\u9FAF]+/g;
+    const matches = Array.from(new Set(cleaned.match(jpRegex) || []));
+    for (const match of matches) {
+      try {
+        const trans = await translateText(match, targetLang, 'ja');
+        if (trans && !hasJapaneseCharacters(trans)) {
+          cleaned = cleaned.split(match).join(trans);
+        }
+      } catch {}
+    }
+  }
+
+  // 3. それでも残る孤立した日本語文字を除去
+  if (hasJapaneseCharacters(cleaned)) {
+    cleaned = cleaned.replace(/[\u3041-\u3096\u30A1-\u30FA\u4E00-\u9FAF]/g, '');
+  }
+
+  return cleaned.replace(/\s+/g, ' ').trim();
+}
+
 async function generateAiSummary(
   description: string,
   targetLang: 'es' | 'pt',
@@ -668,7 +732,7 @@ Tu tarea es traducir y resumir de forma clara, profesional y 100% en ESPAÑOL la
 
 REGLAS CRÍTICAS:
 1. Debes redactar TODO absolutamente en ESPAÑOL. No incluyas ningún carácter en japonés (kanji, hiragana, katakana).
-   - IMPORTANTE: Incluso sufijos japoneses en códigos de modelo o especificaciones como "改" (e.g. E-EG2改 -> E-EG2 Modificado), "型" (e.g. 後期型 -> Modelo tardío / Restyling), o "ドンガラ" -> (Chasis despojado) DEBEN traducirse al español. NUNCA dejes caracteres kanji.
+   - IMPORTANTE: Incluso sufijos japoneses en códigos de modelo o especificaciones como "改" (e.g. E-EG2改 -> E-EG2 Modificado), "型" (e.g. 後期型 -> Modelo tardío / Restyling), o "ドンガラ" -> (Chasis despojado), términos de subasta como "並品", "美品", "有", "無", "元払い", "宅急便" DEBEN traducirse al español. NUNCA dejes caracteres kanji.
 2. Estructura el resumen EXACTAMENTE con los siguientes 5 bloques separados por un salto de línea entre cada uno, usando viñetas claras:
 
 
