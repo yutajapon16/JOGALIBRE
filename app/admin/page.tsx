@@ -1943,6 +1943,9 @@ export default function AdminDashboard() {
       } catch {}
     }
 
+    // 楽観的除外直後にローディングを解除
+    setProcessingRequestId(null);
+
     // 3. バックグラウンドでDELETE通信
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
