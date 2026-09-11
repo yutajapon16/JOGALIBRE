@@ -767,6 +767,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     if (!isBidManuallyChanged) {
+      // 詳細情報（APIレスポンス）が取得完了している場合は、正確なカテゴリIDと確定送料をもとに再計算した金額を最優先適用
+      if (product?.shippingCost !== undefined || product?.categoryId) {
+        const effectivePrice = product?.currentPrice || (origPriceParam && !isNaN(Number(origPriceParam)) ? Number(origPriceParam) : 0);
+        if (effectivePrice > 0) {
+          const calculated = calculateConvertedPrice(effectivePrice, 'USD').toString().replace(/,/g, '');
+          setBidForm(prev => ({ 
+            ...prev, 
+            maxBid: calculated 
+          }));
+          return;
+        }
+      }
+
+      // 詳細データ取得前（ロード中）の初期表示は、検索一覧からの引き継ぎ値を暫定適用（チラつき防止）
       const isUsdDisp = (currencyParam || selectedCurrency) === 'USD';
       if (dispPriceParam && isUsdDisp) {
         setBidForm(prev => ({ 
@@ -1166,9 +1180,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <span className="text-sm sm:text-base font-extrabold">
               {(product?.id?.startsWith('m-') || (product?.url && !product.url.includes('auctions.yahoo.co.jp') && !product.url.includes('page.auctions.yahoo.co.jp')))
                 ? convertUSDToSelectedCurrency(product?.currentPrice || (origPriceParam ? Number(origPriceParam) : 0))
-                : (selectedCurrency === (currencyParam || product?.displayCurrency || 'USD') && (dispPriceParam || product?.displayPrice))
-                  ? `${getCurrencySymbol(selectedCurrency)} ${dispPriceParam || product?.displayPrice}`
-                  : `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(product?.currentPrice || (origPriceParam ? Number(origPriceParam) : 0))}`}
+                : (product?.shippingCost !== undefined || product?.categoryId)
+                  ? `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(product?.currentPrice || (origPriceParam ? Number(origPriceParam) : 0))}`
+                  : (selectedCurrency === (currencyParam || product?.displayCurrency || 'USD') && (dispPriceParam || product?.displayPrice))
+                    ? `${getCurrencySymbol(selectedCurrency)} ${dispPriceParam || product?.displayPrice}`
+                    : `${getCurrencySymbol(selectedCurrency)} ${calculateConvertedPrice(product?.currentPrice || (origPriceParam ? Number(origPriceParam) : 0))}`}
             </span>
           </div>
           

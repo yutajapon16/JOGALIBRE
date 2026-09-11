@@ -176,17 +176,27 @@ async function fetchItemsForKeyword(keyword: string): Promise<any[]> {
       const id = productIdMatch ? productIdMatch[1] : '';
       
       let categoryId = '';
-      const catMatch = url?.match(/[?&]auccat=([0-9]+)/);
-      if (catMatch) {
+      const catMatch = dataClParams.match(/catid:(\d+);/);
+      if (catMatch && catMatch[1]) {
         categoryId = catMatch[1];
+      } else if (url) {
+        const urlCatMatch = url.match(/[?&]auccat=([0-9]+)/);
+        if (urlCatMatch && urlCatMatch[1]) {
+          categoryId = urlCatMatch[1];
+        }
       }
-      
+
       if (id && title && url && imageUrl && price > 0) {
+        let finalUrl = url;
+        if (categoryId && !finalUrl.includes('auccat=')) {
+          finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'auccat=' + categoryId;
+        }
+
         results.push({
           id,
           title,
           titleJa: title,
-          url,
+          url: finalUrl,
           imageUrl,
           images: [imageUrl],
           currentPrice: price,
@@ -207,6 +217,7 @@ async function fetchItemsForKeyword(keyword: string): Promise<any[]> {
         
         const title = $el.find('.item__titleLink, .s_item__titleLink, .sdc__title').text().trim();
         const url = $el.find('.item__titleLink, .s_item__titleLink, .sdc__link').attr('href');
+        const dataClParams = $el.find('.item__titleLink, .s_item__titleLink, .sdc__link').attr('data-cl-params') || '';
         let imageUrl = $el.find('.item__imageData, .s_item__imageData, .sdc__image, img').attr('src');
         if (!imageUrl || imageUrl.includes('blank.gif')) {
           imageUrl = $el.find('img').attr('data-original') || $el.find('img').attr('data-src');
@@ -221,17 +232,27 @@ async function fetchItemsForKeyword(keyword: string): Promise<any[]> {
         const id = productIdMatch ? productIdMatch[1] : '';
         
         let categoryId = '';
-        const catMatch = url?.match(/[?&]auccat=([0-9]+)/);
-        if (catMatch) {
+        const catMatch = dataClParams.match(/catid:(\d+);/);
+        if (catMatch && catMatch[1]) {
           categoryId = catMatch[1];
+        } else if (url) {
+          const urlCatMatch = url.match(/[?&]auccat=([0-9]+)/);
+          if (urlCatMatch && urlCatMatch[1]) {
+            categoryId = urlCatMatch[1];
+          }
         }
-        
+
         if (id && title && url && imageUrl && price > 0) {
+          let finalUrl = url;
+          if (categoryId && !finalUrl.includes('auccat=')) {
+            finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'auccat=' + categoryId;
+          }
+
           results.push({
             id,
             title,
             titleJa: title,
-            url,
+            url: finalUrl,
             imageUrl,
             images: [imageUrl],
             currentPrice: price,

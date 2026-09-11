@@ -228,6 +228,7 @@ export async function resolveItemShippingCost(params: {
   url?: string | null;
   itemData?: any;
   html?: string;
+  categoryId?: string | null;
 }): Promise<ResolvedShippingCost> {
   const { auctionId, title, url } = params;
   let itemData = params.itemData;
@@ -384,7 +385,28 @@ export async function resolveItemShippingCost(params: {
 
   // 7. 送料が未設定（着払い、送料未定、落札後連絡など）の場合: 送料CSVから読み込み
   const effectiveTitle = title || itemData?.title || itemData?.name || '';
-  const effectiveUrl = url || (cleanAid ? `https://auctions.yahoo.co.jp/jp/auction/${cleanAid}` : '');
+  let effectiveUrl = url || (cleanAid ? `https://auctions.yahoo.co.jp/jp/auction/${cleanAid}` : '');
+
+  // カテゴリIDの自動抽出・補完（HTMLのパンくずやcatidから全カテゴリIDを抽出してeffectiveUrlに付与）
+  let resolvedCatId = params.categoryId || '';
+  if (!resolvedCatId && pageHtml) {
+    const breadcrumbMatches = Array.from(
+      pageHtml.matchAll(/auctions\.yahoo\.co\.jp\/(?:category\/list\/(\d+)|list\d+\/(\d+)-category\.html)/g)
+    );
+    const ids = breadcrumbMatches.map(m => m[1] || m[2]).filter(Boolean);
+    const catidMatches = Array.from(pageHtml.matchAll(/"catid\d+"\s*:\s*"(\d+)"/g));
+    if (catidMatches.length > 0) {
+      ids.push(...catidMatches.map(m => m[1]));
+    }
+    if (ids.length > 0) {
+      resolvedCatId = Array.from(new Set(ids)).join(',');
+    }
+  }
+
+  if (resolvedCatId && !effectiveUrl.includes('auccat=')) {
+    effectiveUrl += (effectiveUrl.includes('?') ? '&' : '?') + 'auccat=' + resolvedCatId;
+  }
+
   const fallbackShippingCost = calculateDefaultShippingCost(effectiveTitle, effectiveUrl);
 
   return {

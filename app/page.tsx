@@ -4329,7 +4329,8 @@ export default function Home() {
       product.titleJa || product.title, 
       product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), 
       currentCategory?.id, 
-      product.id
+      product.id,
+      product.shippingCost
     );
 
     const detailHref = buildProductDetailUrl(product, displayPriceVal);
@@ -4476,7 +4477,15 @@ export default function Home() {
                     name: (currentUser?.role === 'customer' && currentUser?.agentCustomerId)
                       ? (currentUser?.agentFullName || '')
                       : (currentUser?.fullName || ''),
-                    maxBid: calculateConvertedPrice(product.currentPrice, 'USD', product.titleJa || product.title, product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), currentCategory?.id).toString().replace(/,/g, '')
+                    maxBid: calculateConvertedPrice(
+                      product.currentPrice, 
+                      'USD', 
+                      product.titleJa || product.title, 
+                      product.url + (product.categoryId ? (product.url.includes('?') ? '&' : '?') + 'auccat=' + product.categoryId : ''), 
+                      currentCategory?.id,
+                      product.id,
+                      product.shippingCost
+                    ).toString().replace(/,/g, '')
                   });
                   if (product.url) {
                     fetchProductDetailForOfferSilent(product.url);
@@ -4988,7 +4997,8 @@ export default function Home() {
                                   request.productTitleJa || request.productTitle,
                                   request.productUrl,
                                   undefined,
-                                  request.productId
+                                  request.productId,
+                                  typeof request.shippingCostJpy === 'number' ? request.shippingCostJpy : undefined
                                 )}`
                             : '-'}
                         </span>
@@ -8069,7 +8079,8 @@ export default function Home() {
                                   item.titleJa || item.title,
                                   itemUrlWithCat,
                                   undefined,
-                                  item.id
+                                  item.id,
+                                  item.shippingCost
                                 );
                                 const itemOffered = isProductOffered(item);
 
@@ -8090,7 +8101,8 @@ export default function Home() {
                                           item.titleJa || item.title,
                                           itemUrlWithCat,
                                           undefined,
-                                          item.id
+                                          item.id,
+                                          item.shippingCost
                                         ).toString().replace(/,/g, '')
                                       });
                                       if (item.url) {

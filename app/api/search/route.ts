@@ -273,8 +273,25 @@ export async function GET(request: Request) {
       const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
       const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
+      // カテゴリIDの抽出（data-cl-params内の catid:2084199053; または URL内の auccat= ）
+      let itemCategoryId = searchCategoryId || '';
+      const catMatch = dataClParams.match(/catid:(\d+);/);
+      if (catMatch && catMatch[1]) {
+        itemCategoryId = catMatch[1];
+      } else if (url) {
+        const urlCatMatch = url.match(/[?&]auccat=([0-9]+)/);
+        if (urlCatMatch && urlCatMatch[1]) {
+          itemCategoryId = urlCatMatch[1];
+        }
+      }
+
       if (title && url) {
-        items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, endTime: endTimeISO, categoryId: searchCategoryId || undefined, source: 'yahoo_search' });
+        let finalUrl = url;
+        if (itemCategoryId && !finalUrl.includes('auccat=')) {
+          finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'auccat=' + itemCategoryId;
+        }
+
+        items.push({ id, title, titleJa: title, url: finalUrl, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, endTime: endTimeISO, categoryId: itemCategoryId || undefined, source: 'yahoo_search' });
       }
     });
 
@@ -343,8 +360,25 @@ export async function GET(request: Request) {
         const productIdMatch = url?.match(/\/auction\/([a-z0-9]+)/);
         const id = productIdMatch ? productIdMatch[1] : `search-${page}-${i}`;
 
+        // カテゴリIDの抽出（data-cl-params内の catid:2084199053; または URL内の auccat= ）
+        let itemCategoryId = searchCategoryId || '';
+        const catMatch = dataClParams.match(/catid:(\d+);/);
+        if (catMatch && catMatch[1]) {
+          itemCategoryId = catMatch[1];
+        } else if (url) {
+          const urlCatMatch = url.match(/[?&]auccat=([0-9]+)/);
+          if (urlCatMatch && urlCatMatch[1]) {
+            itemCategoryId = urlCatMatch[1];
+          }
+        }
+
         if (title && url) {
-          items.push({ id, title, titleJa: title, url, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, endTime: endTimeISO, categoryId: searchCategoryId || undefined, source: 'yahoo_category' });
+          let finalUrl = url;
+          if (itemCategoryId && !finalUrl.includes('auccat=')) {
+            finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'auccat=' + itemCategoryId;
+          }
+
+          items.push({ id, title, titleJa: title, url: finalUrl, imageUrl, images: [imageUrl], currentPrice: price, bids, timeLeft, endTime: endTimeISO, categoryId: itemCategoryId || undefined, source: 'yahoo_category' });
         }
       });
     }
@@ -421,6 +455,19 @@ export async function GET(request: Request) {
         if (bidsText) item.bids = parseInt(bidsText) || 0;
 
         const dataClParams = $el.find('a[data-cl-params]').attr('data-cl-params') || aTag.attr('data-cl-params') || '';
+        const catMatch = dataClParams.match(/catid:(\d+);/);
+        if (catMatch && catMatch[1]) {
+          item.categoryId = catMatch[1];
+        } else if (href) {
+          const urlCatMatch = href.match(/[?&]auccat=([0-9]+)/);
+          if (urlCatMatch && urlCatMatch[1]) {
+            item.categoryId = urlCatMatch[1];
+          }
+        }
+        if (item.categoryId && item.url && !item.url.includes('auccat=')) {
+          item.url += (item.url.includes('?') ? '&' : '?') + 'auccat=' + item.categoryId;
+        }
+
         const endMatch = dataClParams.match(/end:(\d+);/);
         if (endMatch) {
           const endTime = parseInt(endMatch[1], 10) * 1000;
@@ -461,7 +508,7 @@ export async function GET(request: Request) {
             currentPrice: item.currentPrice as number,
             bids: item.bids as number,
             timeLeft: item.timeLeft as string,
-            categoryId: searchCategoryId || undefined,
+            categoryId: (item.categoryId as string) || searchCategoryId || undefined,
             source: 'yahoo_car_category'
           });
         }
