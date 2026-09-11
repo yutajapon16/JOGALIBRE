@@ -466,7 +466,19 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (res.ok && data.success) {
         alert(data.message);
-        await fetchBidRequests(); // データを再取得して表示を更新
+        // 差分更新: 全件再取得（fetchBidRequests）を待たずに該当アイテムのみ即座に更新
+        setBidRequests(prev => prev.map(item => {
+          if (item.id === requestItem.id) {
+            return {
+              ...item,
+              productPrice: data.currentPrice !== undefined && data.currentPrice !== null ? data.currentPrice : item.productPrice,
+              productEndTime: data.endTime !== undefined ? data.endTime : item.productEndTime,
+              finalStatus: data.isNewEndTimeFuture ? null : item.finalStatus,
+              adminNeedsConfirm: data.isNewEndTimeFuture ? false : item.adminNeedsConfirm,
+            };
+          }
+          return item;
+        }));
       } else {
         alert(data.message || data.error || 'ヤフオク同期に失敗しました。');
       }
@@ -1688,6 +1700,76 @@ export default function AdminDashboard() {
   const updateStatus = async (id: string, status: string, reason?: string, counterOfferAmount?: number, shippingJpy?: number, totalJpy?: number, localCost?: number | null) => {
     if (processingRequestId) return;
     setProcessingRequestId(id);
+
+    // 1. ロールバック用に現在の状態をバックアップ
+    const previousRequests = [...bidRequests];
+    const targetRequest = bidRequests.find(r => r.id === id);
+
+    // 2. 【即座にUIを楽観的更新】（ボタンを押した瞬間反映・体感0秒）
+    const updatedRequests = bidRequests.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          status: status as BidStatus,
+          rejectReason: reason || null,
+          counterOffer: counterOfferAmount !== undefined ? counterOfferAmount : item.counterOffer,
+          shippingCostJpy: shippingJpy || null,
+          local_cost: localCost !== undefined ? localCost : item.local_cost,
+          totalJpy: totalJpy || null,
+          approvedAt: status === 'approved' ? new Date().toISOString() : item.approvedAt,
+          maxBid: (status === 'approved' && item.customerCounterOffer) ? item.customerCounterOffer : item.maxBid
+        };
+      }
+      return item;
+    });
+    setBidRequests(updatedRequests);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(updatedRequests));
+      } catch {}
+    }
+
+    // モーダル・入力欄を即座にリセットして閉じる
+    setSelectedRequest(null);
+    setActionType(null);
+    setRejectReason('');
+    setShippingCostJpy('');
+    setFobCostJpy('2,000');
+    setLocalCostUsd('');
+
+    // 3. プッシュ通知送信を非同期（バックグラウンド）で発火
+    const email = targetRequest?.customerEmail;
+    if (email) {
+      const lang = targetRequest?.language || 'es';
+      const itemTitle = (lang === 'pt' ? (targetRequest as any)?.productTitlePt : (targetRequest as any)?.productTitleEs) || targetRequest?.productTitle || 'Item';
+      let notifyTitle = 'Administrador';
+      let notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
+
+      if (status === 'approved') {
+        notifyTitle = lang === 'pt' ? '✅ Solicitação Aprovada' : '✅ Solicitud Aprobada';
+        notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
+      } else if (status === 'rejected') {
+        notifyTitle = lang === 'pt' ? '❌ Solicitação Rejeitada' : '❌ Solicitud Rechazada';
+        notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
+      } else if (status === 'counter_offer') {
+        notifyTitle = lang === 'pt' ? '💬 Contra-oferta' : '💬 Contraoferta';
+        notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
+      }
+
+      fetch('/api/push-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bidRequestId: id,
+          email,
+          title: notifyTitle,
+          body: notifyBody,
+          url: '/',
+        }),
+      }).catch(err => console.error('Push notification error:', err));
+    }
+
+    // 4. バックグラウンドでAPIにデータ送信
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -1709,75 +1791,27 @@ export default function AdminDashboard() {
         })
       });
 
-      if (res.ok) {
-        // 楽観的UI更新: 即座にステータスを反映してチラつきを防止
-        setBidRequests(prev => prev.map(item => {
-          if (item.id === id) {
-            return {
-              ...item,
-              status: status as BidStatus,
-              rejectReason: reason || null,
-              counterOffer: counterOfferAmount !== undefined ? counterOfferAmount : item.counterOffer,
-              shippingCostJpy: shippingJpy || null,
-              local_cost: localCost !== undefined ? localCost : item.local_cost,
-              totalJpy: totalJpy || null,
-              approvedAt: status === 'approved' ? new Date().toISOString() : item.approvedAt,
-              maxBid: (status === 'approved' && item.customerCounterOffer) ? item.customerCounterOffer : item.maxBid
-            };
-          }
-          return item;
-        }));
-
-        setSelectedRequest(null);
-        setActionType(null);
-        setRejectReason('');
-        setShippingCostJpy('');
-        setFobCostJpy('2,000');
-        setLocalCostUsd('');
-
-        // プッシュ通知を送信（対象顧客のリクエストを特定）
-        const targetRequest = bidRequests.find(r => r.id === id);
-        const email = targetRequest?.customerEmail;
-        if (email) {
-          const lang = targetRequest?.language || 'es';
-          const itemTitle = (lang === 'pt' ? (targetRequest as any)?.productTitlePt : (targetRequest as any)?.productTitleEs) || targetRequest?.productTitle || 'Item';
-          let notifyTitle = 'Administrador';
-          let notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
-
-          if (status === 'approved') {
-            notifyTitle = lang === 'pt' ? '✅ Solicitação Aprovada' : '✅ Solicitud Aprobada';
-            notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
-          } else if (status === 'rejected') {
-            notifyTitle = lang === 'pt' ? '❌ Solicitação Rejeitada' : '❌ Solicitud Rechazada';
-            notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
-          } else if (status === 'counter_offer') {
-            notifyTitle = lang === 'pt' ? '💬 Contra-oferta' : '💬 Contraoferta';
-            notifyBody = lang === 'pt'
-              ? `Produto: ${itemTitle}`
-              : `Producto: ${itemTitle}`;
-          }
-
-          fetch('/api/push-send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              bidRequestId: id,
-              email,
-              title: notifyTitle,
-              body: notifyBody,
-              url: '/',
-            }),
-          }).catch(err => console.error('Push notification error:', err));
+      if (!res.ok) {
+        console.error('updateStatus failed on server:', res.status);
+        // エラー時は元の状態にロールバック
+        setBidRequests(previousRequests);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(previousRequests));
+          } catch {}
         }
-
-        await fetchBidRequests();
-      } else {
-        console.error('updateStatus failed:', res.status);
-        alert('更新に失敗しました。ページをリロードしてください。');
+        alert('更新に失敗しました。元の状態に戻します。');
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('通信エラーが発生しました。');
+      // 通信エラー時もロールバック
+      setBidRequests(previousRequests);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(previousRequests));
+        } catch {}
+      }
+      alert('通信エラーが発生したため、元の状態に戻します。');
     } finally {
       setProcessingRequestId(null);
     }
@@ -1786,6 +1820,70 @@ export default function AdminDashboard() {
   const updateFinalStatus = async (id: string, finalStatus: string, finalPrice?: number, totalJpy?: number, japanSendUsd?: number) => {
     if (processingRequestId) return;
     setProcessingRequestId(id);
+
+    // 1. ロールバック用に現在の状態をバックアップ
+    const previousRequests = [...bidRequests];
+    const targetRequest = bidRequests.find(r => r.id === id);
+
+    // 2. 【即座にUIを楽観的更新】（ボタンを押した瞬間反映・体感0秒）
+    // 落札時も顧客確認前（customerConfirmed === false）のため、申請タブに残ったまま落札金額ボックスが表示される
+    const updatedRequests = bidRequests.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          finalStatus: finalStatus as FinalStatus,
+          finalPrice: finalPrice || null,
+          totalJpy: totalJpy || null
+        };
+      }
+      return item;
+    });
+    setBidRequests(updatedRequests);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(updatedRequests));
+      } catch {}
+    }
+
+    // モーダル・入力欄を即座にリセットして閉じる
+    setSelectedRequest(null);
+    setActionType(null);
+    setFinalPriceInput('');
+    setTotalJpyInput('');
+    setWonPriceJpyInput('');
+    setWonShippingJpyInput('');
+    setWonFobJpyInput('');
+
+    // 3. プッシュ通知を非同期で送信
+    const email = targetRequest?.customerEmail;
+    if (email) {
+      const lang = targetRequest?.language || 'es';
+      const itemTitle = (lang === 'pt' ? targetRequest?.productTitlePt : targetRequest?.productTitleEs) || targetRequest?.productTitle || 'Item';
+      let notifyTitle = 'Resultado';
+      let notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
+
+      if (finalStatus === 'won') {
+        notifyTitle = lang === 'pt' ? '🎉 Ganhado!' : '🎉 ¡Ganado!';
+        notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
+      } else if (finalStatus === 'lost') {
+        notifyTitle = '😢 Perdido';
+        notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
+      }
+
+      fetch('/api/push-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bidRequestId: id,
+          email,
+          title: notifyTitle,
+          body: notifyBody,
+          url: '/',
+        }),
+      }).catch(err => console.error('Push notification error:', err));
+    }
+
+    // 4. バックグラウンドでAPI送信
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
@@ -1799,65 +1897,25 @@ export default function AdminDashboard() {
         body: JSON.stringify({ id, finalStatus, finalPrice, totalJpy, japanSendUsd })
       });
 
-      if (res.ok) {
-        // 楽観的UI更新: 即座にステータスを反映してチラつきを防止
-        setBidRequests(prev => prev.map(item => {
-          if (item.id === id) {
-            return {
-              ...item,
-              finalStatus: finalStatus as FinalStatus,
-              finalPrice: finalPrice || null,
-              totalJpy: totalJpy || null
-            };
-          }
-          return item;
-        }));
-
-        setSelectedRequest(null);
-        setActionType(null);
-        setFinalPriceInput('');
-
-        // プッシュ通知を送信（対象顧客のリクエストを特定）
-        const targetRequest = bidRequests.find(r => r.id === id);
-        const email = targetRequest?.customerEmail;
-        if (email) {
-          const lang = targetRequest?.language || 'es';
-          const itemTitle = (lang === 'pt' ? targetRequest?.productTitlePt : targetRequest?.productTitleEs) || targetRequest?.productTitle || 'Item';
-          let notifyTitle = 'Resultado';
-          let notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
-
-          if (finalStatus === 'won') {
-            notifyTitle = lang === 'pt' ? '🎉 Ganhado!' : '🎉 ¡Ganado!';
-            notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
-          } else if (finalStatus === 'lost') {
-            notifyTitle = '😢 Perdido';
-            notifyBody = lang === 'pt' ? `Produto: ${itemTitle}` : `Producto: ${itemTitle}`;
-          }
-
-          fetch('/api/push-send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              bidRequestId: id,
-              email,
-              title: notifyTitle,
-              body: notifyBody,
-              url: '/',
-            }),
-          }).catch(err => console.error('Push notification error:', err));
+      if (!res.ok) {
+        console.error('updateFinalStatus failed on server:', res.status);
+        setBidRequests(previousRequests);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(previousRequests));
+          } catch {}
         }
-
-        await fetchBidRequests();
-        if (finalStatus === 'won') {
-          await fetchPurchasedItems();
-        }
-      } else {
-        console.error('updateFinalStatus failed:', res.status);
-        alert('更新に失敗しました。ページをリロードしてください。');
+        alert('更新に失敗しました。元の状態に戻します。');
       }
     } catch (error) {
       console.error('Error updating final status:', error);
-      alert('通信エラーが発生しました。');
+      setBidRequests(previousRequests);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(previousRequests));
+        } catch {}
+      }
+      alert('通信エラーが発生したため、元の状態に戻します。');
     } finally {
       setProcessingRequestId(null);
     }
@@ -1866,12 +1924,27 @@ export default function AdminDashboard() {
   const confirmCustomerRejection = async (id: string) => {
     if (processingRequestId) return;
     setProcessingRequestId(id);
+
+    // 1. ロールバック用に現在の状態をバックアップ
+    const previousRequests = [...bidRequests];
+
+    // 2. 【即座にUIから除外】（カードが消える・体感0秒）
+    const updatedRequests = bidRequests.filter(item => item.id !== id);
+    setBidRequests(updatedRequests);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(updatedRequests));
+      } catch {}
+    }
+
+    // 3. バックグラウンドでDELETE通信
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
       const accessToken = clientSession?.access_token;
 
       if (!accessToken) {
         alert('セッションが切れています。ページをリロードしてください。');
+        setBidRequests(previousRequests);
         window.location.reload();
         return;
       }
@@ -1883,18 +1956,26 @@ export default function AdminDashboard() {
         }
       });
 
-      if (res.ok) {
-        // 楽観的UI更新: 即座に一覧から除外
-        setBidRequests(prev => prev.filter(item => item.id !== id));
-        await fetchBidRequests();
-      } else {
+      if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         console.error('Delete failed:', res.status, errorData);
-        alert('削除に失敗しました。ページをリロードしてください。');
+        setBidRequests(previousRequests);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(previousRequests));
+          } catch {}
+        }
+        alert('削除に失敗しました。元の状態に戻します。');
       }
     } catch (error) {
       console.error('Error confirming rejection:', error);
-      alert('通信エラーが発生しました。');
+      setBidRequests(previousRequests);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(previousRequests));
+        } catch {}
+      }
+      alert('通信エラーが発生したため、元の状態に戻します。');
     } finally {
       setProcessingRequestId(null);
     }
