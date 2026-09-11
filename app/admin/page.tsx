@@ -1729,6 +1729,9 @@ export default function AdminDashboard() {
       } catch {}
     }
 
+    // 楽観的UI更新直後にローディングを解除（新しく現れる落札・落札できずボタンを即座にアクティブ化）
+    setProcessingRequestId(null);
+
     // モーダル・入力欄を即座にリセットして閉じる
     setSelectedRequest(null);
     setActionType(null);
@@ -1844,6 +1847,9 @@ export default function AdminDashboard() {
         localStorage.setItem('jogalibre_admin_bid_requests', JSON.stringify(updatedRequests));
       } catch {}
     }
+
+    // 楽観的UI更新直後にローディングを解除
+    setProcessingRequestId(null);
 
     // モーダル・入力欄を即座にリセットして閉じる
     setSelectedRequest(null);

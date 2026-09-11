@@ -1,5 +1,5 @@
 // JOGALIBRE Service Worker
-const CACHE_NAME = 'jogalibre-v3';
+const CACHE_NAME = 'jogalibre-v4';
 
 // インストール時
 self.addEventListener('install', () => {
@@ -32,8 +32,8 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // API リクエストはネットワークのみ
-    if (event.request.url.includes('/api/')) {
+    // API リクエストおよび管理画面 (/admin) は常にネットワークのみ（キャッシュしない）
+    if (event.request.url.includes('/api/') || event.request.url.includes('/admin')) {
         return;
     }
 
