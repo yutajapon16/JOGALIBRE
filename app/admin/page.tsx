@@ -1990,6 +1990,13 @@ export default function AdminDashboard() {
     }
   };
 
+  // 管理者がカウンターオファー送信後に顧客未返答のオファーを削除するハンドラ
+  const handleDeleteOffer = async (id: string) => {
+    if (processingRequestId) return;
+    if (!window.confirm('このオファーを削除してもよろしいですか？')) return;
+    await confirmCustomerRejection(id);
+  };
+
   const updatePaidStatus = async (id: string, paid: boolean) => {
     try {
       const { data: { session: clientSession } } = await supabase.auth.getSession();
@@ -3505,6 +3512,17 @@ export default function AdminDashboard() {
                         className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {processingRequestId === request.id ? '処理中...' : '削除を確認'}
+                      </button>
+                    )}
+
+                    {/* カウンターオファー送信済み（顧客未返答）時のオファー削除ボタン */}
+                    {request.status === 'counter_offer' && !request.customerCounterOffer && !request.finalStatus && (
+                      <button
+                        onClick={() => handleDeleteOffer(request.id)}
+                        disabled={!!processingRequestId}
+                        className="w-full bg-red-600 text-white px-4 h-12 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {processingRequestId === request.id ? '処理中...' : 'オファー削除'}
                       </button>
                     )}
                   </div>
