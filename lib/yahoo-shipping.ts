@@ -387,9 +387,22 @@ export async function resolveItemShippingCost(params: {
   const effectiveTitle = title || itemData?.title || itemData?.name || '';
   let effectiveUrl = url || (cleanAid ? `https://auctions.yahoo.co.jp/jp/auction/${cleanAid}` : '');
 
-  // カテゴリIDの自動抽出・補完（HTMLのパンくずやcatidから全カテゴリIDを抽出してeffectiveUrlに付与）
-  let resolvedCatId = params.categoryId || '';
-  if (!resolvedCatId && pageHtml) {
+  // カテゴリIDの自動抽出・補完（URL既存のauccat、引数のcategoryId、HTMLのパンくずやcatidから全カテゴリIDをマージしてeffectiveUrlに付与）
+  const allCategoryIds: string[] = [];
+
+  // 1) 既存のeffectiveUrlに含まれるauccatを取得
+  const existingAuccatMatch = effectiveUrl.match(/[?&]auccat=([^&]+)/);
+  if (existingAuccatMatch) {
+    allCategoryIds.push(...existingAuccatMatch[1].split(',').map(s => s.trim()).filter(Boolean));
+  }
+
+  // 2) 引数で渡されたcategoryIdを取得
+  if (params.categoryId) {
+    allCategoryIds.push(...params.categoryId.split(',').map(s => s.trim()).filter(Boolean));
+  }
+
+  // 3) HTMLのパンくずリスト・catidメタ情報から抽出
+  if (pageHtml) {
     const breadcrumbMatches = Array.from(
       pageHtml.matchAll(/auctions\.yahoo\.co\.jp\/(?:category\/list\/(\d+)|list\d+\/(\d+)-category\.html)/g)
     );
@@ -398,13 +411,17 @@ export async function resolveItemShippingCost(params: {
     if (catidMatches.length > 0) {
       ids.push(...catidMatches.map(m => m[1]));
     }
-    if (ids.length > 0) {
-      resolvedCatId = Array.from(new Set(ids)).join(',');
-    }
+    allCategoryIds.push(...ids);
   }
 
-  if (resolvedCatId && !effectiveUrl.includes('auccat=')) {
-    effectiveUrl += (effectiveUrl.includes('?') ? '&' : '?') + 'auccat=' + resolvedCatId;
+  const uniqueCatIds = Array.from(new Set(allCategoryIds));
+  if (uniqueCatIds.length > 0) {
+    const combinedCats = uniqueCatIds.join(',');
+    if (effectiveUrl.includes('auccat=')) {
+      effectiveUrl = effectiveUrl.replace(/([?&])auccat=[^&]+/, (_match, prefix) => prefix + 'auccat=' + combinedCats);
+    } else {
+      effectiveUrl += (effectiveUrl.includes('?') ? '&' : '?') + 'auccat=' + combinedCats;
+    }
   }
 
   const fallbackShippingCost = calculateDefaultShippingCost(effectiveTitle, effectiveUrl);

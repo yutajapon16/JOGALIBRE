@@ -1041,6 +1041,20 @@ export const calculateJapanSendAmount = (item: any, totalSalePrice: number, exch
 };
 
 /**
+ * 数値を5の倍数に丸めるヘルパー関数（例: 412 -> 410, 413 -> 415）
+ * 最低値 minLimit（デフォルト 5）を下回らないように補正
+ * @param val 丸め対象の数値または文字列
+ * @param minLimit 最小値（デフォルト 5）
+ * @returns 5の倍数に丸められた数値
+ */
+export const roundToStep5 = (val: number | string, minLimit: number = 5): number => {
+  const num = typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : val;
+  if (isNaN(num) || num <= 0) return minLimit;
+  const rounded = Math.round(num / 5) * 5;
+  return Math.max(minLimit, rounded);
+};
+
+/**
  * 顧客のドルオファー上限額（maxBid）から、ヤフオクで入札可能な商品本体価格（JPY）の上限を逆算する関数
  * @param maxBidUsd ドルでの上限額
  * @param customerId 顧客ID
@@ -1049,6 +1063,7 @@ export const calculateJapanSendAmount = (item: any, totalSalePrice: number, exch
  * @param title 商品タイトル
  * @param url 商品URL
  * @param exchangeRate JPY為替レート
+ * @param actualShippingCost ヤフオク設定実送料または指定送料 (JPY)
  * @returns ヤフオク入札可能本体価格 (JPY)
  */
 export const calculateProductBidJpy = (
@@ -1058,12 +1073,15 @@ export const calculateProductBidJpy = (
   country?: string | null,
   title?: string | null,
   url?: string | null,
-  exchangeRate: number = 150
+  exchangeRate: number = 150,
+  actualShippingCost?: number | null
 ): number => {
   if (!maxBidUsd || maxBidUsd <= 0) return 0;
 
   const fob = calculateDefaultFobCost(title, url);
-  const shipping = calculateDefaultShippingCost(title, url);
+  const shipping = (typeof actualShippingCost === 'number' && !isNaN(actualShippingCost) && actualShippingCost >= 0)
+    ? actualShippingCost
+    : calculateDefaultShippingCost(title, url);
 
   const profitDivisor = (() => {
     if (customerId === 'B001') return 0.9;

@@ -3160,7 +3160,8 @@ export default function AdminDashboard() {
                         request.customerCountry,
                         request.productTitle,
                         request.productUrl,
-                        jpyRate
+                        jpyRate,
+                        request.shippingCostJpy
                       );
 
                       return (

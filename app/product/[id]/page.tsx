@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { getCurrentUser, type User } from '@/lib/auth';
 import { useAuth } from '@/lib/auth-context';
-import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, syncLocalOfferedIds, computeConvertedPrice } from '@/lib/utils';
+import { getTimeRemaining, calculateDefaultFobCost, calculateDefaultShippingCost, calculateLocalCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, syncLocalOfferedIds, computeConvertedPrice, roundToStep5 } from '@/lib/utils';
 import { getOptimizedImageUrl } from '@/lib/image-cache';
 
 // オークションIDまたはURLからキャッシュキーを正規化して生成する関数
@@ -885,6 +885,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       return;
     }
 
+    const roundedMaxBid = roundToStep5(bidForm.maxBid);
+    if (roundedMaxBid <= 0) {
+      setMessage({ type: 'error', text: lang === 'es' ? 'Por favor ingrese un monto válido.' : 'Por favor insira um valor válido.' });
+      return;
+    }
+
     setSubmitting(true);
     setMessage(null);
 
@@ -919,7 +925,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           productImage: product.imageUrl,
           productPrice: product.currentPrice,
           productEndTime: product.endTime || (endTimeParam ? safeDecodeURIComponent(endTimeParam) : undefined),
-          maxBid: Number(bidForm.maxBid),
+          maxBid: roundedMaxBid,
           customerName: finalCustomerName,
           language: lang,
           deliveryLocation: deliveryCountry === 'JP' ? 'JP' : deliveryCity,
@@ -1346,17 +1352,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
                     <input
                       type="number"
+                      step="5"
+                      min="5"
                       placeholder="USD"
                       value={bidForm.maxBid}
                       onChange={(e) => {
                         setIsBidManuallyChanged(true);
                         setBidForm(prev => ({ ...prev, maxBid: e.target.value }));
                       }}
+                      onBlur={(e) => {
+                        if (e.target.value) {
+                          setIsBidManuallyChanged(true);
+                          setBidForm(prev => ({ ...prev, maxBid: String(roundToStep5(e.target.value)) }));
+                        }
+                      }}
                       className="w-full border border-gray-300 rounded-lg pl-8 pr-4 h-12 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300 placeholder:font-normal"
                       required
-                      min="1"
                     />
                 </div>
+                <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                  {lang === 'es' ? '※ Ingrese en múltiplos de 5 USD (ej: 410, 415)' : '※ Insira em múltiplos de 5 USD (ex: 410, 415)'}
+                </p>
               </div>
 
               {isProductOffered() ? (

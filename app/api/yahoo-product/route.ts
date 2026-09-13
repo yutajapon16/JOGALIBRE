@@ -53,6 +53,7 @@ export async function POST(request: Request) {
     const skipDescription = body.skipDescription || false;
     const skipAiSummary = body.skipAiSummary || false;
     const forceRefresh = body.forceRefresh || body.refresh || false;
+    const initialCategoryId = body.categoryId || body.auccat || '';
 
 
     if (!url || !url.includes('auctions.yahoo.co.jp')) {
@@ -405,7 +406,8 @@ export async function POST(request: Request) {
         title,
         url,
         itemData: extractedItemData,
-        html
+        html,
+        categoryId: initialCategoryId || undefined
       })
         .then((res) => {
           resolvedShipping = res;

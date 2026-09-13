@@ -7,7 +7,7 @@ import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword,
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
-import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds, copyToClipboardSafe, computeConvertedPrice } from '@/lib/utils';
+import { formatDateTime, formatDateOnly, getTimeRemaining, parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateLocalCost, calculateJapanSendAmount, calculateDefaultFobCost, calculateDefaultShippingCost, deliveryLocations, getCountryNameJa, getCityNameJa, extractAuctionId, getLocalOfferedIds, addLocalOfferedId, removeLocalOfferedId, syncLocalOfferedIds, copyToClipboardSafe, computeConvertedPrice, roundToStep5 } from '@/lib/utils';
 import { getOptimizedImageUrl } from '@/lib/image-cache';
 import { BidRequest, SearchItem } from '@/lib/types';
 import { COUNTRIES, BRAZIL_STATES } from '@/lib/constants';
@@ -2924,7 +2924,8 @@ export default function Home() {
       ? (currentUser?.agentFullName || '')
       : bidForm.name;
 
-    if (!selectedProduct || !finalCustomerName || !bidForm.maxBid) return;
+    const roundedMaxBid = roundToStep5(bidForm.maxBid);
+    if (!selectedProduct || !finalCustomerName || !bidForm.maxBid || roundedMaxBid <= 0) return;
 
     // 20件制限チェック
     if (myRequests.length >= 20) {
@@ -2955,7 +2956,7 @@ export default function Home() {
           productImage: selectedProduct.imageUrl,
           productPrice: selectedProduct.currentPrice,
           productEndTime: selectedProduct.endTime,
-          maxBid: parseFloat(bidForm.maxBid),
+          maxBid: roundedMaxBid,
           customerName: finalCustomerName,
           customerEmail: currentUser?.email,
           language: lang,
@@ -3266,7 +3267,13 @@ export default function Home() {
           'Content-Type': 'application/json',
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         },
-        body: JSON.stringify({ url, lang, skipDescription: true, skipAiSummary: true })
+        body: JSON.stringify({
+          url,
+          lang,
+          skipDescription: true,
+          skipAiSummary: true,
+          categoryId: selectedProduct?.categoryId || currentCategory?.id
+        })
       });
       const data = await res.json();
       if (data.product) {
@@ -3735,7 +3742,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           id: editingOfferRequest.id,
-          maxBid: Number(editingOfferAmount)
+          maxBid: roundToStep5(editingOfferAmount)
         })
       });
       if (res.ok) {
@@ -8523,14 +8530,23 @@ export default function Home() {
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
                     <input
                       type="number"
+                      step="5"
+                      min="5"
                       value={bidForm.maxBid}
                       onChange={(e) => setBidForm({ ...bidForm, maxBid: e.target.value })}
+                      onBlur={(e) => {
+                        if (e.target.value) {
+                          setBidForm(prev => ({ ...prev, maxBid: String(roundToStep5(e.target.value)) }));
+                        }
+                      }}
                       className="w-full border border-gray-300 rounded-lg pl-8 pr-4 h-12 text-lg font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 placeholder:text-gray-300 placeholder:font-normal"
                       required
-                      min="1"
                       placeholder="USD"
                     />
                   </div>
+                  <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                    {lang === 'es' ? '※ Ingrese en múltiplos de 5 USD (ej: 410, 415)' : '※ Insira em múltiplos de 5 USD (ex: 410, 415)'}
+                  </p>
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button
@@ -8654,12 +8670,21 @@ export default function Home() {
                   <input
                     type="number"
                     step="5"
+                    min="5"
                     value={editingOfferAmount}
                     onChange={(e) => setEditingOfferAmount(e.target.value)}
+                    onBlur={(e) => {
+                      if (e.target.value) {
+                        setEditingOfferAmount(String(roundToStep5(e.target.value)));
+                      }
+                    }}
                     className="w-full h-14 pl-10 pr-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-lg font-bold text-black focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all outline-none"
                     placeholder="0.00"
                   />
                 </div>
+                <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                  {lang === 'es' ? '※ Ingrese en múltiplos de 5 USD (ej: 410, 415)' : '※ Insira em múltiplos de 5 USD (ex: 410, 415)'}
+                </p>
               </div>
 
               {editingOfferRequest.status === 'approved' && (
