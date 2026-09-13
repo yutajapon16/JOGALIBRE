@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, type User } from '@/lib/auth';
+import { signIn, signUp, signOut, getCurrentUser, resetPassword, updatePassword, updateProfile, getValidAccessToken, type User } from '@/lib/auth';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/push-notifications';
@@ -334,6 +334,7 @@ interface Category {
 const SEARCH_NAV_CACHE_KEY = 'jogalibre_search_nav_state';
 const MY_REQUESTS_CACHE_KEY = 'jogalibre_my_requests_cache';
 const PURCHASED_ITEMS_CACHE_KEY = 'jogalibre_purchased_items_cache';
+const DEPOSITS_CACHE_KEY = 'jogalibre_deposits_cache';
 
 interface SearchNavState {
   activeTab?: 'search' | 'favorites' | 'requests' | 'purchased' | 'mypage' | 'deposits' | 'shipping';
@@ -1287,8 +1288,18 @@ export default function Home() {
   const [hasClosedDepositReminder, setHasClosedDepositReminder] = useState(false);
   const [showDepositReminder, setShowDepositReminder] = useState(false);
 
-  // 入金履歴用
-  const [depositsList, setDepositsList] = useState<any[]>([]);
+  // 入金履歴用（ローカルキャッシュから即時0ms復元）
+  const [depositsList, setDepositsList] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(DEPOSITS_CACHE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {
+        console.warn('Initial depositsList cache parse error:', e);
+      }
+    }
+    return [];
+  });
   const [loadingDeposits, setLoadingDeposits] = useState(false);
   const [depositFilterYear, setDepositFilterYear] = useState('all');
   const [depositFilterMonth, setDepositFilterMonth] = useState('all');
@@ -1541,6 +1552,14 @@ export default function Home() {
       } catch {}
     }
   }, [purchasedItems]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && depositsList && depositsList.length > 0) {
+      try {
+        localStorage.setItem(DEPOSITS_CACHE_KEY, JSON.stringify(depositsList));
+      } catch {}
+    }
+  }, [depositsList]);
   // マイページ用state
   const [profileForm, setProfileForm] = useState({ fullName: '', whatsapp: '', address: '', addressNumber: '', complement: '', zipCode: '', agentCustomerId: '', cpf: '', state: '', city: '', language: '' });
   
@@ -1910,12 +1929,20 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 
-  // 詳細画面からの戻りやタブフォーカス時に即時オファー状態を同期・再検証＆モーダルクローズ
+  // 詳細画面からの戻り・タブフォーカス・iOSスリープ復帰時に即時全データ同期・再検証＆モーダルクローズ
   useEffect(() => {
-    const handleRevalidate = () => {
+    const handleRevalidate = async () => {
       setSelectedProduct(null);
       if (currentUser?.email) {
-        fetchMyRequests(currentUser.email);
+        // トークンの有効性を確認（必要に応じて安全に自動リフレッシュ）
+        await getValidAccessToken();
+        Promise.allSettled([
+          fetchMyRequests(currentUser.email),
+          fetchPurchasedItems(currentUser.email),
+          fetchDeposits(),
+          fetchUserProfile(),
+          fetchUnreadCount(),
+        ]).catch(err => console.warn('Revalidate background sync error:', err));
       }
     };
     window.addEventListener('pageshow', handleRevalidate);
@@ -2215,8 +2242,7 @@ export default function Home() {
   const fetchUserProfile = async (retryCount = 0) => {
     if (!currentUser) return;
     try {
-      const { data: { session: clientSession } } = await supabase.auth.getSession();
-      const accessToken = clientSession?.access_token;
+      const accessToken = await getValidAccessToken();
 
       const res = await fetch(`/api/profile?t=${Date.now()}`, {
         headers: {
@@ -2298,12 +2324,14 @@ export default function Home() {
         }
       } else if (res.status === 401) {
         if (retryCount < 2) {
-          // ログイン直後のアクセストークン反映タイムラグ対策として、800ms待ってからリトライする
-          await new Promise(resolve => setTimeout(resolve, 800));
-          fetchUserProfile(retryCount + 1);
+          // トークンリフレッシュを試行して安全に再試行
+          try {
+            await supabase.auth.refreshSession();
+          } catch {}
+          await new Promise(resolve => setTimeout(resolve, 500));
+          return fetchUserProfile(retryCount + 1);
         } else {
-          console.warn('Profile API returned 401 after retries, signing out due to expired session');
-          handleLogout();
+          console.warn('Profile API returned 401 after retries, keeping cached user session without force logout');
         }
       } else {
         const errText = await res.text();
@@ -2365,19 +2393,29 @@ export default function Home() {
   };
 
 
-  const fetchPurchasedItems = async (overrideEmail?: string) => {
+  const fetchPurchasedItems = async (overrideEmail?: string, retryCount = 0) => {
     try {
       const email = overrideEmail || currentUser?.email;
       if (!email) return;
 
-      const { data: { session: clientSession } } = await supabase.auth.getSession();
-      const accessToken = clientSession?.access_token;
+      const accessToken = await getValidAccessToken();
 
       const res = await fetch(`/api/bid-request?email=${encodeURIComponent(email)}&purchased=true`, {
         headers: {
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         }
       });
+
+      if (res.status === 401 && retryCount < 2) {
+        try {
+          await supabase.auth.refreshSession();
+        } catch {}
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return fetchPurchasedItems(overrideEmail, retryCount + 1);
+      }
+
+      if (!res.ok) return;
+
       const data = await res.json();
       // スネークケースからキャメルケースに変換
       const convertedItems = (data.purchasedItems || []).map((item: Record<string, unknown>) => ({
@@ -2443,12 +2481,11 @@ export default function Home() {
     }
   };
 
-  const fetchDeposits = async () => {
+  const fetchDeposits = async (retryCount = 0) => {
     if (!currentUser) return;
     setLoadingDeposits(true);
     try {
-      const { data: { session: clientSession } } = await supabase.auth.getSession();
-      const accessToken = clientSession?.access_token;
+      const accessToken = await getValidAccessToken();
 
       const res = await fetch(`/api/deposits?t=${Date.now()}`, {
         headers: {
@@ -2457,12 +2494,26 @@ export default function Home() {
         credentials: 'include'
       });
 
+      if (res.status === 401 && retryCount < 2) {
+        try {
+          await supabase.auth.refreshSession();
+        } catch {}
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return fetchDeposits(retryCount + 1);
+      }
+
       if (!res.ok) {
         throw new Error('Failed to fetch deposits');
       }
 
       const { deposits: data } = await res.json();
-      setDepositsList(data || []);
+      const list = data || [];
+      setDepositsList(list);
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(DEPOSITS_CACHE_KEY, JSON.stringify(list));
+        } catch {}
+      }
     } catch (error) {
       console.error('Error fetching deposits:', error);
     } finally {
@@ -3147,19 +3198,29 @@ export default function Home() {
     return calculateLocalCost(loc, { productTitle: product.titleJa || product.title, productUrl: finalUrl }, shippingMethod);
   };
 
-  const fetchMyRequests = async (overrideEmail?: string) => {
+  const fetchMyRequests = async (overrideEmail?: string, retryCount = 0) => {
     try {
       const email = overrideEmail || currentUser?.email;
       if (!email) return;
 
-      const { data: { session: clientSession } } = await supabase.auth.getSession();
-      const accessToken = clientSession?.access_token;
+      const accessToken = await getValidAccessToken();
 
       const res = await fetch(`/api/bid-request?email=${encodeURIComponent(email)}`, {
         headers: {
           'Authorization': accessToken ? `Bearer ${accessToken}` : ''
         }
       });
+
+      if (res.status === 401 && retryCount < 2) {
+        try {
+          await supabase.auth.refreshSession();
+        } catch {}
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return fetchMyRequests(overrideEmail, retryCount + 1);
+      }
+
+      if (!res.ok) return;
+
       const data = await res.json();
       // スネークケースからキャメルケースに変換
       const convertedRequests = (data.bidRequests || []).map((req: Record<string, unknown>) => ({

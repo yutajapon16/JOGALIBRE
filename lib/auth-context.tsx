@@ -56,13 +56,25 @@ const writeUserCacheToStorage = (user: User | null) => {
   if (typeof window === 'undefined') return;
   try {
     if (user) {
+      // 既存キャッシュの customerId が失われないように保護
+      let existingCustomerId: string | undefined = undefined;
+      try {
+        const raw = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.id === user.id && parsed?.customerId) {
+            existingCustomerId = parsed.customerId;
+          }
+        }
+      } catch {}
+
       localStorage.setItem('jogalibre_user_cache', JSON.stringify({
         id: user.id,
         email: user.email,
         role: user.role,
         fullName: user.fullName,
         whatsapp: user.whatsapp,
-        customerId: user.customerId,
+        customerId: user.customerId || existingCustomerId,
         address: user.address,
         zipCode: user.zipCode,
         country: user.country,
@@ -92,11 +104,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthChecking, setIsAuthChecking] = useState<boolean>(() => !readUserCacheFromStorage());
 
   // ユーザー状態更新ラッパー（メモリ更新＋LocalStorage即時同期）
+  // 防衛ロジック: 一度取得した customerId や重要プロパティを不完全な更新で消去されないよう保護・マージ
   const setUser = useCallback((userOrUpdater: React.SetStateAction<User | null>) => {
     setUserState(prev => {
       const nextUser = typeof userOrUpdater === 'function' ? userOrUpdater(prev) : userOrUpdater;
-      writeUserCacheToStorage(nextUser);
-      return nextUser;
+      if (!nextUser) {
+        writeUserCacheToStorage(null);
+        return null;
+      }
+
+      // 既存の customerId や氏名などの重要属性を自動マージ保護
+      const cached = readUserCacheFromStorage();
+      const safeCustomerId = nextUser.customerId || (prev?.id === nextUser.id ? prev.customerId : undefined) || (cached?.id === nextUser.id ? cached.customerId : undefined);
+      const safeFullName = nextUser.fullName || (prev?.id === nextUser.id ? prev.fullName : undefined) || (cached?.id === nextUser.id ? cached.fullName : undefined);
+      const safeRole = nextUser.role || (prev?.id === nextUser.id ? prev.role : undefined) || (cached?.id === nextUser.id ? cached.role : undefined) || 'customer';
+      const safeAgentCustomerId = nextUser.agentCustomerId || (prev?.id === nextUser.id ? prev.agentCustomerId : undefined) || (cached?.id === nextUser.id ? cached.agentCustomerId : undefined);
+      const safeCountry = nextUser.country || (prev?.id === nextUser.id ? prev.country : undefined) || (cached?.id === nextUser.id ? cached.country : undefined);
+
+      const mergedUser: User = {
+        ...nextUser,
+        customerId: safeCustomerId,
+        fullName: safeFullName,
+        role: safeRole,
+        agentCustomerId: safeAgentCustomerId,
+        country: safeCountry
+      };
+
+      writeUserCacheToStorage(mergedUser);
+      return mergedUser;
     });
   }, []);
 
@@ -162,6 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('jogalibre_my_requests_cache');
       localStorage.removeItem('jogalibre_purchased_items_cache');
+      localStorage.removeItem('jogalibre_deposits_cache');
       localStorage.removeItem('jogalibre_search_nav_state');
     }
     await apiSignOut();
@@ -180,8 +216,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(loadedUser);
           }
         } else {
-          // セッションが存在しない場合のみユーザーをnullに設定
-          if (isMounted && !readUserCacheFromStorage()) {
+          // セッションが存在しない場合でも、ローカルキャッシュがあれば一時的な通信障害とみなし
+          // ログアウトされるまで保持する（勝手にnullに落とさない）
+          const cached = readUserCacheFromStorage();
+          if (isMounted && !cached) {
             setUser(null);
           }
         }
@@ -203,7 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setIsAuthChecking(false);
-      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
         if (session?.user) {
           const freshUser = await getCurrentUser(session.user);
           if (isMounted && freshUser) {

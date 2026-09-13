@@ -223,6 +223,30 @@ export async function updateProfile(fullName: string, whatsapp: string, address?
   }
 }
 
+// 有効なアクセストークンを確実に取得するヘルパー関数
+// トークン期限切れ（または残り60秒未満）の場合は自動でセッションをリフレッシュします
+export async function getValidAccessToken(): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+    const now = Date.now();
+    // 期限切れ、または残り60秒以内の場合は安全にリフレッシュを試みる
+    if (expiresAt && (expiresAt - now < 60000)) {
+      const { data: refreshed, error } = await supabase.auth.refreshSession();
+      if (!error && refreshed.session?.access_token) {
+        return refreshed.session.access_token;
+      }
+    }
+
+    return session.access_token || null;
+  } catch (err) {
+    console.warn('getValidAccessToken error:', err);
+    return null;
+  }
+}
+
 export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): Promise<User | null> {
   // 関数全体（getUser + user_roles取得）が10秒を超えたら強制的にタイムアウトさせる
   const timeoutPromise = new Promise<null>((_, reject) => {
@@ -241,6 +265,20 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       if (!user) return null;
 
       const isExportAdmin = user.email?.toLowerCase() === 'admin@jogalibre.com';
+
+      // 既存のローカルストレージキャッシュを安全に事前読み出し
+      let existingCache: any = null;
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.id === user.id) {
+              existingCache = parsed;
+            }
+          }
+        } catch {}
+      }
 
       // キャッシュの不整合を防ぐためDB(user_roles)から最新情報を取得する
       const controller = new AbortController();
@@ -267,14 +305,15 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
 
       const errObj = fetchError as { code?: string } | null;
       if (errObj && errObj.code !== 'PGRST116') {
-        console.warn('Could not fetch user_roles from DB, falling back to metadata:', fetchError);
+        console.warn('Could not fetch user_roles from DB, falling back to metadata/cache:', fetchError);
       }
 
       // エージェントIDが設定されている場合は、エージェント氏名の取得も試みる
-      let agentFullName = undefined;
-      if (roleData?.agent_customer_id) {
+      let agentFullName = existingCache?.agentFullName;
+      const targetAgentId = roleData?.agent_customer_id || user.user_metadata?.agent_customer_id || existingCache?.agentCustomerId;
+      if (targetAgentId && !agentFullName) {
         try {
-          const cleanAgentId = roleData.agent_customer_id.trim().toUpperCase();
+          const cleanAgentId = targetAgentId.trim().toUpperCase();
           const { data: agentData } = await supabase
             .from('user_roles')
             .select('full_name')
@@ -291,28 +330,34 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
 
       const metadata = user.user_metadata || {};
 
+      // 重要: DB取得に失敗したフィールドは既存キャッシュから確実に引き継ぎ、値の消失を絶対に防ぐ
+      const finalCustomerId = roleData?.customer_id || metadata.customer_id || existingCache?.customerId || undefined;
+      const finalFullName = roleData?.full_name || metadata.full_name || existingCache?.fullName || undefined;
+      const finalRole = isExportAdmin ? 'admin' : (roleData?.role || metadata.user_role || metadata.role || existingCache?.role || 'customer');
+
       const userData: User = {
         id: user.id,
         email: user.email!,
-        role: isExportAdmin ? 'admin' : (roleData?.role || metadata.user_role || metadata.role || 'customer'),
-        fullName: roleData?.full_name || metadata.full_name || undefined,
-        whatsapp: roleData?.whatsapp || metadata.whatsapp || undefined,
-        customerId: roleData?.customer_id || undefined,
-        address: roleData?.address || metadata.address || undefined,
-        zipCode: roleData?.zip_code || metadata.zip_code || undefined,
-        country: roleData?.country || metadata.country || undefined,
-        agentCustomerId: roleData?.agent_customer_id || metadata.agent_customer_id || undefined,
-        agentFullName: agentFullName || metadata.agent_full_name || undefined,
-        depositAmount: roleData?.deposit_amount !== undefined ? Number(roleData.deposit_amount) : (metadata.deposit_amount !== undefined ? Number(metadata.deposit_amount) : undefined),
-        depositConfirmedAt: roleData?.deposit_confirmed_at || metadata.deposit_confirmed_at || undefined,
-        termsAcceptedAt: roleData?.terms_accepted_at || metadata.terms_accepted_at || undefined,
-        cpf: roleData?.cpf || metadata.cpf || undefined,
-        state: roleData?.state || metadata.state || undefined,
-        city: roleData?.city || metadata.city || undefined,
-        language: roleData?.language || metadata.language || undefined,
+        role: finalRole,
+        fullName: finalFullName,
+        whatsapp: roleData?.whatsapp || metadata.whatsapp || existingCache?.whatsapp || undefined,
+        customerId: finalCustomerId,
+        address: roleData?.address || metadata.address || existingCache?.address || undefined,
+        zipCode: roleData?.zip_code || metadata.zip_code || existingCache?.zipCode || undefined,
+        country: roleData?.country || metadata.country || existingCache?.country || undefined,
+        agentCustomerId: roleData?.agent_customer_id || metadata.agent_customer_id || existingCache?.agentCustomerId || undefined,
+        agentFullName: agentFullName || metadata.agent_full_name || existingCache?.agentFullName || undefined,
+        depositAmount: roleData?.deposit_amount !== undefined ? Number(roleData.deposit_amount) : (metadata.deposit_amount !== undefined ? Number(metadata.deposit_amount) : (existingCache?.depositAmount !== undefined ? Number(existingCache.depositAmount) : undefined)),
+        depositConfirmedAt: roleData?.deposit_confirmed_at || metadata.deposit_confirmed_at || existingCache?.depositConfirmedAt || undefined,
+        termsAcceptedAt: roleData?.terms_accepted_at || metadata.terms_accepted_at || existingCache?.termsAcceptedAt || undefined,
+        cpf: roleData?.cpf || metadata.cpf || existingCache?.cpf || undefined,
+        state: roleData?.state || metadata.state || existingCache?.state || undefined,
+        city: roleData?.city || metadata.city || existingCache?.city || undefined,
+        language: roleData?.language || metadata.language || existingCache?.language || undefined,
       };
 
-      if (typeof localStorage !== 'undefined') {
+      // 健全なキャッシュ保存（DB取得成功、または既に customerId を保持している場合のみ更新し、空データによる破壊を防止）
+      if (typeof localStorage !== 'undefined' && (roleData || userData.customerId)) {
         localStorage.setItem('jogalibre_user_cache', JSON.stringify({
           id: userData.id,
           email: userData.email,
@@ -333,6 +378,17 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
           city: userData.city,
           language: userData.language,
         }));
+      }
+
+      // customerId が判明していて Auth の user_metadata に未登録の場合、非同期で user_metadata に永続化
+      // これにより以降はトークン自体（JWT）に customer_id が含まれ、0msで即座に復元可能になる
+      if (finalCustomerId && metadata.customer_id !== finalCustomerId) {
+        supabase.auth.updateUser({
+          data: {
+            customer_id: finalCustomerId,
+            full_name: finalFullName || metadata.full_name || null
+          }
+        }).catch(err => console.warn('Sync customer_id to user_metadata error:', err));
       }
 
       // セッション確立時に最終ログイン日時を更新（24時間キャッシュ付き、非同期）
@@ -393,27 +449,36 @@ export async function getCurrentUser(alreadyFetchedUser?: SupabaseUser | null): 
       }
     }
 
-    // 最終手段として最低限の情報を返す
+    // 最終手段として最低限の情報を返す（既存キャッシュやメタデータの customerId を保持）
     if (alreadyFetchedUser) {
       const metadata = alreadyFetchedUser.user_metadata || {};
+      let cachedData: any = null;
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('jogalibre_user_cache') || localStorage.getItem('joga_user_cache');
+          if (raw) cachedData = JSON.parse(raw);
+        } catch {}
+      }
+
       return {
         id: alreadyFetchedUser.id,
         email: alreadyFetchedUser.email!,
-        role: alreadyFetchedUser.email?.toLowerCase() === 'admin@jogalibre.com' ? 'admin' : (metadata.user_role || metadata.role || 'customer'),
-        fullName: metadata.full_name,
-        whatsapp: metadata.whatsapp,
-        address: metadata.address,
-        zipCode: metadata.zip_code,
-        country: metadata.country,
-        agentCustomerId: metadata.agent_customer_id,
-        agentFullName: metadata.agent_full_name,
-        depositAmount: metadata.deposit_amount !== undefined ? Number(metadata.deposit_amount) : undefined,
-        depositConfirmedAt: metadata.deposit_confirmed_at,
-        termsAcceptedAt: metadata.terms_accepted_at,
-        cpf: metadata.cpf,
-        state: metadata.state,
-        city: metadata.city,
-        language: metadata.language,
+        role: alreadyFetchedUser.email?.toLowerCase() === 'admin@jogalibre.com' ? 'admin' : (metadata.user_role || metadata.role || cachedData?.role || 'customer'),
+        fullName: metadata.full_name || cachedData?.fullName,
+        whatsapp: metadata.whatsapp || cachedData?.whatsapp,
+        customerId: metadata.customer_id || cachedData?.customerId,
+        address: metadata.address || cachedData?.address,
+        zipCode: metadata.zip_code || cachedData?.zipCode,
+        country: metadata.country || cachedData?.country,
+        agentCustomerId: metadata.agent_customer_id || cachedData?.agentCustomerId,
+        agentFullName: metadata.agent_full_name || cachedData?.agentFullName,
+        depositAmount: metadata.deposit_amount !== undefined ? Number(metadata.deposit_amount) : (cachedData?.depositAmount !== undefined ? Number(cachedData.depositAmount) : undefined),
+        depositConfirmedAt: metadata.deposit_confirmed_at || cachedData?.depositConfirmedAt,
+        termsAcceptedAt: metadata.terms_accepted_at || cachedData?.termsAcceptedAt,
+        cpf: metadata.cpf || cachedData?.cpf,
+        state: metadata.state || cachedData?.state,
+        city: metadata.city || cachedData?.city,
+        language: metadata.language || cachedData?.language,
       };
     }
     return null;
