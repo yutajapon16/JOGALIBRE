@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 import { translateTitle } from '@/lib/translate';
-import { parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateDefaultShippingCost, extractAuctionId } from '@/lib/utils';
+import { parseAnyDateTime, parseDbDateTime, parseJstDateTime, calculateDefaultShippingCost, extractAuctionId, roundToStep5 } from '@/lib/utils';
 import { resolveItemShippingCost } from '@/lib/yahoo-shipping';
 import { sendWonEmail, sendShippingInfoEmail } from '@/lib/resend';
 import { ErrorUserInfo, hasJapaneseCharacters } from '@/lib/error-notifier';
@@ -138,7 +138,7 @@ export async function POST(request: Request) {
       product_image: productImage,
       product_price: productPrice,
       product_end_time: productEndTime,
-      max_bid: maxBid,
+      max_bid: typeof maxBid === 'number' || typeof maxBid === 'string' ? roundToStep5(maxBid) : maxBid,
       customer_name: customerName,
       customer_email: finalEmail,
       customer_id: effectiveUser?.id || null,
@@ -631,7 +631,7 @@ export async function PATCH(request: Request) {
 
     if (!isAdmin) {
       if (maxBid !== undefined) {
-        const newMaxBid = Number(maxBid);
+        const newMaxBid = roundToStep5(maxBid);
         if (currentRequest.status === 'pending') {
           updateData.max_bid = newMaxBid;
           // オファー金額変更時に高値更新通知フラグをリセット
@@ -716,7 +716,9 @@ export async function PATCH(request: Request) {
       }
     }
     if (customerMessage !== undefined) updateData.customer_message = customerMessage;
-    if (customerCounterOffer !== undefined) updateData.customer_counter_offer = customerCounterOffer;
+    if (customerCounterOffer !== undefined) {
+      updateData.customer_counter_offer = customerCounterOffer !== null ? roundToStep5(customerCounterOffer) : null;
+    }
 
     // 落札の場合の金額設定（管理者がfinalStatusを設定した時のみ）
     if (isAdmin && finalStatus === 'won') {
@@ -735,7 +737,7 @@ export async function PATCH(request: Request) {
     if (isAdmin && status === 'approved') {
       updateData.approved_at = new Date().toISOString();
       if (currentRequest.customer_counter_offer) {
-        updateData.max_bid = currentRequest.customer_counter_offer;
+        updateData.max_bid = roundToStep5(currentRequest.customer_counter_offer);
       }
     }
 

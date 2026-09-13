@@ -3576,6 +3576,7 @@ export default function Home() {
           })
         });
       } else if (action === 'counter' && counterAmount) {
+        const finalCounterAmount = roundToStep5(counterAmount);
         res = await fetch('/api/bid-request', {
           method: 'PATCH',
           headers: {
@@ -3584,7 +3585,7 @@ export default function Home() {
           },
           body: JSON.stringify({
             id: requestId,
-            customerCounterOffer: counterAmount
+            customerCounterOffer: finalCounterAmount
           })
         });
       }
@@ -3598,7 +3599,8 @@ export default function Home() {
             } else if (action === 'reject') {
               return { ...item, status: 'rejected', rejectReason: 'Offer declined by customer' };
             } else if (action === 'counter' && counterAmount) {
-              return { ...item, customerCounterOffer: counterAmount, customerCounterOfferUsed: false };
+              const finalCounterAmount = roundToStep5(counterAmount);
+              return { ...item, customerCounterOffer: finalCounterAmount, customerCounterOfferUsed: false };
             }
           }
           return item;
@@ -3724,7 +3726,7 @@ export default function Home() {
     const effectiveCurrentBid = agreedCounter !== null
       ? agreedCounter
       : (request.maxBid || 0);
-    setEditingOfferAmount(effectiveCurrentBid ? String(effectiveCurrentBid) : '');
+    setEditingOfferAmount(effectiveCurrentBid ? String(roundToStep5(effectiveCurrentBid)) : '');
     setIsEditOfferModalOpen(true);
   };
 
@@ -8595,12 +8597,22 @@ export default function Home() {
                   <span className="absolute left-4 text-gray-500 font-semibold">$</span>
                   <input
                     type="number"
+                    step="5"
+                    min="5"
                     value={customerCounterAmount}
                     onChange={(e) => setCustomerCounterAmount(e.target.value)}
+                    onBlur={(e) => {
+                      if (e.target.value) {
+                        setCustomerCounterAmount(String(roundToStep5(e.target.value)));
+                      }
+                    }}
                     className="w-full h-12 border border-gray-300 rounded-lg pl-8 pr-4 focus:outline-none focus:border-blue-500 font-semibold"
                     placeholder="0"
                   />
                 </div>
+                <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                  {lang === 'es' ? '※ Ingrese en múltiplos de 5 USD (ej: 410, 415)' : '※ Insira em múltiplos de 5 USD (ex: 410, 415)'}
+                </p>
               </div>
 
               <div className="flex gap-3">
@@ -8617,10 +8629,12 @@ export default function Home() {
                 </button>
                 <button
                   onClick={async () => {
-                    if (isSubmittingCounter || !customerCounterAmount || isNaN(parseFloat(customerCounterAmount)) || parseFloat(customerCounterAmount) <= 0) return;
+                    if (isSubmittingCounter || !customerCounterAmount) return;
+                    const roundedCounterAmount = roundToStep5(customerCounterAmount);
+                    if (roundedCounterAmount <= 0) return;
                     setIsSubmittingCounter(true);
                     try {
-                      await handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', parseFloat(customerCounterAmount));
+                      await handleCounterOfferResponse(selectedRequestForCounter.id, 'counter', roundedCounterAmount);
                       setShowCounterModal(false);
                       setSelectedRequestForCounter(null);
                       setCustomerCounterAmount('');
