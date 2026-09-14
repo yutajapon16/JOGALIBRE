@@ -1139,15 +1139,17 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     return desarmeCost ? desarmeCost.fob : 70000;
   }
 
-  // --- 1. バイク車体の最優先判定: 10,000円 ---
+  // --- 1. 自転車の判定: 3,000円 ---
   const isBicycle = 
     lowerTitle.includes('ロードバイク') || 
     lowerTitle.includes('クロスバイク') || 
     lowerTitle.includes('マウンテンバイク') || 
     lowerTitle.includes('自転車') || 
     lowerTitle.includes('bicicleta') ||
-    lowerUrl.includes('26246');
+    lowerUrl.includes('26246') ||
+    jcat === 'bicicleta';
 
+  // --- 2. バイク車体の最優先判定: 10,000円 ---
   const isMoto = 
     !isBicycle && (
       lowerUrl.includes('26316') || 
@@ -1160,6 +1162,11 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
   if (isMoto) {
     const motoCost = cachedFobCosts.find(i => i.key === 'moto');
     return motoCost ? motoCost.fob : 10000;
+  }
+
+  if (isBicycle) {
+    const bicyCost = cachedFobCosts.find(i => i.key === 'bicicleta');
+    return bicyCost ? bicyCost.fob : 3000;
   }
 
   // --- 2. 自動車パーツ（isCarPart）の判定 ---

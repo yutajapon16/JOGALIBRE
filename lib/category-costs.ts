@@ -18,9 +18,10 @@ export const CATEGORY_COSTS: Record<string, CategoryCostSettings> = {
   'silvia':  { fob: 59000 },
   'impreza': { fob: 59000 },
   
-  // --- その他車両 ---
-  'desarme': { fob: 70000 },
-  'moto':    { fob: 10000 },
+  // --- その他車両・乗り物 ---
+  'desarme':   { fob: 70000 },
+  'moto':      { fob: 10000 },
+  'bicicleta': { fob: 3000 },
   
   // --- 自動車部品（送料） ---
   'motor':       { shipping: 10000 },
