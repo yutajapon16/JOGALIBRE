@@ -4,6 +4,7 @@ export const revalidate = 0;
 import { NextResponse } from 'next/server';
 import { parseJstDateTime, parseDbDateTime, parseAnyDateTime } from '@/lib/utils';
 import { translateTitle, translateText, cleanupBrandNames } from '@/lib/translate';
+import { generateWithGemini } from '@/lib/gemini';
 import { notifyAdminError, hasJapaneseCharacters, ErrorUserInfo } from '@/lib/error-notifier';
 import { getUserFromRequest, getUserInfoByEmail } from '@/lib/auth-helpers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
@@ -713,11 +714,12 @@ async function generateAiSummary(
   user?: ErrorUserInfo
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const useVertex = process.env.USE_VERTEX_AI === 'true';
+  if (!apiKey && !useVertex) {
     notifyAdminError({
       category: 'ai_summary',
-      title: 'Gemini APIキー未設定エラー',
-      message: 'GEMINI_API_KEY 環境変数が設定されていないため、AI要約がフォールバックモードで動作しています。',
+      title: 'Gemini API認証未設定エラー',
+      message: 'GEMINI_API_KEY および USE_VERTEX_AI が未設定のため、AI要約がフォールバックモードで動作しています。',
       user,
       severity: 'critical',
       throttleKey: 'gemini-apikey-missing'
@@ -872,63 +874,27 @@ ${textToSummarize}`;
     'gemini-flash-latest'
   ];
 
-  for (const model of models) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const res = await generateWithGemini(prompt, {
+      models,
+      temperature: 0.2,
+      maxOutputTokens: 2000,
+      thinkingBudget: 0,
+      timeoutMs: 6000,
+      apiKey,
+    });
 
-      const urlEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const isThinkingModel = model.includes('2.5') || model.includes('thinking');
-      const generationConfig: Record<string, any> = {
-        maxOutputTokens: 2000,
-        temperature: 0.2,
-      };
-      if (isThinkingModel) {
-        generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    if (res?.text && res.text.trim().length > 20) {
+      let cleaned = cleanupBrandNames(res.text.trim());
+      cleaned = cleaned.replace(/([A-Za-z0-9-]+)改/g, targetLang === 'es' ? '$1 (Modificado)' : '$1 (Modificado)');
+      cleaned = cleaned.replace(/\b改\b/g, targetLang === 'es' ? '(Modificado)' : '(Modificado)');
+      if (targetLang === 'pt') {
+        cleaned = fixPortugueseAccents(cleaned);
       }
-
-      const response = await fetch(urlEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
-
-      if (response.ok) {
-        const resData = await response.json();
-        const text = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text && text.trim() && text.length > 20) {
-          let cleaned = cleanupBrandNames(text.trim());
-          cleaned = cleaned.replace(/([A-Za-z0-9-]+)改/g, targetLang === 'es' ? '$1 (Modificado)' : '$1 (Modificado)');
-          cleaned = cleaned.replace(/\b改\b/g, targetLang === 'es' ? '(Modificado)' : '(Modificado)');
-          if (targetLang === 'pt') {
-            cleaned = fixPortugueseAccents(cleaned);
-          }
-          return cleaned;
-        }
-
-      } else {
-        const errBody = await response.text();
-        console.warn(`Gemini model ${model} status ${response.status}:`, errBody.substring(0, 200));
-
-        if (response.status === 429 || response.status === 503) {
-          // レートリミット（429）や一時混雑時は少し待機してから次のモデルへ
-          await new Promise(r => setTimeout(r, 800));
-        }
-      }
-    } catch (e) {
-      console.warn(`Gemini model ${model} fetch error:`, e);
+      return cleaned;
     }
+  } catch (e) {
+    console.warn('buildAiSummary generateWithGemini error:', e);
   }
 
   // Gemini 全モデル失敗時に管理者に通知
@@ -943,8 +909,6 @@ ${textToSummarize}`;
     severity: 'error',
     throttleKey: 'gemini-all-models-failed'
   }).catch(e => console.error('Admin notify error:', e));
-
-
 
   return await buildFallbackSummary(translatedDesc || description, targetLang);
 }

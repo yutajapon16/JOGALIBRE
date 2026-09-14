@@ -4,6 +4,7 @@
  */
 
 import { notifyAdminError, hasJapaneseCharacters, ErrorUserInfo } from '@/lib/error-notifier';
+import { generateWithGemini } from '@/lib/gemini';
 
 
 // 公式の超低コスト・高スループット安定モデルを最安順に設定 (404エラー完全防止)
@@ -427,48 +428,21 @@ async function translateChunkWithFallback(chunk: string[], targetLang: string, a
 export async function translateText(text: string, targetLang: string, sourceLang: string = 'ja'): Promise<string> {
   if (!text || targetLang === sourceLang) return text;
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (apiKey) {
-    try {
-      const targetLangName = targetLang === 'es' ? 'Spanish' : targetLang === 'pt' ? 'Portuguese' : targetLang === 'ja' ? 'Japanese' : targetLang;
-      const prompt = `Translate the following text into ${targetLangName}. Output ONLY the translated text without any explanation or quotes.\n\nText:\n${text}`;
+  try {
+    const targetLangName = targetLang === 'es' ? 'Spanish' : targetLang === 'pt' ? 'Portuguese' : targetLang === 'ja' ? 'Japanese' : targetLang;
+    const prompt = `Translate the following text into ${targetLangName}. Output ONLY the translated text without any explanation or quotes.\n\nText:\n${text}`;
 
-      for (const model of GEMINI_MODELS) {
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 6000);
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-          const isThinkingModel = model.includes('2.5') || model.includes('thinking');
-          const generationConfig: Record<string, any> = {
-            maxOutputTokens: 2000,
-            temperature: 0.1,
-          };
-          if (isThinkingModel) {
-            generationConfig.thinkingConfig = { thinkingBudget: 0 };
-          }
+    const res = await generateWithGemini(prompt, {
+      models: GEMINI_MODELS,
+      temperature: 0.1,
+      maxOutputTokens: 2000,
+      timeoutMs: 6000,
+    });
 
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig
-            }),
-            signal: controller.signal
-          });
-          clearTimeout(timeout);
-          if (res.ok) {
-            const data = await res.json();
-            const translated = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-            if (translated) return cleanupBrandNames(translated);
-          } else if (res.status === 429 || res.status === 503) {
-            // レートリミット・一時混雑時は少し待機してから次のモデルへ
-            await new Promise(r => setTimeout(r, 600));
-          }
-        } catch {}
-      }
-    } catch {}
-  }
+    if (res?.text) {
+      return cleanupBrandNames(res.text);
+    }
+  } catch {}
 
   // フォールバック: Google Translate
   try {
@@ -531,62 +505,38 @@ Input JSON:
 ${JSON.stringify(titles)}`;
 
 
-  for (const model of GEMINI_MODELS) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 7000);
+  try {
+    const res = await generateWithGemini(prompt, {
+      models: GEMINI_MODELS,
+      temperature: 0.1,
+      maxOutputTokens: 2500,
+      responseMimeType: 'application/json',
+      timeoutMs: 7000,
+      apiKey,
+    });
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const isThinkingModel = model.includes('2.5') || model.includes('thinking');
-      const generationConfig: Record<string, any> = {
-        maxOutputTokens: 2500,
-        temperature: 0.1,
-        responseMimeType: 'application/json',
-      };
-      if (isThinkingModel) {
-        generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    if (res?.text) {
+      let cleanJson = res.text.trim();
+      if (cleanJson.startsWith('```json')) {
+        cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+      } else if (cleanJson.startsWith('```')) {
+        cleanJson = cleanJson.replace(/^```\s*/, '').replace(/```$/, '').trim();
       }
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
-
-      if (response.ok) {
-        const resData = await response.json();
-        const rawText = resData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-        
-        // JSONパース
-        let cleanJson = rawText;
-        if (cleanJson.startsWith('```json')) {
-          cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/```$/, '').trim();
-        } else if (cleanJson.startsWith('```')) {
-          cleanJson = cleanJson.replace(/^```\s*/, '').replace(/```$/, '').trim();
-        }
-
-        const parsed = JSON.parse(cleanJson);
-        if (Array.isArray(parsed) && parsed.length === titles.length) {
-          return parsed.map((item, idx) => {
-            if (typeof item === 'string' && item.trim()) {
-              return item.trim();
-            }
-            return titles[idx];
-          });
-        }
-      } else if (response.status === 429 || response.status === 503) {
-        // レートリミット・一時混雑時は少し待機してから次のモデルへ
-        await new Promise(r => setTimeout(r, 600));
+      const parsed = JSON.parse(cleanJson);
+      if (Array.isArray(parsed) && parsed.length === titles.length) {
+        return parsed.map((item, idx) => {
+          if (typeof item === 'string' && item.trim()) {
+            return item.trim();
+          }
+          return titles[idx];
+        });
       }
-    } catch {
-      // 次のモデルへ
     }
+  } catch (err) {
+    console.warn('translateWithGeminiBatch JSON parse/fetch error:', err);
   }
+
   return null;
 }
 
