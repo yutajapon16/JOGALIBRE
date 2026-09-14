@@ -1392,6 +1392,30 @@ export default function AdminDashboard() {
     }
   }, [currentUser]);
 
+  // 管理者Cookieの同期関数（Middlewareでの日本国内バイパス用）
+  const syncAdminAuthCookie = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await fetch('/api/admin/auth-cookie', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to sync admin auth cookie:', err);
+    }
+  };
+
+  // 管理者がログイン中の場合は自動的に管理者Cookieを維持
+  useEffect(() => {
+    if (currentUser?.role === 'admin') {
+      syncAdminAuthCookie();
+    }
+  }, [currentUser]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoggingIn || isLoggingOut) return;
@@ -1401,6 +1425,7 @@ export default function AdminDashboard() {
     setIsLoggingIn(true);
     try {
       await signIn(loginForm.email.trim(), loginForm.password);
+      await syncAdminAuthCookie();
       setLoginForm({ email: '', password: '' });
     } catch (error: any) {
       console.error('Login error:', error);
@@ -1413,6 +1438,13 @@ export default function AdminDashboard() {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     setShowLogoutConfirm(false);
+
+    // ログアウト時に管理者Cookieを削除
+    try {
+      await fetch('/api/admin/auth-cookie', { method: 'DELETE' });
+    } catch (err) {
+      console.warn('Failed to remove admin auth cookie:', err);
+    }
 
     // ログアウト前にPushサブスクリプションを削除
     if (currentUser) {
