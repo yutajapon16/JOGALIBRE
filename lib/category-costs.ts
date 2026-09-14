@@ -11,15 +11,15 @@ export type CategoryCostSettings = {
 
 export const CATEGORY_COSTS: Record<string, CategoryCostSettings> = {
   // --- JDM車 ---
-  'supra':   { fob: 54000 },
-  'skyline': { fob: 54000 },
-  'lancer':  { fob: 54000 },
-  'rx7':     { fob: 54000 },
-  'silvia':  { fob: 54000 },
-  'impreza': { fob: 54000 },
+  'supra':   { fob: 59000 },
+  'skyline': { fob: 59000 },
+  'lancer':  { fob: 59000 },
+  'rx7':     { fob: 59000 },
+  'silvia':  { fob: 59000 },
+  'impreza': { fob: 59000 },
   
   // --- その他車両 ---
-  'desarme': { fob: 65000 },
+  'desarme': { fob: 70000 },
   'moto':    { fob: 10000 },
   
   // --- 自動車部品（送料） ---

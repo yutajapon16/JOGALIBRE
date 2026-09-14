@@ -65,7 +65,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [rejectReason, setRejectReason] = useState('');
   const [shippingCostJpy, setShippingCostJpy] = useState('');
-  const [fobCostJpy, setFobCostJpy] = useState('2,000');
+  const [fobCostJpy, setFobCostJpy] = useState('500');
   const [localCostUsd, setLocalCostUsd] = useState('');
   const [selectedRequest, setSelectedRequest] = useState<BidRequest | null>(null);
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
@@ -1769,7 +1769,7 @@ export default function AdminDashboard() {
     setActionType(null);
     setRejectReason('');
     setShippingCostJpy('');
-    setFobCostJpy('2,000');
+    setFobCostJpy('500');
     setLocalCostUsd('');
 
     // 3. プッシュ通知送信を非同期（バックグラウンド）で発火
@@ -2589,7 +2589,7 @@ export default function AdminDashboard() {
 
   const handleCounterOffer = () => {
     if (selectedRequest) {
-      const defaultFob = selectedRequest ? calculateDefaultFobCost(selectedRequest.productTitle, selectedRequest.productUrl) : 2000;
+      const defaultFob = selectedRequest ? calculateDefaultFobCost(selectedRequest.productTitle, selectedRequest.productUrl) : 500;
       const fob = fobCostJpy.replace(/,/g, '').trim() ? parseFloat(fobCostJpy.replace(/,/g, '')) : defaultFob;
       const defaultShipping = (selectedRequest?.shippingCostJpy !== null && selectedRequest?.shippingCostJpy !== undefined)
         ? selectedRequest.shippingCostJpy
@@ -5952,7 +5952,7 @@ export default function AdminDashboard() {
                 <span className="text-gray-600">FOB費用:</span>
                 <input
                   type="text"
-                  placeholder="2,000"
+                  placeholder="500"
                   value={fobCostJpy}
                   onChange={(e) => setFobCostJpy(formatCommaSeparatedNumber(e.target.value))}
                   className="w-32 h-12 border border-gray-300 rounded px-3 py-0 text-base text-right box-border focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-black font-bold"
@@ -6049,7 +6049,7 @@ export default function AdminDashboard() {
                   setSelectedRequest(null);
                   setActionType(null);
                   setShippingCostJpy('');
-                  setFobCostJpy('2,000');
+                  setFobCostJpy('500');
                   setLocalCostUsd('');
                 }}
                 disabled={!!processingRequestId}

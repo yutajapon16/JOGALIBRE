@@ -1125,8 +1125,45 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
   const lowerUrl = decodedUrl.toLowerCase();
   const lowerTitle = (title || '').toLowerCase();
 
-  // --- 0. パーツ・部品（フロントガラス、ライト、ホイール、シート等）の判定 ---
-  // タイトルやURLにパーツ関連の単語がある場合は、車種名（シルビア、スープラ等）が含まれていても車両FOB（54,000円）を適用しない
+  // --- 0. 解体車両（部品取り車）の最優先判定: 70,000円 ---
+  const isDesarme = 
+    lowerUrl.includes('2084061280') || 
+    lowerUrl.includes('desarme') || 
+    jcat === 'desarme' ||
+    lowerTitle.includes('部品取り') || 
+    lowerTitle.includes('丸車') || 
+    lowerTitle.includes('書類無し') || 
+    lowerTitle.includes('desmanche');
+  if (isDesarme) {
+    const desarmeCost = cachedFobCosts.find(i => i.key === 'desarme');
+    return desarmeCost ? desarmeCost.fob : 70000;
+  }
+
+  // --- 1. バイク車体の最優先判定: 10,000円 ---
+  const isBicycle = 
+    lowerTitle.includes('ロードバイク') || 
+    lowerTitle.includes('クロスバイク') || 
+    lowerTitle.includes('マウンテンバイク') || 
+    lowerTitle.includes('自転車') || 
+    lowerTitle.includes('bicicleta') ||
+    lowerUrl.includes('26246');
+
+  const isMoto = 
+    !isBicycle && (
+      lowerUrl.includes('26316') || 
+      jcat === 'moto' || 
+      (
+        (lowerTitle.includes('バイク') || lowerTitle.includes('オートバイ') || lowerTitle.includes('二輪') || lowerTitle.includes('motorcycle') || (lowerUrl.includes('moto') && !lowerUrl.includes('motor'))) &&
+        !lowerTitle.includes('パーツ') && !lowerTitle.includes('部品') && !lowerTitle.includes('ヘルメット') && !lowerTitle.includes('ジャケット')
+      )
+    );
+  if (isMoto) {
+    const motoCost = cachedFobCosts.find(i => i.key === 'moto');
+    return motoCost ? motoCost.fob : 10000;
+  }
+
+  // --- 2. 自動車パーツ（isCarPart）の判定 ---
+  // タイトルやURLにパーツ関連の単語がある場合は、車種名（シルビア、スープラ等）が含まれていても車両FOB（59,000円）を適用しない
   const isCarPart = 
     lowerTitle.includes('フロントガラス') ||
     lowerTitle.includes('ガラス') ||
@@ -1179,73 +1216,80 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     lowerTitle.includes('パネル') ||
     lowerTitle.includes('カバー') ||
     lowerTitle.includes('パーツ') ||
-    lowerTitle.includes('部品');
+    lowerTitle.includes('部品') ||
+    lowerUrl.includes('26318'); // ヤフオク自動車・オートバイパーツカテゴリ
 
-  // --- 0.5 大物自動車部品（エンジン、バンパー・外装、シート、マフラー、ミッション等）の最優先判定 ---
-  if (isEngineUnit(lowerTitle, lowerUrl)) {
-    const motorCost = cachedFobCosts.find(i => i.key === 'motor');
-    return motorCost ? motorCost.fob : 2000;
-  }
-  if (isCarroceriaUnit(lowerTitle, lowerUrl)) {
-    const cost = cachedFobCosts.find(i => i.key === 'carroceria');
-    return cost ? cost.fob : 2000;
-  }
-  if (isSeatUnit(lowerTitle, lowerUrl)) {
-    const cost = cachedFobCosts.find(i => i.key === 'asiento');
-    return cost ? cost.fob : 2000;
-  }
-  if (isMufflerUnit(lowerTitle, lowerUrl)) {
-    const cost = cachedFobCosts.find(i => i.key === 'escape');
-    return cost ? cost.fob : 2000;
-  }
-  if (isTransmissionUnit(lowerTitle, lowerUrl)) {
-    const cost = cachedFobCosts.find(i => i.key === 'transmision');
-    return cost ? cost.fob : 2000;
+  // --- 3. 車両本体の判定: 59,000円 ---
+  // パーツ単語が含まれず、自動車車体カテゴリ(26360)または車両キーの場合
+  const isVehicle = 
+    !isCarPart && (
+      lowerUrl.includes('26360') ||
+      ['supra', 'skyline', 'lancer', 'rx7', 'silvia', 'impreza'].includes(jcat || '') ||
+      (['supra', 'skyline', 'lancer', 'rx7', 'silvia', 'impreza'].some(car => lowerTitle.includes(car)) && lowerUrl.includes('26360'))
+    );
+  if (isVehicle) {
+    const vehicleCost = cachedFobCosts.find(i => ['supra', 'skyline', 'lancer', 'rx7', 'silvia', 'impreza'].includes(i.key));
+    return vehicleCost ? vehicleCost.fob : 59000;
   }
 
-  // --- 1. URL内のヤフオクカテゴリIDによる厳密な判定 ---
+  // --- 4. 自動車パーツの判定: 3,000円 ---
+  // 大物パーツ判定ヘルパー
+  if (
+    isEngineUnit(lowerTitle, lowerUrl) ||
+    isCarroceriaUnit(lowerTitle, lowerUrl) ||
+    isSeatUnit(lowerTitle, lowerUrl) ||
+    isMufflerUnit(lowerTitle, lowerUrl) ||
+    isTransmissionUnit(lowerTitle, lowerUrl)
+  ) {
+    return 3000;
+  }
+
+  // 自動車パーツキー一覧
+  const carPartKeys = [
+    'motor', 'transmision', 'carroceria', 'escape', 'llantas', 'll16', 'll17', 'll18',
+    'aros', 'ar16', 'ar17', 'ar18', 'luces', 'volante', 'suspension', 'asiento',
+    'barras', 'freno', 'caraudio', 'reproductor', 'amplificador', 'subwoofer', 'altavoz'
+  ];
+
+  // URL内のヤフオクカテゴリIDによる厳密な判定
   let matchedItem: FobCostItem | null = null;
   for (const item of cachedFobCosts) {
     if (item.categoryIds.length > 0 && item.categoryIds.some(id => lowerUrl.includes(id))) {
-      // 車両本体FOB（54,000円以上）の場合、パーツ単語が含まれていたら除外
+      // 車両本体FOB（50,000円以上）の場合、パーツ単語が含まれていたら除外
       if (item.fob >= 50000 && isCarPart) {
         continue;
       }
-      // 大物カテゴリの場合、部品単体・小物であれば除外
-      if (!isCategoryUnitItem(item.key, lowerTitle, lowerUrl)) {
+      // バイク本体の場合、自転車なら除外
+      if (item.key === 'moto' && isBicycle) {
         continue;
       }
       matchedItem = item;
       break;
     }
   }
-
   if (matchedItem) {
     return matchedItem.fob;
   }
 
-  // --- 2. jcatがあればマスタデータからFOB費用を取得 (上記カテゴリIDで一致しなかった場合) ---
+  // jcatがあればマスタデータからFOB費用を取得
   if (jcat) {
     const sizeCost = cachedFobCosts.find(i => i.key === jcat);
     if (sizeCost) {
       if (sizeCost.fob >= 50000 && isCarPart) {
-        return 2000;
-      }
-      if (!isCategoryUnitItem(sizeCost.key, lowerTitle, lowerUrl)) {
-        return 2000;
+        return 3000;
       }
       return sizeCost.fob;
     }
   }
 
-  // --- 3. キーワード判定（車両本体FOBは自動車車体カテゴリ26360または部品取り2084061280がある場合のみ） ---
-  const isVehicleCategory = lowerUrl.includes('26360') || lowerUrl.includes('2084061280') || lowerUrl.includes('26316');
+  // キーワード判定
   for (const item of cachedFobCosts) {
-    if (item.fob >= 50000 && (!isVehicleCategory || isCarPart)) {
-      // 車両本体FOBは車両カテゴリ以外またはパーツ商品には絶対に適用しない
+    // 車両本体FOB（50,000円以上）および解体車両は判定済みのためスキップ
+    if (item.fob >= 50000) {
       continue;
     }
-    if (!isCategoryUnitItem(item.key, lowerTitle, lowerUrl)) {
+    // バイク本体FOB（10,000円）はバイク車体判定済みのためスキップ（自転車や用品への誤爆防止）
+    if (item.key === 'moto') {
       continue;
     }
     if (item.keywords.some(keyword => matchesCostKeyword(lowerTitle, keyword) || matchesCostKeyword(lowerUrl, keyword))) {
@@ -1253,7 +1297,13 @@ export const calculateDefaultFobCost = (title?: string | null, url?: string | nu
     }
   }
 
-  return 2000;
+  // パーツ判定が true の場合は自動車パーツの 3,000円
+  if (isCarPart || carPartKeys.includes(jcat || '')) {
+    return 3000;
+  }
+
+  // --- 5. 上記以外（小物・アパレル・ホビー・時計・一般商品等）: 500円 ---
+  return 500;
 };
 
 
