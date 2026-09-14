@@ -19,6 +19,9 @@ const siteDescription = "JOGALIBRE es tu plataforma para comprar y subastar prod
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  alternates: {
+    canonical: "/",
+  },
   title: "JOGALIBRE",
   description: siteDescription,
   manifest: "/manifest.json",
