@@ -737,7 +737,7 @@ Tu tarea es traducir y resumir de forma clara, profesional y 100% en ESPAÑOL la
 REGLAS CRÍTICAS:
 1. Debes redactar TODO absolutamente en ESPAÑOL. No incluyas ningún carácter en japonés (kanji, hiragana, katakana).
    - IMPORTANTE: Incluso sufijos japoneses en códigos de modelo o especificaciones como "改" (e.g. E-EG2改 -> E-EG2 Modificado), "型" (e.g. 後期型 -> Modelo tardío / Restyling), o "ドンガラ" -> (Chasis despojado), términos de subasta como "並品", "美品", "有", "無", "元払い", "宅急便" DEBEN traducirse al español. NUNCA dejes caracteres kanji.
-2. Estructura el resumen EXACTAMENTE con los siguientes 5 bloques separados por un salto de línea entre cada uno, usando viñetas claras:
+2. Estructura el resumen EXACTAMENTE con los siguientes 4 bloques separados por un salto de línea entre cada uno, usando viñetas claras:
 
 
 • **Especificaciones**:
@@ -752,10 +752,7 @@ REGLAS CRÍTICAS:
 • **Accesorios incluidos**:
 (caja, cables, manuales o solo el artículo principal)
 
-• **Envío en Japón**:
-(detalles de envío si se mencionan en la descripción)
-
-3. No incluyas saludos ni despedidas. Solo los 5 bloques con viñetas en español.
+3. No incluyas saludos ni despedidas. Solo los 4 bloques con viñetas en español.
 
 Descripción del producto:
 ${textToSummarize}`;
@@ -842,7 +839,7 @@ REGRAS CRÍTICAS DE IDIOMA E ORTOGRAFIA:
    - IMPORTANTE: Mesmo sufixos japoneses em códigos de modelo como "改" (ex: E-EG2改 -> E-EG2 Modificado), "型" (ex: 後期型 -> Modelo tardio / Restyling), ou "ドンガラ" -> (Chassi sem acabamento) DEVEM ser traduzidos para o português. NUNCA deixe caracteres kanji.
 
 2. Não inclua nenhum caractere em japonês (kanji, hiragana, katakana).
-3. Estruture o resumo EXATAMENTE com os seguintes 5 blocos separados por uma linha em branco entre cada um, usando marcadores claros:
+3. Estruture o resumo EXATAMENTE com os seguintes 4 blocos separados por uma linha em branco entre cada um, usando marcadores claros:
 
 
 • **Especificações**:
@@ -857,10 +854,7 @@ REGRAS CRÍTICAS DE IDIOMA E ORTOGRAFIA:
 • **Acessórios incluídos**:
 (caixa, cabos, manuais ou apenas o item principal)
 
-• **Envio no Japão**:
-(detalhes de envio se mencionados na descrição)
-
-4. Não inclua saudações nem despedidas. Apenas os 5 blocos com marcadores em português com acentuação estritamente correta.
+4. Não inclua saudações nem despedidas. Apenas os 4 blocos com marcadores em português com acentuação estritamente correta.
 
 Descrição do produto:
 ${textToSummarize}`;
